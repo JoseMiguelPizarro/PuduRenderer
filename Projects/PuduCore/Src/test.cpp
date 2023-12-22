@@ -3,5 +3,4 @@
 #include "test.h"
 
 void test::Hi() {
-	Print("Hello world!");
 }

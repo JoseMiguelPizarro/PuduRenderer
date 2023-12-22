@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <VulkanManager.h>
 
 class PuduApp
 {
@@ -26,6 +27,9 @@ public:
 private:
 	void InitVulkan();
 	void CreateVulkanInstance();
+	void PickPhysicalDevice();
+	bool IsDeviceSuitable(VkPhysicalDevice device);
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 	void MainLoop();
 	void Cleanup();
 	void InitWindow();
@@ -36,6 +40,7 @@ private:
 
 	GLFWwindow* m_windowPtr;
 	VkInstance m_vkInstance;
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
 };

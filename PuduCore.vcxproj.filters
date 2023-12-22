@@ -12,10 +12,13 @@
     <ClInclude Include="Projects\PuduCore\lib\Logger.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\test.h">
+    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h">
+    <ClInclude Include="Projects\PuduCore\lib\VulkanManager.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\test.h">
       <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>

@@ -88,6 +88,7 @@ project "PuduCore"
 	kind "StaticLib"
 	language "C++"
 	targetdir "bin/%{cfg.buildcfg}"
+	cppdialect "C++20"
 
 	files "Projects/PuduCore/**"
 	includedirs "Projects/PuduCore/lib"
@@ -127,6 +128,7 @@ project "App"
 	kind "ConsoleApp"
 	files "Projects/App/**"
 	includedirs "Projects/App/lib"
+	cppdialect "C++20"
 	-- We also need the headers
    -- We also need the headers
 	includeGLFW()

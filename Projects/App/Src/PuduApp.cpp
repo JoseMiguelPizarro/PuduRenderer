@@ -50,7 +50,7 @@ bool PuduApp::CheckValidationLayerSupport()
 }
 
 void PuduApp::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-	
+
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	createInfo.messageSeverity =
 		VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
@@ -76,7 +76,7 @@ void PuduApp::SetupDebugMessenger()
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 	PopulateDebugMessengerCreateInfo(createInfo);
 
-	if (CreateDebugUtilsMessengerEXT(m_vkInstance,&createInfo, m_allocatorPtr, &m_debugMessenger)!= VK_SUCCESS)
+	if (CreateDebugUtilsMessengerEXT(m_vkInstance, &createInfo, m_allocatorPtr, &m_debugMessenger) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to set up debug messenger!");
 	}
@@ -101,7 +101,9 @@ std::vector<const char*> PuduApp::GetRequiredExtensions()
 void PuduApp::InitVulkan()
 {
 	CreateVulkanInstance();
+	SetupDebugMessenger();
 }
+
 
 void PuduApp::CreateVulkanInstance() {
 
@@ -155,7 +157,7 @@ void PuduApp::CreateVulkanInstance() {
 		createInfo.ppEnabledLayerNames = validationLayers.data();
 
 		PopulateDebugMessengerCreateInfo(debugCreateInfo);
-		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)& debugCreateInfo;
+		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 	}
 	else {
 		createInfo.enabledLayerCount = 0;
@@ -171,12 +173,78 @@ void PuduApp::CreateVulkanInstance() {
 	}
 }
 
+void PuduApp::PickPhysicalDevice()
+{
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
+
+	if (deviceCount == 0)
+	{
+		throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+	}
+
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+	vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, devices.data());
+
+	for (const auto& device : devices) {
+		if (IsDeviceSuitable(device))
+		{
+			m_physicalDevice = device;
+			break;
+		}
+	}
+
+	if (m_physicalDevice == VK_NULL_HANDLE)
+	{
+		throw std::runtime_error("Failed to find a suitable GPU!");
+	}
+}
+
+bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device) 
+{
+	VkPhysicalDeviceProperties deviceProperties;
+	VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+	QueueFamilyIndices indices = FindQueueFamilies(device);
+
+
+	return indices.isComplete();
+}
+
+QueueFamilyIndices PuduApp::FindQueueFamilies(VkPhysicalDevice device) {
+	QueueFamilyIndices indices;
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+	int i = 0;
+	for (const auto& queueFamily : queueFamilies) {
+		if (queueFamily.queueFlags * VK_QUEUE_GRAPHICS_BIT)
+		{
+			indices.graphicsFamily = i;
+		}
+
+		if (indices.isComplete())
+			break;
+
+		i++;
+	}
+
+	return indices;
+}
+
 void PuduApp::MainLoop()
 {
 	while (!glfwWindowShouldClose(m_windowPtr))
 	{
 		glfwPollEvents();
 	}
+
 }
 
 void PuduApp::Cleanup()
@@ -186,9 +254,9 @@ void PuduApp::Cleanup()
 		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, m_allocatorPtr);
 	}
 
-	glfwDestroyWindow(m_windowPtr);
-
 	vkDestroyInstance(m_vkInstance, m_allocatorPtr);
+
+	glfwDestroyWindow(m_windowPtr);
 
 	glfwTerminate();
 }
