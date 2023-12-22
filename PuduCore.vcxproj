@@ -55,7 +55,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>lib\GLFW\include;lib\hlslpp;lib\dxc\include;Projects\PuduCore\lib;C:\VulkanSDK\1.3.243.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\hlslpp;lib\dxc\include;C:\VulkanSDK\1.3.243.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
@@ -69,7 +69,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>lib\GLFW\include;lib\hlslpp;lib\dxc\include;Projects\PuduCore\lib;C:\VulkanSDK\1.3.243.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\hlslpp;lib\dxc\include;C:\VulkanSDK\1.3.243.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -84,6 +84,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h" />
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
     <ClInclude Include="Projects\PuduCore\lib\test.h" />
   </ItemGroup>

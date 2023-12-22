@@ -90,6 +90,7 @@ project "PuduCore"
 	targetdir "bin/%{cfg.buildcfg}"
 
 	files "Projects/PuduCore/**"
+	includedirs "Projects/PuduCore/lib"
 
 	includeGLFW()
 	includeHLSLpp()
@@ -97,12 +98,14 @@ project "PuduCore"
 
 	includedirs 
 	{
-		"Projects/PuduCore/lib",
    		"%{IncludeDir.VulkanSDK}"
 	}
 
 -- This function includes GLFW's header files
 
+function includeVulkan()
+	includedirs "%{IncludeDir.VulkanSDK}"
+end
 
 function useCoreLib()
 	-- The library's public headers
@@ -123,10 +126,14 @@ end
 project "App"
 	kind "ConsoleApp"
 	files "Projects/App/**"
+	includedirs "Projects/App/lib"
 	-- We also need the headers
    -- We also need the headers
 	includeGLFW()
+	includeVulkan()
 	useCoreLib()
 	includeHLSLpp()
+	libdirs { "C:/VulkanSDK/1.3.243.0/Lib" }
+	links "vulkan-1"
 
 	filter { "system:windows" }
