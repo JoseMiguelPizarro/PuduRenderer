@@ -1,6 +1,8 @@
 #include "PuduApp.h"
 #include <PuduGlobals.h>
 #include <stdexcept>
+#include <Logger.h>
+#include <set>
 
 
 void PuduApp::Run()
@@ -102,6 +104,10 @@ void PuduApp::InitVulkan()
 {
 	CreateVulkanInstance();
 	SetupDebugMessenger();
+	CreateSurface();
+	PickPhysicalDevice();
+	CreateLogicalDevice();
+
 }
 
 
@@ -189,7 +195,16 @@ void PuduApp::PickPhysicalDevice()
 	for (const auto& device : devices) {
 		if (IsDeviceSuitable(device))
 		{
-			m_physicalDevice = device;
+			m_physicalDevice = device; //For now just pick the first suitable device, later we can pick the most fancy one
+			VkPhysicalDeviceProperties deviceProperties;
+			VkPhysicalDeviceFeatures deviceFeatures;
+
+			vkGetPhysicalDeviceProperties(device, &deviceProperties);
+			vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+			Print("Picked device name %s", deviceProperties.deviceName);
+			Print("Device type %i", deviceProperties.deviceType);
+
 			break;
 		}
 	}
@@ -200,7 +215,68 @@ void PuduApp::PickPhysicalDevice()
 	}
 }
 
-bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device) 
+void PuduApp::CreateLogicalDevice()
+{
+	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+
+	float queuePriority = 1.0f;
+
+	for (auto queueFamily : uniqueQueueFamilies) {
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = queueFamily;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfos.push_back(queueCreateInfo);
+	}
+
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	createInfo.pQueueCreateInfos = queueCreateInfos.data();
+
+	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	createInfo.enabledExtensionCount = 0;
+
+	if (enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else {
+		createInfo.enabledLayerCount = 0;
+	}
+
+	if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create logical device!");
+	}
+
+	vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
+	vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentationQueue);
+}
+
+void PuduApp::CreateSurface()
+{
+	if (glfwCreateWindowSurface(m_vkInstance, m_windowPtr, m_allocatorPtr, &m_surface) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create window surface");
+	}
+}
+
+bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
@@ -209,6 +285,10 @@ bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device)
 
 	QueueFamilyIndices indices = FindQueueFamilies(device);
 
+	if (deviceProperties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+	{
+		return false; //Force not using integrated for now
+	}
 
 	return indices.isComplete();
 }
@@ -224,6 +304,15 @@ QueueFamilyIndices PuduApp::FindQueueFamilies(VkPhysicalDevice device) {
 
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
+
+		VkBool32 presentSupport = false;
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_surface, &presentSupport);
+
+		if (presentSupport)
+		{
+			indices.presentFamily = i;
+		}
+
 		if (queueFamily.queueFlags * VK_QUEUE_GRAPHICS_BIT)
 		{
 			indices.graphicsFamily = i;
@@ -244,17 +333,18 @@ void PuduApp::MainLoop()
 	{
 		glfwPollEvents();
 	}
-
 }
 
 void PuduApp::Cleanup()
 {
-	if (enableValidationLayers)
-	{
-		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, m_allocatorPtr);
+	vkDestroyDevice(m_device, nullptr);
+
+	if (enableValidationLayers) {
+		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
 	}
 
-	vkDestroyInstance(m_vkInstance, m_allocatorPtr);
+	vkDestroySurfaceKHR(m_vkInstance, m_surface, m_allocatorPtr); //Be sure to destroy surface before instance
+	vkDestroyInstance(m_vkInstance, nullptr);
 
 	glfwDestroyWindow(m_windowPtr);
 
