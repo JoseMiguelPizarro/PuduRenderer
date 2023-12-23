@@ -34,7 +34,9 @@ private:
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
 	void CreateSurface();
+	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	bool IsDeviceSuitable(VkPhysicalDevice device);
+	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 	void MainLoop();
 	void Cleanup();
