@@ -1,6 +1,11 @@
+//Windows defines a min max func that messes up std funcs :') 
+#define NOMINMAX 
+
 #include "PuduApp.h"
 #include <PuduGlobals.h>
 #include <stdexcept>
+#include <limits>
+#include <algorithm>
 #include <Logger.h>
 #include <set>
 
@@ -83,6 +88,52 @@ void PuduApp::SetupDebugMessenger()
 	}
 }
 
+VkSurfaceFormatKHR PuduApp::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	for (const auto& availableFormat : availableFormats) {
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+			return availableFormat;
+		}
+	}
+
+	return availableFormats[0];
+}
+
+VkPresentModeKHR PuduApp::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+{
+	for (const auto& availablePresentMode : availablePresentModes) {
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			return availablePresentMode;
+		}
+	}
+
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D PuduApp::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	if (capabilities.currentExtent.width != numeric_limits<uint32_t>::max())
+	{
+		return capabilities.currentExtent;
+	}
+	else
+	{
+		int width, height;
+		glfwGetFramebufferSize(m_windowPtr, &width, &height);
+
+		VkExtent2D actualExtent = {
+			static_cast<uint32_t>(width),
+			static_cast<uint32_t>(height)
+		};
+
+		actualExtent.width= std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+		actualExtent.height= std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+		return actualExtent;
+	}
+}
+
 std::vector<const char*> PuduApp::GetRequiredExtensions()
 {
 	uint32_t glfwExtensionsCount = 0;
@@ -106,9 +157,8 @@ void PuduApp::InitVulkan()
 	CreateSurface();
 	PickPhysicalDevice();
 	CreateLogicalDevice();
-
+	CreateSwapChain();
 }
-
 
 void PuduApp::CreateVulkanInstance() {
 
@@ -123,7 +173,7 @@ void PuduApp::CreateVulkanInstance() {
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "No Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_3;
 
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -243,7 +293,7 @@ void PuduApp::CreateLogicalDevice()
 
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
+	
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
@@ -276,6 +326,65 @@ void PuduApp::CreateSurface()
 	}
 }
 
+void PuduApp::CreateSwapChain()
+{
+	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice);
+
+	VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+	VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+	VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
+
+	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+		imageCount = swapChainSupport.capabilities.maxImageCount;
+	}
+
+	VkSwapchainCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.surface = m_surface;
+
+	createInfo.minImageCount = imageCount;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
+	createInfo.imageExtent = extent;
+	createInfo.imageArrayLayers = 1;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+	if (indices.graphicsFamily != indices.presentFamily) {
+		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.queueFamilyIndexCount = 2;
+		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+	}
+	else {
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	}
+
+	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.presentMode = presentMode;
+	createInfo.clipped = VK_TRUE;
+
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+	if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create swap chain!");
+	}
+	else
+	{
+		Print("SwapChain created!");
+	}
+
+	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+	m_swapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+
+	m_swapChainImageFormat = surfaceFormat.format;
+	m_swapChainExtent = extent;
+}
+
 SwapChainSupportDetails PuduApp::QuerySwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
@@ -285,7 +394,7 @@ SwapChainSupportDetails PuduApp::QuerySwapChainSupport(VkPhysicalDevice device)
 	uint32_t formatCount;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, nullptr);
 
-	if (formatCount>0)
+	if (formatCount > 0)
 	{
 		details.formats.resize(formatCount);
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_surface, &formatCount, details.formats.data());
@@ -294,7 +403,7 @@ SwapChainSupportDetails PuduApp::QuerySwapChainSupport(VkPhysicalDevice device)
 	uint32_t presentModeCount = 0;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, nullptr);
 
-	if (presentModeCount>0)
+	if (presentModeCount > 0)
 	{
 		details.presentModes.resize(presentModeCount);
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_surface, &presentModeCount, details.presentModes.data());
@@ -316,7 +425,6 @@ bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device)
 	{
 		return false; //Force not using integrated for now
 	}
-
 
 	bool extensionsSupported = CheckDeviceExtensionSupport(device);
 	bool swapChainAdequate = false;
@@ -391,6 +499,8 @@ void PuduApp::MainLoop()
 
 void PuduApp::Cleanup()
 {
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+
 	vkDestroyDevice(m_device, nullptr);
 
 	if (enableValidationLayers) {

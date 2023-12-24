@@ -34,6 +34,7 @@ private:
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
 	void CreateSurface();
+	void CreateSwapChain();
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -44,6 +45,11 @@ private:
 	bool CheckValidationLayerSupport();
 	void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	void SetupDebugMessenger();
+	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	
+
 	std::vector<const char*> GetRequiredExtensions();
 
 	GLFWwindow* m_windowPtr;
@@ -53,6 +59,10 @@ private:
 	VkDevice m_device;
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentationQueue;
+	VkSwapchainKHR m_swapChain;
+	VkFormat m_swapChainImageFormat;
+	VkExtent2D m_swapChainExtent;
+	std::vector<VkImage> m_swapChainImages;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
 };

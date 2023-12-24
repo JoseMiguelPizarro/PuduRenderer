@@ -135,7 +135,7 @@ project "App"
 	includeVulkan()
 	useCoreLib()
 	includeHLSLpp()
-	libdirs { "C:/VulkanSDK/1.3.243.0/Lib" }
+	libdirs { "C:/VulkanSDK/1.3.268.0/Lib" }
 	links "vulkan-1"
 
 	filter { "system:windows" }
