@@ -35,6 +35,7 @@ private:
 	void CreateLogicalDevice();
 	void CreateSurface();
 	void CreateSwapChain();
+	void CreateImageViews();
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -51,7 +52,7 @@ private:
 	
 
 	std::vector<const char*> GetRequiredExtensions();
-
+	std::vector<VkImageView> m_swapChainImagesViews;
 	GLFWwindow* m_windowPtr;
 	VkInstance m_vkInstance;
 	VkSurfaceKHR m_surface;
