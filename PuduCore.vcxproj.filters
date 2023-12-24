@@ -26,5 +26,8 @@
     <ClCompile Include="Projects\PuduCore\Src\test.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\FileManager.h">
+      <Filter>lib</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

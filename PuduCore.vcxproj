@@ -92,6 +92,7 @@
     <ClInclude Include="Projects\PuduCore\lib\test.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Projects\PuduCore\Src\FileManager.h" />
     <ClCompile Include="Projects\PuduCore\Src\test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

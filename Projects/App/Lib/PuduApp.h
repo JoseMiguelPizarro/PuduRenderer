@@ -36,6 +36,10 @@ private:
 	void CreateSurface();
 	void CreateSwapChain();
 	void CreateImageViews();
+	void CreateRenderPass();
+	void CreateGraphicsPipeline();
+	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -64,7 +68,13 @@ private:
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
 	std::vector<VkImage> m_swapChainImages;
+	VkRenderPass m_renderPass;
+	VkPipelineLayout m_pipelineLayout;
+
 	VkDebugUtilsMessengerEXT m_debugMessenger;
+
+
+
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
 };
 
