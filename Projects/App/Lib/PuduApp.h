@@ -70,6 +70,7 @@ private:
 	std::vector<VkImage> m_swapChainImages;
 	VkRenderPass m_renderPass;
 	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_graphicsPipeline;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
