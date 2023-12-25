@@ -151,6 +151,63 @@ std::vector<const char*> PuduApp::GetRequiredExtensions()
 	return extensions;
 }
 
+void PuduApp::MainLoop()
+{
+	while (!glfwWindowShouldClose(m_windowPtr)) {
+		glfwPollEvents();
+		DrawFrame();
+	}
+
+	vkDeviceWaitIdle(m_device);
+}
+
+void PuduApp::DrawFrame()
+{
+	vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(m_device, 1, &m_inFlightFence);
+
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	
+	vkResetCommandBuffer(m_commandBuffer, 0);
+
+	RecordCommandBuffer(m_commandBuffer, imageIndex);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_commandBuffer;
+
+	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { m_swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr; // Optional
+
+	vkQueuePresentKHR(m_presentationQueue, &presentInfo);
+}
+
 void PuduApp::InitVulkan()
 {
 	CreateVulkanInstance();
@@ -165,6 +222,7 @@ void PuduApp::InitVulkan()
 	CreateFrameBuffers();
 	CreateCommandPool();
 	CreateCommandBuffer();
+	CreateSyncObjects();
 }
 
 void PuduApp::CreateVulkanInstance() {
@@ -454,6 +512,20 @@ void PuduApp::CreateRenderPass()
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 
+	//Dependencies
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
 	if (vkCreateRenderPass(m_device, &renderPassInfo, m_allocatorPtr, &m_renderPass) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create render pass");
@@ -667,12 +739,30 @@ void PuduApp::CreateCommandBuffer()
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = 1;
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate command buffer!");
 	}
 
 	Print("Created command buffer");
+}
+
+void PuduApp::CreateSyncObjects()
+{
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore) != VK_SUCCESS ||
+		vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore) != VK_SUCCESS ||
+		vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence) != VK_SUCCESS
+		)
+	{
+		throw std::runtime_error("Failed to create semaphores");
+	}
 }
 
 void PuduApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
@@ -842,16 +932,12 @@ QueueFamilyIndices PuduApp::FindQueueFamilies(VkPhysicalDevice device) {
 	return indices;
 }
 
-void PuduApp::MainLoop()
-{
-	while (!glfwWindowShouldClose(m_windowPtr))
-	{
-		glfwPollEvents();
-	}
-}
-
 void PuduApp::Cleanup()
 {
+	vkDestroySemaphore(m_device, m_imageAvailableSemaphore, m_allocatorPtr);
+	vkDestroySemaphore(m_device, m_renderFinishedSemaphore, m_allocatorPtr);
+	vkDestroyFence(m_device, m_inFlightFence, m_allocatorPtr);
+
 	vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
 
 	for (auto frameBuffer : m_swapChainFrameBuffers)

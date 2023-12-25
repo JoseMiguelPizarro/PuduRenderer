@@ -29,7 +29,10 @@ public:
 
 
 private:
+	void MainLoop();
+	void DrawFrame();
 	void InitVulkan();
+
 	void CreateVulkanInstance();
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
@@ -41,7 +44,9 @@ private:
 	void CreateFrameBuffers();
 	void CreateCommandPool();
 	void CreateCommandBuffer();
+	void CreateSyncObjects();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -49,7 +54,6 @@ private:
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-	void MainLoop();
 	void Cleanup();
 	void InitWindow();
 	bool CheckValidationLayerSupport();
@@ -78,9 +82,14 @@ private:
 	VkPipeline m_graphicsPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
-	VkCommandBuffer commandBuffer;
+	VkCommandBuffer m_commandBuffer;
+
+	VkSemaphore m_imageAvailableSemaphore;
+	VkSemaphore m_renderFinishedSemaphore;
+	VkFence m_inFlightFence;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
+
 
 
 
