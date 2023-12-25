@@ -459,8 +459,8 @@ void PuduApp::CreateRenderPass()
 
 void PuduApp::CreateGraphicsPipeline()
 {
-	auto vertShaderCode = ReadFile("shaders/triangle_vert.spv");
-	auto fragShaderCode = ReadFile("shaders/triangle_frag.spv");
+	auto vertShaderCode = ReadFile("Shaders/triangle_vert.spv");
+	auto fragShaderCode = ReadFile("Shaders/triangle_frag.spv");
 
 	VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);

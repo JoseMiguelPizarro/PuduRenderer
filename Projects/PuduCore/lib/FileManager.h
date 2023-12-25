@@ -2,10 +2,11 @@
 
 #include <fstream>
 #include <vector>
+#include <iostream>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 static std::vector<char> ReadFile(const std::string& fileName) {
-	std::ifstream file(fileName, std::ios::ate | std::ios::binary); //ate: at the end lmao
-
 	if (!file.is_open())
 	{
 		throw std::runtime_error("Failed to open file");
