@@ -162,6 +162,7 @@ void PuduApp::InitVulkan()
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+
 }
 
 void PuduApp::CreateVulkanInstance() {
@@ -582,6 +583,8 @@ void PuduApp::CreateGraphicsPipeline()
 		throw std::runtime_error("Failed to create pipeline layout!");
 	}
 
+	Print("Pipeline layout created");
+
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
@@ -606,8 +609,36 @@ void PuduApp::CreateGraphicsPipeline()
 		throw std::runtime_error("Failed to create graphics pipeline!");
 	}
 
+	Print("Pipeline created");
+
 	vkDestroyShaderModule(m_device, vertShaderModule, m_allocatorPtr);
 	vkDestroyShaderModule(m_device, fragShaderModule, m_allocatorPtr);
+}
+
+void PuduApp::CreateFrameBuffers()
+{
+	m_swapChainFrameBuffers.resize(m_swapChainImagesViews.size());
+
+	for (size_t i = 0; i < m_swapChainImagesViews.size(); i++) {
+		VkImageView attachments[] = {
+			m_swapChainImagesViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_swapChainExtent.width;
+		framebufferInfo.height = m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+
+		Print("Created frame buffers");
+	}
 }
 
 VkShaderModule PuduApp::CreateShaderModule(const std::vector<char>& code)
@@ -740,6 +771,11 @@ void PuduApp::MainLoop()
 
 void PuduApp::Cleanup()
 {
+	for (auto frameBuffer: m_swapChainFrameBuffers)
+	{
+		vkDestroyFramebuffer(m_device, frameBuffer, m_allocatorPtr);
+	}
+
 	vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
 	vkDestroyRenderPass(m_device, m_renderPass, m_allocatorPtr);

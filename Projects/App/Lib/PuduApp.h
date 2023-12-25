@@ -38,6 +38,8 @@ private:
 	void CreateImageViews();
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
+	void CreateFrameBuffers();
+
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
@@ -71,6 +73,7 @@ private:
 	VkRenderPass m_renderPass;
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline;
+	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
