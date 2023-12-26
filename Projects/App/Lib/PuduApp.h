@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <VulkanManager.h>
+#include <Frame.h>
 
 class PuduApp
 {
@@ -42,6 +43,7 @@ private:
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
+	void CreateFrames();
 	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
@@ -82,14 +84,13 @@ private:
 	VkPipeline m_graphicsPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
-	VkCommandBuffer m_commandBuffer;
-
-	VkSemaphore m_imageAvailableSemaphore;
-	VkSemaphore m_renderFinishedSemaphore;
-	VkFence m_inFlightFence;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
+	std::vector<Frame> m_Frames;
+
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+	uint32_t m_currentFrame = 0;
 
 
 

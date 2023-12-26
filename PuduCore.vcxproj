@@ -88,6 +88,7 @@
   <ItemGroup>
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
     <ClInclude Include="Projects\PuduCore\lib\VulkanManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\test.h" />
   </ItemGroup>

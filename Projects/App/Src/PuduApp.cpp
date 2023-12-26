@@ -163,33 +163,34 @@ void PuduApp::MainLoop()
 
 void PuduApp::DrawFrame()
 {
-	vkWaitForFences(m_device, 1, &m_inFlightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(m_device, 1, &m_inFlightFence);
+	Frame frame = m_Frames[m_currentFrame];
+	vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(m_device, 1, &frame.InFlightFence);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-	
-	vkResetCommandBuffer(m_commandBuffer, 0);
+	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-	RecordCommandBuffer(m_commandBuffer, imageIndex);
+	vkResetCommandBuffer(frame.CommandBuffer, 0);
+
+	RecordCommandBuffer(frame.CommandBuffer, imageIndex);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { frame.ImageAvailableSemaphore };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffer;
+	submitInfo.pCommandBuffers = &frame.CommandBuffer;
 
-	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { frame.RenderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFence) != VK_SUCCESS) {
+	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame.InFlightFence) != VK_SUCCESS) {
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
@@ -206,6 +207,8 @@ void PuduApp::DrawFrame()
 	presentInfo.pResults = nullptr; // Optional
 
 	vkQueuePresentKHR(m_presentationQueue, &presentInfo);
+
+	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void PuduApp::InitVulkan()
@@ -219,6 +222,7 @@ void PuduApp::InitVulkan()
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+	CreateFrames();
 	CreateFrameBuffers();
 	CreateCommandPool();
 	CreateCommandBuffer();
@@ -714,6 +718,11 @@ void PuduApp::CreateFrameBuffers()
 	Print("Created frame buffers");
 }
 
+void PuduApp::CreateFrames()
+{
+	m_Frames.resize(MAX_FRAMES_IN_FLIGHT);
+}
+
 void PuduApp::CreateCommandPool()
 {
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice);
@@ -737,11 +746,21 @@ void PuduApp::CreateCommandBuffer()
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = m_commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = 1;
+	allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, &m_commandBuffer) != VK_SUCCESS)
+	std::vector<VkCommandBuffer> buffers;
+	buffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate command buffer!");
+	}
+
+	//We might need to fix the layout
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		Frame &frame = m_Frames[i];
+		frame.CommandBuffer = buffers[i];
 	}
 
 	Print("Created command buffer");
@@ -756,13 +775,18 @@ void PuduApp::CreateSyncObjects()
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore) != VK_SUCCESS ||
-		vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore) != VK_SUCCESS ||
-		vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFence) != VK_SUCCESS
-		)
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		throw std::runtime_error("Failed to create semaphores");
+		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].ImageAvailableSemaphore) != VK_SUCCESS ||
+			vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].RenderFinishedSemaphore) != VK_SUCCESS ||
+			vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence) != VK_SUCCESS
+			)
+		{
+			throw std::runtime_error("Failed to create semaphores");
+		}
 	}
+
+
 }
 
 void PuduApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
@@ -934,9 +958,12 @@ QueueFamilyIndices PuduApp::FindQueueFamilies(VkPhysicalDevice device) {
 
 void PuduApp::Cleanup()
 {
-	vkDestroySemaphore(m_device, m_imageAvailableSemaphore, m_allocatorPtr);
-	vkDestroySemaphore(m_device, m_renderFinishedSemaphore, m_allocatorPtr);
-	vkDestroyFence(m_device, m_inFlightFence, m_allocatorPtr);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		vkDestroySemaphore(m_device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
+		vkDestroySemaphore(m_device, m_Frames[i].ImageAvailableSemaphore, m_allocatorPtr);
+		vkDestroyFence(m_device, m_Frames[i].InFlightFence, m_allocatorPtr);
+	}
 
 	vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
 
