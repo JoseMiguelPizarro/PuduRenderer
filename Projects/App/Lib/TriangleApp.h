@@ -9,8 +9,9 @@
 
 #include <VulkanManager.h>
 #include <Frame.h>
+#include <PuduApp.h>
 
-class PuduApp
+class TriangleApp:PuduApp
 {
 public:
 	void Run();
@@ -48,7 +49,10 @@ private:
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void RecreateSwapChain();
 
+	void Cleanup();
+	void CleanupSwapChain();
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -56,7 +60,6 @@ private:
 	bool IsDeviceSuitable(VkPhysicalDevice device);
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-	void Cleanup();
 	void InitWindow();
 	bool CheckValidationLayerSupport();
 	void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -89,6 +92,7 @@ private:
 
 	std::vector<Frame> m_Frames;
 
+	bool framebufferResized = false;
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	uint32_t m_currentFrame = 0;
 

@@ -9,12 +9,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Projects\App\Lib\PuduApp.h">
+    <ClInclude Include="Projects\App\Lib\TriangleApp.h">
       <Filter>Lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Projects\App\Src\PuduApp.cpp">
+    <ClCompile Include="Projects\App\Src\TriangleApp.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\App\Src\main.cpp">

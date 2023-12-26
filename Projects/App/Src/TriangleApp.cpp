@@ -1,7 +1,7 @@
 //Windows defines a min max func that messes up std funcs :') 
 #define NOMINMAX 
 
-#include "PuduApp.h"
+#include "TriangleApp.h"
 #include <PuduGlobals.h>
 #include <stdexcept>
 #include <limits>
@@ -10,7 +10,7 @@
 #include <set>
 #include "FileManager.h"
 
-void PuduApp::Run()
+void TriangleApp::Run()
 {
 	InitWindow();
 	InitVulkan();
@@ -18,17 +18,18 @@ void PuduApp::Run()
 	Cleanup();
 }
 
-void PuduApp::InitWindow()
+void TriangleApp::InitWindow()
 {
 	glfwInit();
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
 	m_windowPtr = glfwCreateWindow(WindowWidth, WindowHeight, RENDERER_NAME, nullptr, nullptr);
+	glfwSetWindowUserPointer(m_windowPtr, this);
+	glfwSetFramebufferSizeCallback(m_windowPtr, FramebufferResizeCallback);
 }
 
-bool PuduApp::CheckValidationLayerSupport()
+bool TriangleApp::CheckValidationLayerSupport()
 {
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -56,7 +57,7 @@ bool PuduApp::CheckValidationLayerSupport()
 	return true;
 }
 
-void PuduApp::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+void TriangleApp::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
 
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	createInfo.messageSeverity =
@@ -73,7 +74,7 @@ void PuduApp::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEX
 	createInfo.pUserData = nullptr;
 }
 
-void PuduApp::SetupDebugMessenger()
+void TriangleApp::SetupDebugMessenger()
 {
 	if (!enableValidationLayers)
 	{
@@ -89,7 +90,7 @@ void PuduApp::SetupDebugMessenger()
 	}
 }
 
-VkSurfaceFormatKHR PuduApp::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR TriangleApp::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
 	for (const auto& availableFormat : availableFormats) {
 		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -100,7 +101,7 @@ VkSurfaceFormatKHR PuduApp::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceF
 	return availableFormats[0];
 }
 
-VkPresentModeKHR PuduApp::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+VkPresentModeKHR TriangleApp::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
 	for (const auto& availablePresentMode : availablePresentModes) {
 		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -112,7 +113,7 @@ VkPresentModeKHR PuduApp::ChooseSwapPresentMode(const std::vector<VkPresentModeK
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D PuduApp::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+VkExtent2D TriangleApp::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
 	if (capabilities.currentExtent.width != numeric_limits<uint32_t>::max())
 	{
@@ -135,7 +136,7 @@ VkExtent2D PuduApp::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilitie
 	}
 }
 
-std::vector<const char*> PuduApp::GetRequiredExtensions()
+std::vector<const char*> TriangleApp::GetRequiredExtensions()
 {
 	uint32_t glfwExtensionsCount = 0;
 	const char** glfwExtensions;
@@ -151,7 +152,7 @@ std::vector<const char*> PuduApp::GetRequiredExtensions()
 	return extensions;
 }
 
-void PuduApp::MainLoop()
+void TriangleApp::MainLoop()
 {
 	while (!glfwWindowShouldClose(m_windowPtr)) {
 		glfwPollEvents();
@@ -161,14 +162,23 @@ void PuduApp::MainLoop()
 	vkDeviceWaitIdle(m_device);
 }
 
-void PuduApp::DrawFrame()
+void TriangleApp::DrawFrame()
 {
 	Frame frame = m_Frames[m_currentFrame];
 	vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(m_device, 1, &frame.InFlightFence);
 
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		RecreateSwapChain();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+
+	vkResetFences(m_device, 1, &frame.InFlightFence);
 
 	vkResetCommandBuffer(frame.CommandBuffer, 0);
 
@@ -206,12 +216,22 @@ void PuduApp::DrawFrame()
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr; // Optional
 
-	vkQueuePresentKHR(m_presentationQueue, &presentInfo);
+	result = vkQueuePresentKHR(m_presentationQueue, &presentInfo);
 
-	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+	{
+		framebufferResized = false;
+		RecreateSwapChain();
+	}
+	else if (result != VK_SUCCESS) {
+		throw std::runtime_error("Failed to present swap chain image!");
+	}
+
+	//When `MAX_FRAMES_IN_FLIGHT` is a power of 2 you can update the current frame without modulo division
+	m_currentFrame = (m_currentFrame + 1) & (MAX_FRAMES_IN_FLIGHT - 1);
 }
 
-void PuduApp::InitVulkan()
+void TriangleApp::InitVulkan()
 {
 	CreateVulkanInstance();
 	SetupDebugMessenger();
@@ -229,7 +249,7 @@ void PuduApp::InitVulkan()
 	CreateSyncObjects();
 }
 
-void PuduApp::CreateVulkanInstance() {
+void TriangleApp::CreateVulkanInstance() {
 
 	if (enableValidationLayers && !CheckValidationLayerSupport())
 	{
@@ -297,7 +317,7 @@ void PuduApp::CreateVulkanInstance() {
 	}
 }
 
-void PuduApp::PickPhysicalDevice()
+void TriangleApp::PickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
@@ -333,7 +353,7 @@ void PuduApp::PickPhysicalDevice()
 	}
 }
 
-void PuduApp::CreateLogicalDevice()
+void TriangleApp::CreateLogicalDevice()
 {
 	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
 
@@ -387,7 +407,7 @@ void PuduApp::CreateLogicalDevice()
 	vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentationQueue);
 }
 
-void PuduApp::CreateSurface()
+void TriangleApp::CreateSurface()
 {
 	if (glfwCreateWindowSurface(m_vkInstance, m_windowPtr, m_allocatorPtr, &m_surface) != VK_SUCCESS)
 	{
@@ -395,7 +415,7 @@ void PuduApp::CreateSurface()
 	}
 }
 
-void PuduApp::CreateSwapChain()
+void TriangleApp::CreateSwapChain()
 {
 	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice);
 
@@ -454,7 +474,7 @@ void PuduApp::CreateSwapChain()
 	m_swapChainExtent = extent;
 }
 
-void PuduApp::CreateImageViews()
+void TriangleApp::CreateImageViews()
 {
 	m_swapChainImagesViews.resize(m_swapChainImages.size());
 
@@ -485,7 +505,7 @@ void PuduApp::CreateImageViews()
 	}
 }
 
-void PuduApp::CreateRenderPass()
+void TriangleApp::CreateRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = m_swapChainImageFormat;
@@ -536,7 +556,7 @@ void PuduApp::CreateRenderPass()
 	}
 }
 
-void PuduApp::CreateGraphicsPipeline()
+void TriangleApp::CreateGraphicsPipeline()
 {
 	auto vertShaderCode = ReadFile("Shaders/triangle_vert.spv");
 	auto fragShaderCode = ReadFile("Shaders/triangle_frag.spv");
@@ -693,7 +713,7 @@ void PuduApp::CreateGraphicsPipeline()
 	vkDestroyShaderModule(m_device, fragShaderModule, m_allocatorPtr);
 }
 
-void PuduApp::CreateFrameBuffers()
+void TriangleApp::CreateFrameBuffers()
 {
 	m_swapChainFrameBuffers.resize(m_swapChainImagesViews.size());
 
@@ -718,12 +738,12 @@ void PuduApp::CreateFrameBuffers()
 	Print("Created frame buffers");
 }
 
-void PuduApp::CreateFrames()
+void TriangleApp::CreateFrames()
 {
 	m_Frames.resize(MAX_FRAMES_IN_FLIGHT);
 }
 
-void PuduApp::CreateCommandPool()
+void TriangleApp::CreateCommandPool()
 {
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice);
 
@@ -740,7 +760,7 @@ void PuduApp::CreateCommandPool()
 	Print("Created command pool");
 }
 
-void PuduApp::CreateCommandBuffer()
+void TriangleApp::CreateCommandBuffer()
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -766,7 +786,7 @@ void PuduApp::CreateCommandBuffer()
 	Print("Created command buffer");
 }
 
-void PuduApp::CreateSyncObjects()
+void TriangleApp::CreateSyncObjects()
 {
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -789,7 +809,7 @@ void PuduApp::CreateSyncObjects()
 
 }
 
-void PuduApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -836,7 +856,27 @@ void PuduApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageI
 	}
 }
 
-VkShaderModule PuduApp::CreateShaderModule(const std::vector<char>& code)
+void TriangleApp::RecreateSwapChain()
+{
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(m_windowPtr, &width, &height);
+	while (width == 0 || height == 0) {
+		glfwWaitEvents();
+		glfwGetFramebufferSize(m_windowPtr, &width, &height);
+
+		if (glfwWindowShouldClose(m_windowPtr)) {
+			return;
+		}
+	}
+
+	vkDeviceWaitIdle(m_device);
+
+	CreateSwapChain();
+	CreateImageViews();
+	CreateFrameBuffers();
+}
+
+VkShaderModule TriangleApp::CreateShaderModule(const std::vector<char>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -852,7 +892,7 @@ VkShaderModule PuduApp::CreateShaderModule(const std::vector<char>& code)
 	return shaderModule;
 }
 
-SwapChainSupportDetails PuduApp::QuerySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails TriangleApp::QuerySwapChainSupport(VkPhysicalDevice device)
 {
 	SwapChainSupportDetails details;
 
@@ -879,7 +919,7 @@ SwapChainSupportDetails PuduApp::QuerySwapChainSupport(VkPhysicalDevice device)
 	return details;
 }
 
-bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device)
+bool TriangleApp::IsDeviceSuitable(VkPhysicalDevice device)
 {
 	VkPhysicalDeviceProperties deviceProperties;
 	VkPhysicalDeviceFeatures deviceFeatures;
@@ -905,7 +945,7 @@ bool PuduApp::IsDeviceSuitable(VkPhysicalDevice device)
 	return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
-bool PuduApp::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+bool TriangleApp::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -922,7 +962,7 @@ bool PuduApp::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	return requiredExtensions.empty();
 }
 
-QueueFamilyIndices PuduApp::FindQueueFamilies(VkPhysicalDevice device) {
+QueueFamilyIndices TriangleApp::FindQueueFamilies(VkPhysicalDevice device) {
 	QueueFamilyIndices indices;
 
 	uint32_t queueFamilyCount = 0;
@@ -956,8 +996,14 @@ QueueFamilyIndices PuduApp::FindQueueFamilies(VkPhysicalDevice device) {
 	return indices;
 }
 
-void PuduApp::Cleanup()
+void TriangleApp::Cleanup()
 {
+	CleanupSwapChain();
+
+	vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
+	vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
+	vkDestroyRenderPass(m_device, m_renderPass, m_allocatorPtr);
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vkDestroySemaphore(m_device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
@@ -966,21 +1012,6 @@ void PuduApp::Cleanup()
 	}
 
 	vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
-
-	for (auto frameBuffer : m_swapChainFrameBuffers)
-	{
-		vkDestroyFramebuffer(m_device, frameBuffer, m_allocatorPtr);
-	}
-
-	vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
-	vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
-	vkDestroyRenderPass(m_device, m_renderPass, m_allocatorPtr);
-
-	for (auto imageView : m_swapChainImagesViews) {
-		vkDestroyImageView(m_device, imageView, m_allocatorPtr);
-	}
-
-	vkDestroySwapchainKHR(m_device, m_swapChain, m_allocatorPtr);
 
 	vkDestroyDevice(m_device, m_allocatorPtr);
 
@@ -994,5 +1025,19 @@ void PuduApp::Cleanup()
 	glfwDestroyWindow(m_windowPtr);
 
 	glfwTerminate();
+}
+
+void TriangleApp::CleanupSwapChain()
+{
+	for (size_t i = 0; i < m_swapChainFrameBuffers.size(); i++) {
+		vkDestroyFramebuffer(m_device, m_swapChainFrameBuffers[i], nullptr);
+	}
+
+	for (size_t i = 0; i < m_swapChainImagesViews.size(); i++) {
+		vkDestroyImageView(m_device, m_swapChainImagesViews[i], nullptr);
+	}
+
+	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+
 }
 

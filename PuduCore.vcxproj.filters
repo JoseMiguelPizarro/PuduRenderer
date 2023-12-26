@@ -24,6 +24,9 @@
     <ClInclude Include="Projects\PuduCore\lib\Frame.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
+      <Filter>lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\test.cpp">

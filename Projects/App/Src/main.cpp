@@ -3,12 +3,12 @@
 
 #include "hlsl++.h"
 #include <string>
-#include <PuduApp.h>
+#include <TriangleApp.h>
 #include <iostream>
 
 int main() {
 
-	PuduApp app;
+	TriangleApp app;
 
 	try {
 		app.Run();

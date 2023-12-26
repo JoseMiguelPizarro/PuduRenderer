@@ -92,10 +92,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Projects\App\Lib\PuduApp.h" />
+    <ClInclude Include="Projects\App\Lib\TriangleApp.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Projects\App\Src\PuduApp.cpp" />
+    <ClCompile Include="Projects\App\Src\TriangleApp.cpp" />
     <ClCompile Include="Projects\App\Src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
