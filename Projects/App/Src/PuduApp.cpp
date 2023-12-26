@@ -777,7 +777,7 @@ void PuduApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageI
 	}
 
 	VkRenderPassBeginInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = m_renderPass;
 	renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
 	renderPassInfo.renderArea = { 0,0 };
