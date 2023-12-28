@@ -29,9 +29,9 @@ void PuduGraphics::InitWindow()
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	m_windowPtr = glfwCreateWindow(WindowWidth, WindowHeight, RENDERER_NAME, nullptr, nullptr);
-	glfwSetWindowUserPointer(m_windowPtr, this);
-	glfwSetFramebufferSizeCallback(m_windowPtr, FramebufferResizeCallback);
+	WindowPtr = glfwCreateWindow(WindowWidth, WindowHeight, RENDERER_NAME, nullptr, nullptr);
+	glfwSetWindowUserPointer(WindowPtr, this);
+	glfwSetFramebufferSizeCallback(WindowPtr, FramebufferResizeCallback);
 }
 
 bool PuduGraphics::CheckValidationLayerSupport()
@@ -127,7 +127,7 @@ VkExtent2D PuduGraphics::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 	else
 	{
 		int width, height;
-		glfwGetFramebufferSize(m_windowPtr, &width, &height);
+		glfwGetFramebufferSize(WindowPtr, &width, &height);
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(width),
@@ -149,23 +149,23 @@ void PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
 	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-	if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create buffer!");
 	}
 
 	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
+	vkGetBufferMemoryRequirements(Device, buffer, &memRequirements);
 
 	VkMemoryAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(Device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate buffer memory!");
 	}
 
-	vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
+	vkBindBufferMemory(Device, buffer, bufferMemory, 0);
 }
 
 void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -176,7 +176,7 @@ void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+	vkAllocateCommandBuffers(Device, &allocInfo, &commandBuffer);
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -190,6 +190,8 @@ void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 	copyRegion.size = size;
 	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
+	vkEndCommandBuffer(commandBuffer);
+
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
@@ -198,7 +200,7 @@ void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 	vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(m_graphicsQueue);
 
-	vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
+	vkFreeCommandBuffers(Device, m_commandPool, 1, &commandBuffer);
 }
 
 uint32_t PuduGraphics::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -215,6 +217,12 @@ uint32_t PuduGraphics::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
 	}
 
 	throw std::runtime_error("Failed to find suitable memory type!");
+}
+
+void PuduGraphics::DestroyBuffer(GraphicsBuffer buffer)
+{
+	vkDestroyBuffer(Device, buffer.Buffer, m_allocatorPtr);
+	vkFreeMemory(Device, buffer.DeviceMemory, m_allocatorPtr);
 }
 
 std::vector<const char*> PuduGraphics::GetRequiredExtensions()
@@ -244,10 +252,10 @@ PuduGraphics::~PuduGraphics()
 void PuduGraphics::DrawFrame()
 {
 	Frame frame = m_Frames[m_currentFrame];
-	vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
+	vkWaitForFences(Device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(Device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		RecreateSwapChain();
@@ -257,7 +265,7 @@ void PuduGraphics::DrawFrame()
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	vkResetFences(m_device, 1, &frame.InFlightFence);
+	vkResetFences(Device, 1, &frame.InFlightFence);
 
 	vkResetCommandBuffer(frame.CommandBuffer, 0);
 
@@ -324,7 +332,7 @@ void PuduGraphics::InitVulkan()
 	CreateFrames();
 	CreateFrameBuffers();
 	CreateCommandPool();
-	CreateVertexBuffer();
+	CreateVertexAndIndexBuffer();
 	CreateCommandBuffer();
 	CreateSyncObjects();
 }
@@ -397,27 +405,31 @@ void PuduGraphics::CreateVulkanInstance() {
 	}
 }
 
-void PuduGraphics::CreateVertexBuffer()
+
+GraphicsBuffer PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage)
 {
-	VkDeviceSize bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
+	VkDeviceSize bufferSize = size;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
-	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer, stagingBufferMemory);
+	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_vertices.data(), (size_t)bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
+	vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, bufferData, (size_t)bufferSize);
+	vkUnmapMemory(Device, stagingBufferMemory);
 
-	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
+	VkBuffer vkBuffer;
+	VkDeviceMemory vkdeviceMemory;
 
-	CopyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vkBuffer, vkdeviceMemory);
 
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+	CopyBuffer(stagingBuffer, vkBuffer, bufferSize);
+
+	vkDestroyBuffer(Device, stagingBuffer, nullptr);
+	vkFreeMemory(Device, stagingBufferMemory, nullptr);
+
+	return GraphicsBuffer(vkBuffer, vkdeviceMemory);
 }
 
 void PuduGraphics::PickPhysicalDevice()
@@ -502,17 +514,17 @@ void PuduGraphics::CreateLogicalDevice()
 		createInfo.enabledLayerCount = 0;
 	}
 
-	if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS) {
+	if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &Device) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create logical device!");
 	}
 
-	vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
-	vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentationQueue);
+	vkGetDeviceQueue(Device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
+	vkGetDeviceQueue(Device, indices.presentFamily.value(), 0, &m_presentationQueue);
 }
 
 void PuduGraphics::CreateSurface()
 {
-	if (glfwCreateWindowSurface(m_vkInstance, m_windowPtr, m_allocatorPtr, &m_surface) != VK_SUCCESS)
+	if (glfwCreateWindowSurface(m_vkInstance, WindowPtr, m_allocatorPtr, &m_surface) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create window surface");
 	}
@@ -561,7 +573,7 @@ void PuduGraphics::CreateSwapChain()
 
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	if (vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+	if (vkCreateSwapchainKHR(Device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swap chain!");
 	}
 	else
@@ -569,9 +581,9 @@ void PuduGraphics::CreateSwapChain()
 		Print("SwapChain created!");
 	}
 
-	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+	vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, nullptr);
 	m_swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+	vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, m_swapChainImages.data());
 
 	m_swapChainImageFormat = surfaceFormat.format;
 	m_swapChainExtent = extent;
@@ -601,7 +613,7 @@ void PuduGraphics::CreateImageViews()
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImagesViews[i]) != VK_SUCCESS)
+		if (vkCreateImageView(Device, &createInfo, nullptr, &m_swapChainImagesViews[i]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to craete image views!");
 		}
@@ -653,10 +665,16 @@ void PuduGraphics::CreateRenderPass()
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(m_device, &renderPassInfo, m_allocatorPtr, &m_renderPass) != VK_SUCCESS)
+	if (vkCreateRenderPass(Device, &renderPassInfo, m_allocatorPtr, &m_renderPass) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create render pass");
 	}
+}
+
+void PuduGraphics::CreateVertexAndIndexBuffer()
+{
+	m_vertexBuffer = CreateGraphicsBuffer(sizeof(m_vertices[0]) * m_vertices.size(), m_vertices.data(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	m_indexBuffer = CreateGraphicsBuffer(sizeof(m_indices[0]) * m_indices.size(), m_indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 }
 
 void PuduGraphics::CreateGraphicsPipeline()
@@ -782,7 +800,7 @@ void PuduGraphics::CreateGraphicsPipeline()
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-	if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &m_pipelineLayout) != VK_SUCCESS)
+	if (vkCreatePipelineLayout(Device, &pipelineLayoutInfo, m_allocatorPtr, &m_pipelineLayout) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create pipeline layout!");
 	}
@@ -811,15 +829,15 @@ void PuduGraphics::CreateGraphicsPipeline()
 
 
 
-	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
+	if (vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create graphics pipeline!");
 	}
 
 	Print("Pipeline created");
 
-	vkDestroyShaderModule(m_device, vertShaderModule, m_allocatorPtr);
-	vkDestroyShaderModule(m_device, fragShaderModule, m_allocatorPtr);
+	vkDestroyShaderModule(Device, vertShaderModule, m_allocatorPtr);
+	vkDestroyShaderModule(Device, fragShaderModule, m_allocatorPtr);
 }
 
 void PuduGraphics::CreateFrameBuffers()
@@ -840,7 +858,7 @@ void PuduGraphics::CreateFrameBuffers()
 		framebufferInfo.height = m_swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS) {
+		if (vkCreateFramebuffer(Device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create framebuffer!");
 		}
 	}
@@ -861,7 +879,7 @@ void PuduGraphics::CreateCommandPool()
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-	if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command pool");
 	}
@@ -880,7 +898,7 @@ void PuduGraphics::CreateCommandBuffer()
 	std::vector<VkCommandBuffer> buffers;
 	buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-	if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
+	if (vkAllocateCommandBuffers(Device, &allocInfo, buffers.data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to allocate command buffer!");
 	}
@@ -906,9 +924,9 @@ void PuduGraphics::CreateSyncObjects()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].ImageAvailableSemaphore) != VK_SUCCESS ||
-			vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].RenderFinishedSemaphore) != VK_SUCCESS ||
-			vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence) != VK_SUCCESS
+		if (vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &m_Frames[i].ImageAvailableSemaphore) != VK_SUCCESS ||
+			vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &m_Frames[i].RenderFinishedSemaphore) != VK_SUCCESS ||
+			vkCreateFence(Device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence) != VK_SUCCESS
 			)
 		{
 			throw std::runtime_error("Failed to create semaphores");
@@ -956,12 +974,14 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 	//Bind vertex buffer
-	VkBuffer vertexBuffers[] = { m_vertexBuffer };
+	VkBuffer vertexBuffers[] = { m_vertexBuffer.Buffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
 
 	auto vertexCount = m_vertices.size();
 
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
 	vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -973,17 +993,17 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 void PuduGraphics::RecreateSwapChain()
 {
 	int width = 0, height = 0;
-	glfwGetFramebufferSize(m_windowPtr, &width, &height);
+	glfwGetFramebufferSize(WindowPtr, &width, &height);
 	while (width == 0 || height == 0) {
 		glfwWaitEvents();
-		glfwGetFramebufferSize(m_windowPtr, &width, &height);
+		glfwGetFramebufferSize(WindowPtr, &width, &height);
 
-		if (glfwWindowShouldClose(m_windowPtr)) {
+		if (glfwWindowShouldClose(WindowPtr)) {
 			return;
 		}
 	}
 
-	vkDeviceWaitIdle(m_device);
+	vkDeviceWaitIdle(Device);
 
 	CreateSwapChain();
 	CreateImageViews();
@@ -998,7 +1018,7 @@ VkShaderModule PuduGraphics::CreateShaderModule(const std::vector<char>& code)
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(m_device, &createInfo, m_allocatorPtr, &shaderModule) != VK_SUCCESS)
+	if (vkCreateShaderModule(Device, &createInfo, m_allocatorPtr, &shaderModule) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create shader module!");
 	}
@@ -1113,25 +1133,30 @@ QueueFamilyIndices PuduGraphics::FindQueueFamilies(VkPhysicalDevice device)
 
 void PuduGraphics::Cleanup()
 {
+	if (!m_initialized)
+	{
+		return;
+	}
+
 	CleanupSwapChain();
 
-	vkDestroyBuffer(m_device, m_vertexBuffer, m_allocatorPtr);
-	vkFreeMemory(m_device, m_vertexBufferMemory, m_allocatorPtr);
+	vkDestroyPipeline(Device, m_graphicsPipeline, m_allocatorPtr);
+	vkDestroyPipelineLayout(Device, m_pipelineLayout, m_allocatorPtr);
+	vkDestroyRenderPass(Device, m_renderPass, m_allocatorPtr);
 
-	vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
-	vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
-	vkDestroyRenderPass(m_device, m_renderPass, m_allocatorPtr);
+	DestroyBuffer(m_vertexBuffer);
+	DestroyBuffer(m_indexBuffer);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		vkDestroySemaphore(m_device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
-		vkDestroySemaphore(m_device, m_Frames[i].ImageAvailableSemaphore, m_allocatorPtr);
-		vkDestroyFence(m_device, m_Frames[i].InFlightFence, m_allocatorPtr);
+		vkDestroySemaphore(Device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
+		vkDestroySemaphore(Device, m_Frames[i].ImageAvailableSemaphore, m_allocatorPtr);
+		vkDestroyFence(Device, m_Frames[i].InFlightFence, m_allocatorPtr);
 	}
 
-	vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
+	vkDestroyCommandPool(Device, m_commandPool, m_allocatorPtr);
 
-	vkDestroyDevice(m_device, m_allocatorPtr);
+	vkDestroyDevice(Device, m_allocatorPtr);
 
 	if (enableValidationLayers) {
 		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
@@ -1140,7 +1165,7 @@ void PuduGraphics::Cleanup()
 	vkDestroySurfaceKHR(m_vkInstance, m_surface, m_allocatorPtr); //Be sure to destroy surface before instance
 	vkDestroyInstance(m_vkInstance, nullptr);
 
-	glfwDestroyWindow(m_windowPtr);
+	glfwDestroyWindow(WindowPtr);
 
 	glfwTerminate();
 
@@ -1150,13 +1175,13 @@ void PuduGraphics::Cleanup()
 void PuduGraphics::CleanupSwapChain()
 {
 	for (size_t i = 0; i < m_swapChainFrameBuffers.size(); i++) {
-		vkDestroyFramebuffer(m_device, m_swapChainFrameBuffers[i], nullptr);
+		vkDestroyFramebuffer(Device, m_swapChainFrameBuffers[i], nullptr);
 	}
 
 	for (size_t i = 0; i < m_swapChainImagesViews.size(); i++) {
-		vkDestroyImageView(m_device, m_swapChainImagesViews[i], nullptr);
+		vkDestroyImageView(Device, m_swapChainImagesViews[i], nullptr);
 	}
 
-	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+	vkDestroySwapchainKHR(Device, m_swapChain, nullptr);
 }
 

@@ -2,6 +2,7 @@
 #include <array>
 #include <hlsl++_vector_float_type.h>
 
+
 struct Vertex {
 	hlslpp::float2 pos;
 	hlslpp::float3 color;

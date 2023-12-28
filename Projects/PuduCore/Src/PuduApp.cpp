@@ -7,14 +7,14 @@ void PuduApp::Init()
 }
 void PuduApp::Cleanup()
 {
-	vkDeviceWaitIdle(Graphics.m_device);
+	vkDeviceWaitIdle(Graphics.Device);
 	Graphics.Cleanup();
 
 	OnCleanup();
 }
 void PuduApp::Run() {
 	printf("PuduApp Run");
-	while (!glfwWindowShouldClose(Graphics.m_windowPtr)) {
+	while (!glfwWindowShouldClose(Graphics.WindowPtr)) {
 		glfwPollEvents();
 
 		OnRun();

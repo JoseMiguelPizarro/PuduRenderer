@@ -27,6 +27,12 @@
     <ClInclude Include="WindowApp.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\vertex.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h">
+      <Filter>lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\FileManager.h">
@@ -36,6 +42,9 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>

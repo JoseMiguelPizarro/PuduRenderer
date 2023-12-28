@@ -3,9 +3,10 @@
 
 class PuduApp {
 public:
-	bool FrameBufferResized;
 	void Init();
 	void Run();
+
+	bool FrameBufferResized;
 	PuduGraphics Graphics;
 private:
 	void Cleanup();

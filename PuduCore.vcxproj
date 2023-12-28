@@ -86,15 +86,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h" />
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h" />
     <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
+    <ClInclude Include="Projects\PuduCore\lib\vertex.h" />
     <ClInclude Include="WindowApp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\FileManager.h" />
+    <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp" />
   </ItemGroup>

@@ -11,6 +11,7 @@
 #include <optional>
 #include <Frame.h>
 #include <vertex.h>
+#include <GraphicsBuffer.h>
 
 typedef std::optional<uint32_t> Optional;
 
@@ -52,15 +53,14 @@ public:
 	const bool enableValidationLayers = true;
 #endif
 
-	VkDevice m_device;
-	GLFWwindow* m_windowPtr;
+	VkDevice Device;
+	GLFWwindow* WindowPtr;
 	bool FramebufferResized = false;
 	void Cleanup();
 	~PuduGraphics();
 
 private:
 	void InitVulkan();
-
 	void CreateVulkanInstance();
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
@@ -68,7 +68,7 @@ private:
 	void CreateSwapChain();
 	void CreateImageViews();
 	void CreateRenderPass();
-	void CreateVertexBuffer();
+	void CreateVertexAndIndexBuffer();
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateFrames();
@@ -79,6 +79,7 @@ private:
 	void RecreateSwapChain();
 
 	void CleanupSwapChain();
+	GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage);
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -96,7 +97,7 @@ private:
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
+	void DestroyBuffer(GraphicsBuffer buffer);
 	std::vector<const char*> GetRequiredExtensions();
 	std::vector<VkImageView> m_swapChainImagesViews;
 	VkInstance m_vkInstance;
@@ -113,8 +114,9 @@ private:
 	VkPipeline m_graphicsPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
-	VkBuffer m_vertexBuffer;
-	VkDeviceMemory m_vertexBufferMemory;
+	GraphicsBuffer m_vertexBuffer;
+	GraphicsBuffer m_indexBuffer;
+
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
@@ -125,15 +127,19 @@ private:
 
 	bool m_initialized = false;
 
-	const std::vector<Vertex> m_vertices = {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	std::vector<Vertex> m_vertices = {
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	};
+
+	std::vector<uint16_t> m_indices = {
+	0, 1, 2, 2, 3, 0
 	};
 
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
 };
-
 
 void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
