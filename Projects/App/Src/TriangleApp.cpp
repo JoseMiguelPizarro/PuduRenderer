@@ -136,6 +136,22 @@ VkExtent2D TriangleApp::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabil
 	}
 }
 
+uint32_t TriangleApp::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	{
+		if (typeFilter & (1 << i) &&
+			(memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("Failed to find suitable memory type!");
+}
+
 std::vector<const char*> TriangleApp::GetRequiredExtensions()
 {
 	uint32_t glfwExtensionsCount = 0;
@@ -245,6 +261,7 @@ void TriangleApp::InitVulkan()
 	CreateFrames();
 	CreateFrameBuffers();
 	CreateCommandPool();
+	CreateVertexBuffer();
 	CreateCommandBuffer();
 	CreateSyncObjects();
 }
@@ -315,6 +332,43 @@ void TriangleApp::CreateVulkanInstance() {
 	{
 		printf("Vulkan instance created successfully\n");
 	}
+}
+
+void TriangleApp::CreateVertexBuffer()
+{
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(m_vertices[0]) * m_vertices.size();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.flags = 0;
+
+	if (vkCreateBuffer(m_device, &bufferInfo, m_allocatorPtr, &m_vertexBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to created vertex buffer!");
+	}
+
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	//host visible means we can map it from cpu to gpu
+	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_vertexBufferMemory) != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to allocate vertex buffer memory!");
+	}
+
+	vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexBufferMemory, 0);
+
+	void* data;
+	vkMapMemory(m_device, m_vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	Print(std::format("Vertex count {}",m_vertices.size()).c_str());
+	memcpy(data, m_vertices.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(m_device, m_vertexBufferMemory);
 }
 
 void TriangleApp::PickPhysicalDevice()
@@ -580,12 +634,15 @@ void TriangleApp::CreateGraphicsPipeline()
 
 
 	//Vertex
+	auto bindingDescription = Vertex::GetBindingDescription();
+	auto attributeDescription = Vertex::GetAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;//optional
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;//optional
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
 	//Input Assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -702,6 +759,9 @@ void TriangleApp::CreateGraphicsPipeline()
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1; //Eventually pipeline inheritance could be supported
 
+
+
+
 	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create graphics pipeline!");
@@ -779,7 +839,7 @@ void TriangleApp::CreateCommandBuffer()
 	//We might need to fix the layout
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		Frame &frame = m_Frames[i];
+		Frame& frame = m_Frames[i];
 		frame.CommandBuffer = buffers[i];
 	}
 
@@ -805,8 +865,6 @@ void TriangleApp::CreateSyncObjects()
 			throw std::runtime_error("Failed to create semaphores");
 		}
 	}
-
-
 }
 
 void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
@@ -848,7 +906,14 @@ void TriangleApp::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t im
 	scissor.extent = m_swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	//Bind vertex buffer
+	VkBuffer vertexBuffers[] = { m_vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	auto vertexCount = m_vertices.size();
+
+	vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -999,6 +1064,9 @@ QueueFamilyIndices TriangleApp::FindQueueFamilies(VkPhysicalDevice device) {
 void TriangleApp::Cleanup()
 {
 	CleanupSwapChain();
+
+	vkDestroyBuffer(m_device, m_vertexBuffer, m_allocatorPtr);
+	vkFreeMemory(m_device, m_vertexBufferMemory, m_allocatorPtr);
 
 	vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);

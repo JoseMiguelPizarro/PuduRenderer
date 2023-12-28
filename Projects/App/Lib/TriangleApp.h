@@ -10,6 +10,7 @@
 #include <VulkanManager.h>
 #include <Frame.h>
 #include <PuduApp.h>
+#include <vertex.h>
 
 class TriangleApp:PuduApp
 {
@@ -36,6 +37,7 @@ private:
 	void InitVulkan();
 
 	void CreateVulkanInstance();
+	void CreateVertexBuffer();
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
 	void CreateSurface();
@@ -67,6 +69,7 @@ private:
 	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 	
 
 	std::vector<const char*> GetRequiredExtensions();
@@ -87,6 +90,8 @@ private:
 	VkPipeline m_graphicsPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
+	VkBuffer m_vertexBuffer;
+	VkDeviceMemory m_vertexBufferMemory;
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
@@ -96,7 +101,11 @@ private:
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	uint32_t m_currentFrame = 0;
 
-
+	const std::vector<Vertex> m_vertices = {
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
 
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
 };
