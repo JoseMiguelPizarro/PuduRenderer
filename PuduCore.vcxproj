@@ -86,16 +86,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h" />
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h" />
     <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
-    <ClInclude Include="Projects\PuduCore\lib\VulkanManager.h" />
-    <ClInclude Include="Projects\PuduCore\lib\test.h" />
+    <ClInclude Include="WindowApp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\FileManager.h" />
-    <ClCompile Include="Projects\PuduCore\Src\test.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

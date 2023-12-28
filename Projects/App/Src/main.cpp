@@ -1,16 +1,15 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "hlsl++.h"
 #include <string>
 #include <TriangleApp.h>
 #include <iostream>
 
 int main() {
-
 	TriangleApp app;
 
 	try {
+		app.Init();
 		app.Run();
 	}
 	catch (const std::exception& e) {

@@ -1,12 +1,10 @@
 #pragma once
-#include <hlsl++.h>
 #include <array>
-
-using namespace hlslpp;
+#include <hlsl++_vector_float_type.h>
 
 struct Vertex {
-	float2 pos;
-	float3 color;
+	hlslpp::float2 pos;
+	hlslpp::float3 color;
 
 	static VkVertexInputBindingDescription GetBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};
