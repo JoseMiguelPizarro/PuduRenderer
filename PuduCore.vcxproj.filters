@@ -9,42 +9,45 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Projects\PuduCore\lib\Logger.h">
-      <Filter>lib</Filter>
+    <ClInclude Include="Projects\PuduCore\Src\FileManager.h">
+      <Filter>Src</Filter>
     </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h">
+    <ClInclude Include="Projects\PuduCore\lib\FileManager.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\Frame.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\Logger.h">
+      <Filter>lib</Filter>
+    </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="WindowApp.h">
+    <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\vertex.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h">
-      <Filter>lib</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Projects\PuduCore\Src\FileManager.h">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp">
+    <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp">
+    <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>

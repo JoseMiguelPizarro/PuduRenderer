@@ -54,7 +54,8 @@ function includeAndLinkDxc()
 end
 
 function includeHLSLpp()
-   includedirs "lib/hlslpp"
+	includedirs "lib/hlslpp"
+   	includedirs "lib/hlslpp/**"
 end
 
 function includeGLFW()
@@ -97,6 +98,9 @@ project "PuduCore"
 	includeHLSLpp()
 	includedxc()
 
+	defines {"HLSLPP_FEATURE_TRANSFORM"}
+
+
 	includedirs 
 	{
    		"%{IncludeDir.VulkanSDK}"
@@ -137,5 +141,5 @@ project "App"
 	includeHLSLpp()
 	libdirs { "C:/VulkanSDK/1.3.268.0/Lib" }
 	links "vulkan-1"
-
+	defines {"HLSLPP_FEATURE_TRANSFORM"}
 	filter { "system:windows" }

@@ -57,7 +57,6 @@ public:
 	GLFWwindow* WindowPtr;
 	bool FramebufferResized = false;
 	void Cleanup();
-	~PuduGraphics();
 
 private:
 	void InitVulkan();
@@ -68,18 +67,22 @@ private:
 	void CreateSwapChain();
 	void CreateImageViews();
 	void CreateRenderPass();
-	void CreateVertexAndIndexBuffer();
+	void CreateBuffers();
+	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateFrames();
 	void CreateCommandPool();
+	void CreateDescriptorPool();
+	void CreateDescriptorSets();
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateSwapChain();
+	void UpdateUniformBuffer(uint32_t currentImage);
 
 	void CleanupSwapChain();
-	GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage);
+	GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage, VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -110,12 +113,20 @@ private:
 	VkExtent2D m_swapChainExtent;
 	std::vector<VkImage> m_swapChainImages;
 	VkRenderPass m_renderPass;
-	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
+	
 	GraphicsBuffer m_vertexBuffer;
 	GraphicsBuffer m_indexBuffer;
+
+	std::vector<GraphicsBuffer> m_uniformBuffers;
+	
+	VkDescriptorSetLayout m_descriptorSetLayout;
+	VkPipelineLayout m_pipelineLayout;
+
+	VkDescriptorPool m_descriptorPool;
+	std::vector<VkDescriptorSet> m_descriptorSets;
 
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;

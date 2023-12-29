@@ -55,7 +55,8 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\hlslpp;lib\dxc\include;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HLSLPP_FEATURE_TRANSFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\hlslpp;lib\hlslpp\platforms;lib\hlslpp\swizzle;lib\hlslpp\transform;lib\dxc\include;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -70,7 +71,8 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\hlslpp;lib\dxc\include;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HLSLPP_FEATURE_TRANSFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\hlslpp;lib\hlslpp\platforms;lib\hlslpp\swizzle;lib\hlslpp\transform;lib\dxc\include;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -86,20 +88,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\Src\FileManager.h" />
+    <ClInclude Include="Projects\PuduCore\lib\FileManager.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
     <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h" />
-    <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h" />
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h" />
-    <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
+    <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h" />
+    <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h" />
     <ClInclude Include="Projects\PuduCore\lib\vertex.h" />
-    <ClInclude Include="WindowApp.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Projects\PuduCore\Src\FileManager.h" />
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp" />
-    <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
