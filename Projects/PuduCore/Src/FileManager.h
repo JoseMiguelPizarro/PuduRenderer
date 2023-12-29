@@ -27,11 +27,17 @@ static std::vector<char> ReadFile(const std::string& fileName) {
 	return buffer;
 }
 
+
+/// <summary>
+/// Get path relative to assets folder
+/// </summary>
+static std::string GetAssetPath(std::string path) {
+	return std::format("{}/{}", ASSETS_FOLDER_PATH, path);
+}
+
 /// <summary>
 /// Read asset relative to the assets folder
 /// </summary>
-/// <param name="fileName"></param>
-/// <returns></returns>
 static std::vector<char> ReadAssetFile(const std::string& fileName) {
 	auto path = std::format("{}/{}", ASSETS_FOLDER_PATH, fileName);
 

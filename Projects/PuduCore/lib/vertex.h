@@ -3,10 +3,10 @@
 #include <hlsl++_vector_float_type.h>
 
 
-
 struct Vertex {
 	hlslpp::float2 pos;
 	hlslpp::float3 color;
+	hlslpp::float2 texcoord;
 
 	static VkVertexInputBindingDescription GetBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};
@@ -18,8 +18,8 @@ struct Vertex {
 		return bindingDescription;
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+	static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -30,6 +30,11 @@ struct Vertex {
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+		attributeDescriptions[2].binding = 0;
+		attributeDescriptions[2].location = 2;
+		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(Vertex, texcoord);
 
 		return attributeDescriptions;
 	}
