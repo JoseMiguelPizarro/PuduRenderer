@@ -58,6 +58,10 @@ function includeHLSLpp()
    	includedirs "lib/hlslpp/**"
 end
 
+function includeStb_Image()
+	includedirs "lib/stb"
+end
+
 function includeGLFW()
    includedirs "lib/GLFW/include"
 end
@@ -97,6 +101,7 @@ project "PuduCore"
 	includeGLFW()
 	includeHLSLpp()
 	includedxc()
+	includeStb_Image()
 
 	defines {"HLSLPP_FEATURE_TRANSFORM"}
 
@@ -139,6 +144,7 @@ project "App"
 	includeVulkan()
 	useCoreLib()
 	includeHLSLpp()
+	includeStb_Image()
 	libdirs { "C:/VulkanSDK/1.3.268.0/Lib" }
 	links "vulkan-1"
 	defines {"HLSLPP_FEATURE_TRANSFORM"}

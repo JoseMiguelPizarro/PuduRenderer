@@ -73,6 +73,7 @@ private:
 	void CreateFrameBuffers();
 	void CreateFrames();
 	void CreateCommandPool();
+	void CreateTextureImage();
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
 	void CreateCommandBuffer();
@@ -81,8 +82,19 @@ private:
 	void RecreateSwapChain();
 	void UpdateUniformBuffer(uint32_t currentImage);
 
+	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+
+	VkCommandBuffer BeginSingleTimeCommands();
+	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+
 	void CleanupSwapChain();
 	GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage, VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	void CreateImage(uint32_t width, uint32_t height, VkFormat format,
+		VkImageTiling tiling, VkImageUsageFlags usage,
+		VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -116,12 +128,15 @@ private:
 	VkPipeline m_graphicsPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
-	
+
 	GraphicsBuffer m_vertexBuffer;
 	GraphicsBuffer m_indexBuffer;
+	
+	VkImage m_textureImage;
+	VkDeviceMemory m_textureImageMemory;
 
 	std::vector<GraphicsBuffer> m_uniformBuffers;
-	
+
 	VkDescriptorSetLayout m_descriptorSetLayout;
 	VkPipelineLayout m_pipelineLayout;
 
