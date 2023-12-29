@@ -482,6 +482,27 @@ void PuduGraphics::CreateImage(uint32_t width, uint32_t height, VkFormat format,
 	vkBindImageMemory(Device, image, imageMemory, 0);
 }
 
+VkImageView PuduGraphics::CreateImageView(VkImage image, VkFormat format)
+{
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = image;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = format;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	VkImageView imageView;
+	if (vkCreateImageView(Device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+		PUDU_ERROR("failed to create texture image view!");
+	}
+
+	return imageView;
+}
+
 void PuduGraphics::PickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
@@ -547,6 +568,7 @@ void PuduGraphics::CreateLogicalDevice()
 	queueCreateInfo.pQueuePriorities = &queuePriority;
 
 	VkPhysicalDeviceFeatures deviceFeatures{};
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -655,28 +677,7 @@ void PuduGraphics::CreateImageViews()
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
-		VkImageViewCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_swapChainImages[i];
-
-		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = m_swapChainImageFormat;
-
-		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel = 0;
-		createInfo.subresourceRange.levelCount = 1;
-		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 1;
-
-		if (vkCreateImageView(Device, &createInfo, nullptr, &m_swapChainImagesViews[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to craete image views!");
-		}
+		m_swapChainImagesViews[i] = CreateImageView(m_swapChainImages[i], m_swapChainImageFormat);
 	}
 }
 
@@ -1005,6 +1006,42 @@ void PuduGraphics::CreateTextureImage()
 
 	vkDestroyBuffer(Device, stagingBuffer.Buffer, nullptr);
 	vkFreeMemory(Device, stagingBuffer.DeviceMemory, nullptr);
+}
+
+void PuduGraphics::CreateTextureImageView()
+{
+	m_textureImageView = CreateImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+}
+
+void PuduGraphics::CreateTextureSampler()
+{
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+	samplerInfo.anisotropyEnable = VK_TRUE;
+
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
+
+	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+
+	if (vkCreateSampler(Device, &samplerInfo, nullptr, &m_textureSampler) != VK_SUCCESS) {
+		PUDU_ERROR("failed to create texture sampler!");
+	}
 }
 
 void PuduGraphics::CreateCommandBuffer()
@@ -1485,7 +1522,7 @@ bool PuduGraphics::IsDeviceSuitable(VkPhysicalDevice device)
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
-	return indices.isComplete() && extensionsSupported && swapChainAdequate;
+	return indices.isComplete() && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy;
 }
 
 bool PuduGraphics::CheckDeviceExtensionSupport(VkPhysicalDevice device)
@@ -1550,6 +1587,9 @@ void PuduGraphics::Cleanup()
 
 	CleanupSwapChain();
 
+	vkDestroySampler(Device, m_textureSampler, m_allocatorPtr);
+	vkDestroyImageView(Device, m_textureImageView, nullptr);
+
 	vkDestroyImage(Device, m_textureImage, m_allocatorPtr);
 	vkFreeMemory(Device, m_textureImageMemory, m_allocatorPtr);
 
@@ -1569,7 +1609,7 @@ void PuduGraphics::Cleanup()
 	DestroyBuffer(m_vertexBuffer);
 	DestroyBuffer(m_indexBuffer);
 
-	
+
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{

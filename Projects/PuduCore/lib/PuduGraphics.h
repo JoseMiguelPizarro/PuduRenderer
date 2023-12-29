@@ -73,7 +73,11 @@ private:
 	void CreateFrameBuffers();
 	void CreateFrames();
 	void CreateCommandPool();
+
 	void CreateTextureImage();
+	void CreateTextureImageView();
+	void CreateTextureSampler();
+
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
 	void CreateCommandBuffer();
@@ -96,7 +100,12 @@ private:
 		VkImageTiling tiling, VkImageUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
+	VkImageView CreateImageView(VkImage image, VkFormat format);
+
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
+	VkImageView m_textureImageView;
+	VkSampler m_textureSampler;
 
 	SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 	bool IsDeviceSuitable(VkPhysicalDevice device);
