@@ -3,7 +3,7 @@
 
 using namespace std;
 
-void Print(const char* text, ...) {
+static void Print(const char* text, ...) {
 	printf(text);
 	printf("\n");
 }

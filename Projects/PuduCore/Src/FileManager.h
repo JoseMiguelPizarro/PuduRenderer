@@ -27,7 +27,6 @@ static std::vector<char> ReadFile(const std::string& fileName) {
 	return buffer;
 }
 
-
 /// <summary>
 /// Get path relative to assets folder
 /// </summary>
@@ -40,6 +39,13 @@ static std::string GetAssetPath(std::string path) {
 /// </summary>
 static std::vector<char> ReadAssetFile(const std::string& fileName) {
 	auto path = std::format("{}/{}", ASSETS_FOLDER_PATH, fileName);
+
+	return ReadFile(path);
+}
+
+static std::vector<char> ReadShaderFile(const std::string& shaderPath) {
+	auto path = GetAssetPath(shaderPath);
+	path = std::format("{}/{}.spv", path, "Compiled");
 
 	return ReadFile(path);
 }

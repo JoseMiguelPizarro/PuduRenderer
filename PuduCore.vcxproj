@@ -88,6 +88,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\lib\PuduMath.h" />
     <ClInclude Include="Projects\PuduCore\Src\FileManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\FileManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\Frame.h" />

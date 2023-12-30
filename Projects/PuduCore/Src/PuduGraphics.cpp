@@ -828,8 +828,8 @@ void PuduGraphics::CreateDescriptorSets()
 
 void PuduGraphics::CreateGraphicsPipeline()
 {
-	auto vertShaderCode = ReadAssetFile("Shaders/triangle_vert.spv");
-	auto fragShaderCode = ReadAssetFile("Shaders/triangle_frag.spv");
+	auto vertShaderCode = ReadAssetFile("Shaders/Compiled/triangle.vert.spv");
+	auto fragShaderCode = ReadAssetFile("Shaders/Compiled/triangle.frag.spv");
 
 	VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);

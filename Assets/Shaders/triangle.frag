@@ -1,12 +1,14 @@
-#version 450
+Texture2D mainTex : register(t1);
+SamplerState mainTexSampler : register(s1);
 
-layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec2 fragTexCoord;
+struct PS_INPUT {
+    float3 fragColor : COLOR0;
+    float2 uv : TEXCOORD0;
+};
 
-layout(location = 0) out vec4 outColor;
-
-layout(binding = 1) uniform sampler2D texSampler;
-
-void main() {
-    outColor = texture(texSampler, fragTexCoord);
+float4 main(PS_INPUT input):SV_TARGET {
+    float4 output;
+    output = float4(mainTex.Sample(mainTexSampler, input.uv).rgb,1.0);
+   // output = float4(input.uv,1,1);
+    return output;
 }
