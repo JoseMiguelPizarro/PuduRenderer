@@ -15,6 +15,7 @@
 #include "UniformBufferObject.h"
 #include <chrono>
 #include "hlsl++.h"
+#include <PuduMath.h>
 
 void PuduGraphics::Init(int windowWidth, int windowHeight)
 {
@@ -1222,34 +1223,6 @@ void PuduGraphics::RecreateSwapChain()
 }
 
 
-
-static inline float4x4 look_at(const float3& position, const float3& target, const float3& up)
-{
-#if HLSLPP_COORDINATES == HLSLPP_COORDINATES_LEFT_HANDED
-	const float3 look = normalize(target - position);
-#else
-	const float3 look = normalize(position - target); // Negate without the extra cost
-#endif
-	const float3 right = normalize(cross(up, look));
-	const float3 up_dir = cross(look, right);
-
-#if HLSLPP_LOGICAL_LAYOUT == HLSLPP_LOGICAL_LAYOUT_ROW_MAJOR
-	return float4x4(
-		float4(right.x, up_dir.x, look.x, 0.0f),
-		float4(right.y, up_dir.y, look.y, 0.0f),
-		float4(right.z, up_dir.z, look.z, 0.0f),
-		float4(-dot(position, right), -dot(position, up_dir), -dot(position, look), 1.0f)
-	);
-#else
-	return float4x4(
-		float4(right, -dot(position, right)),
-		float4(up_dir, -dot(position, up_dir)),
-		float4(look, -dot(position, look)),
-		float4(0.0f, 0.0f, 0.0f, 1.0f)
-	);
-#endif
-}
-
 static inline float4x4 perspective(const projection& proj)
 {
 	const float r = proj.frustum_planes.right;
@@ -1355,17 +1328,12 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.modelMatrix = float4x4::rotation_y(time * 0.1f);
-	ubo.viewMatrix = float4x4::identity();
-	ubo.ProjectionMatrix = float4x4::identity();
-
-	ubo.viewMatrix = look_at(float3(2, 2, 2), float3(0, 0, 0), float3(0, 1, 0));
-
+	ubo.modelMatrix = float4x4::identity();
+	ubo.viewMatrix = PuduMath::LookAtInverse(float3(0, 4, 3), float3(0, 0, 0), float3(0, 1, 0));
 	frustum camFrustrum = frustum::field_of_view_x(45.f, m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 1000.0f);
 	projection projectionData(camFrustrum, zclip::zero);
-	ubo.ProjectionMatrix = perspective(projectionData);
 
-	ubo.ProjectionMatrix[1][1] *= -1;
+	ubo.ProjectionMatrix = perspective(projectionData);
 
 	memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));
 }

@@ -1,12 +1,9 @@
 #pragma once
-
 #include <fstream>
 #include <vector>
 #include <format>
 
-
 static const std::string ASSETS_FOLDER_PATH = "Assets";
-
 
 static std::vector<char> ReadFile(const std::string& fileName) {
 	std::ifstream file(fileName, std::ios::ate | std::ios::binary); //ate: at the end lmao
