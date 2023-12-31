@@ -27,7 +27,9 @@ VSOutput main(VSInput input, uint VertexIndex : SV_VertexID)
 	output.Color = input.Color * float(VertexIndex);
     output.uv = input.uv;
 	float4x4 modelMatrix =ubo.modelMatrix; 
-	modelMatrix._m13 *= -1; //Flip to make the ndc happy
-	output.Pos = mul(ubo.projectionMatrix, mul(ubo.viewMatrix, mul(modelMatrix, float4(input.Position.xyz, 1.0))));
+	float4x4 viewMatrix = ubo.viewMatrix;
+	modelMatrix._m13 *= -1; //Flip to make the ndc happy. We might want to do this in the CPU??
+	viewMatrix._m13 *=-1;
+	output.Pos = mul(ubo.projectionMatrix, mul(viewMatrix, mul(modelMatrix, float4(input.Position.xyz, 1.0))));
 	return output;
 }

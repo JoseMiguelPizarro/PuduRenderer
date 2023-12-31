@@ -1236,9 +1236,8 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 	ubo.modelMatrix = float4x4::identity();
 	ubo.modelMatrix = float4x4::translation(0.1, .5, 0);
 
-	float4x4 t = float4x4::translation(float3(0, 0, -3));
+	float4x4 t = float4x4::translation(float3(0, 1, -3));
 
-	//t[3][1] *= -1.0f; //Multiply Y pos by -1 to map to vulkan coordinates
 	ubo.viewMatrix = inverse(t);
 
 	frustum camFrustrum = frustum::field_of_view_x(45.f, m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 1000.0f);
