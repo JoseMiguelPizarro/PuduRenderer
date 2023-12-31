@@ -1223,102 +1223,6 @@ void PuduGraphics::RecreateSwapChain()
 }
 
 
-static inline float4x4 perspective(const projection& proj)
-{
-	const float r = proj.frustum_planes.right;
-	const float l = proj.frustum_planes.left;
-	const float t = proj.frustum_planes.top;
-	const float b = proj.frustum_planes.bottom;
-	const float n = proj.frustum_planes.near_z;
-	const float f = proj.frustum_planes.far_z;
-	const float s = HLSLPP_COORDINATES_SIGN;
-
-	const float m00 = 2.0f * n / (r - l);
-	const float m11 = 2.0f * n / (t - b);
-
-	const float m20 = -s * (r + l) / (r - l);
-	const float m21 = -s * (t + b) / (t - b);
-	const float m23 = s;
-
-	float m22 = 0.0f;
-	float m32 = 0.0f;
-
-	if (proj.z_clip == zclip::zero)
-	{
-		if (proj.z_direction == zdirection::forward)
-		{
-			if (proj.z_plane == zplane::finite)
-			{
-				m22 = s * f / (f - n);
-				m32 = -n * f / (f - n);
-			}
-			else
-			{
-				m22 = s;
-				m32 = -n;
-			}
-		}
-		else
-		{
-			if (proj.z_plane == zplane::finite)
-			{
-				m22 = s * n / (n - f);
-				m32 = -f * n / (n - f);
-			}
-			else
-			{
-				m22 = 0.0f;
-				m32 = 0.0f;
-			}
-		}
-	}
-	else
-	{
-		if (proj.z_direction == zdirection::forward)
-		{
-			if (proj.z_plane == zplane::finite)
-			{
-				m22 = s * (f + n) / (f - n);
-				m32 = -2.0f * f * n / (f - n);
-			}
-			else
-			{
-				m22 = s;
-				m32 = -2.0f * n;
-			}
-		}
-		else
-		{
-			if (proj.z_plane == zplane::finite)
-			{
-				m22 = s * (n + f) / (n - f);
-				m32 = -2.0f * n * f / (n - f);
-			}
-			else
-			{
-				m22 = -s;
-				m32 = 2.0f * n;
-			}
-		}
-	}
-
-#if HLSLPP_LOGICAL_LAYOUT == HLSLPP_LOGICAL_LAYOUT_ROW_MAJOR
-	return float4x4(
-		m00, 0.0f, 0.0f, 0.0f,
-		0.0f, m11, 0.0f, 0.0f,
-		m20, m21, m22, m23,
-		0.0f, 0.0f, m32, 0.0f
-	);
-#else
-	return float4x4(
-		m00, 0.0f, m20, 0.0f,
-		0.0f, m11, m21, 0.0f,
-		0.0f, 0.0f, m22, m32,
-		0.0f, 0.0f, m23, 0.0f
-	);
-#endif
-}
-
 void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
@@ -1328,12 +1232,19 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.modelMatrix = float4x4::identity();
-	ubo.viewMatrix = PuduMath::LookAtInverse(float3(0, 4, 3), float3(0, 0, 0), float3(0, 1, 0));
-	frustum camFrustrum = frustum::field_of_view_x(45.f, m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 1000.0f);
-	projection projectionData(camFrustrum, zclip::zero);
 
-	ubo.ProjectionMatrix = perspective(projectionData);
+	ubo.modelMatrix = float4x4::identity();
+	ubo.modelMatrix = float4x4::translation(0.1, .5, 0);
+
+	float4x4 t = float4x4::translation(float3(0, 0, -3));
+
+	//t[3][1] *= -1.0f; //Multiply Y pos by -1 to map to vulkan coordinates
+	ubo.viewMatrix = inverse(t);
+
+	frustum camFrustrum = frustum::field_of_view_x(45.f, m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 1000.0f);
+	projection projectionData(camFrustrum, zclip::zero, zdirection::forward, zplane::finite);
+
+	ubo.ProjectionMatrix = PuduMath::PerspectiveMatrix(45, (float)m_swapChainExtent.height / m_swapChainExtent.width, 0.1f, 1000.0f);
 
 	memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));
 }
