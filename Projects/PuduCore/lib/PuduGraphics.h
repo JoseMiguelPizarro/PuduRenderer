@@ -151,7 +151,6 @@ private:
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSet> m_descriptorSets;
 
-
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
 	std::vector<Frame> m_Frames;
@@ -162,10 +161,10 @@ private:
 	bool m_initialized = false;
 
 	std::vector<Vertex> m_vertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+	{{-0.5f, -0.5f,0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, -0.5f,0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, 0.5f,0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	{{-0.5f, 0.5f,0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 	};
 
 	std::vector<uint16_t> m_indices = {

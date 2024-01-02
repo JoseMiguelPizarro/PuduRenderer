@@ -1,10 +1,9 @@
 #pragma once
-#include "hlsl++.h"
-
-using namespace hlslpp;
+#include "glm/glm.hpp"
+using namespace glm;
 
 struct UniformBufferObject {
-    float4x4 modelMatrix;
-    float4x4 viewMatrix;
-    float4x4 ProjectionMatrix;
+    mat4 modelMatrix;
+    mat4 viewMatrix;
+    mat4 ProjectionMatrix;
 };

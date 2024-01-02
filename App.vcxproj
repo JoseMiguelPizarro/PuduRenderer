@@ -58,7 +58,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>HLSLPP_FEATURE_TRANSFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.268.0\Include;Projects\PuduCore\lib;lib\hlslpp;lib\hlslpp\platforms;lib\hlslpp\swizzle;lib\hlslpp\transform;lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.268.0\Include;Projects\PuduCore\lib;lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -76,7 +76,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>HLSLPP_FEATURE_TRANSFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.268.0\Include;Projects\PuduCore\lib;lib\hlslpp;lib\hlslpp\platforms;lib\hlslpp\swizzle;lib\hlslpp\transform;lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.268.0\Include;Projects\PuduCore\lib;lib\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>

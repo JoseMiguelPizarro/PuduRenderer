@@ -1,20 +1,20 @@
 //Windows defines a min max func that messes up std funcs :') 
 #define NOMINMAX 
 
+#include <chrono>
+#include <limits>
+#include <algorithm>
+#include <stdexcept>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "PuduGraphics.h"
 #include <PuduGlobals.h>
-#include <stdexcept>
-#include <limits>
-#include <algorithm>
 #include <Logger.h>
 #include <set>
 #include "FileManager.h"
 #include "UniformBufferObject.h"
-#include <chrono>
-#include "hlsl++.h"
 #include <PuduMath.h>
 
 void PuduGraphics::Init(int windowWidth, int windowHeight)
@@ -1233,15 +1233,8 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 
 	UniformBufferObject ubo{};
 
-	ubo.modelMatrix = float4x4::identity();
-	ubo.modelMatrix = float4x4::translation(0.1, .5, 0);
-
-	float4x4 t = float4x4::translation(float3(0, 1, -3));
-
-	ubo.viewMatrix = inverse(t);
-
-	frustum camFrustrum = frustum::field_of_view_x(45.f, m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 1000.0f);
-	projection projectionData(camFrustrum, zclip::zero, zdirection::forward, zplane::finite);
+	ubo.modelMatrix = glm::identity<mat4>();
+	ubo.viewMatrix = PuduMath::LookAtInverse({ 0,0,-3 }, { 0,0,0 }, { 0,1,0 });
 
 	ubo.ProjectionMatrix = PuduMath::PerspectiveMatrix(45, (float)m_swapChainExtent.height / m_swapChainExtent.width, 0.1f, 1000.0f);
 

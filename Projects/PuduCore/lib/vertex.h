@@ -1,12 +1,14 @@
 #pragma once
 #include <array>
-#include <hlsl++_vector_float_type.h>
+#include <glm/glm.hpp>
+#include "vulkan/vulkan.h"
 
+using namespace glm;
 
 struct Vertex {
-	hlslpp::float2 pos;
-	hlslpp::float3 color;
-	hlslpp::float2 texcoord;
+	vec3 pos;
+	vec3 color;
+	vec2 texcoord;
 
 	static VkVertexInputBindingDescription GetBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};

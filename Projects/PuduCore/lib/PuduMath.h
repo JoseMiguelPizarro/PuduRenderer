@@ -1,10 +1,11 @@
 ﻿#pragma once
-#include <hlsl++.h>
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #define PI 3.141592653589
 
-using namespace hlslpp;
-
+using namespace glm;
 
 /*
 <<VULKAN COORDINATE SYSTEM>>
@@ -23,23 +24,23 @@ Z+
 //All matrices are in Column Major
 namespace PuduMath {
 
-	static float4x4 LookAt(float3 eyePosition, float3 targetPosition, float3 up) {
-		float3 direction = normalize(targetPosition - eyePosition);
+	static mat4 LookAt(vec3 eyePosition, vec3 targetPosition, vec3 up) {
+		vec3 direction = normalize(targetPosition - eyePosition);
 
-		float3 w = direction;
-		float3 u = normalize(cross(up, w));
-		float3 v = cross(w, u);
+		vec3 w = direction;
+		vec3 u = normalize(cross(up, w));
+		vec3 v = cross(w, u);
 
-		float4x4 m;
+		mat4 m;
 
-		return	float4x4{
+		return	mat4{
 			u.x,u.y,u.z,eyePosition.x,
 			v.x,v.y,v.z,eyePosition.y,
 			w.x,w.y,w.z,eyePosition.z,
 			0,0,0,1 };
 	}
 
-	static float4x4 PerspectiveMatrix(float vertical_fov, float aspect_ratio, float n, float f)
+	static mat4 PerspectiveMatrix(float vertical_fov, float aspect_ratio, float n, float f)
 	{
 		float fov_rad = vertical_fov * 2.0f * PI / 360.0f;
 		float focal_length = 1.0f / std::tan(fov_rad / 2.0f);
@@ -48,7 +49,7 @@ namespace PuduMath {
 		float A = f / (f - n);
 		float B = -n * A;
 
-		float4x4 pm
+		mat4 pm
 		(
 			aspect_ratio * focal_length, 0.0f, 0.0f, 0.0f,
 			0.0f, focal_length, 0.0f, 0.0f, //Multiply by -1 to remap to vk ndc space
@@ -58,19 +59,19 @@ namespace PuduMath {
 		return pm;
 	}
 
-	static float4x4 LookAtInverse(float3 eyePosition, float3 targetPosition, float3 up)
+	static mat4 LookAtInverse(vec3 eyePosition, vec3 targetPosition, vec3 up)
 	{
-		float3 forward_axis = normalize(targetPosition - eyePosition);;
-		float3 right_axis = normalize(cross(up, forward_axis));
-		float3 up_axis = cross(forward_axis, right_axis);
+		vec3 forward_axis = normalize(targetPosition - eyePosition);;
+		vec3 right_axis = normalize(cross(up, forward_axis));
+		vec3 up_axis = cross(forward_axis, right_axis);
 
-		float3 t = float3(-dot(eyePosition, right_axis), -dot(eyePosition, up_axis), -dot(eyePosition, forward_axis));
+		vec3 t = vec3(-dot(eyePosition, right_axis), -dot(eyePosition, up_axis), -dot(eyePosition, forward_axis));
 
-		return	float4x4{
-			float4(right_axis.x,up_axis.x,forward_axis.x,0.0f),
-			float4(right_axis.y,up_axis.y,forward_axis.y,0.0f),
-			float4(right_axis.z,up_axis.z,forward_axis.z,0.0f),
-			float4(-dot(eyePosition,right_axis),-dot(eyePosition,up_axis),-dot(eyePosition,forward_axis),1.0f) };
+		return	mat4{
+			vec4(right_axis.x,up_axis.x,forward_axis.x,0.0f),
+			vec4(right_axis.y,up_axis.y,forward_axis.y,0.0f),
+			vec4(right_axis.z,up_axis.z,forward_axis.z,0.0f),
+			vec4(-dot(eyePosition,right_axis),-dot(eyePosition,up_axis),-dot(eyePosition,forward_axis),1.0f) };
 	}
 }
 

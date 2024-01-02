@@ -53,11 +53,6 @@ function includeAndLinkDxc()
 	
 end
 
-function includeHLSLpp()
-	includedirs "lib/hlslpp"
-   	includedirs "lib/hlslpp/**"
-end
-
 function includeStb_Image()
 	includedirs "lib/stb"
 end
@@ -99,7 +94,6 @@ project "PuduCore"
 	includedirs "Projects/PuduCore/lib"
 
 	includeGLFW()
-	includeHLSLpp()
 	includedxc()
 	includeStb_Image()
 
@@ -143,7 +137,6 @@ project "App"
 	includeGLFW()
 	includeVulkan()
 	useCoreLib()
-	includeHLSLpp()
 	includeStb_Image()
 	libdirs { "C:/VulkanSDK/1.3.268.0/Lib" }
 	links "vulkan-1"
