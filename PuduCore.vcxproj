@@ -88,6 +88,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imconfig.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui_impl_glfw.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui_impl_vulkan.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui_internal.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_textedit.h" />
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_truetype.h" />
     <ClInclude Include="Projects\PuduCore\Src\FileManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\FileManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
@@ -101,6 +109,13 @@
     <ClInclude Include="Projects\PuduCore\lib\vertex.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui.cpp" />
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />

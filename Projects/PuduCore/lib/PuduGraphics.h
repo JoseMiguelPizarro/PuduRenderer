@@ -7,12 +7,22 @@
 #include <GLFW/glfw3native.h>
 #include <vector>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <optional>
 #include <Frame.h>
 #include <vertex.h>
 #include <GraphicsBuffer.h>
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
 
 typedef std::optional<uint32_t> Optional;
+
+using namespace glm;
 
 struct QueueFamilyIndices {
 	Optional graphicsFamily;
@@ -71,7 +81,7 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateFrameBuffers();
 	void CreateFrames();
-	void CreateCommandPool();
+	void CreateCommandPool(VkCommandPool* cmdPool);
 
 	void CreateTextureImage();
 	void CreateTextureImageView();
@@ -88,11 +98,11 @@ private:
 	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-
+	void InitImgui();
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
-
+	VkPipelineCache m_pipelineCache;
 	void CleanupSwapChain();
 	GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage, VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	void CreateImage(uint32_t width, uint32_t height, VkFormat format,
@@ -134,12 +144,13 @@ private:
 	std::vector<VkImage> m_swapChainImages;
 	VkRenderPass m_renderPass;
 	VkPipeline m_graphicsPipeline;
+	VkPipeline m_imguiPipeline;
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
 
 	GraphicsBuffer m_vertexBuffer;
 	GraphicsBuffer m_indexBuffer;
-	
+
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureImageMemory;
 
@@ -148,8 +159,17 @@ private:
 	VkDescriptorSetLayout m_descriptorSetLayout;
 	VkPipelineLayout m_pipelineLayout;
 
+	VkCommandPool m_ImGuiCommandPool;
+	VkRenderPass m_ImGuiRenderPass;
+	std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
+	std::vector<VkFramebuffer> m_ImGuiFramebuffers;
+	void CreateImGuiRenderPass();
+	void CreateImGUICommandBuffers();
+	void CreateImGUIFrameBuffer();
+
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSet> m_descriptorSets;
+
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
@@ -157,18 +177,26 @@ private:
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 	uint32_t m_currentFrame = 0;
+	uint32_t m_imageCount;
 
 	bool m_initialized = false;
 
 	std::vector<Vertex> m_vertices = {
-	{{-0.5f, -0.5f,0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f,0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f,0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f,0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+	{vec3(-0.5f, -0.5f, 0.0f), vec3(1.0f, 0.0f, 0.0f), vec2(0.0f, 0.0f)},
+	{vec3(0.5f, -0.5f, 0.0f), vec3(0.0f, 1.0f, 0.0f), vec2(1.0f, 0.0f) },
+	{vec3(0.5f, 0.5f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(1.0f, 1.0f) },
+	{vec3(-0.5f, 0.5f, 0.0f), vec3(1.0f, 1.0f, 1.0f), vec2(0.0f, 1.0f) }
+
+
+	/*{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}*/
 	};
 
 	std::vector<uint16_t> m_indices = {
-	0, 1, 2, 2, 3, 0
+		0, 1, 2, 2, 3, 0,
+		/*4, 5, 6, 6, 7, 4*/
 	};
 
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
@@ -179,3 +207,5 @@ void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 	PuduGraphics* app = reinterpret_cast<PuduGraphics*>(glfwGetWindowUserPointer(window));
 	app->FramebufferResized = true;
 }
+
+

@@ -1,21 +1,21 @@
 //Windows defines a min max func that messes up std funcs :') 
 #define NOMINMAX 
 
-#include <chrono>
-#include <limits>
-#include <algorithm>
-#include <stdexcept>
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "PuduGraphics.h"
 #include <PuduGlobals.h>
+#include <stdexcept>
+#include <limits>
+#include <algorithm>
 #include <Logger.h>
 #include <set>
 #include "FileManager.h"
 #include "UniformBufferObject.h"
+#include <chrono>
 #include <PuduMath.h>
+#include "glm/common.hpp"
 
 void PuduGraphics::Init(int windowWidth, int windowHeight)
 {
@@ -25,6 +25,7 @@ void PuduGraphics::Init(int windowWidth, int windowHeight)
 
 	InitWindow();
 	InitVulkan();
+	InitImgui();
 
 	m_initialized = true;
 }
@@ -44,7 +45,7 @@ void PuduGraphics::InitVulkan()
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateFrameBuffers();
-	CreateCommandPool();
+	CreateCommandPool(&m_commandPool);
 
 	CreateTextureImage();
 	CreateTextureImageView();
@@ -56,7 +57,6 @@ void PuduGraphics::InitVulkan()
 	CreateCommandBuffer();
 	CreateSyncObjects();
 }
-
 
 void PuduGraphics::InitWindow()
 {
@@ -137,7 +137,7 @@ VkSurfaceFormatKHR PuduGraphics::ChooseSwapSurfaceFormat(const std::vector<VkSur
 {
 	for (const auto& availableFormat : availableFormats)
 	{
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace ==
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace ==
 			VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
 		{
 			return availableFormat;
@@ -265,6 +265,87 @@ std::vector<const char*> PuduGraphics::GetRequiredExtensions()
 	return extensions;
 }
 
+void PuduGraphics::CreateImGuiRenderPass()
+{
+	VkAttachmentDescription attachment = {};
+	attachment.format = m_swapChainImageFormat;
+	attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference color_attachment = {};
+	color_attachment.attachment = 0;
+	color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment;
+
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0; // or VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	VkRenderPassCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	info.attachmentCount = 1;
+	info.pAttachments = &attachment;
+	info.subpassCount = 1;
+	info.pSubpasses = &subpass;
+	info.dependencyCount = 1;
+	info.pDependencies = &dependency;
+
+	if (vkCreateRenderPass(Device, &info, nullptr, &m_ImGuiRenderPass) != VK_SUCCESS)
+		throw std::runtime_error("failed to create render pass!");
+}
+
+void PuduGraphics::CreateImGUICommandBuffers()
+{
+	m_ImGuiCommandBuffers.resize(m_swapChainImagesViews.size());
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = m_ImGuiCommandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)m_ImGuiCommandBuffers.size();
+
+	if (vkAllocateCommandBuffers(Device, &allocInfo, m_ImGuiCommandBuffers.data()) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate command buffers!");
+	}
+}
+
+void PuduGraphics::CreateImGUIFrameBuffer()
+{
+	m_ImGuiFramebuffers.resize(m_swapChainImagesViews.size());
+
+	VkImageView attachment[1];
+	VkFramebufferCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	info.renderPass = m_ImGuiRenderPass;
+	info.attachmentCount = 1;
+	info.pAttachments = attachment;
+	info.width = m_swapChainExtent.width;
+	info.height = m_swapChainExtent.height;
+	info.layers = 1;
+	for (uint32_t i = 0; i < m_swapChainImagesViews.size(); i++)
+	{
+		attachment[0] = m_swapChainImagesViews[i];
+		if (vkCreateFramebuffer(Device, &info, nullptr, &m_ImGuiFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+}
+
 void PuduGraphics::DrawFrame()
 {
 	Frame frame = m_Frames[m_currentFrame];
@@ -284,15 +365,52 @@ void PuduGraphics::DrawFrame()
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	UpdateUniformBuffer(m_currentFrame);
 	vkResetFences(Device, 1, &frame.InFlightFence);
-
-	vkResetCommandBuffer(frame.CommandBuffer, 0);
 
 	RecordCommandBuffer(frame.CommandBuffer, imageIndex);
 
+	// vkResetCommandPool(m_Device, m_ImGuiCommandPool, 0);
+	VkCommandBufferBeginInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
+
+	VkRenderPassBeginInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = m_ImGuiRenderPass;
+	renderPassInfo.framebuffer = m_ImGuiFramebuffers[imageIndex];
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = m_swapChainExtent;
+	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+	vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::Text("Everyone says hi to Daphne");
+
+	ImGui::Render();
+
+	// Record dear imgui primitives into command buffer
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_ImGuiCommandBuffers[m_currentFrame]);
+
+	vkCmdEndRenderPass(m_ImGuiCommandBuffers[m_currentFrame]);
+	vkEndCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame]);
+
+	ImGui::EndFrame();
+
+	UpdateUniformBuffer(m_currentFrame);
+
+	//vkResetCommandBuffer(frame.CommandBuffer, 0); //RESET FOR IMGUI
+
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	std::array<VkCommandBuffer, 2> submitCommandBuffers =
+	{ frame.CommandBuffer, m_ImGuiCommandBuffers[m_currentFrame] };
 
 	VkSemaphore waitSemaphores[] = { frame.ImageAvailableSemaphore };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -300,13 +418,12 @@ void PuduGraphics::DrawFrame()
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &frame.CommandBuffer;
+	submitInfo.commandBufferCount = static_cast<uint32_t>(submitCommandBuffers.size());
+	submitInfo.pCommandBuffers = submitCommandBuffers.data();
 
 	VkSemaphore signalSemaphores[] = { frame.RenderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
-
 
 	if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame.InFlightFence) != VK_SUCCESS)
 	{
@@ -587,6 +704,13 @@ void PuduGraphics::CreateLogicalDevice()
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = DeviceExtensions.data();
 
+	VkPhysicalDevicePipelineCreationCacheControlFeatures cacheFeatures{};
+	cacheFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES;
+	cacheFeatures.pipelineCreationCacheControl = true;
+
+	//createInfo.pNext = &cacheFeatures;
+
+
 	if (enableValidationLayers)
 	{
 		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -673,6 +797,7 @@ void PuduGraphics::CreateSwapChain()
 	m_swapChainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, m_swapChainImages.data());
 
+	m_imageCount = imageCount;
 	m_swapChainImageFormat = surfaceFormat.format;
 	m_swapChainExtent = extent;
 }
@@ -770,6 +895,7 @@ void PuduGraphics::CreateDescriptorPool()
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	//poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
 	poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
@@ -936,7 +1062,17 @@ void PuduGraphics::CreateGraphicsPipeline()
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
+	/*VkPipelineCacheCreateInfo cacheInfo{};
+	cacheInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+	cacheInfo.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
+	cacheInfo.pNext = VK_NULL_HANDLE;
+
+	if (vkCreatePipelineCache(Device, &cacheInfo, m_allocatorPtr, &m_pipelineCache) != VK_SUCCESS)
+	{
+		PUDU_ERROR("Failed to create pipeline cache");
+	}*/
+
+	if (vkCreateGraphicsPipelines(Device, nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
@@ -977,7 +1113,7 @@ void PuduGraphics::CreateFrames()
 	m_Frames.resize(MAX_FRAMES_IN_FLIGHT);
 }
 
-void PuduGraphics::CreateCommandPool()
+void PuduGraphics::CreateCommandPool(VkCommandPool* cmdPool)
 {
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice);
 
@@ -986,7 +1122,7 @@ void PuduGraphics::CreateCommandPool()
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-	if (vkCreateCommandPool(Device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
+	if (vkCreateCommandPool(Device, &poolInfo, nullptr, cmdPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create command pool");
 	}
@@ -1146,7 +1282,7 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0; // Optional
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
 	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
@@ -1191,13 +1327,15 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
+	// Record dear imgui primitives into command buffer
+
 	vkCmdEndRenderPass(commandBuffer);
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to record command buffer!");
 	}
+
 }
 
 void PuduGraphics::RecreateSwapChain()
@@ -1235,7 +1373,6 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 
 	ubo.modelMatrix = glm::identity<mat4>();
 	ubo.viewMatrix = PuduMath::LookAtInverse({ 0,0,-3 }, { 0,0,0 }, { 0,1,0 });
-
 	ubo.ProjectionMatrix = PuduMath::PerspectiveMatrix(45, (float)m_swapChainExtent.height / m_swapChainExtent.width, 0.1f, 1000.0f);
 
 	memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));
@@ -1321,6 +1458,87 @@ void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wi
 
 	EndSingleTimeCommands(commandBuffer);
 }
+
+static void check_vk_result(VkResult err)
+{
+	if (err == 0)
+		return;
+	fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+	if (err < 0)
+		abort();
+}
+
+
+void PuduGraphics::InitImgui()
+{
+	ImGui::CreateContext();
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+
+	ImGui_ImplGlfw_InitForVulkan(WindowPtr, true);
+
+	VkDescriptorPool imGuiDescriptorPool;
+	// Create Descriptor Pool
+  // The example only requires a single combined image sampler descriptor for the font image and only uses one descriptor set (for that)
+  // If you wish to load e.g. additional textures you may need to alter pools sizes.
+	{
+		{
+			VkDescriptorPoolSize pool_sizes[] =
+			{
+					{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+					{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+					{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+					{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+					{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+					{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+					{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000} };
+
+			VkDescriptorPoolCreateInfo pool_info = {};
+			pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+			pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+			pool_info.pPoolSizes = pool_sizes;
+
+			if (vkCreateDescriptorPool(Device, &pool_info, nullptr, &imGuiDescriptorPool) != VK_SUCCESS)
+				throw std::runtime_error("Create DescriptorPool for m_ImGuiDescriptorPool failed!");
+		}
+	}
+
+	CreateImGuiRenderPass();
+	CreateCommandPool(&m_ImGuiCommandPool);
+	CreateImGUICommandBuffers();
+	CreateImGUIFrameBuffer();
+
+	ImGui_ImplVulkan_InitInfo initInfo{};
+	initInfo.Instance = m_vkInstance;
+	initInfo.PhysicalDevice = m_physicalDevice;
+	initInfo.Device = Device;
+	initInfo.QueueFamily = FindQueueFamilies(m_physicalDevice).graphicsFamily.value();
+	initInfo.Queue = m_graphicsQueue;
+	initInfo.PipelineCache = VK_NULL_HANDLE;
+	initInfo.DescriptorPool = imGuiDescriptorPool;
+	initInfo.Subpass = 0;
+	initInfo.ImageCount = m_imageCount;
+	initInfo.MinImageCount = m_imageCount;
+	initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	initInfo.Allocator = m_allocatorPtr;
+	initInfo.CheckVkResultFn = check_vk_result;
+
+
+	//initInfo.PipelineCache = m_pipelineCache;
+
+	ImGui_ImplVulkan_Init(&initInfo, m_ImGuiRenderPass);
+	vkDeviceWaitIdle(Device);
+
+	//ImGui_ImplVulkan_DestroyFontsTexture();
+}
+
 
 VkCommandBuffer PuduGraphics::BeginSingleTimeCommands()
 {
@@ -1486,6 +1704,10 @@ void PuduGraphics::Cleanup()
 		return;
 	}
 
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	CleanupSwapChain();
 
 	vkDestroySampler(Device, m_textureSampler, m_allocatorPtr);
@@ -1509,8 +1731,6 @@ void PuduGraphics::Cleanup()
 
 	DestroyBuffer(m_vertexBuffer);
 	DestroyBuffer(m_indexBuffer);
-
-
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{

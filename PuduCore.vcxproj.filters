@@ -7,6 +7,9 @@
     <Filter Include="lib">
       <UniqueIdentifier>{3C8C880B-A895-887C-3111-9F7C9D19947C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lib\ImGui">
+      <UniqueIdentifier>{2674daa8-d049-4f77-a36e-9a116392278a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Projects\PuduCore\Src\FileManager.h">
@@ -42,6 +45,30 @@
     <ClInclude Include="Projects\PuduCore\lib\vertex.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imconfig.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui_impl_glfw.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui_impl_vulkan.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imgui_internal.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_rectpack.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_textedit.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_truetype.h">
+      <Filter>lib\ImGui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp">
@@ -52,6 +79,27 @@
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp">
       <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui.cpp">
+      <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_demo.cpp">
+      <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_draw.cpp">
+      <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_impl_glfw.cpp">
+      <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_impl_vulkan.cpp">
+      <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_tables.cpp">
+      <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_widgets.cpp">
+      <Filter>lib\ImGui</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
