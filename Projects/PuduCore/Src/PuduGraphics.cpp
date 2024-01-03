@@ -1335,7 +1335,6 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 	{
 		throw std::runtime_error("failed to record command buffer!");
 	}
-
 }
 
 void PuduGraphics::RecreateSwapChain()
@@ -1360,7 +1359,6 @@ void PuduGraphics::RecreateSwapChain()
 	CreateFrameBuffers();
 }
 
-
 void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
@@ -1371,8 +1369,9 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 
 	UniformBufferObject ubo{};
 
-	ubo.modelMatrix = glm::identity<mat4>();
-	ubo.viewMatrix = PuduMath::LookAtInverse({ 0,0,-3 }, { 0,0,0 }, { 0,1,0 });
+
+	ubo.modelMatrix = glm::rotate(mat4(1.0f), time * radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+	ubo.viewMatrix = PuduMath::LookAtInverse({ 0,-2.0f,-2.0f }, { 0,0,0 }, { 0,1,0 });
 	ubo.ProjectionMatrix = PuduMath::PerspectiveMatrix(45, (float)m_swapChainExtent.height / m_swapChainExtent.width, 0.1f, 1000.0f);
 
 	memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));
