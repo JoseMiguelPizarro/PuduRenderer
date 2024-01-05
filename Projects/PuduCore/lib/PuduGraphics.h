@@ -98,7 +98,32 @@ private:
 	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
+#pragma region  ImGUI
 	void InitImgui();
+	VkCommandPool m_ImGuiCommandPool;
+	VkRenderPass m_ImGuiRenderPass;
+	std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
+	std::vector<VkFramebuffer> m_ImGuiFramebuffers;
+	void CreateImGuiRenderPass();
+	void CreateImGUICommandBuffers();
+	void CreateImGUIFrameBuffer();
+#pragma endregion
+
+
+#pragma region DepthBuffer
+	VkImage m_depthImage;
+	VkDeviceMemory m_depthImageMemory;
+	VkImageView m_depthImageView;
+
+	void CreateDepthResources();
+	VkFormat FindDepthFormat();
+
+	bool HasStencilComponent(VkFormat format);
+#pragma endregion
+
+	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
@@ -109,7 +134,7 @@ private:
 		VkImageTiling tiling, VkImageUsageFlags usage,
 		VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
-	VkImageView CreateImageView(VkImage image, VkFormat format);
+	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -159,17 +184,8 @@ private:
 	VkDescriptorSetLayout m_descriptorSetLayout;
 	VkPipelineLayout m_pipelineLayout;
 
-	VkCommandPool m_ImGuiCommandPool;
-	VkRenderPass m_ImGuiRenderPass;
-	std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
-	std::vector<VkFramebuffer> m_ImGuiFramebuffers;
-	void CreateImGuiRenderPass();
-	void CreateImGUICommandBuffers();
-	void CreateImGUIFrameBuffer();
-
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSet> m_descriptorSets;
-
 
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 
