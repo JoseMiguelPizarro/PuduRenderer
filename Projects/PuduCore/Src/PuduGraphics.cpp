@@ -4,6 +4,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#ifndef TINYOBJLOADER_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
+#endif
+#include <tiny_obj_loader.h>
+
 #include "PuduGraphics.h"
 #include <PuduGlobals.h>
 #include <stdexcept>
@@ -51,6 +56,8 @@ void PuduGraphics::InitVulkan()
 	CreateTextureImage();
 	CreateTextureImageView();
 	CreateTextureSampler();
+
+	LoadModel();
 
 	CreateBuffers();
 	CreateDescriptorPool();
@@ -382,7 +389,7 @@ void PuduGraphics::DrawFrame()
 	renderPassInfo.framebuffer = m_ImGuiFramebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = m_swapChainExtent;
-	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 
@@ -401,9 +408,9 @@ void PuduGraphics::DrawFrame()
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
-		ImGui::Text("Everyone says hi to Daphne");
-
+		ImGui::Begin("Pudu Renderer Debug");
+		ImGui::Text("Just an aliased rotating chocobo for now");
+		ImGui::End();
 		ImGui::Render();
 
 		// Record dear imgui primitives into command buffer
@@ -820,8 +827,6 @@ void PuduGraphics::CreateImageViews()
 
 void PuduGraphics::CreateRenderPass()
 {
-
-
 	//Color attachment
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = m_swapChainImageFormat;
@@ -840,8 +845,6 @@ void PuduGraphics::CreateRenderPass()
 
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
 
 	//Depth & Stencil
 	VkAttachmentDescription depthAttachment{};
@@ -1114,7 +1117,7 @@ void PuduGraphics::CreateFrameBuffers()
 
 	for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
 	{
-		std::array<VkImageView,2> attachments = {
+		std::array<VkImageView, 2> attachments = {
 			m_swapChainImagesViews[i],
 			m_depthImageView
 		};
@@ -1162,7 +1165,7 @@ void PuduGraphics::CreateTextureImage()
 {
 	int texWidth, texHeight, texChannels;
 
-	auto texturePath = GetAssetPath("textures/daphne.jpg");
+	auto texturePath = GetAssetPath(TEXTURE_PATH.c_str());
 	stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -1326,7 +1329,7 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 	renderPassInfo.renderArea.extent = m_swapChainExtent;
 
 	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+	clearValues[0].color = { {0.8860f, 1.0f, 0.996f, 1.0f} };
 	clearValues[1].depthStencil = { 1.0f, 0 };
 
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -1353,7 +1356,7 @@ void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t i
 	VkBuffer vertexBuffers[] = { m_vertexBuffer.Buffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
@@ -1404,8 +1407,8 @@ void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 	UniformBufferObject ubo{};
 
 
-	ubo.modelMatrix = glm::rotate(mat4(1.0f), time * radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-	ubo.viewMatrix = PuduMath::LookAtInverse({ 0,-2.0f,-2.0f }, { 0,0,0 }, { 0,1,0 });
+	ubo.modelMatrix = glm::rotate(mat4(1.0f), time * 0.08f, { 0,1,0 });
+	ubo.viewMatrix = PuduMath::LookAtInverse({ 0,-3.0f, 7.0f }, { 0,-2,0 }, { 0,1,0 });
 	ubo.ProjectionMatrix = PuduMath::PerspectiveMatrix(45, (float)m_swapChainExtent.height / m_swapChainExtent.width, 0.1f, 1000.0f);
 
 	memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));
@@ -1513,6 +1516,41 @@ void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t wi
 	EndSingleTimeCommands(commandBuffer);
 }
 
+void PuduGraphics::LoadModel()
+{
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warn, err;
+
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, GetAssetPath(MODEL_PATH).c_str()))
+	{
+		PUDU_ERROR(warn + err);
+	}
+	for (auto& shape : shapes)
+	{
+		for (const auto& index : shape.mesh.indices) {
+			Vertex vertex{};
+
+			vertex.pos = {
+				-attrib.vertices[3 * index.vertex_index + 0],
+				-attrib.vertices[3 * index.vertex_index + 1],
+				attrib.vertices[3 * index.vertex_index + 2],
+			};
+
+			vertex.texcoord = {
+				attrib.texcoords[2 * index.texcoord_index + 0],
+				1.0f - attrib.texcoords[2 * index.texcoord_index + 1] //Obj assumes bottom left corner to be 0. vulkan upload images from (0,-1)
+			};
+
+			vertex.color = { 1.0f,1.0f,1.0f };
+
+			m_vertices.push_back(vertex);
+			m_indices.push_back(static_cast<uint32_t>(m_indices.size()));
+		}
+	}
+}
+
 static void check_vk_result(VkResult err)
 {
 	if (err == 0)
@@ -1529,7 +1567,6 @@ void PuduGraphics::InitImgui()
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsLight();
-
 	ImGui_ImplGlfw_InitForVulkan(WindowPtr, true);
 
 	VkDescriptorPool imGuiDescriptorPool;
@@ -1583,7 +1620,6 @@ void PuduGraphics::InitImgui()
 	initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	initInfo.Allocator = m_allocatorPtr;
 	initInfo.CheckVkResultFn = check_vk_result;
-
 
 	//initInfo.PipelineCache = m_pipelineCache;
 

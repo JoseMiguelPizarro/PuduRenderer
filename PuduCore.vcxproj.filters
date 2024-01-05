@@ -8,7 +8,7 @@
       <UniqueIdentifier>{3C8C880B-A895-887C-3111-9F7C9D19947C}</UniqueIdentifier>
     </Filter>
     <Filter Include="lib\ImGui">
-      <UniqueIdentifier>{2674daa8-d049-4f77-a36e-9a116392278a}</UniqueIdentifier>
+      <UniqueIdentifier>{663E70E8-D2A8-245F-1BE7-D504879002B4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -22,27 +22,6 @@
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\Logger.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\PuduMath.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\vertex.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\ImGui\imconfig.h">
@@ -68,6 +47,27 @@
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_truetype.h">
       <Filter>lib\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\Logger.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\PuduMath.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\vertex.h">
+      <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -101,5 +101,10 @@
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_widgets.cpp">
       <Filter>lib\ImGui</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Projects\PuduCore\lib\ImGui\LICENSE.txt">
+      <Filter>lib\ImGui</Filter>
+    </None>
   </ItemGroup>
 </Project>

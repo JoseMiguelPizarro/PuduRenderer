@@ -19,10 +19,12 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
+#include <string>
 
 typedef std::optional<uint32_t> Optional;
 
 using namespace glm;
+
 
 struct QueueFamilyIndices {
 	Optional graphicsFamily;
@@ -98,6 +100,11 @@ private:
 	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
+	void LoadModel();
+
+	std::string MODEL_PATH = "models/chocobo/chocobo.obj";
+	std::string TEXTURE_PATH = "models/chocobo/chocobo.png";
+
 #pragma region  ImGUI
 	void InitImgui();
 	VkCommandPool m_ImGuiCommandPool;
@@ -108,7 +115,6 @@ private:
 	void CreateImGUICommandBuffers();
 	void CreateImGUIFrameBuffer();
 #pragma endregion
-
 
 #pragma region DepthBuffer
 	VkImage m_depthImage;
@@ -122,7 +128,6 @@ private:
 #pragma endregion
 
 	VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-
 
 	VkCommandBuffer BeginSingleTimeCommands();
 	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -173,9 +178,6 @@ private:
 	std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 	VkCommandPool m_commandPool;
 
-	GraphicsBuffer m_vertexBuffer;
-	GraphicsBuffer m_indexBuffer;
-
 	VkImage m_textureImage;
 	VkDeviceMemory m_textureImageMemory;
 
@@ -197,22 +199,10 @@ private:
 
 	bool m_initialized = false;
 
-	std::vector<Vertex> m_vertices = {
-	{{-0.5f, -0.5f , 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-	{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-	};
-
-	std::vector<uint16_t> m_indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};
+	std::vector<Vertex> m_vertices;
+	std::vector<uint32_t> m_indices;
+	GraphicsBuffer m_vertexBuffer;
+	GraphicsBuffer m_indexBuffer;
 
 	VkAllocationCallbacks* m_allocatorPtr = nullptr;
 };

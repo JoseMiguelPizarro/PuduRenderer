@@ -74,6 +74,11 @@ function linkdxc()
 	filter {}
 end
 
+function includeTinyObjLoader()
+	includedirs "lib/tiny_obj_loader/**"
+	includedirs "lib/tiny_obj_loader"
+	defines {"TINYOBJLOADER_IMPLEMENTATION"}
+end
 -- This function links statically against GLFW
 function linkGLFW()
    libdirs "lib/GLFW/Lib"
@@ -96,9 +101,7 @@ project "PuduCore"
 	includeGLFW()
 	includedxc()
 	includeStb_Image()
-
-	defines {"HLSLPP_FEATURE_TRANSFORM"}
-
+	includeTinyObjLoader()
 
 	includedirs 
 	{
