@@ -12,8 +12,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Projects\PuduCore\Src\FileManager.h">
-      <Filter>Src</Filter>
+    <ClInclude Include="Projects\PuduCore\lib\DrawCall.h">
+      <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\FileManager.h">
       <Filter>lib</Filter>
@@ -51,6 +51,9 @@
     <ClInclude Include="Projects\PuduCore\lib\Logger.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\Mesh.h">
+      <Filter>lib</Filter>
+    </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -63,6 +66,9 @@
     <ClInclude Include="Projects\PuduCore\lib\PuduMath.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\Texture2D.h">
+      <Filter>lib</Filter>
+    </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -71,13 +77,25 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Projects\PuduCore\Src\DrawCall.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\FileManager.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\Mesh.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\Texture2D.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui.cpp">

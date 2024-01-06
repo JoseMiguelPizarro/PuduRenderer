@@ -77,7 +77,7 @@ end
 function includeTinyObjLoader()
 	includedirs "lib/tiny_obj_loader/**"
 	includedirs "lib/tiny_obj_loader"
-	defines {"TINYOBJLOADER_IMPLEMENTATION"}
+	--defines {"TINYOBJLOADER_IMPLEMENTATION"}
 end
 -- This function links statically against GLFW
 function linkGLFW()
@@ -141,6 +141,7 @@ project "App"
 	includeVulkan()
 	useCoreLib()
 	includeStb_Image()
+	includeTinyObjLoader()
 	libdirs { "C:/VulkanSDK/1.3.268.0/Lib" }
 	links "vulkan-1"
 	defines {"HLSLPP_FEATURE_TRANSFORM"}

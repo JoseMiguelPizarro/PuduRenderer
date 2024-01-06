@@ -1,26 +1,32 @@
 #pragma once
-
 #include <fstream>
 #include <vector>
-#include <iostream>
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <format>
 
-static std::vector<char> ReadFile(const std::string& fileName) {
-	std::ifstream file(fileName, std::ios::ate | std::ios::binary); //ate: at the end lmao
+#include "Mesh.h"
+#include "../Src/MeshData.h"
 
-	if (!file.is_open())
-	{
-		throw std::runtime_error(std::format("Failed to open file {}", fileName));
-	}
+static const std::string ASSETS_FOLDER_PATH = "Assets";
+namespace Pudu {
+    class FileManager
+    {
+    public:
+        static std::vector<char> ReadFile(const std::string& fileName);
 
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
+        /// <summary>
+        /// Get path relative to assets folder
+        /// </summary>
+        static std::string GetAssetPath(std::string path);
 
-	file.seekg(0); //Go back to the beggining of the file
-	file.read(buffer.data(), fileSize);
+        /// <summary>
+        /// Read asset relative to the assets folder
+        /// </summary>
+        static std::vector<char> ReadAssetFile(const std::string& fileName);
 
-	file.close();
 
-	return buffer;
+        static std::vector<char> ReadShaderFile(const std::string& shaderPath);
+
+        static MeshData LoadModelObj(std::string assetPath);
+    };
+
 }

@@ -4,14 +4,14 @@
 class GraphicsBuffer
 {
 public:
-    VkBuffer Buffer;
-    VkDeviceMemory DeviceMemory;
+    VkBuffer Handler;
+    VkDeviceMemory DeviceMemoryHandler;
     void* MappedMemory;
 
     GraphicsBuffer() = default;
 
     GraphicsBuffer(VkBuffer buffer, VkDeviceMemory deviceMemory)
-        : Buffer(buffer), DeviceMemory(deviceMemory)
+        : Handler(buffer), DeviceMemoryHandler(deviceMemory)
     {
         MappedMemory = nullptr;
     }

@@ -6,39 +6,49 @@
 
 using namespace std::chrono_literals;
 
-void PuduApp::Init()
+namespace Pudu
 {
-	printf("PuduApp Init");
-	Graphics.Init(800, 600);
+	void PuduApp::Init()
+	{
 
-	lastFrameTime = std::chrono::high_resolution_clock::now();
-}
-void PuduApp::Cleanup()
-{
-	vkDeviceWaitIdle(Graphics.Device);
-	Graphics.Cleanup();
+		printf("PuduApp Init");
+		Graphics.Init(800, 600);
+		Graphics.InitPipeline();
+		OnInit();
 
-	OnCleanup();
-}
-void PuduApp::Run() {
-
-	float targetFrameDuration = 1.0f / TargetFPS;
-
-	Print("PuduApp Run");
-	while (!glfwWindowShouldClose(Graphics.WindowPtr)) {
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<float> frameDuration = currentTime - lastFrameTime;
-
-		float durationDelta = targetFrameDuration - frameDuration.count();
-		if (durationDelta > 0)
-		{
-			std::this_thread::sleep_for(std::chrono::duration<float>(durationDelta));
-		}
-
-		glfwPollEvents();
-		OnRun();
 		lastFrameTime = std::chrono::high_resolution_clock::now();
 	}
 
-	Cleanup();
+	void PuduApp::Cleanup()
+	{
+		vkDeviceWaitIdle(Graphics.Device);
+
+		OnCleanup();
+		Graphics.Cleanup();
+
+	}
+
+	void PuduApp::Run()
+	{
+		float targetFrameDuration = 1.0f / TargetFPS;
+
+		Print("PuduApp Run");
+		while (!glfwWindowShouldClose(Graphics.WindowPtr))
+		{
+			auto currentTime = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<float> frameDuration = currentTime - lastFrameTime;
+
+			float durationDelta = targetFrameDuration - frameDuration.count();
+			if (durationDelta > 0)
+			{
+				std::this_thread::sleep_for(std::chrono::duration<float>(durationDelta));
+			}
+
+			glfwPollEvents();
+			OnRun();
+			lastFrameTime = std::chrono::high_resolution_clock::now();
+		}
+
+		Cleanup();
+	}
 }

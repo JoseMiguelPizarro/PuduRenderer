@@ -55,7 +55,6 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\dxc\include;lib\stb;lib\tiny_obj_loader;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
@@ -71,7 +70,6 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\dxc\include;lib\stb;lib\tiny_obj_loader;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -88,7 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Projects\PuduCore\Src\FileManager.h" />
+    <ClInclude Include="Projects\PuduCore\lib\DrawCall.h" />
     <ClInclude Include="Projects\PuduCore\lib\FileManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
     <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h" />
@@ -101,17 +99,25 @@
     <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_textedit.h" />
     <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_truetype.h" />
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Mesh.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGlobals.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduMath.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Texture2D.h" />
     <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h" />
     <ClInclude Include="Projects\PuduCore\lib\vertex.h" />
+    <ClInclude Include="Projects\PuduCore\Src\MeshData.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Projects\PuduCore\Src\DrawCall.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\FileManager.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Mesh.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\MeshData.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Texture2D.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_draw.cpp" />

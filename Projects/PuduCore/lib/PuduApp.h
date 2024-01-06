@@ -2,19 +2,34 @@
 #include <PuduGraphics.h>
 #include <chrono>
 
+namespace  Pudu
+{
+	class PuduApp
+	{
+	public:
+		virtual ~PuduApp() = default;
+		void Run();
+		void Init();
 
-class PuduApp {
-public:
-	void Init();
-	void Run();
+		bool FrameBufferResized;
+		float TargetFPS = 60;
+		PuduGraphics Graphics;
 
-	bool FrameBufferResized;
-	float TargetFPS = 60;
-	PuduGraphics Graphics;
-private:
-	void Cleanup();
-	void  virtual OnRun() {};
-	void  virtual OnCleanup() {};
+	private:
+		void Cleanup();
 
-	std::chrono::steady_clock::time_point lastFrameTime;
-};
+		void virtual OnRun()
+		{
+		};
+
+		virtual void OnInit() {};
+
+
+		void virtual OnCleanup()
+		{
+		};
+
+		std::chrono::steady_clock::time_point lastFrameTime;
+	};
+
+}
