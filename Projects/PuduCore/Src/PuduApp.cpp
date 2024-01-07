@@ -11,7 +11,7 @@ namespace Pudu
 	void PuduApp::Init()
 	{
 		printf("PuduApp Init");
-		Graphics.Init(800, 600);
+		Graphics.Init(1024, 1024);
 		OnInit();
 		Graphics.InitPipeline();
 

@@ -421,9 +421,10 @@ namespace Pudu
 
 			ImGuiUtils::DrawTransform(m_camera->Transform);
 
-		/*	ImGui::Text(std::format("Position: {},{},{}", cameraPos.x, cameraPos.y, cameraPos.z).c_str());
-			ImGui::Text(std::format("Rotation: {},{},{}", cameraRot.x, cameraRot.y, cameraRot.z).c_str());*/
 			ImGui::Text(std::format("Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
+			vec3 camPos = m_camera->Transform.GetTransformationMatrix() * vec4(0, 0, 0, 1);
+			ImGui::Text(std::format("Cam pos: {},{},{}", camPos.x, camPos.y, camPos.z).c_str());
+
 			ImGui::End();
 			ImGui::Render();
 
@@ -1459,16 +1460,10 @@ namespace Pudu
 
 		UniformBufferObject ubo{};
 
-		ubo.modelMatrix = glm::rotate(mat4(1.0f), time * 0.08f, { 0, 1, 0 });
+		ubo.modelMatrix = mat4(1);
 		ubo.viewMatrix = m_camera->GetViewMatrix();
 		ubo.ProjectionMatrix = m_camera->GetPerspectiveMatrix();
-
-		/*ubo.modelMatrix = glm::rotate(mat4(1.0f), time * 0.08f, { 0, 1, 0 });
-		ubo.viewMatrix = PuduMath::LookAtInverse({ 0, -9.0f, 7.0f }, normalize(vec3(0, 2, -1)), { 0, 1, 0 });*/
-
-		ubo.ProjectionMatrix = PuduMath::PerspectiveMatrix(
-			45, (float)m_swapChainExtent.height / m_swapChainExtent.width, 0.1f, 1000.0f);
-
+		//ubo.ProjectionMatrix = perspective(45.f, 1.f, 0.001f, 1000.f);
 
 		memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));
 	}

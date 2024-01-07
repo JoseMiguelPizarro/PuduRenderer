@@ -12,7 +12,7 @@ quat Transform::GetRotationQuat()
 mat4 Transform::GetTransformationMatrix()
 {
 	mat4 rot = toMat4(quat(Rotation));
-	return rot * scale(mat4(1.0f), Scale) * translate(mat4(1.0f), Position);
+	return translate(mat4(1.0f), Position) * scale(mat4(1.0f), Scale) * rot;
 }
 
 void Transform::SetForward(vec3 forward, vec3 up)

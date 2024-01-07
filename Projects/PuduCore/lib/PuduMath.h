@@ -11,7 +11,7 @@ using namespace glm;
 
 /*
 <<VULKAN COORDINATE SYSTEM>>
-Right hand system. +Z going inwards
+Right hand system. +Z going inwards. Y going down
 
 Z+
  .─────────►X+
@@ -23,7 +23,7 @@ Z+
  Y+
  */
 
-//All matrices are in Column Major
+ //All matrices are in Column Major
 namespace PuduMath {
 
 	static mat4 LookAt(vec3 eyePosition, vec3 targetPosition, vec3 up) {
@@ -54,7 +54,7 @@ namespace PuduMath {
 		mat4 pm
 		(
 			aspect_ratio * focal_length, 0.0f, 0.0f, 0.0f,
-			0.0f, focal_length, 0.0f, 0.0f, //Multiply by -1 to remap to vk ndc space
+			0.0f, -focal_length, 0.0f, 0.0f, //Multiply by -1 to remap to vk ndc space
 			0.0f, 0.0f, A, 1,
 			0.0f, 0.0f, B, 0.0f);
 
@@ -64,9 +64,10 @@ namespace PuduMath {
 
 	static mat4 LookAtInverse(vec3 eyePosition, vec3 forward, vec3 up)
 	{
+		//Right handed, since is the inverse the cross producs right and up are inverted
 		vec3 forward_axis = forward;
-		vec3 right_axis = normalize(cross(up, forward_axis));
-		vec3 up_axis = cross(forward_axis, right_axis);
+		vec3 right_axis = normalize(cross(forward_axis, up)); 
+		vec3 up_axis = cross(right_axis, forward_axis); 
 
 		vec3 t = vec3(-dot(eyePosition, right_axis), -dot(eyePosition, up_axis), -dot(eyePosition, forward_axis));
 
