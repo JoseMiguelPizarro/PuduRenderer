@@ -380,12 +380,6 @@ namespace Pudu
 
 		RecordCommandBuffer(m_drawCall, frame.CommandBuffer, imageIndex);
 
-		// vkResetCommandPool(m_Device, m_ImGuiCommandPool, 0);
-		VkCommandBufferBeginInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
-
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = m_ImGuiRenderPass;
@@ -406,6 +400,12 @@ namespace Pudu
 
 		//ImGui Pass
 		{
+		// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
+		VkCommandBufferBeginInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
+		 
 			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			ImGui_ImplVulkan_NewFrame();
@@ -860,7 +860,7 @@ namespace Pudu
 		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; //Images to be presented in the swap chain
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //Images to be presented in the swap chain
 
 		VkAttachmentReference colorAttachmentRef{};
 
@@ -1421,7 +1421,7 @@ namespace Pudu
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to record command buffer!");
+			PUDU_ERROR("failed to record command buffer!");
 		}
 	}
 
@@ -1586,7 +1586,6 @@ namespace Pudu
 		if (err < 0)
 			abort();
 	}
-
 
 	void PuduGraphics::InitImgui()
 	{
