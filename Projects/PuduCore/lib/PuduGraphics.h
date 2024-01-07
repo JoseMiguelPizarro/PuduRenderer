@@ -118,8 +118,11 @@ namespace Pudu
         void InitImgui();
         VkCommandPool m_ImGuiCommandPool;
         VkRenderPass m_ImGuiRenderPass;
+        VkPipeline m_imguiPipeline;
+        VkDescriptorPool m_ImGuiDescriptorPool;
         std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
         std::vector<VkFramebuffer> m_ImGuiFramebuffers;
+
         void CreateImGuiRenderPass();
         void CreateImGUICommandBuffers();
         void CreateImGUIFrameBuffer();
@@ -189,7 +192,7 @@ namespace Pudu
         std::vector<VkImage> m_swapChainImages;
         VkRenderPass m_renderPass;
         VkPipeline m_graphicsPipeline;
-        VkPipeline m_imguiPipeline;
+        
         std::vector<VkFramebuffer> m_swapChainFrameBuffers;
         VkCommandPool m_commandPool;
 

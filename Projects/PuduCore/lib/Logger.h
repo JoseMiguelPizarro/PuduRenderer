@@ -11,3 +11,6 @@ static void Print(const char* text, ...) {
 
 #define PUDU_ERROR(message)\
  throw std::runtime_error(std::format("Error: {}", message))
+
+#define LOG(message)\
+Print(message)

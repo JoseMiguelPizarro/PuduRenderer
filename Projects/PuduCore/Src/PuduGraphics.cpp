@@ -336,6 +336,8 @@ namespace Pudu
 
 	void PuduGraphics::CreateImGUIFrameBuffer()
 	{
+		LOG("CreateImGuiFrameBuffers");
+
 		m_ImGuiFramebuffers.resize(m_swapChainImagesViews.size());
 
 		VkImageView attachment[1];
@@ -400,12 +402,12 @@ namespace Pudu
 
 		//ImGui Pass
 		{
-		// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
-		VkCommandBufferBeginInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
-		 
+			// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
+			VkCommandBufferBeginInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+			vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
+
 			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			ImGui_ImplVulkan_NewFrame();
@@ -661,12 +663,13 @@ namespace Pudu
 
 	void PuduGraphics::PickPhysicalDevice()
 	{
+		LOG("PickPhysicalDevice");
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(m_vkInstance, &deviceCount, nullptr);
 
 		if (deviceCount == 0)
 		{
-			throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+			PUDU_ERROR("Failed to find GPUs with Vulkan support!");
 		}
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -693,12 +696,13 @@ namespace Pudu
 
 		if (m_physicalDevice == VK_NULL_HANDLE)
 		{
-			throw std::runtime_error("Failed to find a suitable GPU!");
+			PUDU_ERROR("Failed to find a suitable GPU!");
 		}
 	}
 
 	void PuduGraphics::CreateLogicalDevice()
 	{
+		LOG("CreateLogicalDevice");
 		QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -773,8 +777,9 @@ namespace Pudu
 
 	void PuduGraphics::CreateSwapChain()
 	{
-		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice);
+		LOG("CreateSwapChain");
 
+		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice);
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
 		VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
@@ -817,17 +822,17 @@ namespace Pudu
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(Device, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(Device, &createInfo, m_allocatorPtr, &m_swapChain) != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to create swap chain!");
+			PUDU_ERROR("failed to create swap chain!");
 		}
 		else
 		{
-			Print("SwapChain created!");
+			LOG("SwapChain created!");
 		}
 
-		vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, nullptr);
 		m_swapChainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, nullptr);
 		vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, m_swapChainImages.data());
 
 		m_imageCount = imageCount;
@@ -837,6 +842,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateImageViews()
 	{
+		LOG("CreateImageViews");
 		m_swapChainImagesViews.resize(m_swapChainImages.size());
 
 		for (size_t i = 0; i < m_swapChainImages.size(); i++)
@@ -848,6 +854,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateRenderPass()
 	{
+		LOG("CreateRenderPass");
 		//Color attachment
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = m_swapChainImageFormat;
@@ -1020,6 +1027,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateGraphicsPipeline()
 	{
+		LOG("CreateGraphicsPipeline");
 		auto vertShaderCode = FileManager::ReadAssetFile("Shaders/Compiled/triangle.vert.spv");
 		auto fragShaderCode = FileManager::ReadAssetFile("Shaders/Compiled/triangle.frag.spv");
 
@@ -1150,6 +1158,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateFrameBuffers()
 	{
+		LOG("CreateFrameBuffers");
 		m_swapChainFrameBuffers.resize(m_swapChainImagesViews.size());
 
 		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
@@ -1183,6 +1192,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateCommandPool(VkCommandPool* cmdPool)
 	{
+		LOG("CreateCommandPool");
 		QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice);
 
 		VkCommandPoolCreateInfo poolInfo{};
@@ -1310,6 +1320,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateDescriptorSetLayout()
 	{
+		LOG("CreateDescriptorSetLayout");
 		VkDescriptorSetLayoutBinding uboLayoutBinding{};
 		uboLayoutBinding.binding = 0;
 		uboLayoutBinding.descriptorCount = 1;
@@ -1595,7 +1606,6 @@ namespace Pudu
 		//ImGui::StyleColorsLight();
 		ImGui_ImplGlfw_InitForVulkan(WindowPtr, true);
 
-		VkDescriptorPool imGuiDescriptorPool;
 		// Create Descriptor Pool
 		// The example only requires a single combined image sampler descriptor for the font image and only uses one descriptor set (for that)
 		// If you wish to load e.g. additional textures you may need to alter pools sizes.
@@ -1603,27 +1613,27 @@ namespace Pudu
 			{
 				VkDescriptorPoolSize pool_sizes[] =
 				{
-					{VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
-					{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
-					{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
-					{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
-					{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
-					{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
-					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
-					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
-					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
-					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
-					{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}
+					{VK_DESCRIPTOR_TYPE_SAMPLER, 1},
+					{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
+					{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
+					{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
+					{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1},
+					{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1},
+					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
+					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
+					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
+					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1},
+					{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1}
 				};
 
 				VkDescriptorPoolCreateInfo pool_info = {};
 				pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 				pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-				pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+				pool_info.maxSets = IM_ARRAYSIZE(pool_sizes);
 				pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
 				pool_info.pPoolSizes = pool_sizes;
 
-				if (vkCreateDescriptorPool(Device, &pool_info, nullptr, &imGuiDescriptorPool) != VK_SUCCESS)
+				if (vkCreateDescriptorPool(Device, &pool_info, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 					throw std::runtime_error("Create DescriptorPool for m_ImGuiDescriptorPool failed!");
 			}
 		}
@@ -1640,7 +1650,7 @@ namespace Pudu
 		initInfo.QueueFamily = FindQueueFamilies(m_physicalDevice).graphicsFamily.value();
 		initInfo.Queue = m_graphicsQueue;
 		initInfo.PipelineCache = VK_NULL_HANDLE;
-		initInfo.DescriptorPool = imGuiDescriptorPool;
+		initInfo.DescriptorPool = m_ImGuiDescriptorPool;
 		initInfo.Subpass = 0;
 		initInfo.ImageCount = m_imageCount;
 		initInfo.MinImageCount = m_imageCount;
@@ -1659,6 +1669,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateDepthResources()
 	{
+		LOG("CreateDepthResources");
 		VkFormat depthFormat = FindDepthFormat();
 
 		CreateImage(m_swapChainExtent.width, m_swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL,
@@ -1879,10 +1890,10 @@ namespace Pudu
 
 		vkDestroySampler(Device, m_textureSampler, m_allocatorPtr);
 
-
 		vkDestroyPipeline(Device, m_graphicsPipeline, m_allocatorPtr);
 		vkDestroyPipelineLayout(Device, m_pipelineLayout, m_allocatorPtr);
 		vkDestroyRenderPass(Device, m_renderPass, m_allocatorPtr);
+
 
 		for (int i = 0; i < m_uniformBuffers.size(); i++)
 		{
@@ -1902,7 +1913,18 @@ namespace Pudu
 
 		vkDestroyCommandPool(Device, m_commandPool, m_allocatorPtr);
 
-		vkDestroyDevice(Device, m_allocatorPtr);
+		//ImGui
+		{
+			vkDestroyCommandPool(Device, m_ImGuiCommandPool, m_allocatorPtr);
+			vkDestroyRenderPass(Device, m_ImGuiRenderPass, m_allocatorPtr);
+			vkDestroyDescriptorPool(Device, m_ImGuiDescriptorPool, m_allocatorPtr);
+			//vkDestroyPipeline(Device, m_imguiPipeline, m_allocatorPtr);
+
+			for (auto frameBuffer : m_ImGuiFramebuffers)
+			{
+				vkDestroyFramebuffer(Device, frameBuffer, m_allocatorPtr);
+			}
+		}
 
 		if (enableValidationLayers)
 		{
@@ -1910,11 +1932,16 @@ namespace Pudu
 		}
 
 		vkDestroySurfaceKHR(m_vkInstance, m_surface, m_allocatorPtr); //Be sure to destroy surface before instance
+
+		vkDestroyDevice(Device, m_allocatorPtr);
+
 		vkDestroyInstance(m_vkInstance, nullptr);
 
 		glfwDestroyWindow(WindowPtr);
 
 		glfwTerminate();
+
+
 
 		m_initialized = false;
 	}
@@ -1924,7 +1951,6 @@ namespace Pudu
 		vkDestroyImageView(Device, m_depthImageView, nullptr);
 		vkDestroyImage(Device, m_depthImage, nullptr);
 		vkFreeMemory(Device, m_depthImageMemory, nullptr);
-
 
 		for (size_t i = 0; i < m_swapChainFrameBuffers.size(); i++)
 		{

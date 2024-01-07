@@ -28,4 +28,5 @@ void TriangleApp::OnInit()
 void TriangleApp::OnCleanup()
 {
 	Graphics.DestroyMesh(&m_modelMesh);
+	Graphics.DestroyTexture(m_texture);
 }
