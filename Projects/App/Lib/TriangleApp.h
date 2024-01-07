@@ -14,7 +14,10 @@ public:
 private:
     void OnCleanup() override;
 
+    std::string TEXTURE_PATH = "models/chocobo/chocobo.png";
     std::string MODEL_PATH = "models/chocobo/chocobo.obj";
     DrawCall m_drawCall;
+    Camera m_camera;
     Mesh m_modelMesh;
+    Texture2d m_texture;
 };

@@ -19,13 +19,15 @@
 #include "DrawCall.h"
 #include "Mesh.h"
 #include "FileManager.h"
+#include <Texture2D.h>
+
+#include "Camera.h"
 
 namespace Pudu
 {
     typedef std::optional<uint32_t> Optional;
 
     using namespace glm;
-
 
     struct QueueFamilyIndices
     {
@@ -77,10 +79,11 @@ namespace Pudu
         void Cleanup();
         Mesh CreateMesh(MeshData& meshData);
         void DestroyMesh(Mesh* mesh);
+        void DestroyTexture(Texture2d& texture);
+        Texture2d CreateTexture(std::string& path);
+        void SetCamera(Camera* camera){m_camera = camera;}
 
     private:
-        std::string TEXTURE_PATH = "models/chocobo/chocobo.png";
-
         void InitVulkan();
         void CreateVulkanInstance();
         void PickPhysicalDevice();
@@ -95,8 +98,7 @@ namespace Pudu
         void CreateFrames();
         void CreateCommandPool(VkCommandPool* cmdPool);
 
-        void CreateTextureImage();
-        void CreateTextureImageView();
+        void CreateTextureImageView(Texture2d& texture2d);
         void CreateTextureSampler();
 
         void CreateDescriptorPool();
@@ -110,7 +112,7 @@ namespace Pudu
         void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
         void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-        
+        Camera* m_camera = nullptr;
         
 #pragma region  ImGUI
         void InitImgui();
@@ -153,7 +155,7 @@ namespace Pudu
 
         VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
-        VkImageView m_textureImageView;
+        
         VkSampler m_textureSampler;
 
         void CreateUniformBuffers();
@@ -191,8 +193,7 @@ namespace Pudu
         std::vector<VkFramebuffer> m_swapChainFrameBuffers;
         VkCommandPool m_commandPool;
 
-        VkImage m_textureImage;
-        VkDeviceMemory m_textureImageMemory;
+       
 
         std::vector<GraphicsBuffer> m_uniformBuffers;
 

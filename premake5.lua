@@ -108,6 +108,10 @@ project "PuduCore"
    		"%{IncludeDir.VulkanSDK}"
 	}
 
+	vpaths {
+		--leave it empty to generate filters respecting the folder structure
+	}
+
 -- This function includes GLFW's header files
 
 function includeVulkan()

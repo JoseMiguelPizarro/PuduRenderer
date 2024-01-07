@@ -10,5 +10,6 @@ float4 main(PS_INPUT input):SV_TARGET {
     float4 output;
     output = float4(mainTex.Sample(mainTexSampler, input.uv).rgb,1.0);
     //output = float4(input.uv,0,1);
+    //return float4(1.0f,0.0f,0.0f,1.0f);
     return pow(output,1/2.2);
 }

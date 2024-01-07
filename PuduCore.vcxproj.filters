@@ -12,6 +12,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Projects\PuduCore\lib\Camera.h">
+      <Filter>lib</Filter>
+    </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\DrawCall.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -48,10 +51,16 @@
     <ClInclude Include="Projects\PuduCore\lib\ImGui\imstb_truetype.h">
       <Filter>lib\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\ImGuiUtils.h">
+      <Filter>lib</Filter>
+    </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\Logger.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\Mesh.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\MeshData.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
@@ -69,6 +78,9 @@
     <ClInclude Include="Projects\PuduCore\lib\Texture2D.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\Transform.h">
+      <Filter>lib</Filter>
+    </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -77,6 +89,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Projects\PuduCore\Src\Camera.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\DrawCall.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -86,7 +101,13 @@
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\ImGuiUtils.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\Mesh.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\MeshData.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp">
@@ -96,6 +117,9 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\Texture2D.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\Transform.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui.cpp">

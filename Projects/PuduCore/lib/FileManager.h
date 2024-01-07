@@ -4,7 +4,7 @@
 #include <format>
 
 #include "Mesh.h"
-#include "../Src/MeshData.h"
+#include "MeshData.h"
 
 static const std::string ASSETS_FOLDER_PATH = "Assets";
 namespace Pudu {

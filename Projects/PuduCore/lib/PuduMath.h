@@ -2,6 +2,8 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 #define PI 3.141592653589
 
@@ -59,9 +61,10 @@ namespace PuduMath {
 		return pm;
 	}
 
-	static mat4 LookAtInverse(vec3 eyePosition, vec3 targetPosition, vec3 up)
+
+	static mat4 LookAtInverse(vec3 eyePosition, vec3 forward, vec3 up)
 	{
-		vec3 forward_axis = normalize(targetPosition - eyePosition);;
+		vec3 forward_axis = forward;
 		vec3 right_axis = normalize(cross(up, forward_axis));
 		vec3 up_axis = cross(forward_axis, right_axis);
 
@@ -72,6 +75,27 @@ namespace PuduMath {
 			vec4(right_axis.y,up_axis.y,forward_axis.y,0.0f),
 			vec4(right_axis.z,up_axis.z,forward_axis.z,0.0f),
 			vec4(-dot(eyePosition,right_axis),-dot(eyePosition,up_axis),-dot(eyePosition,forward_axis),1.0f) };
+	}
+
+	static quat LookRotation(vec3 forward, vec3 up)
+	{
+		vec3 right = normalize(cross(up, forward));
+		return quat(mat3(right, cross(forward, right), forward));
+	}
+
+	/// <summary>
+	/// Returns euler angles in radians, picht(X), yaw(y), roll(z)
+	/// </summary>
+	/// <param name="q"></param>
+	/// <returns></returns>
+	static vec3 EulerAnglesFromQuat(quat q) {
+		mat3 r = toMat3(q); //Apparently glm handles rotation in Rz*Rx*Ry
+
+		float pitch = asin(r[1][2]); //X axis
+		float yaw = atan2(-r[0][2], r[2][2]); //Y axis
+		float roll = atan2(-r[1][0], r[1][1]);//Z axis
+
+		return vec3(pitch, yaw, roll);
 	}
 }
 

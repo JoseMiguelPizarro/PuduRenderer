@@ -10,11 +10,10 @@ namespace Pudu
 {
 	void PuduApp::Init()
 	{
-
 		printf("PuduApp Init");
 		Graphics.Init(800, 600);
-		Graphics.InitPipeline();
 		OnInit();
+		Graphics.InitPipeline();
 
 		lastFrameTime = std::chrono::high_resolution_clock::now();
 	}
