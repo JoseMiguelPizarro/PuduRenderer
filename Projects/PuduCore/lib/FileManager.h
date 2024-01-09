@@ -4,7 +4,7 @@
 #include <format>
 
 #include "Mesh.h"
-#include "MeshData.h"
+#include "MeshCreationData.h"
 
 static const std::string ASSETS_FOLDER_PATH = "Assets";
 namespace Pudu {
@@ -26,7 +26,7 @@ namespace Pudu {
 
         static std::vector<char> ReadShaderFile(const std::string& shaderPath);
 
-        static MeshData LoadModelObj(std::string assetPath);
+        static MeshCreationData LoadModelObj(std::string assetPath);
     };
 
 }

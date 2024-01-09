@@ -1,22 +1,17 @@
 ﻿#pragma once
-#include "Mesh.h"
-#include "Texture2D.h"
 
+#include "Model.h"
 namespace Pudu
 {
 	class DrawCall
 	{
 	public:
-		Mesh* GetMesh() const { return m_mesh; }
-		Texture2d* GetTexture() const { return m_texture; }
+		Model* ModelPtr;
 
 		DrawCall() {}
-		DrawCall(Mesh* mesh, Texture2d* texture) : m_mesh(mesh), m_texture(texture)
+		DrawCall(Model* model)
 		{
+			ModelPtr = model;
 		}
-
-	private:
-		Mesh* m_mesh = nullptr;
-		Texture2d* m_texture = nullptr;
 	};
 }

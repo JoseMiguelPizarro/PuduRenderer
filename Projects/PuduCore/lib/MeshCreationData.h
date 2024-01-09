@@ -6,9 +6,8 @@
 
 namespace Pudu
 {
-    struct MeshData
+    struct MeshCreationData
     {
-    public:
         std::vector<Vertex> Vertices;
         std::vector<uint32_t> Indices;
     };

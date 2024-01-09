@@ -22,206 +22,210 @@
 #include <Texture2D.h>
 
 #include "Camera.h"
+#include "Scene.h"
+#include "Model.h"
+#include "UniformBufferObject.h"
 
 namespace Pudu
 {
-    typedef std::optional<uint32_t> Optional;
+	typedef std::optional<uint32_t> Optional;
 
-    using namespace glm;
+	using namespace glm;
 
-    struct QueueFamilyIndices
-    {
-        Optional graphicsFamily;
-        Optional presentFamily;
+	struct QueueFamilyIndices
+	{
+		Optional graphicsFamily;
+		Optional presentFamily;
 
-        bool IsComplete()
-        {
-            return graphicsFamily.has_value() && presentFamily.has_value();
-        }
-    };
+		bool IsComplete()
+		{
+			return graphicsFamily.has_value() && presentFamily.has_value();
+		}
+	};
 
-    struct SwapChainSupportDetails
-    {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
-    };
+	struct SwapChainSupportDetails
+	{
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
 
-    const std::vector<const char*> DeviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
+	const std::vector<const char*> DeviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	};
 
-    class PuduGraphics
-    {
-    public:
-        void Init(int windowWidth, int windowHeight);
-        void DrawFrame();
+	class PuduGraphics
+	{
+	public:
+		void Init(int windowWidth, int windowHeight);
+		void DrawFrame();
 
-        uint32_t WindowWidth = 800;
-        uint32_t WindowHeight = 600;
+		uint32_t WindowWidth = 800;
+		uint32_t WindowHeight = 600;
 
-        const std::vector<const char*> validationLayers = {
-            "VK_LAYER_KHRONOS_validation"
-        };
-        
-        DrawCall m_drawCall;
+		const std::vector<const char*> validationLayers = {
+			"VK_LAYER_KHRONOS_validation"
+		};
+
+		Scene SceneToRender;
+		DrawCall m_drawCall;
 
 #ifdef NDEBUG
 		const bool enableValidationLayers = false;
 #else
-        const bool enableValidationLayers = true;
+		const bool enableValidationLayers = true;
 #endif
 
-        VkDevice Device;
-        GLFWwindow* WindowPtr;
-        bool FramebufferResized = false;
-        void InitPipeline();
-        void Cleanup();
-        Mesh CreateMesh(MeshData& meshData);
-        void DestroyMesh(Mesh* mesh);
-        void DestroyTexture(Texture2d& texture);
-        Texture2d CreateTexture(std::string& path);
-        void SetCamera(Camera* camera){m_camera = camera;}
+		VkDevice Device;
+		GLFWwindow* WindowPtr;
+		bool FramebufferResized = false;
+		void InitPipeline();
+		void Cleanup();
+		Model CreateModel(Mesh* mesh, Material material);
+		Mesh CreateMesh(MeshCreationData& meshData);
+		void DestroyMesh(Mesh* mesh);
+		void DestroyTexture(Texture2d& texture);
+		Texture2d CreateTexture(std::string& path);
+		void SetCamera(Camera* camera) { m_camera = camera; }
 
-    private:
-        void InitVulkan();
-        void CreateVulkanInstance();
-        void PickPhysicalDevice();
-        void CreateLogicalDevice();
-        void CreateSurface();
-        void CreateSwapChain();
-        void CreateImageViews();
-        void CreateRenderPass();
-        void CreateDescriptorSetLayout();
-        void CreateGraphicsPipeline();
-        void CreateFrameBuffers();
-        void CreateFrames();
-        void CreateCommandPool(VkCommandPool* cmdPool);
+	private:
+		void InitVulkan();
+		void CreateVulkanInstance();
+		void PickPhysicalDevice();
+		void CreateLogicalDevice();
+		void CreateSurface();
+		void CreateSwapChain();
+		void CreateImageViews();
+		void CreateRenderPass();
+		void CreateDescriptorSetLayout();
+		void CreateGraphicsPipeline();
+		void CreateFrameBuffers();
+		void CreateFrames();
+		void CreateCommandPool(VkCommandPool* cmdPool);
 
-        void CreateTextureImageView(Texture2d& texture2d);
-        void CreateTextureSampler();
+		void CreateTextureImageView(Texture2d& texture2d);
+		void CreateTextureSampler();
 
-        void CreateDescriptorPool();
-        void CreateDescriptorSets();
-        void CreateCommandBuffer();
-        void CreateSyncObjects();
-        void RecordCommandBuffer(const DrawCall& drawCall, VkCommandBuffer commandBuffer, uint32_t imageIndex);
-        void RecreateSwapChain();
-        void UpdateUniformBuffer(uint32_t currentImage);
+		void CreateDescriptorPool();
+		void CreateDescriptorSets(Model* model);
+		void CreateCommandBuffer();
+		void CreateSyncObjects();
+		void RecordCommandBuffer(const DrawCall& drawCall, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		void RecreateSwapChain();
+		void UpdateUniformBuffer(uint32_t currentImage);
+		UniformBufferObject GetUniformBufferObject(Model* model);
 
-        void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-        void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		Camera* m_camera = nullptr;
 
-        Camera* m_camera = nullptr;
-        
 #pragma region  ImGUI
-        void InitImgui();
-        VkCommandPool m_ImGuiCommandPool;
-        VkRenderPass m_ImGuiRenderPass;
-        VkPipeline m_imguiPipeline;
-        VkDescriptorPool m_ImGuiDescriptorPool;
-        std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
-        std::vector<VkFramebuffer> m_ImGuiFramebuffers;
+		void InitImgui();
+		VkCommandPool m_ImGuiCommandPool;
+		VkRenderPass m_ImGuiRenderPass;
+		VkPipeline m_imguiPipeline;
+		VkDescriptorPool m_ImGuiDescriptorPool;
+		std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
+		std::vector<VkFramebuffer> m_ImGuiFramebuffers;
 
-        void CreateImGuiRenderPass();
-        void CreateImGUICommandBuffers();
-        void CreateImGUIFrameBuffer();
+		void CreateImGuiRenderPass();
+		void CreateImGUICommandBuffers();
+		void CreateImGUIFrameBuffer();
 #pragma endregion
 
 #pragma region DepthBuffer
-        VkImage m_depthImage;
-        VkDeviceMemory m_depthImageMemory;
-        VkImageView m_depthImageView;
+		VkImage m_depthImage;
+		VkDeviceMemory m_depthImageMemory;
+		VkImageView m_depthImageView;
 
-        void CreateDepthResources();
-        VkFormat FindDepthFormat();
+		void CreateDepthResources();
+		VkFormat FindDepthFormat();
 
-        bool HasStencilComponent(VkFormat format);
+		bool HasStencilComponent(VkFormat format);
 #pragma endregion
 
-        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
-                                     VkFormatFeatureFlags features);
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
+			VkFormatFeatureFlags features);
 
-        VkCommandBuffer BeginSingleTimeCommands();
-        void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+		VkCommandBuffer BeginSingleTimeCommands();
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
-        VkPipelineCache m_pipelineCache;
-        void CleanupSwapChain();
-        
-        GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
-                                            VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        void CreateImage(uint32_t width, uint32_t height, VkFormat format,
-                         VkImageTiling tiling, VkImageUsageFlags usage,
-                         VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+		VkPipelineCache m_pipelineCache;
+		void CleanupSwapChain();
 
-        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
+			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
+			VkImageTiling tiling, VkImageUsageFlags usage,
+			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
-        VkShaderModule CreateShaderModule(const std::vector<char>& code);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
-        
-        VkSampler m_textureSampler;
+		VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
-        void CreateUniformBuffers();
 
-        SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-        bool IsDeviceSuitable(VkPhysicalDevice device);
-        bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-        QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-        void InitWindow();
-        bool CheckValidationLayerSupport();
-        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-        void SetupDebugMessenger();
-        VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-        VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-        VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-        void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                          VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-        void DestroyBuffer(GraphicsBuffer buffer);
-        std::vector<const char*> GetRequiredExtensions();
-        std::vector<VkImageView> m_swapChainImagesViews;
-        VkInstance m_vkInstance;
-        VkSurfaceKHR m_surface;
-        VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-        VkQueue m_graphicsQueue;
-        VkQueue m_presentationQueue;
-        VkSwapchainKHR m_swapChain;
-        VkFormat m_swapChainImageFormat;
-        VkExtent2D m_swapChainExtent;
-        std::vector<VkImage> m_swapChainImages;
-        VkRenderPass m_renderPass;
-        VkPipeline m_graphicsPipeline;
-        
-        std::vector<VkFramebuffer> m_swapChainFrameBuffers;
-        VkCommandPool m_commandPool;
+		VkSampler m_textureSampler;
 
-       
+		void CreateUniformBuffers();
 
-        std::vector<GraphicsBuffer> m_uniformBuffers;
+		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+		bool IsDeviceSuitable(VkPhysicalDevice device);
+		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+		void InitWindow();
+		bool CheckValidationLayerSupport();
+		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+		void SetupDebugMessenger();
+		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+			VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		void DestroyBuffer(GraphicsBuffer buffer);
+		std::vector<const char*> GetRequiredExtensions();
+		std::vector<VkImageView> m_swapChainImagesViews;
+		VkInstance m_vkInstance;
+		VkSurfaceKHR m_surface;
+		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+		VkQueue m_graphicsQueue;
+		VkQueue m_presentationQueue;
+		VkSwapchainKHR m_swapChain;
+		VkFormat m_swapChainImageFormat;
+		VkExtent2D m_swapChainExtent;
+		std::vector<VkImage> m_swapChainImages;
+		VkRenderPass m_renderPass;
+		VkPipeline m_graphicsPipeline;
 
-        VkDescriptorSetLayout m_descriptorSetLayout;
-        VkPipelineLayout m_pipelineLayout;
+		std::vector<VkFramebuffer> m_swapChainFrameBuffers;
+		VkCommandPool m_commandPool;
 
-        VkDescriptorPool m_descriptorPool;
-        std::vector<VkDescriptorSet> m_descriptorSets;
 
-        VkDebugUtilsMessengerEXT m_debugMessenger;
 
-        std::vector<Frame> m_Frames;
+		std::vector<GraphicsBuffer> m_uniformBuffers;
 
-        const int MAX_FRAMES_IN_FLIGHT = 2;
-        uint32_t m_currentFrame = 0;
-        uint32_t m_imageCount;
+		VkDescriptorSetLayout m_descriptorSetLayout;
+		VkPipelineLayout m_pipelineLayout;
 
-        bool m_initialized = false;
+		VkDescriptorPool m_descriptorPool;
 
-        VkAllocationCallbacks* m_allocatorPtr = nullptr;
-    };
+		VkDebugUtilsMessengerEXT m_debugMessenger;
 
-    void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
-    {
-        PuduGraphics* app = reinterpret_cast<PuduGraphics*>(glfwGetWindowUserPointer(window));
-        app->FramebufferResized = true;
-    }
+		std::vector<Frame> m_Frames;
+
+		const int MAX_FRAMES_IN_FLIGHT = 2;
+		uint32_t m_currentFrame = 0;
+		uint32_t m_imageCount;
+
+		bool m_initialized = false;
+
+		VkAllocationCallbacks* m_allocatorPtr = nullptr;
+	};
+
+	void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		PuduGraphics* app = reinterpret_cast<PuduGraphics*>(glfwGetWindowUserPointer(window));
+		app->FramebufferResized = true;
+	}
 }

@@ -19,10 +19,29 @@ void TriangleApp::OnInit()
 
 	Graphics.SetCamera(&m_camera);
 
+	m_scene = Scene{};
+
 	m_modelMesh = Graphics.CreateMesh(modelData);
+	
 	m_texture = Graphics.CreateTexture(TEXTURE_PATH);
-	m_drawCall = DrawCall(&m_modelMesh, &m_texture);
-	Graphics.m_drawCall = m_drawCall;
+	Material material{};
+	material.Texture = &m_texture;
+	m_model = Graphics.CreateModel(&m_modelMesh, material);
+	m_model.Transform.Rotation = vec3(0, -90, 0);
+	m_scene.AddModel(&m_model);
+
+	m_model2 = Graphics.CreateModel(&m_modelMesh, material);
+	m_model2.Transform.Position = vec3(-4, 0, -5);
+	m_model2.Transform.Rotation = vec3(0, -120, 0);
+
+	m_model3 = Graphics.CreateModel(&m_modelMesh, material);
+	m_model3.Transform.Position = vec3(4, 0, -8);
+	m_model3.Transform.Rotation = vec3(0, -30, 0);
+
+	m_scene.AddModel(&m_model2);
+	m_scene.AddModel(&m_model3);
+
+	Graphics.SceneToRender = m_scene;
 }
 
 void TriangleApp::OnCleanup()

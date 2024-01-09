@@ -16,8 +16,11 @@ private:
 
     std::string TEXTURE_PATH = "models/chocobo/chocobo.png";
     std::string MODEL_PATH = "models/chocobo/chocobo.obj";
-    DrawCall m_drawCall;
+    Scene m_scene;
     Camera m_camera;
     Mesh m_modelMesh;
+    Model m_model;
+    Model m_model2;
+    Model m_model3;
     Texture2d m_texture;
 };

@@ -55,7 +55,7 @@ namespace Pudu {
 		return ReadFile(path);
 	}
 
-	MeshData FileManager::LoadModelObj(std::string assetPath)
+	MeshCreationData FileManager::LoadModelObj(std::string assetPath)
 	{
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;

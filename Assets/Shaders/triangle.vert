@@ -12,6 +12,7 @@ struct UBO
 	float4x4 projectionMatrix;
 };
 
+[[vk::push_constant]]
 ConstantBuffer<UBO> ubo: register(b0);
 
 struct VSOutput

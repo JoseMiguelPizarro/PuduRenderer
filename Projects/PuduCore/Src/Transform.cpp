@@ -11,7 +11,7 @@ quat Transform::GetRotationQuat()
 
 mat4 Transform::GetTransformationMatrix()
 {
-	mat4 rot = toMat4(quat(Rotation));
+	mat4 rot = toMat4(GetRotationQuat());
 	return translate(mat4(1.0f), Position) * scale(mat4(1.0f), Scale) * rot;
 }
 

@@ -60,7 +60,7 @@
     <ClInclude Include="Projects\PuduCore\lib\Mesh.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="Projects\PuduCore\lib\MeshData.h">
+    <ClInclude Include="Projects\PuduCore\lib\MeshCreationData.h">
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="Projects\PuduCore\lib\PuduApp.h">
@@ -87,6 +87,10 @@
     <ClInclude Include="Projects\PuduCore\lib\vertex.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\Model.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Material.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Shader.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Scene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\Camera.cpp">
@@ -107,7 +111,7 @@
     <ClCompile Include="Projects\PuduCore\Src\Mesh.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Projects\PuduCore\Src\MeshData.cpp">
+    <ClCompile Include="Projects\PuduCore\Src\MeshCreationData.cpp">
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp">
@@ -143,6 +147,10 @@
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_widgets.cpp">
       <Filter>lib\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\Model.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Material.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Shader.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Projects\PuduCore\lib\ImGui\LICENSE.txt">
