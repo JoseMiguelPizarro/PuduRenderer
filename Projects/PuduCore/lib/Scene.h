@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
-#include <DrawCall.h>
+#include "DrawCall.h"
+#include "PuduTime.h"
+#include "Camera.h";
 
 namespace Pudu {
 	class Scene
@@ -10,6 +12,14 @@ namespace Pudu {
 			return m_DrawCalls;
 		}
 
+		Camera* Camera = nullptr;
+
+		Scene() {}
+		Scene(PuduTime* time) {
+			Time = time;
+		}
+
+		PuduTime* Time = nullptr;
 		void AddModel(Model* model);
 
 	private:

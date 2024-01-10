@@ -112,6 +112,7 @@
     <ClInclude Include="Projects\PuduCore\lib\Scene.h" />
     <ClInclude Include="Projects\PuduCore\lib\Shader.h" />
     <ClInclude Include="Projects\PuduCore\lib\Texture2D.h" />
+    <ClInclude Include="Projects\PuduCore\lib\PuduTime.h" />
     <ClInclude Include="Projects\PuduCore\lib\Transform.h" />
     <ClInclude Include="Projects\PuduCore\lib\UniformBufferObject.h" />
     <ClInclude Include="Projects\PuduCore\lib\vertex.h" />
@@ -131,6 +132,7 @@
     <ClCompile Include="Projects\PuduCore\Src\Scene.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Shader.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Texture2D.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\PuduTime.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Transform.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_demo.cpp" />

@@ -1,6 +1,7 @@
 #pragma once
-#include <PuduGraphics.h>
 #include <chrono>
+#include "PuduGraphics.h"
+#include "PuduTime.h"
 
 namespace  Pudu
 {
@@ -14,6 +15,7 @@ namespace  Pudu
 		bool FrameBufferResized;
 		float TargetFPS = 60;
 		PuduGraphics Graphics;
+		PuduTime Time;
 
 	private:
 		void Cleanup();
@@ -28,8 +30,6 @@ namespace  Pudu
 		void virtual OnCleanup()
 		{
 		};
-
-		std::chrono::steady_clock::time_point lastFrameTime;
 	};
 
 }

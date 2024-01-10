@@ -19,7 +19,8 @@ void Transform::SetForward(vec3 forward, vec3 up)
 {
 	quat rot = PuduMath::LookRotation(normalize(forward), normalize(up));
 
-	vec3 rotEuler = degrees(PuduMath::EulerAnglesFromQuat(rot));
+	//vec3 rotEuler = degrees(PuduMath::EulerAnglesFromQuat(rot));
+	vec3 rotEuler = degrees(eulerAngles(rot));
 	Rotation = rotEuler;
 }
 

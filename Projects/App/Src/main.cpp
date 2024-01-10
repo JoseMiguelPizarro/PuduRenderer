@@ -2,8 +2,8 @@
 #include <GLFW/glfw3.h>
 
 #include <string>
-#include <TriangleApp.h>
 #include <iostream>
+#include "TriangleApp.h"
 
 int main() {
 	TriangleApp app;

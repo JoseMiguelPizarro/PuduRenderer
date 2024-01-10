@@ -19,7 +19,7 @@
 #include "DrawCall.h"
 #include "Mesh.h"
 #include "FileManager.h"
-#include <Texture2D.h>
+#include "Texture2D.h"
 
 #include "Camera.h"
 #include "Scene.h"
@@ -68,7 +68,6 @@ namespace Pudu
 		};
 
 		Scene SceneToRender;
-		DrawCall m_drawCall;
 
 #ifdef NDEBUG
 		const bool enableValidationLayers = false;
@@ -86,7 +85,6 @@ namespace Pudu
 		void DestroyMesh(Mesh* mesh);
 		void DestroyTexture(Texture2d& texture);
 		Texture2d CreateTexture(std::string& path);
-		void SetCamera(Camera* camera) { m_camera = camera; }
 
 	private:
 		void InitVulkan();
@@ -110,14 +108,13 @@ namespace Pudu
 		void CreateDescriptorSets(Model* model);
 		void CreateCommandBuffer();
 		void CreateSyncObjects();
-		void RecordCommandBuffer(const DrawCall& drawCall, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
-		UniformBufferObject GetUniformBufferObject(Model* model);
+		UniformBufferObject GetUniformBufferObject(Camera* cam, Model* model);
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-		Camera* m_camera = nullptr;
 
 #pragma region  ImGUI
 		void InitImgui();

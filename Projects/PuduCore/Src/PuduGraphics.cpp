@@ -5,6 +5,7 @@
 #include <stb_image.h>
 
 #include <format>
+#include <limits>
 
 #include "PuduGraphics.h"
 #include <PuduGlobals.h>
@@ -173,7 +174,7 @@ namespace Pudu
 
 	VkExtent2D PuduGraphics::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
-		if (capabilities.currentExtent.width != numeric_limits<uint32_t>::max())
+		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
 			return capabilities.currentExtent;
 		}
@@ -380,7 +381,12 @@ namespace Pudu
 
 		vkResetFences(Device, 1, &frame.InFlightFence);
 
-		RecordCommandBuffer(m_drawCall, frame.CommandBuffer, imageIndex);
+		float deltaTime = SceneToRender.Time->DeltaTime();
+		Camera* cam = SceneToRender.Camera;
+
+		vkResetCommandBuffer(frame.CommandBuffer, 0);
+
+		RecordCommandBuffer(frame.CommandBuffer, imageIndex);
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -393,10 +399,6 @@ namespace Pudu
 		renderPassInfo.pClearValues = &clearColor;
 
 		std::vector<VkCommandBuffer> submitCommandBuffers;
-
-		//UpdateUniformBuffer(m_currentFrame);
-
-		//vkResetCommandBuffer(frame.CommandBuffer, 0); //RESET FOR IMGUI
 
 		submitCommandBuffers.push_back(frame.CommandBuffer);
 
@@ -417,15 +419,14 @@ namespace Pudu
 			ImGui::Text("Just an aliased rotating chocobo for now");
 			ImGui::Text("Testing hehe");
 			ImGui::Text("Camera:");
-			vec3 cameraFwd = m_camera->Transform.GetForward();
-			vec3 cameraRot = m_camera->Transform.Rotation;
-			vec3 cameraPos = m_camera->Transform.Position;
 
-			ImGuiUtils::DrawTransform(m_camera->Transform);
+			vec3 cameraFwd = cam->Transform.GetForward();
 
-			ImGui::Text(std::format("Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
-			vec3 camPos = m_camera->Transform.GetTransformationMatrix() * vec4(0, 0, 0, 1);
-			ImGui::Text(std::format("Cam pos: {},{},{}", camPos.x, camPos.y, camPos.z).c_str());
+			ImGuiUtils::DrawTransform(cam->Transform);
+
+			ImGui::Text(std::format("Cam Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
+			ImGui::Text(std::format("FPS: {}", SceneToRender.Time->GetFPS()).c_str());
+			ImGui::Text(std::format("Delta Time: {}", deltaTime).c_str());
 
 			ImGui::End();
 			ImGui::Render();
@@ -1350,7 +1351,7 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::RecordCommandBuffer(const DrawCall& drawCall, VkCommandBuffer commandBuffer, uint32_t imageIndex)
+	void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	{
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1394,7 +1395,6 @@ namespace Pudu
 		scissor.extent = m_swapChainExtent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-
 		std::vector<DrawCall> drawCalls = SceneToRender.GetDrawCalls();
 
 		VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -1413,7 +1413,7 @@ namespace Pudu
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
 				&model->DescriptorSetByFrame[m_currentFrame], 0, nullptr);
 
-			auto ubo = GetUniformBufferObject(model);
+			auto ubo = GetUniformBufferObject(SceneToRender.Camera, model);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
@@ -1460,7 +1460,7 @@ namespace Pudu
 		memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));*/
 	}
 
-	UniformBufferObject PuduGraphics::GetUniformBufferObject(Model* model)
+	UniformBufferObject PuduGraphics::GetUniformBufferObject(Camera* cam, Model* model)
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1472,8 +1472,8 @@ namespace Pudu
 
 
 		ubo.modelMatrix = model->Transform.GetTransformationMatrix();
-		ubo.viewMatrix = m_camera->GetViewMatrix();
-		ubo.ProjectionMatrix = m_camera->GetPerspectiveMatrix();
+		ubo.viewMatrix = cam->GetViewMatrix();
+		ubo.ProjectionMatrix = cam->GetPerspectiveMatrix();
 
 		return ubo;
 	}
@@ -1590,6 +1590,7 @@ namespace Pudu
 
 	Model PuduGraphics::CreateModel(Mesh* mesh, Material material)
 	{
+		LOG("Creating Model");
 		Model model;
 		model.Mesh = mesh;
 		model.Material = material;

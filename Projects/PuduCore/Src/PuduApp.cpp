@@ -1,10 +1,8 @@
-#include "PuduApp.h"
 #include <chrono>
 #include <format>
-#include <Logger.h>
 #include <thread>
-
-using namespace std::chrono_literals;
+#include "Logger.h"
+#include "PuduApp.h"
 
 namespace Pudu
 {
@@ -15,7 +13,8 @@ namespace Pudu
 		OnInit();
 		Graphics.InitPipeline();
 
-		lastFrameTime = std::chrono::high_resolution_clock::now();
+		Time.m_startTime = std::chrono::high_resolution_clock::now();
+		Time.m_lastFrameTime = std::chrono::high_resolution_clock::now();
 	}
 
 	void PuduApp::Cleanup()
@@ -24,7 +23,6 @@ namespace Pudu
 
 		OnCleanup();
 		Graphics.Cleanup();
-
 	}
 
 	void PuduApp::Run()
@@ -34,18 +32,20 @@ namespace Pudu
 		Print("PuduApp Run");
 		while (!glfwWindowShouldClose(Graphics.WindowPtr))
 		{
-			auto currentTime = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<float> frameDuration = currentTime - lastFrameTime;
+			Time.m_currentFrameTime = std::chrono::high_resolution_clock::now();
+			float deltaTime = Time.DeltaTime();
+			float durationDelta = targetFrameDuration - deltaTime;
+			durationDelta = durationDelta < 0 ? 0 : durationDelta;
 
-			float durationDelta = targetFrameDuration - frameDuration.count();
 			if (durationDelta > 0)
 			{
 				std::this_thread::sleep_for(std::chrono::duration<float>(durationDelta));
 			}
+			Time.m_currentFrameTime = std::chrono::high_resolution_clock::now();
 
 			glfwPollEvents();
 			OnRun();
-			lastFrameTime = std::chrono::high_resolution_clock::now();
+			Time.m_lastFrameTime = Time.m_currentFrameTime;
 		}
 
 		Cleanup();

@@ -1,8 +1,6 @@
 #pragma once
 #include <iostream>
 
-using namespace std;
-
 static void Print(const char* text, ...) {
 	printf(text);
 	printf("\n");

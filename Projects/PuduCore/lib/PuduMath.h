@@ -93,8 +93,8 @@ namespace PuduMath {
 		mat3 r = toMat3(q); //Apparently glm handles rotation in Rz*Rx*Ry
 
 		float pitch = asin(r[1][2]); //X axis
-		float yaw = atan2(-r[0][2], r[2][2]); //Y axis
 		float roll = atan2(-r[1][0], r[1][1]);//Z axis
+		float yaw = atan2(-r[0][2], r[2][2]); //Y axis
 
 		return vec3(pitch, yaw, roll);
 	}
