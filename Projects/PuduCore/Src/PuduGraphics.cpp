@@ -335,31 +335,6 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateImGUIFrameBuffer()
-	{
-		LOG("CreateImGuiFrameBuffers");
-
-		m_ImGuiFramebuffers.resize(m_swapChainImagesViews.size());
-
-		VkImageView attachment[1];
-		VkFramebufferCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		info.renderPass = m_ImGuiRenderPass;
-		info.attachmentCount = 1;
-		info.pAttachments = attachment;
-		info.width = m_swapChainExtent.width;
-		info.height = m_swapChainExtent.height;
-		info.layers = 1;
-		for (uint32_t i = 0; i < m_swapChainImagesViews.size(); i++)
-		{
-			attachment[0] = m_swapChainImagesViews[i];
-			if (vkCreateFramebuffer(Device, &info, nullptr, &m_ImGuiFramebuffers[i]) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to create framebuffer!");
-			}
-		}
-	}
-
 	void PuduGraphics::DrawFrame()
 	{
 		Frame frame = m_Frames[m_currentFrame];
@@ -391,7 +366,8 @@ namespace Pudu
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = m_ImGuiRenderPass;
-		renderPassInfo.framebuffer = m_ImGuiFramebuffers[imageIndex];
+	
+		renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = m_swapChainExtent;
 		VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
@@ -1380,7 +1356,6 @@ namespace Pudu
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -1689,7 +1664,6 @@ namespace Pudu
 		CreateImGuiRenderPass();
 		CreateCommandPool(&m_ImGuiCommandPool);
 		CreateImGUICommandBuffers();
-		CreateImGUIFrameBuffer();
 
 		ImGui_ImplVulkan_InitInfo initInfo{};
 		initInfo.Instance = m_vkInstance;
@@ -1965,12 +1939,6 @@ namespace Pudu
 			vkDestroyCommandPool(Device, m_ImGuiCommandPool, m_allocatorPtr);
 			vkDestroyRenderPass(Device, m_ImGuiRenderPass, m_allocatorPtr);
 			vkDestroyDescriptorPool(Device, m_ImGuiDescriptorPool, m_allocatorPtr);
-			//vkDestroyPipeline(Device, m_imguiPipeline, m_allocatorPtr);
-
-			for (auto frameBuffer : m_ImGuiFramebuffers)
-			{
-				vkDestroyFramebuffer(Device, frameBuffer, m_allocatorPtr);
-			}
 		}
 
 		if (enableValidationLayers)
