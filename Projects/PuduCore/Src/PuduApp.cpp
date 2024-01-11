@@ -34,7 +34,7 @@ namespace Pudu
 		{
 			Time.m_currentFrameTime = std::chrono::high_resolution_clock::now();
 			float deltaTime = Time.DeltaTime();
-			float durationDelta = targetFrameDuration - deltaTime;
+			float durationDelta = targetFrameDuration - deltaTime * 2; //Multiply by 2 to compensate for frame next to render
 			durationDelta = durationDelta < 0 ? 0 : durationDelta;
 
 			if (durationDelta > 0)
