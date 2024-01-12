@@ -3,3 +3,6 @@ Bin
 
 .idea
 .vs
+**.vcxproj.user
+
+imgui.ini
