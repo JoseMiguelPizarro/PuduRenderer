@@ -366,7 +366,7 @@ namespace Pudu
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = m_ImGuiRenderPass;
-	
+
 		renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = m_swapChainExtent;
@@ -1378,7 +1378,7 @@ namespace Pudu
 		for (DrawCall drawCall : drawCalls) {
 
 			Model* model = drawCall.ModelPtr;
-			Mesh* mesh = model->Mesh;
+			Mesh* mesh = drawCall.MeshPtr;
 
 			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
 			VkDeviceSize offsets[] = { 0 };
@@ -1567,8 +1567,11 @@ namespace Pudu
 	{
 		LOG("Creating Model");
 		Model model;
-		model.Mesh = mesh;
-		model.Material = material;
+
+		std::vector<Mesh*> meshes{ mesh };
+		std::vector<Material> materials{ material };
+		model.Meshes = std::vector<Mesh*>(meshes);
+		model.Materials = materials;
 
 		CreateDescriptorSets(&model);
 

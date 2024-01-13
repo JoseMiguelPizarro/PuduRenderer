@@ -11,8 +11,8 @@ namespace Pudu {
 	{
 	public:
 		Transform Transform;
-		Mesh* Mesh;
-		Material Material;
+		std::vector<Mesh*> Meshes;
+		std::vector<Material> Materials;
 		std::vector<VkDescriptorSet> DescriptorSetByFrame;
 	};
 }

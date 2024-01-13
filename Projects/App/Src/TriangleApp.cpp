@@ -89,9 +89,6 @@ void TriangleApp::LoadGameboyModel()
 {
 	fastgltf::Parser parser;
 	fastgltf::GltfDataBuffer data;
-	fs::path rootPath = "./";
-	rootPath.string();
-	LOG(rootPath.string().c_str());
 	auto path = FileManager::GetAssetPath(GameboyModelPath);
 	data.loadFromFile(path);
 	std::filesystem::current_path(path);

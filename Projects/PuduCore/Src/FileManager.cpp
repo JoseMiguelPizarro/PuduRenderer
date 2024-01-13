@@ -106,7 +106,11 @@ namespace Pudu {
 			}
 		}
 
-		return { vertices, indices };
+		MeshCreationData data;
+		data.Vertices = vertices;
+		data.Indices = indices;
+
+		return data;
 	}
 }
 
