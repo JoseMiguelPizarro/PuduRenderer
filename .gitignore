@@ -1,8 +1,10 @@
-Build
+Build/bin
+Build/obj
+!Build/Assets/**
 Bin
 
 .idea
 .vs
 **.vcxproj.user
 
-imgui.ini
+Imgui.ini

@@ -1168,7 +1168,7 @@ namespace Pudu
 	{
 		int texWidth, texHeight, texChannels;
 
-		auto texturePath = FileManager::GetAssetPath(path.c_str());
+		auto texturePath = FileManager::GetAssetPath(path.c_str()).string();
 		stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;

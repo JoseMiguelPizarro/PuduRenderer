@@ -25,7 +25,7 @@ namespace Pudu {
 		}
 
 		float GetFPS() {
-			return 1 / DeltaTime();
+			return 1.0f / DeltaTime();
 		}
 
 		float DeltaTime() {

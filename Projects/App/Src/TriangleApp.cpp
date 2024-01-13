@@ -1,6 +1,14 @@
+#include <filesystem>
+
 #include "TriangleApp.h"
 
 #include <FileManager.h>
+
+#include <fastgltf/parser.hpp>
+#include <fastgltf/types.hpp>
+#include <Logger.h>
+
+namespace fs = std::filesystem;
 
 void TriangleApp::OnRun()
 {
@@ -22,6 +30,7 @@ void TriangleApp::OnRun()
 
 	Graphics.DrawFrame();
 }
+
 
 void TriangleApp::OnInit()
 {
@@ -74,4 +83,17 @@ void TriangleApp::OnCleanup()
 	Graphics.DestroyTexture(m_texture);
 	Graphics.DestroyTexture(m_planeTexture);
 	Graphics.DestroyMesh(&m_planeMesh);
+}
+
+void TriangleApp::LoadGameboyModel()
+{
+	fastgltf::Parser parser;
+	fastgltf::GltfDataBuffer data;
+	fs::path rootPath = "./";
+	rootPath.string();
+	LOG(rootPath.string().c_str());
+	auto path = FileManager::GetAssetPath(GameboyModelPath);
+	data.loadFromFile(path);
+	std::filesystem::current_path(path);
+	auto asset = parser.loadGltf(&data, path);
 }

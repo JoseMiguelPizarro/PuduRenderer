@@ -41,6 +41,7 @@ namespace Pudu
 			{
 				std::this_thread::sleep_for(std::chrono::duration<float>(durationDelta));
 			}
+
 			Time.m_currentFrameTime = std::chrono::high_resolution_clock::now();
 
 			glfwPollEvents();

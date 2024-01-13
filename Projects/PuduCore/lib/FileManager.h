@@ -1,32 +1,34 @@
 #pragma once
 #include <fstream>
 #include <vector>
-#include <format>
 
 #include "Mesh.h"
 #include "MeshCreationData.h"
+#include <filesystem>
 
-static const std::string ASSETS_FOLDER_PATH = "Assets";
+
+static const std::filesystem::path ASSETS_FOLDER_PATH = std::filesystem::path( "../../../Assets");
+
 namespace Pudu {
-    class FileManager
-    {
-    public:
-        static std::vector<char> ReadFile(const std::string& fileName);
+	class FileManager
+	{
+	public:
+		static std::vector<char> ReadFile(const std::filesystem::path fileName);
 
-        /// <summary>
-        /// Get path relative to assets folder
-        /// </summary>
-        static std::string GetAssetPath(std::string path);
+		/// <summary>
+		/// Get path relative to assets folder
+		/// </summary>
+		static std::filesystem::path GetAssetPath(std::string path);
 
-        /// <summary>
-        /// Read asset relative to the assets folder
-        /// </summary>
-        static std::vector<char> ReadAssetFile(const std::string& fileName);
+		/// <summary>
+		/// Read asset relative to the assets folder
+		/// </summary>
+		static std::vector<char> ReadAssetFile(const std::string& fileName);
 
 
-        static std::vector<char> ReadShaderFile(const std::string& shaderPath);
+		static std::vector<char> ReadShaderFile(const std::string& shaderPath);
 
-        static MeshCreationData LoadModelObj(std::string assetPath);
-    };
+		static MeshCreationData LoadModelObj(std::string assetPath);
+	};
 
 }

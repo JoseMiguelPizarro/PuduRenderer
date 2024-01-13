@@ -12,3 +12,6 @@ static void Print(const char* text, ...) {
 
 #define LOG(message)\
 Print(message)
+
+//#define LOG(message)\
+//Print(message.c_str())

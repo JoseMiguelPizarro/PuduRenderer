@@ -17,8 +17,11 @@ public:
 private:
     void OnCleanup() override;
 
+    void LoadGameboyModel();
+
     std::string TEXTURE_PATH = "models/chocobo/chocobo.png";
     std::string MODEL_PATH = "models/chocobo/chocobo.obj";
+    std::string GameboyModelPath = "models/gameboy/scene.gltf";
 
     std::string planeTexturePath = "models/floor/Grass.png";
     std::string planeModelPath= "models/floor/floor.obj";

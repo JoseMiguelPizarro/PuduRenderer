@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Debug">
+      <UniqueIdentifier>{0C95060D-78A9-2EBE-412B-D21DADFE2AEF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lib\simdjson\simdjson.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="lib\simdjson\simdjson.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lib\simdjson\Debug\simdjson.idb">
+      <Filter>Debug</Filter>
+    </None>
+    <None Include="lib\simdjson\Debug\simdjson.lib">
+      <Filter>Debug</Filter>
+    </None>
+    <None Include="lib\simdjson\Debug\simdjson.pdb">
+      <Filter>Debug</Filter>
+    </None>
+  </ItemGroup>
+</Project>
