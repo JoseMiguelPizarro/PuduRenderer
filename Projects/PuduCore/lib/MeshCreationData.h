@@ -2,7 +2,8 @@
 #include <vector>
 
 #include "vertex.h"
-
+#include "Material.h"
+#include "MaterialCreationData.h"
 
 namespace Pudu
 {
@@ -21,5 +22,6 @@ namespace Pudu
 
         std::vector<Vertex> Vertices;
         std::vector<uint32_t> Indices;
+        MaterialCreationData Material;
     };
 }

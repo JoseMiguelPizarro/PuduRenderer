@@ -25,6 +25,7 @@
 #include "Scene.h"
 #include "Model.h"
 #include "UniformBufferObject.h"
+#include "MeshCreationData.h"
 
 namespace Pudu
 {
@@ -67,7 +68,7 @@ namespace Pudu
 			"VK_LAYER_KHRONOS_validation"
 		};
 
-		Scene SceneToRender;
+		Scene* SceneToRender;
 
 #ifdef NDEBUG
 		const bool enableValidationLayers = false;
@@ -81,10 +82,11 @@ namespace Pudu
 		void InitPipeline();
 		void Cleanup();
 		Model CreateModel(Mesh* mesh, Material material);
+		Model CreateModel(MeshCreationData data);
 		Mesh CreateMesh(MeshCreationData& meshData);
 		void DestroyMesh(Mesh* mesh);
 		void DestroyTexture(Texture2d& texture);
-		Texture2d CreateTexture(std::string& path);
+		Texture2d CreateTexture(std::filesystem::path& path);
 
 	private:
 		void InitVulkan();

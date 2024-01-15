@@ -19,12 +19,16 @@ private:
 
     void LoadGameboyModel();
 
-    std::string TEXTURE_PATH = "models/chocobo/chocobo.png";
-    std::string MODEL_PATH = "models/chocobo/chocobo.obj";
-    std::string GameboyModelPath = "models/gameboy/scene.gltf";
+    std::filesystem::path TEXTURE_PATH = "models/chocobo/chocobo.png";
+    std::filesystem::path MODEL_PATH = "models/chocobo/chocobo.obj";
+    std::filesystem::path GameboyModelPath = "models/gameboy/gameboy.gltf";
+    //std::string GameboyModelPath = "models/gameboy/scene.gltf";
 
-    std::string planeTexturePath = "models/floor/Grass.png";
-    std::string planeModelPath= "models/floor/floor.obj";
+    std::filesystem::path planeTexturePath = "models/floor/Grass.png";
+    std::filesystem::path planeModelPath= "models/floor/floor.obj";
+
+
+    std::vector<Model> gameboyModels;
 
     Scene m_scene;
     Camera m_camera;

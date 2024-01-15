@@ -74,6 +74,12 @@ function includedxc()
     includedirs "lib/dxc/include"
 end
 
+function includeAndLinkFmtlib()
+    includedirs "lib/fmt/include"
+    libdirs "lib/fmt/%{cfg.longname}"
+    links {"fmtd"}
+end
+
 function linkdxc()
     libdirs "lib/dxc/Lib"
 
@@ -98,6 +104,25 @@ function linkGLFW()
     filter {}
 end
 
+function includeVulkan()
+    includedirs "%{IncludeDir.VulkanSDK}"
+end
+
+function useCoreLib()
+    -- The library's public headers
+    includedirs "Projects/PuduCore/lib"
+
+    -- We link against a library that's in the same workspace, so we can just
+    -- use the project name - premake is really smart and will handle everything for us.
+    links "PuduCore"
+
+    linkGLFW()
+    linkdxc()
+    includeAndLinkFmtlib()
+
+    filter {"system:windows"}
+end
+
 project "PuduCore"
 kind "StaticLib"
 language "C++"
@@ -112,6 +137,7 @@ includedxc()
 includeStb_Image()
 includeTinyObjLoader()
 includeAndLinkFastGltf()
+includeAndLinkFmtlib()
 
 includedirs {"%{IncludeDir.VulkanSDK}"}
 
@@ -139,27 +165,7 @@ includedirs {"lib/fastgltf/include","lib/simdjson"}
 
 links "simdjson"
 
--- This function includes GLFW's header files
 
-function includeVulkan()
-    includedirs "%{IncludeDir.VulkanSDK}"
-end
-
-function useCoreLib()
-    -- The library's public headers
-    includedirs "Projects/PuduCore/lib"
-
-    -- We link against a library that's in the same workspace, so we can just
-    -- use the project name - premake is really smart and will handle everything for us.
-    links "PuduCore"
-
-    linkGLFW()
-    linkdxc()
-
-    filter {"system:windows"}
-end
-
--- The windowed app
 project "App"
 
 kind "ConsoleApp"
@@ -176,4 +182,3 @@ libdirs {"C:/VulkanSDK/1.3.268.0/Lib"}
 links "vulkan-1"
 defines {"HLSLPP_FEATURE_TRANSFORM"}
 debugdir "$(ProjectDir)Build/Bin/$(ProjectName)/%{cfg.longname}"
-

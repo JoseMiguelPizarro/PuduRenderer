@@ -18,7 +18,7 @@ namespace Pudu {
 		/// <summary>
 		/// Get path relative to assets folder
 		/// </summary>
-		static std::filesystem::path GetAssetPath(std::string path);
+		static std::filesystem::path GetAssetPath(std::filesystem::path path);
 
 		/// <summary>
 		/// Read asset relative to the assets folder
@@ -29,6 +29,8 @@ namespace Pudu {
 		static std::vector<char> ReadShaderFile(const std::string& shaderPath);
 
 		static MeshCreationData LoadModelObj(std::string assetPath);
+
+		static std::vector<MeshCreationData> LoadModelGltf(std::filesystem::path path);
 	};
 
 }

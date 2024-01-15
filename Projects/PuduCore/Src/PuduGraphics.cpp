@@ -3,8 +3,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <fmt/core.h>
 
-#include <format>
 #include <limits>
 
 #include "PuduGraphics.h"
@@ -356,8 +356,8 @@ namespace Pudu
 
 		vkResetFences(Device, 1, &frame.InFlightFence);
 
-		float deltaTime = SceneToRender.Time->DeltaTime();
-		Camera* cam = SceneToRender.Camera;
+		float deltaTime = SceneToRender->Time->DeltaTime();
+		Camera* cam = SceneToRender->Camera;
 
 		vkResetCommandBuffer(frame.CommandBuffer, 0);
 
@@ -401,7 +401,7 @@ namespace Pudu
 			ImGuiUtils::DrawTransform(cam->Transform);
 
 			ImGui::Text(std::format("Cam Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
-			ImGui::Text(std::format("FPS: {}", SceneToRender.Time->GetFPS()).c_str());
+			ImGui::Text(std::format("FPS: {}", SceneToRender->Time->GetFPS()).c_str());
 			ImGui::Text(std::format("Delta Time: {}", deltaTime).c_str());
 
 			ImGui::End();
@@ -916,8 +916,8 @@ namespace Pudu
 
 	Mesh PuduGraphics::CreateMesh(MeshCreationData& data)
 	{
-		auto vertices = data.Vertices;
-		auto indices = data.Indices;
+		auto& vertices = data.Vertices;
+		auto& indices = data.Indices;
 
 		GraphicsBuffer vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -1164,18 +1164,18 @@ namespace Pudu
 		Print("Created command pool");
 	}
 
-	Texture2d PuduGraphics::CreateTexture(std::string& path)
+	Texture2d PuduGraphics::CreateTexture(std::filesystem::path& path)
 	{
 		int texWidth, texHeight, texChannels;
 
-		auto texturePath = FileManager::GetAssetPath(path.c_str()).string();
-		stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		auto texturePath = path.is_absolute() ? path : FileManager::GetAssetPath(path);
+		stbi_uc* pixels = stbi_load(texturePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels)
 		{
-			PUDU_ERROR(std::format("Texture not found {}", texturePath));
+			PUDU_ERROR(fmt::format(R"(Texture not found {})", texturePath.string()));
 		}
 
 		GraphicsBuffer stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -1370,7 +1370,7 @@ namespace Pudu
 		scissor.extent = m_swapChainExtent;
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		std::vector<DrawCall> drawCalls = SceneToRender.GetDrawCalls();
+		std::vector<DrawCall> drawCalls = SceneToRender->GetDrawCalls();
 
 		VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		std::vector<VkDescriptorSet> descriptorSets(drawCalls.size());
@@ -1388,7 +1388,7 @@ namespace Pudu
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
 				&model->DescriptorSetByFrame[m_currentFrame], 0, nullptr);
 
-			auto ubo = GetUniformBufferObject(SceneToRender.Camera, model);
+			auto ubo = GetUniformBufferObject(SceneToRender->Camera, model);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
@@ -1586,7 +1586,7 @@ namespace Pudu
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = material.Texture->ImageViewHandler;
+			imageInfo.imageView = material.Texture.ImageViewHandler;
 			imageInfo.sampler = m_textureSampler;
 
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
@@ -1613,6 +1613,19 @@ namespace Pudu
 
 
 		return model;
+	}
+
+	Model PuduGraphics::CreateModel(MeshCreationData data)
+	{
+		Mesh mesh = CreateMesh(data);
+		Texture2d tex = CreateTexture(data.Material.BasetTexturePath);
+		Material material = Material();
+		material.Texture = tex;
+
+		Model m;
+		CreateModel(&mesh, material);
+
+		return m;
 	}
 
 	static void check_vk_result(VkResult err)

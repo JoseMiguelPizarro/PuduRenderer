@@ -8,7 +8,7 @@ namespace Pudu {
 	{
 	public:
 		Shader* Shader;
-		Texture2d* Texture;
+		Texture2d Texture;
 
 	};
 }

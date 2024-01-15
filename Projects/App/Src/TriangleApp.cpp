@@ -1,12 +1,11 @@
 #include <filesystem>
+#include <fmt/core.h>
+#include <Logger.h>
 
 #include "TriangleApp.h"
 
 #include <FileManager.h>
 
-#include <fastgltf/parser.hpp>
-#include <fastgltf/types.hpp>
-#include <Logger.h>
 
 namespace fs = std::filesystem;
 
@@ -34,7 +33,7 @@ void TriangleApp::OnRun()
 
 void TriangleApp::OnInit()
 {
-	auto modelData = FileManager::LoadModelObj(MODEL_PATH);
+	auto modelData = FileManager::LoadModelObj(MODEL_PATH.string());
 
 	m_camera = {};
 	m_camera.Transform.SetForward(vec3(0, 0, -1), vec3(0, 1, 0));
@@ -49,7 +48,7 @@ void TriangleApp::OnInit()
 
 	m_texture = Graphics.CreateTexture(TEXTURE_PATH);
 	Material material{};
-	material.Texture = &m_texture;
+	material.Texture = m_texture;
 	m_model = Graphics.CreateModel(&m_modelMesh, material);
 	m_model.Transform.Rotation = vec3(0, -90, 0);
 	m_scene.AddModel(&m_model);
@@ -62,19 +61,19 @@ void TriangleApp::OnInit()
 	m_model3.Transform.Position = vec3(4, 0, -8);
 	m_model3.Transform.Rotation = vec3(0, -30, 0);
 
-
 	m_planeTexture = Graphics.CreateTexture(planeTexturePath);
-	auto planeModelData = FileManager::LoadModelObj(planeModelPath);
+	auto planeModelData = FileManager::LoadModelObj(planeModelPath.string());
 	m_planeMesh = Graphics.CreateMesh(planeModelData);
 	Material planeMaterial{};
-	planeMaterial.Texture = &m_planeTexture;
+	planeMaterial.Texture = m_planeTexture;
 	m_planeModel = Graphics.CreateModel(&m_planeMesh, planeMaterial);
 
 	m_scene.AddModel(&m_model2);
 	m_scene.AddModel(&m_model3);
 	m_scene.AddModel(&m_planeModel);
 
-	Graphics.SceneToRender = m_scene;
+	LoadGameboyModel();
+	Graphics.SceneToRender = &m_scene;
 }
 
 void TriangleApp::OnCleanup()
@@ -87,10 +86,11 @@ void TriangleApp::OnCleanup()
 
 void TriangleApp::LoadGameboyModel()
 {
-	fastgltf::Parser parser;
-	fastgltf::GltfDataBuffer data;
-	auto path = FileManager::GetAssetPath(GameboyModelPath);
-	data.loadFromFile(path);
-	std::filesystem::current_path(path);
-	auto asset = parser.loadGltf(&data, path);
+	auto data = FileManager::LoadModelGltf(GameboyModelPath);
+
+	for (auto d : data) {
+		Model m = Graphics.CreateModel(d);
+		gameboyModels.push_back(m);
+		m_scene.AddModel(&m);
+	}
 }

@@ -1,5 +1,6 @@
 #pragma once
-#include <iostream>
+#include <fmt/core.h>
+
 
 static void Print(const char* text, ...) {
 	printf(text);
@@ -8,10 +9,11 @@ static void Print(const char* text, ...) {
 
 
 #define PUDU_ERROR(message)\
- throw std::runtime_error(std::format("Error: {}", message))
+ throw std::runtime_error(fmt::format("Error: {}", message))\
 
-#define LOG(message)\
-Print(message)
+#define LOG(message,...)\
+fmt::print(message,__VA_ARGS__);\
+fmt::print("\n")\
 
 //#define LOG(message)\
 //Print(message.c_str())

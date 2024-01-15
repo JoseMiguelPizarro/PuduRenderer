@@ -55,7 +55,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\dxc\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\dxc\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;lib\fmt\include;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -66,14 +66,15 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>lib\fastgltf;lib\simdjson;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib\fastgltf;lib\simdjson;lib\fmt\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\dxc\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\PuduCore\lib;lib\GLFW\include;lib\dxc\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;lib\fmt\include;C:\VulkanSDK\1.3.268.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -88,7 +89,8 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>lib\fastgltf;lib\simdjson;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib\fastgltf;lib\simdjson;lib\fmt\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -108,6 +110,7 @@
     <ClInclude Include="Projects\PuduCore\lib\ImGuiUtils.h" />
     <ClInclude Include="Projects\PuduCore\lib\Logger.h" />
     <ClInclude Include="Projects\PuduCore\lib\Material.h" />
+    <ClInclude Include="Projects\PuduCore\lib\MaterialCreationData.h" />
     <ClInclude Include="Projects\PuduCore\lib\Mesh.h" />
     <ClInclude Include="Projects\PuduCore\lib\MeshCreationData.h" />
     <ClInclude Include="Projects\PuduCore\lib\Model.h" />
@@ -130,6 +133,7 @@
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\ImGuiUtils.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Material.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\MaterialCreationData.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Mesh.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\MeshCreationData.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Model.cpp" />

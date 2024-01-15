@@ -1,12 +1,21 @@
 ﻿#pragma once
 #include <filesystem>
-#include <FileManager.h>
+#include <fmt/core.h>
+
+#include <fastgltf/parser.hpp>
+#include <fastgltf/types.hpp>
+#include <fastgltf/tools.hpp>
+#include <fastgltf/glm_element_traits.hpp>
+
+#include "FileManager.h"
+
 #include "Logger.h"
 
 #ifndef TINYOBJLOADER_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #endif
+#include <MaterialCreationData.h>
 
 namespace fs = std::filesystem;
 
@@ -38,12 +47,9 @@ namespace Pudu {
 	/// <summary>
 	/// Get path relative to assets folder
 	/// </summary>
-	inline fs::path FileManager::GetAssetPath(std::string path)
+	inline fs::path FileManager::GetAssetPath(fs::path path)
 	{
-		fs::path p = fs::path(ASSETS_FOLDER_PATH);
-		p.append(path);
-
-		return p;
+		return fs::absolute(ASSETS_FOLDER_PATH / path);
 	}
 
 	/// <summary>
@@ -53,9 +59,10 @@ namespace Pudu {
 	{
 		auto path = std::filesystem::path(ASSETS_FOLDER_PATH);
 		path.append(fileName);
+		auto absPath = std::filesystem::absolute(path);
 		//auto path = std::format("{}/{}", ASSETS_FOLDER_PATH, fileName);
 
-		return ReadFile(path);
+		return ReadFile(absPath);
 	}
 
 	std::vector<char> FileManager::ReadShaderFile(const std::string& shaderPath)
@@ -111,6 +118,93 @@ namespace Pudu {
 		data.Indices = indices;
 
 		return data;
+	}
+	std::vector<MeshCreationData> FileManager::LoadModelGltf(std::filesystem::path path)
+	{
+		auto pathAssetFolder = FileManager::GetAssetPath(path.string());
+
+		constexpr auto gltfOptions =
+			fastgltf::Options::DontRequireValidAssetMember |
+			fastgltf::Options::AllowDouble |
+			fastgltf::Options::LoadGLBBuffers |
+			fastgltf::Options::LoadExternalBuffers |
+			fastgltf::Options::GenerateMeshIndices;
+
+		fastgltf::Parser parser;
+		fastgltf::GltfDataBuffer data;
+		data.loadFromFile(pathAssetFolder);
+		auto asset = parser.loadGltf(&data, pathAssetFolder.parent_path(), gltfOptions);
+
+		if (auto error = asset.error() != fastgltf::Error::None)
+		{
+			Print(std::to_string(error).c_str());
+			PUDU_ERROR("Invalid gltf asset");
+		}
+
+		std::vector<MeshCreationData> creationData;
+
+		for (auto& mesh : asset->meshes) {
+			LOG("Processing mesh {} primitives: {}\n", mesh.name, mesh.primitives.size());
+			for (auto primitive : mesh.primitives) {
+				if (!primitive.indicesAccessor.has_value())
+				{
+					continue;
+				}
+
+				std::vector<Vertex> vertices;
+				std::vector<uint32_t> indices;
+				fastgltf::Accessor& indexAccessor = asset->accessors[primitive.indicesAccessor.value()];
+				indices.resize(indexAccessor.count);
+
+				fastgltf::iterateAccessorWithIndex<uint32_t>(asset.get(), indexAccessor, [&](uint32_t index, size_t i) {
+					indices[i++] = index;
+				});
+
+				std::size_t idx = 0;
+				auto& positionsAccessor = asset->accessors[primitive.findAttribute("POSITION")->second];
+				vertices.resize(positionsAccessor.count);
+
+				for (auto& attribute : primitive.attributes) {
+					if (attribute.first.compare("POSITION"))
+					{
+						idx = 0;
+						fastgltf::iterateAccessor<vec3>(asset.get(), indexAccessor, [&](vec3 v) {
+							vertices[idx++].pos = v;
+						});
+						fmt::print("Attribute: {} Accesor Index {} \n", attribute.first, attribute.second);
+					}
+
+					if (attribute.first.compare("TEXCOORD_0"))
+					{
+						idx = 0;
+						fastgltf::iterateAccessor<vec2>(asset.get(), indexAccessor, [&](vec2 v) {
+							vertices[idx++].texcoord = v;
+						});
+						fmt::print("Attribute: {} Accesor Index {} \n", attribute.first, attribute.second);
+					}
+				}
+
+				auto& gltfMat = asset->materials[primitive.materialIndex.value()];
+
+				auto baseTextSource = asset->images[gltfMat.pbrData.baseColorTexture.value().textureIndex].data;
+
+				auto uri = std::get_if<fastgltf::sources::URI>(&baseTextSource);
+
+				auto baseTexturePath = fs::path(uri->uri.path());
+
+				LOG("Base texture path {}", baseTexturePath.string());
+
+				MeshCreationData meshCreationData;
+				MaterialCreationData materialCreationData;
+				materialCreationData.BasetTexturePath = path.parent_path().relative_path() / baseTexturePath;
+				meshCreationData.Indices = indices;
+				meshCreationData.Vertices = vertices;
+				meshCreationData.Material = materialCreationData;
+				creationData.push_back(meshCreationData);
+			}
+		}
+
+		return creationData;
 	}
 }
 

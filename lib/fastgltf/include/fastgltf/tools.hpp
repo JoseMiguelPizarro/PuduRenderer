@@ -138,7 +138,7 @@ constexpr DestType convertComponent(const SourceType& source, bool normalized) {
 				minValue = static_cast<DestType>(0.0);
 			}
 
-			// We have to use max here because for uchar -> float we could have -128 but 1.0 should represent 127,
+			// We have to use max here because for uchar -> float we could have -128 but 1.0 should represent s127,
 			// which is why -128 and -127 both equate to 1.0.
 			return fastgltf::max(static_cast<DestType>(source) / static_cast<DestType>(std::numeric_limits<SourceType>::max()),
 			                     minValue);

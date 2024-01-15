@@ -102,6 +102,9 @@
     <ClInclude Include="Projects\PuduCore\lib\vertex.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\MaterialCreationData.h">
+      <Filter>lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\Camera.cpp">
@@ -172,6 +175,9 @@
     </ClCompile>
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_widgets.cpp">
       <Filter>lib\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\MaterialCreationData.cpp">
+      <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
