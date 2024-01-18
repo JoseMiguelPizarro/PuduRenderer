@@ -6,12 +6,12 @@ namespace Pudu
 	class DrawCall
 	{
 	public:
-		Model* ModelPtr;
-		Mesh* MeshPtr;
-		Material* MaterialPtr;
+		Model ModelPtr;
+		Mesh MeshPtr;
+		Material MaterialPtr;
 
 		DrawCall() {}
-		DrawCall(Model* model, Mesh* mesh, Material* material)
+		DrawCall(Model  model, Mesh mesh, Material material)
 		{
 			ModelPtr = model;
 			MeshPtr = mesh;

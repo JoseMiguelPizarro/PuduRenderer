@@ -24,8 +24,8 @@ void TriangleApp::OnRun()
 	vec3 r = cross({ 0,1,0 }, dir);
 	vec3 u = cross(dir, r);
 
-	m_camera.Transform.Position = pos;
-	m_camera.Transform.SetForward(dir, u);
+	/*m_camera.Transform.Position = pos;
+	m_camera.Transform.SetForward(dir, u);*/
 
 	Graphics.DrawFrame();
 }
@@ -49,15 +49,14 @@ void TriangleApp::OnInit()
 	m_texture = Graphics.CreateTexture(TEXTURE_PATH);
 	Material material{};
 	material.Texture = m_texture;
-	m_model = Graphics.CreateModel(&m_modelMesh, material);
+	m_model = Graphics.CreateModel(m_modelMesh, material);
 	m_model.Transform.Rotation = vec3(0, -90, 0);
-	m_scene.AddModel(&m_model);
 
-	m_model2 = Graphics.CreateModel(&m_modelMesh, material);
+	m_model2 = Graphics.CreateModel(m_modelMesh, material);
 	m_model2.Transform.Position = vec3(-4, 0, -5);
 	m_model2.Transform.Rotation = vec3(0, -120, 0);
 
-	m_model3 = Graphics.CreateModel(&m_modelMesh, material);
+	m_model3 = Graphics.CreateModel(m_modelMesh, material);
 	m_model3.Transform.Position = vec3(4, 0, -8);
 	m_model3.Transform.Rotation = vec3(0, -30, 0);
 
@@ -66,11 +65,12 @@ void TriangleApp::OnInit()
 	m_planeMesh = Graphics.CreateMesh(planeModelData);
 	Material planeMaterial{};
 	planeMaterial.Texture = m_planeTexture;
-	m_planeModel = Graphics.CreateModel(&m_planeMesh, planeMaterial);
+	m_planeModel = Graphics.CreateModel(m_planeMesh, planeMaterial);
 
-	m_scene.AddModel(&m_model2);
-	m_scene.AddModel(&m_model3);
-	m_scene.AddModel(&m_planeModel);
+	//m_scene.AddModel(m_model);
+	//m_scene.AddModel(m_model2);
+	//m_scene.AddModel(m_model3);
+	//m_scene.AddModel(m_planeModel);
 
 	LoadGameboyModel();
 	Graphics.SceneToRender = &m_scene;
@@ -90,7 +90,7 @@ void TriangleApp::LoadGameboyModel()
 
 	for (auto d : data) {
 		Model m = Graphics.CreateModel(d);
-		gameboyModels.push_back(m);
-		m_scene.AddModel(&m);
+		GameboyModels.push_back(m);
+		m_scene.AddModel(m);
 	}
 }

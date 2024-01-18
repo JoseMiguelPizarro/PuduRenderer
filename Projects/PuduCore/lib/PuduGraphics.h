@@ -81,12 +81,12 @@ namespace Pudu
 		bool FramebufferResized = false;
 		void InitPipeline();
 		void Cleanup();
-		Model CreateModel(Mesh* mesh, Material material);
-		Model CreateModel(MeshCreationData data);
-		Mesh CreateMesh(MeshCreationData& meshData);
+		Model CreateModel(Mesh& mesh, Material& material);
+		Model CreateModel(MeshCreationData const& data);
+		Mesh CreateMesh(MeshCreationData const& meshData);
 		void DestroyMesh(Mesh* mesh);
 		void DestroyTexture(Texture2d& texture);
-		Texture2d CreateTexture(std::filesystem::path& path);
+		Texture2d CreateTexture(std::filesystem::path const& path);
 
 	private:
 		void InitVulkan();

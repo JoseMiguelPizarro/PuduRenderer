@@ -157,30 +157,31 @@ namespace Pudu {
 				indices.resize(indexAccessor.count);
 
 				fastgltf::iterateAccessorWithIndex<uint32_t>(asset.get(), indexAccessor, [&](uint32_t index, size_t i) {
-					indices[i++] = index;
+					indices[i] = index;
 				});
 
-				std::size_t idx = 0;
 				auto& positionsAccessor = asset->accessors[primitive.findAttribute("POSITION")->second];
 				vertices.resize(positionsAccessor.count);
 
+
 				for (auto& attribute : primitive.attributes) {
-					if (attribute.first.compare("POSITION"))
+
+					auto accessor = asset->accessors[attribute.second];
+					const char* attribName = attribute.first.c_str();
+					if (strcmp(attribName, "POSITION") == 0)
 					{
-						idx = 0;
-						fastgltf::iterateAccessor<vec3>(asset.get(), indexAccessor, [&](vec3 v) {
+						std::size_t idx = 0;
+						fastgltf::iterateAccessor<vec3>(asset.get(), accessor, [&](vec3 v) {
 							vertices[idx++].pos = v;
 						});
-						fmt::print("Attribute: {} Accesor Index {} \n", attribute.first, attribute.second);
 					}
 
-					if (attribute.first.compare("TEXCOORD_0"))
+					if (strcmp(attribName, "TEXCOORD_0") == 0)
 					{
-						idx = 0;
-						fastgltf::iterateAccessor<vec2>(asset.get(), indexAccessor, [&](vec2 v) {
+						std::size_t idx = 0;
+						fastgltf::iterateAccessor<vec2>(asset.get(), accessor, [&](vec2 v) {
 							vertices[idx++].texcoord = v;
 						});
-						fmt::print("Attribute: {} Accesor Index {} \n", attribute.first, attribute.second);
 					}
 				}
 
@@ -200,6 +201,7 @@ namespace Pudu {
 				meshCreationData.Indices = indices;
 				meshCreationData.Vertices = vertices;
 				meshCreationData.Material = materialCreationData;
+				meshCreationData.Name = mesh.name;
 				creationData.push_back(meshCreationData);
 			}
 		}

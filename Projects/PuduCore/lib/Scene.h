@@ -20,7 +20,7 @@ namespace Pudu {
 		}
 
 		PuduTime* Time = nullptr;
-		void AddModel(Model* model);
+		void AddModel(Model& model);
 
 	private:
 		std::vector<DrawCall> m_DrawCalls;

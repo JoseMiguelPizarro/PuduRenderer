@@ -914,10 +914,10 @@ namespace Pudu
 		}
 	}
 
-	Mesh PuduGraphics::CreateMesh(MeshCreationData& data)
+	Mesh PuduGraphics::CreateMesh(MeshCreationData const& data)
 	{
-		auto& vertices = data.Vertices;
-		auto& indices = data.Indices;
+		auto vertices = data.Vertices;
+		auto indices = data.Indices;
 
 		GraphicsBuffer vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -927,7 +927,6 @@ namespace Pudu
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 		Mesh mesh = Mesh(vertexBuffer, indexBuffer, vertices, indices);
-
 		return mesh;
 	}
 
@@ -1164,7 +1163,7 @@ namespace Pudu
 		Print("Created command pool");
 	}
 
-	Texture2d PuduGraphics::CreateTexture(std::filesystem::path& path)
+	Texture2d PuduGraphics::CreateTexture(std::filesystem::path const& path)
 	{
 		int texWidth, texHeight, texChannels;
 
@@ -1377,21 +1376,21 @@ namespace Pudu
 
 		for (DrawCall drawCall : drawCalls) {
 
-			Model* model = drawCall.ModelPtr;
-			Mesh* mesh = drawCall.MeshPtr;
+			Model model = drawCall.ModelPtr;
+			Mesh mesh = drawCall.MeshPtr;
 
-			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
+			VkBuffer vertexBuffers[] = { mesh.GetVertexBuffer()->Handler };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, mesh.GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-				&model->DescriptorSetByFrame[m_currentFrame], 0, nullptr);
+				&model.DescriptorSetByFrame[m_currentFrame], 0, nullptr);
 
-			auto ubo = GetUniformBufferObject(SceneToRender->Camera, model);
+			auto ubo = GetUniformBufferObject(SceneToRender->Camera, &model);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.GetIndices()->size()), 1, 0, 0, 0);
 		}
 
 		// Record dear imgui primitives into command buffer
@@ -1563,14 +1562,14 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	Model PuduGraphics::CreateModel(Mesh* mesh, Material material)
+	Model PuduGraphics::CreateModel(Mesh& mesh, Material& material)
 	{
 		LOG("Creating Model");
 		Model model;
 
-		std::vector<Mesh*> meshes{ mesh };
+		std::vector<Mesh> meshes{ mesh };
 		std::vector<Material> materials{ material };
-		model.Meshes = std::vector<Mesh*>(meshes);
+		model.Meshes = std::vector<Mesh>(meshes);
 		model.Materials = materials;
 
 		CreateDescriptorSets(&model);
@@ -1615,16 +1614,15 @@ namespace Pudu
 		return model;
 	}
 
-	Model PuduGraphics::CreateModel(MeshCreationData data)
+	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
-		Mesh mesh = CreateMesh(data);
+		auto mesh = CreateMesh(data);
 		Texture2d tex = CreateTexture(data.Material.BasetTexturePath);
 		Material material = Material();
 		material.Texture = tex;
 
-		Model m;
-		CreateModel(&mesh, material);
-
+		auto m = CreateModel(mesh, material);
+		m.Name = data.Name;
 		return m;
 	}
 

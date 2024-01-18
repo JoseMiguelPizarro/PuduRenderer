@@ -479,8 +479,9 @@ void iterateAccessor(const Asset& asset, const Accessor& accessor, Functor&& fun
 	static_assert(std::is_constructible_v<ElementType>, "Element type must be constructible");
 	static_assert(std::is_move_assignable_v<ElementType>, "Element type must be move-assignable");
 
+	
 	if (accessor.type != Traits::type) {
-		return;
+		//return;
 	}
 
 	if (accessor.sparse && accessor.sparse->count > 0) {
