@@ -1,2 +1,2 @@
-simdjson.dir
-simdjson/debug
+simdjson.dir/**
+simdjson/debug/**
