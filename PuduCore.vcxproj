@@ -96,6 +96,7 @@
   <ItemGroup>
     <ClInclude Include="Projects\PuduCore\lib\Camera.h" />
     <ClInclude Include="Projects\PuduCore\lib\DrawCall.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Entity.h" />
     <ClInclude Include="Projects\PuduCore\lib\FileManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\Frame.h" />
     <ClInclude Include="Projects\PuduCore\lib\GraphicsBuffer.h" />
@@ -119,6 +120,8 @@
     <ClInclude Include="Projects\PuduCore\lib\PuduGraphics.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduMath.h" />
     <ClInclude Include="Projects\PuduCore\lib\PuduTime.h" />
+    <ClInclude Include="Projects\PuduCore\lib\RenderEntity.h" />
+    <ClInclude Include="Projects\PuduCore\lib\RenderEntityManager.h" />
     <ClInclude Include="Projects\PuduCore\lib\Scene.h" />
     <ClInclude Include="Projects\PuduCore\lib\Shader.h" />
     <ClInclude Include="Projects\PuduCore\lib\Texture2D.h" />
@@ -129,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\Camera.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\DrawCall.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Entity.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\FileManager.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\GraphicsBuffer.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\ImGuiUtils.cpp" />
@@ -140,6 +144,7 @@
     <ClCompile Include="Projects\PuduCore\Src\PuduApp.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduGraphics.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\PuduTime.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\RenderEntityManager.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Scene.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Shader.cpp" />
     <ClCompile Include="Projects\PuduCore\Src\Texture2D.cpp" />
@@ -151,6 +156,7 @@
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_tables.cpp" />
     <ClCompile Include="Projects\PuduCore\lib\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="RenderEntity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Projects\PuduCore\lib\ImGui\LICENSE.txt" />

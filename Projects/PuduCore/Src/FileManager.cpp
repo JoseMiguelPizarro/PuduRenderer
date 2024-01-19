@@ -8,8 +8,8 @@
 #include <fastgltf/glm_element_traits.hpp>
 
 #include "FileManager.h"
-
 #include "Logger.h"
+#include "PuduGraphics.h"
 
 #ifndef TINYOBJLOADER_IMPLEMENTATION
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -20,7 +20,7 @@
 namespace fs = std::filesystem;
 
 namespace Pudu {
-	std::vector<char> FileManager::ReadFile(const std::filesystem::path fileName)
+	std::vector<char> FileManager::ReadFile(std::filesystem::path const& fileName)
 	{
 		Print("Current file");
 		Print(fs::current_path().string().c_str());
@@ -47,7 +47,7 @@ namespace Pudu {
 	/// <summary>
 	/// Get path relative to assets folder
 	/// </summary>
-	inline fs::path FileManager::GetAssetPath(fs::path path)
+	inline fs::path FileManager::GetAssetPath(fs::path const& path)
 	{
 		return fs::absolute(ASSETS_FOLDER_PATH / path);
 	}
@@ -75,7 +75,7 @@ namespace Pudu {
 		//return ReadFile(path);
 	}
 
-	MeshCreationData FileManager::LoadModelObj(std::string assetPath)
+	MeshCreationData FileManager::LoadModelObj(std::string const& assetPath)
 	{
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
@@ -119,7 +119,28 @@ namespace Pudu {
 
 		return data;
 	}
-	std::vector<MeshCreationData> FileManager::LoadModelGltf(std::filesystem::path path)
+
+	std::vector<MeshCreationData> FileManager::LoadModelGltf(fs::path const& path)
+	{
+		auto asset = LoadGltfAsset(path);
+
+		return GetGltfMeshCreationData(path, asset);
+	}
+	std::vector<RenderEntitySPtr> FileManager::LoadGltfScene(fs::path const& path)
+	{
+		auto asset = LoadGltfAsset(path);
+
+		auto meshCreationData = GetGltfMeshCreationData(path, asset);
+
+		for (auto node : asset->nodes) {
+			auto name = node.name;
+			
+		}
+
+		return std::vector<RenderEntitySPtr>();
+	}
+
+	GltfAsset FileManager::LoadGltfAsset(fs::path const& path)
 	{
 		auto pathAssetFolder = FileManager::GetAssetPath(path.string());
 
@@ -133,7 +154,7 @@ namespace Pudu {
 		fastgltf::Parser parser;
 		fastgltf::GltfDataBuffer data;
 		data.loadFromFile(pathAssetFolder);
-		auto asset = parser.loadGltf(&data, pathAssetFolder.parent_path(), gltfOptions);
+		GltfAsset asset = parser.loadGltf(&data, pathAssetFolder.parent_path(), gltfOptions);
 
 		if (auto error = asset.error() != fastgltf::Error::None)
 		{
@@ -141,9 +162,14 @@ namespace Pudu {
 			PUDU_ERROR("Invalid gltf asset");
 		}
 
+		return asset;
+	}
+
+	std::vector<MeshCreationData> FileManager::GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset)
+	{
 		std::vector<MeshCreationData> creationData;
 
-		for (auto& mesh : asset->meshes) {
+		for (auto& mesh : gltfAsset->meshes) {
 			LOG("Processing mesh {} primitives: {}\n", mesh.name, mesh.primitives.size());
 			for (auto primitive : mesh.primitives) {
 				if (!primitive.indicesAccessor.has_value())
@@ -153,25 +179,25 @@ namespace Pudu {
 
 				std::vector<Vertex> vertices;
 				std::vector<uint32_t> indices;
-				fastgltf::Accessor& indexAccessor = asset->accessors[primitive.indicesAccessor.value()];
+				fastgltf::Accessor& indexAccessor = gltfAsset->accessors[primitive.indicesAccessor.value()];
 				indices.resize(indexAccessor.count);
 
-				fastgltf::iterateAccessorWithIndex<uint32_t>(asset.get(), indexAccessor, [&](uint32_t index, size_t i) {
+				fastgltf::iterateAccessorWithIndex<uint32_t>(gltfAsset.get(), indexAccessor, [&](uint32_t index, size_t i) {
 					indices[i] = index;
 				});
 
-				auto& positionsAccessor = asset->accessors[primitive.findAttribute("POSITION")->second];
+				auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->second];
 				vertices.resize(positionsAccessor.count);
 
 
 				for (auto& attribute : primitive.attributes) {
 
-					auto accessor = asset->accessors[attribute.second];
+					auto accessor = gltfAsset->accessors[attribute.second];
 					const char* attribName = attribute.first.c_str();
 					if (strcmp(attribName, "POSITION") == 0)
 					{
 						std::size_t idx = 0;
-						fastgltf::iterateAccessor<vec3>(asset.get(), accessor, [&](vec3 v) {
+						fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v) {
 							vertices[idx++].pos = v;
 						});
 					}
@@ -179,15 +205,15 @@ namespace Pudu {
 					if (strcmp(attribName, "TEXCOORD_0") == 0)
 					{
 						std::size_t idx = 0;
-						fastgltf::iterateAccessor<vec2>(asset.get(), accessor, [&](vec2 v) {
+						fastgltf::iterateAccessor<vec2>(gltfAsset.get(), accessor, [&](vec2 v) {
 							vertices[idx++].texcoord = v;
 						});
 					}
 				}
 
-				auto& gltfMat = asset->materials[primitive.materialIndex.value()];
+				auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
 
-				auto baseTextSource = asset->images[gltfMat.pbrData.baseColorTexture.value().textureIndex].data;
+				auto baseTextSource = gltfAsset->images[gltfMat.pbrData.baseColorTexture.value().textureIndex].data;
 
 				auto uri = std::get_if<fastgltf::sources::URI>(&baseTextSource);
 
@@ -208,5 +234,6 @@ namespace Pudu {
 
 		return creationData;
 	}
+
 }
 

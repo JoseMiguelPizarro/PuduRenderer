@@ -1971,8 +1971,6 @@ namespace Pudu
 
 		glfwTerminate();
 
-
-
 		m_initialized = false;
 	}
 

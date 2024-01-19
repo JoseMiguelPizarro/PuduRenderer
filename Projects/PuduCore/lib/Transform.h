@@ -10,16 +10,19 @@ using namespace glm;
 
 struct Transform
 {
-    vec3 Position = vec3(0, 0, 0);
-    vec3 Scale = vec3(1, 1, 1);
+	vec3 LocalPosition = vec3(0, 0, 0);
+	vec3 LocalScale = vec3(1, 1, 1);
 
-    /**
-     *Rotation in euler angles
-     */
-    vec3 Rotation = vec3(0, 0, 0);
+	/**
+	 *Rotation in euler angles
+	 */
+	vec3 LocalRotation = vec3(0, 0, 0);
 
-    quat GetRotationQuat();
-    mat4 GetTransformationMatrix();
-    void SetForward(vec3 forward, vec3 up);
-    vec3 GetForward();
+	quat GetRotationQuat();
+	mat4 GetTransformationMatrix();
+	void SetForward(vec3 forward, vec3 up);
+	vec3 GetForward();
+	mat4 ParentMatrix;
+
+	void(*TransformChanged)(Transform&);
 };

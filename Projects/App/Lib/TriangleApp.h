@@ -27,7 +27,7 @@ private:
 	std::filesystem::path planeTexturePath = "models/floor/Grass.png";
 	std::filesystem::path planeModelPath = "models/floor/floor.obj";
 
-	std::vector<Model> GameboyModels;
+	std::vector<RenderEntitySPtr> GameboyEntities;
 
 	Scene m_scene;
 	Camera m_camera;

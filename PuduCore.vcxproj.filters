@@ -105,6 +105,11 @@
     <ClInclude Include="Projects\PuduCore\lib\MaterialCreationData.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\RenderEntity.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Projects\PuduCore\lib\RenderEntityManager.h" />
+    <ClInclude Include="Projects\PuduCore\lib\Entity.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Projects\PuduCore\Src\Camera.cpp">
@@ -179,6 +184,11 @@
     <ClCompile Include="Projects\PuduCore\Src\MaterialCreationData.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="RenderEntity.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Projects\PuduCore\Src\RenderEntityManager.cpp" />
+    <ClCompile Include="Projects\PuduCore\Src\Entity.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Projects\PuduCore\lib\ImGui\LICENSE.txt">

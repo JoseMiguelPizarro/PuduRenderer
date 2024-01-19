@@ -8,7 +8,7 @@ using namespace glm;
 mat4 Camera::GetViewMatrix()
 {
 	vec3 forward = Transform.GetForward();
-	return PuduMath::LookAtInverse(Transform.Position, forward, { 0, 1, 0 });
+	return PuduMath::LookAtInverse(Transform.LocalPosition, forward, { 0, 1, 0 });
 }
 
 mat4 Camera::GetInverseViewMatrix()

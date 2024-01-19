@@ -8,20 +8,20 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				10
+				9
 			]
 		}
 	],
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Object_8"
+			"name":"CartridgeMesh.001"
 		},
 		{
 			"children":[
 				0
 			],
-			"name":"cartridge.001_2",
+			"name":"Cartridge_Root",
 			"rotation":[
 				0,
 				-0.3228400647640228,
@@ -41,13 +41,13 @@
 		},
 		{
 			"mesh":1,
-			"name":"Object_6"
+			"name":"CartridgeMesh.002"
 		},
 		{
 			"children":[
 				2
 			],
-			"name":"cartridge.002_1",
+			"name":"Cartridge_Root.001",
 			"rotation":[
 				0,
 				0.008973931893706322,
@@ -67,13 +67,13 @@
 		},
 		{
 			"mesh":2,
-			"name":"Object_10"
+			"name":"CartridgeMesh"
 		},
 		{
 			"children":[
 				4
 			],
-			"name":"cartridge_3",
+			"name":"Cartridge_Root.002",
 			"scale":[
 				1.287540078163147,
 				1.287540078163147,
@@ -87,13 +87,13 @@
 		},
 		{
 			"mesh":3,
-			"name":"Object_4"
+			"name":"GameboyMesh"
 		},
 		{
 			"children":[
 				6
 			],
-			"name":"Gameboy_0",
+			"name":"Gameboy_Root",
 			"rotation":[
 				0,
 				-0.16013039648532867,
@@ -130,18 +130,12 @@
 			"children":[
 				8
 			],
-			"name":"root"
-		},
-		{
-			"children":[
-				9
-			],
-			"name":"Sketchfab_model",
+			"name":"root",
 			"rotation":[
-				-0.70710688829422,
+				-0.7071066498756409,
 				0,
 				0,
-				0.7071066498756409
+				0.70710688829422
 			]
 		}
 	],
@@ -171,53 +165,57 @@
 	],
 	"meshes":[
 		{
-			"name":"Object_2",
+			"name":"cartridgeMeshData.001",
 			"primitives":[
 				{
 					"attributes":{
 						"POSITION":0,
-						"TEXCOORD_0":1
+						"NORMAL":1,
+						"TEXCOORD_0":2
 					},
-					"indices":2,
+					"indices":3,
 					"material":0
 				}
 			]
 		},
 		{
-			"name":"Object_1",
+			"name":"cartridgeMeshData",
 			"primitives":[
 				{
 					"attributes":{
-						"POSITION":3,
-						"TEXCOORD_0":4
-					},
-					"indices":2,
-					"material":0
-				}
-			]
-		},
-		{
-			"name":"Object_3",
-			"primitives":[
-				{
-					"attributes":{
-						"POSITION":5,
+						"POSITION":4,
+						"NORMAL":5,
 						"TEXCOORD_0":6
 					},
-					"indices":2,
+					"indices":3,
 					"material":0
 				}
 			]
 		},
 		{
-			"name":"Object_0",
+			"name":"cartridgeMesh.001",
 			"primitives":[
 				{
 					"attributes":{
 						"POSITION":7,
-						"TEXCOORD_0":8
+						"NORMAL":8,
+						"TEXCOORD_0":9
 					},
-					"indices":9,
+					"indices":3,
+					"material":0
+				}
+			]
+		},
+		{
+			"name":"GameboyMeshData",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":10,
+						"NORMAL":11,
+						"TEXCOORD_0":12
+					},
+					"indices":13,
 					"material":1
 				}
 			]
@@ -266,16 +264,22 @@
 			"bufferView":1,
 			"componentType":5126,
 			"count":88,
-			"type":"VEC2"
+			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
+			"componentType":5126,
+			"count":88,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":3,
 			"componentType":5123,
 			"count":132,
 			"type":"SCALAR"
 		},
 		{
-			"bufferView":3,
+			"bufferView":4,
 			"componentType":5126,
 			"count":88,
 			"max":[
@@ -291,25 +295,9 @@
 			"type":"VEC3"
 		},
 		{
-			"bufferView":4,
-			"componentType":5126,
-			"count":88,
-			"type":"VEC2"
-		},
-		{
 			"bufferView":5,
 			"componentType":5126,
 			"count":88,
-			"max":[
-				1.1173467636108398,
-				0.1843562126159668,
-				0.5434131622314453
-			],
-			"min":[
-				-1.1173467636108398,
-				-0.1843562126159668,
-				-2.007129192352295
-			],
 			"type":"VEC3"
 		},
 		{
@@ -320,6 +308,34 @@
 		},
 		{
 			"bufferView":7,
+			"componentType":5126,
+			"count":88,
+			"max":[
+				1.1173467636108398,
+				0.1843562126159668,
+				0.5434131622314453
+			],
+			"min":[
+				-1.1173467636108398,
+				-0.1843562126159668,
+				-2.007129192352295
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":8,
+			"componentType":5126,
+			"count":88,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":9,
+			"componentType":5126,
+			"count":88,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":10,
 			"componentType":5126,
 			"count":242,
 			"max":[
@@ -335,13 +351,19 @@
 			"type":"VEC3"
 		},
 		{
-			"bufferView":8,
+			"bufferView":11,
+			"componentType":5126,
+			"count":242,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":12,
 			"componentType":5126,
 			"count":242,
 			"type":"VEC2"
 		},
 		{
-			"bufferView":9,
+			"bufferView":13,
 			"componentType":5123,
 			"count":396,
 			"type":"SCALAR"
@@ -356,56 +378,80 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":704,
+			"byteLength":1056,
 			"byteOffset":1056,
 			"target":34962
 		},
 		{
 			"buffer":0,
+			"byteLength":704,
+			"byteOffset":2112,
+			"target":34962
+		},
+		{
+			"buffer":0,
 			"byteLength":264,
-			"byteOffset":1760,
+			"byteOffset":2816,
 			"target":34963
 		},
 		{
 			"buffer":0,
 			"byteLength":1056,
-			"byteOffset":2024,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":704,
 			"byteOffset":3080,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":1056,
-			"byteOffset":3784,
+			"byteOffset":4136,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":704,
-			"byteOffset":4840,
+			"byteOffset":5192,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":1056,
+			"byteOffset":5896,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":1056,
+			"byteOffset":6952,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":704,
+			"byteOffset":8008,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":2904,
-			"byteOffset":5544,
+			"byteOffset":8712,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":2904,
+			"byteOffset":11616,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":1936,
-			"byteOffset":8448,
+			"byteOffset":14520,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":792,
-			"byteOffset":10384,
+			"byteOffset":16456,
 			"target":34963
 		}
 	],
@@ -417,7 +463,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":11176,
+			"byteLength":17248,
 			"uri":"gameboy.bin"
 		}
 	]

@@ -1,17 +1,36 @@
 #include "Scene.h"
 
-void Pudu::Scene::AddModel(Model& model)
-{
-	for (size_t i = 0; i < model.Meshes.size(); i++)
+namespace Pudu {
+	void Scene::AddEntity(EntitySPtr entity)
 	{
-		Material material = {};
-		if (i >= model.Materials.size())
-		{
-			material = model.Materials[0];
-		}
+		m_entities.push_back(entity);
+		entity->AttatchToScene(*this);
+	}
+	void Scene::RemoveEntity(EntitySPtr entity)
+	{
+		//TODO
+	}
 
-		Model m = model;
-		DrawCall dc(m, model.Meshes[i], material);
-		m_DrawCalls.push_back(dc);
+	void Scene::AddRendererEntity(RenderEntitySPtr renderEntity)
+	{
+		m_renderEntities.push_back(renderEntity);
+
+		auto& model = renderEntity->GetModel();
+		for (size_t i = 0; i < model.Meshes.size(); i++)
+		{
+			Material material = {};
+			if (i >= model.Materials.size())
+			{
+				material = model.Materials[0];
+			}
+
+			Model m = model;
+			DrawCall dc(m, model.Meshes[i], material);
+			m_DrawCalls.push_back(dc);
+		}
+	}
+	void Scene::RemoveRenderEntity(RenderEntitySPtr renderEntity)
+	{
+		//TODO
 	}
 }

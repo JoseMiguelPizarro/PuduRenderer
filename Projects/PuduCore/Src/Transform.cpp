@@ -6,13 +6,13 @@ using namespace glm;
 
 quat Transform::GetRotationQuat()
 {
-	return quat(radians(Rotation));
+	return quat(radians(LocalRotation));
 }
 
 mat4 Transform::GetTransformationMatrix()
 {
 	mat4 rot = toMat4(GetRotationQuat());
-	return translate(mat4(1.0f), Position) * scale(mat4(1.0f), Scale) * rot;
+	return translate(mat4(1.0f), LocalPosition) * scale(mat4(1.0f), LocalScale) * rot;
 }
 
 void Transform::SetForward(vec3 forward, vec3 up)
@@ -21,7 +21,7 @@ void Transform::SetForward(vec3 forward, vec3 up)
 
 	//vec3 rotEuler = degrees(PuduMath::EulerAnglesFromQuat(rot));
 	vec3 rotEuler = degrees(eulerAngles(rot));
-	Rotation = rotEuler;
+	LocalRotation = rotEuler;
 }
 
 vec3 Transform::GetForward()
