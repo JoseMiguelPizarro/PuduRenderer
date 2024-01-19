@@ -363,30 +363,31 @@ namespace Pudu
 
 		RecordCommandBuffer(frame.CommandBuffer, imageIndex);
 
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = m_ImGuiRenderPass;
-
-		renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = m_swapChainExtent;
-		VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-
 		std::vector<VkCommandBuffer> submitCommandBuffers;
 
 		submitCommandBuffers.push_back(frame.CommandBuffer);
 
+
 		//ImGui Pass
-		{
+		if (false) {
+			VkRenderPassBeginInfo imGuiRenderPassInfo = {};
+			imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass;
+
+			imGuiRenderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
+			imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
+			imGuiRenderPassInfo.renderArea.extent = m_swapChainExtent;
+			VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
+			imGuiRenderPassInfo.clearValueCount = 1;
+			imGuiRenderPassInfo.pClearValues = &clearColor;
+
 			// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
 			VkCommandBufferBeginInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 			vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
 
-			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrame], &imGuiRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
@@ -844,12 +845,12 @@ namespace Pudu
 		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //Images to be presented in the swap chain
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; //Images to be presented in the swap chain
 
 		VkAttachmentReference colorAttachmentRef{};
 
 		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		//Depth & Stencil
 		VkAttachmentDescription depthAttachment{};
