@@ -58,6 +58,7 @@ namespace Pudu
 	class PuduGraphics
 	{
 	public:
+		static PuduGraphics* Instance();
 		void Init(int windowWidth, int windowHeight);
 		void DrawFrame();
 
@@ -89,6 +90,8 @@ namespace Pudu
 		Texture2d CreateTexture(std::filesystem::path const& path);
 
 	private:
+		static PuduGraphics* s_instance;
+
 		void InitVulkan();
 		void CreateVulkanInstance();
 		void PickPhysicalDevice();

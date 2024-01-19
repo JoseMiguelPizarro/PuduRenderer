@@ -3,7 +3,7 @@
 #include <Logger.h>
 
 #include "TriangleApp.h"
-#include "RenderEntityManager.h"
+#include "EntityManager.h"
 #include <FileManager.h>
 
 
@@ -29,7 +29,6 @@ void TriangleApp::OnRun()
 
 	Graphics.DrawFrame();
 }
-
 
 void TriangleApp::OnInit()
 {
@@ -86,15 +85,7 @@ void TriangleApp::OnCleanup()
 
 void TriangleApp::LoadGameboyModel()
 {
-	auto data = FileManager::LoadModelGltf(GameboyModelPath);
-
-	std::vector<Model> gameboyModels;
-	for (auto d : data) {
-		Model m = Graphics.CreateModel(d);
-		gameboyModels.push_back(m);
-
-		auto re = RenderEntityManager::AllocateEntity(m);
-		GameboyEntities.push_back(re);
-		m_scene.AddRendererEntity(re);
-	}
+	auto gltfScene = FileManager::LoadGltfScene(GameboyModelPath);
+	
+	m_scene.AddEntities(gltfScene);
 }

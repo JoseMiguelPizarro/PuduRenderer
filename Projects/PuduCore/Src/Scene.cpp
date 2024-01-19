@@ -6,6 +6,13 @@ namespace Pudu {
 		m_entities.push_back(entity);
 		entity->AttatchToScene(*this);
 	}
+	void Scene::AddEntities(std::vector<EntitySPtr> entities)
+	{
+		for (auto e : entities)
+		{
+			AddEntity(e);
+		}
+	}
 	void Scene::RemoveEntity(EntitySPtr entity)
 	{
 		//TODO
@@ -32,5 +39,13 @@ namespace Pudu {
 	void Scene::RemoveRenderEntity(RenderEntitySPtr renderEntity)
 	{
 		//TODO
+	}
+	std::vector<EntitySPtr> Scene::GetEntities()
+	{
+		return m_entities;
+	}
+	std::vector<RenderEntitySPtr> Scene::GetRenderEntities()
+	{
+		return m_renderEntities;
 	}
 }

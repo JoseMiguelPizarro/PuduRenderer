@@ -10,20 +10,34 @@ namespace Pudu {
 	{
 		typedef std::shared_ptr<Entity> EntitySPtr;
 	public:
+		virtual std::string ClassName() {
+			return "Entity";
+		}
+
 		void SetName(std::string& name);
-		const std::string& GetName(std::string& name);
+		const std::string& GetName();
+		Entity() {};
+		Entity(std::string& name);
 
 		Transform& GetTransform();
-		void AddChild(EntitySPtr child);
+		void SetTransform(Transform t);
 		void SetParent(EntitySPtr parent);
+		EntitySPtr GetRoot() const;
+		std::vector<EntitySPtr> GetChildren();
+		size_t ChildCount();
 		virtual void AttatchToScene(Scene& scene);
 
 	protected:
-		EntitySPtr m_entitySPtr;
-		EntitySPtr m_parent;
+		friend class EntityManager;
+
+		EntitySPtr m_entitySPtr = nullptr;
+		EntitySPtr m_parent = nullptr;
+
 		Transform m_transform;
 		std::vector<EntitySPtr> m_children;
 		std::string m_name;
+		EntitySPtr GetRoot(EntitySPtr const & entity) const;
+		void AddChild(EntitySPtr& entity);
 	};
 
 	typedef std::shared_ptr<Entity> EntitySPtr;

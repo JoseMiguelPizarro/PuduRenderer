@@ -16,6 +16,8 @@
 #include <tiny_obj_loader.h>
 #endif
 #include <MaterialCreationData.h>
+#include <EntityManager.h>
+
 
 namespace fs = std::filesystem;
 
@@ -126,18 +128,47 @@ namespace Pudu {
 
 		return GetGltfMeshCreationData(path, asset);
 	}
-	std::vector<RenderEntitySPtr> FileManager::LoadGltfScene(fs::path const& path)
+	std::vector<EntitySPtr> FileManager::LoadGltfScene(fs::path const& path)
 	{
 		auto asset = LoadGltfAsset(path);
 
 		auto meshCreationData = GetGltfMeshCreationData(path, asset);
 
+		std::vector<EntitySPtr> entities;
+
 		for (auto node : asset->nodes) {
-			auto name = node.name;
-			
+			LOG("{}",node.name);
+
+			auto name = std::string(node.name);
+			auto meshIndex = node.meshIndex;
+			if (meshIndex.has_value())
+			{
+				auto meshData = meshCreationData[meshIndex.value()];
+				auto model = PuduGraphics::Instance()->CreateModel(meshData);
+
+				RenderEntitySPtr e = EntityManager::AllocateRenderEntity(name, model);
+				entities.push_back(e);
+			}
+			else {
+				EntitySPtr entity = EntityManager::AllocateEntity(name);
+				fg::TRS transform = std::get<fg::TRS>(node.transform);
+
+				glm::quat r = glm::quat(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+
+				Transform& t = entity->GetTransform();
+				t.SetRotation(r);
+				t.LocalPosition = vec3(transform.translation[0], transform.translation[1], transform.translation[2]);
+				t.LocalScale = vec3(transform.scale[0], transform.scale[1], transform.scale[2]);
+
+				entities.push_back(entity);
+
+				for (auto child : node.children) {
+					entities[child]->SetParent(entity);
+				}
+			}
 		}
 
-		return std::vector<RenderEntitySPtr>();
+		return entities;
 	}
 
 	GltfAsset FileManager::LoadGltfAsset(fs::path const& path)

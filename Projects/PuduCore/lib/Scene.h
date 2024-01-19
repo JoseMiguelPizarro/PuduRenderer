@@ -11,9 +11,12 @@ namespace Pudu {
 	{
 	public:
 		void AddEntity(EntitySPtr entity);
+		void AddEntities(std::vector<EntitySPtr> entities);
 		void RemoveEntity(EntitySPtr entity);
 		void AddRendererEntity(RenderEntitySPtr renderEntity);
 		void RemoveRenderEntity(RenderEntitySPtr renderEntity);
+		std::vector<EntitySPtr> GetEntities();
+		std::vector<RenderEntitySPtr> GetRenderEntities();
 
 		std::vector<DrawCall> GetDrawCalls() {
 			return m_DrawCalls;

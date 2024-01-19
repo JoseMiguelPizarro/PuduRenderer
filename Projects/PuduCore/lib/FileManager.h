@@ -39,7 +39,7 @@ namespace Pudu {
 
 		static std::vector<MeshCreationData> LoadModelGltf(fs::path const& path);
 
-		std::vector<RenderEntitySPtr> LoadGltfScene(fs::path const& path);
+		static std::vector<EntitySPtr> LoadGltfScene(fs::path const& path);
 
 	private:
 		static std::vector<MeshCreationData> GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset);

@@ -27,8 +27,16 @@
 
 namespace Pudu
 {
+	PuduGraphics* PuduGraphics::s_instance = nullptr;
+
+	PuduGraphics* PuduGraphics::Instance()
+	{
+		return s_instance;
+	}
+
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{
+		PuduGraphics::s_instance = this;
 		Print("Graphics Init");
 		WindowWidth = windowWidth;
 		WindowHeight = windowHeight;
@@ -367,9 +375,8 @@ namespace Pudu
 
 		submitCommandBuffers.push_back(frame.CommandBuffer);
 
-
 		//ImGui Pass
-		if (false) {
+		if (true) {
 			VkRenderPassBeginInfo imGuiRenderPassInfo = {};
 			imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass;
@@ -405,6 +412,12 @@ namespace Pudu
 			ImGui::Text(std::format("FPS: {}", SceneToRender->Time->GetFPS()).c_str());
 			ImGui::Text(std::format("Delta Time: {}", deltaTime).c_str());
 
+			auto entities = SceneToRender->GetEntities();
+		
+			//Tree begin
+			ImGuiUtils::DrawEntityTree(entities);
+
+			//Tree end
 			ImGui::End();
 			ImGui::Render();
 

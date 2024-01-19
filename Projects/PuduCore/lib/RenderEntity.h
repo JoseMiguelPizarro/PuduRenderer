@@ -9,6 +9,11 @@ namespace Pudu {
 	{
 		typedef std::shared_ptr<RenderEntity> RenderEntitySPtr;
 	public:
+
+		std::string ClassName() override {
+			return "RenderEntity";
+		}
+
 		Model& GetModel();
 		void SetModel(Model& model);
 		void AttatchToScene(Scene& scene) override;
