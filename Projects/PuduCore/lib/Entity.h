@@ -14,7 +14,7 @@ namespace Pudu {
 			return "Entity";
 		}
 
-		void SetName(std::string& name);
+		void SetName(std::string const name);
 		const std::string& GetName();
 		Entity() {};
 		Entity(std::string& name);
@@ -22,6 +22,7 @@ namespace Pudu {
 		Transform& GetTransform();
 		void SetTransform(Transform t);
 		void SetParent(EntitySPtr parent);
+		EntitySPtr GetParent();
 		EntitySPtr GetRoot() const;
 		std::vector<EntitySPtr> GetChildren();
 		size_t ChildCount();

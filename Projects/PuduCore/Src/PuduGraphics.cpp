@@ -413,7 +413,7 @@ namespace Pudu
 			ImGui::Text(std::format("Delta Time: {}", deltaTime).c_str());
 
 			auto entities = SceneToRender->GetEntities();
-		
+
 			//Tree begin
 			ImGuiUtils::DrawEntityTree(entities);
 
@@ -1401,7 +1401,7 @@ namespace Pudu
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
 				&model.DescriptorSetByFrame[m_currentFrame], 0, nullptr);
 
-			auto ubo = GetUniformBufferObject(SceneToRender->Camera, &model);
+			auto ubo = GetUniformBufferObject(*SceneToRender->Camera, drawCall);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.GetIndices()->size()), 1, 0, 0, 0);
@@ -1448,7 +1448,7 @@ namespace Pudu
 		memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));*/
 	}
 
-	UniformBufferObject PuduGraphics::GetUniformBufferObject(Camera* cam, Model* model)
+	UniformBufferObject PuduGraphics::GetUniformBufferObject(Camera& cam, DrawCall& drawCall)
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1458,10 +1458,9 @@ namespace Pudu
 
 		UniformBufferObject ubo{};
 
-
-		ubo.modelMatrix = model->Transform.GetTransformationMatrix();
-		ubo.viewMatrix = cam->GetViewMatrix();
-		ubo.ProjectionMatrix = cam->GetPerspectiveMatrix();
+		ubo.modelMatrix = drawCall.TransformMatrix;
+		ubo.viewMatrix = cam.GetViewMatrix();
+		ubo.ProjectionMatrix = cam.GetPerspectiveMatrix();
 
 		return ubo;
 	}

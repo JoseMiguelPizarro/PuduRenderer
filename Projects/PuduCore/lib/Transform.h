@@ -25,7 +25,7 @@ namespace Pudu {
 		void SetForward(vec3 forward, vec3 up);
 
 		vec3 GetForward();
-		mat4 ParentMatrix;
+		mat4 ParentMatrix = mat4(1.0f);
 		void UpdateWorldTransformRecursivelly();
 		void SetParent(Transform* parent);
 		Transform* GetParent();

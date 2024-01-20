@@ -51,8 +51,15 @@ namespace Pudu {
 	}
 	void Transform::SetParent(Transform* parent)
 	{
-		m_parentTransform = parent;
-		parent->AddChild(this);
+		if (parent == nullptr)
+		{
+			UpdateWorldTransformRecursivelly();
+		}
+		else
+		{
+			m_parentTransform = parent;
+			parent->AddChild(this);
+		}
 	}
 	void Transform::AddChild(Transform* child)
 	{

@@ -69,7 +69,9 @@ void TriangleApp::OnInit()
 	//m_scene.AddModel(m_model);
 	//m_scene.AddModel(m_model2);
 	//m_scene.AddModel(m_model3);
-	//m_scene.AddModel(m_planeModel);
+	auto name = std::string("Plane");
+	auto planeEntity = EntityManager::AllocateRenderEntity(name, m_planeModel);
+	m_scene.AddEntity(planeEntity);
 
 	LoadGameboyModel();
 	Graphics.SceneToRender = &m_scene;
@@ -86,6 +88,6 @@ void TriangleApp::OnCleanup()
 void TriangleApp::LoadGameboyModel()
 {
 	auto gltfScene = FileManager::LoadGltfScene(GameboyModelPath);
-	
+
 	m_scene.AddEntities(gltfScene);
 }

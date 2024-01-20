@@ -220,7 +220,6 @@ namespace Pudu {
 				auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->second];
 				vertices.resize(positionsAccessor.count);
 
-
 				for (auto& attribute : primitive.attributes) {
 
 					auto accessor = gltfAsset->accessors[attribute.second];

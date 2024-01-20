@@ -9,6 +9,7 @@ namespace Pudu
 		Model ModelPtr;
 		Mesh MeshPtr;
 		Material MaterialPtr;
+		mat4 TransformMatrix;
 
 		DrawCall() {}
 		DrawCall(Model  model, Mesh mesh, Material material)

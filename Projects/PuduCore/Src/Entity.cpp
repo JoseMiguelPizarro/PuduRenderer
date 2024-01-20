@@ -4,7 +4,7 @@ namespace Pudu {
 	Entity::Entity(std::string& name) :m_name(name) {}
 
 
-	void Entity::SetName(std::string& name)
+	void Entity::SetName(std::string const name)
 	{
 		m_name = name;
 	}
@@ -29,6 +29,11 @@ namespace Pudu {
 		m_transform.SetParent(&parent->m_transform);
 
 		parent->AddChild(m_entitySPtr);
+	}
+
+	EntitySPtr Entity::GetParent()
+	{
+		return m_parent;
 	}
 
 	std::vector<EntitySPtr> Entity::GetChildren()

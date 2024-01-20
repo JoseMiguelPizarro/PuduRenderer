@@ -4,6 +4,11 @@ namespace Pudu {
 	void Scene::AddEntity(EntitySPtr entity)
 	{
 		m_entities.push_back(entity);
+		if (entity != SceneRoot && entity->GetParent() == nullptr)
+		{
+			entity->SetParent(SceneRoot);
+		}
+
 		entity->AttatchToScene(*this);
 	}
 	void Scene::AddEntities(std::vector<EntitySPtr> entities)
@@ -32,7 +37,9 @@ namespace Pudu {
 			}
 
 			Model m = model;
+			model.Transform = renderEntity->GetTransform();
 			DrawCall dc(m, model.Meshes[i], material);
+			dc.TransformMatrix = renderEntity->GetTransform().GetTransformationMatrix();
 			m_DrawCalls.push_back(dc);
 		}
 	}

@@ -116,7 +116,7 @@ namespace Pudu
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
-		UniformBufferObject GetUniformBufferObject(Camera* cam, Model* model);
+		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
