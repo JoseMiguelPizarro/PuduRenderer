@@ -8,3 +8,5 @@ Bin
 **.vcxproj.user
 
 Imgui.ini
+*.vcxproj
+*.filters
