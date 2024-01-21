@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "PuduCore.h"
 #include "Model.h"
 namespace Pudu
 {
@@ -7,12 +8,12 @@ namespace Pudu
 	{
 	public:
 		Model ModelPtr;
-		Mesh MeshPtr;
+		SPtr<Mesh> MeshPtr;
 		Material MaterialPtr;
 		mat4 TransformMatrix;
 
 		DrawCall() {}
-		DrawCall(Model  model, Mesh mesh, Material material)
+		DrawCall(Model  model, SPtr<Mesh> mesh, Material material)
 		{
 			ModelPtr = model;
 			MeshPtr = mesh;

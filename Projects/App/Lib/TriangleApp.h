@@ -1,4 +1,5 @@
 #pragma once
+#include <PuduCore.h>
 #include <PuduApp.h>
 #include "Mesh.h"
 #include "Scene.h"
@@ -19,8 +20,6 @@ private:
 
 	void LoadGameboyModel();
 
-	std::filesystem::path TEXTURE_PATH = "models/chocobo/chocobo.png";
-	std::filesystem::path MODEL_PATH = "models/chocobo/chocobo.obj";
 	std::filesystem::path GameboyModelPath = "models/gameboy/gameboy.gltf";
 	//std::string GameboyModelPath = "models/gameboy/scene.gltf";
 
@@ -31,12 +30,7 @@ private:
 
 	Scene m_scene;
 	Camera m_camera;
-	Mesh m_modelMesh;
-	Mesh m_planeMesh;
-	Model m_model;
-	Model m_model2;
-	Model m_model3;
+	SPtr<Mesh> m_planeMesh;
 	Model m_planeModel;
-	Texture2d m_texture;
-	Texture2d m_planeTexture;
+	SPtr<Texture2d> m_planeTexture;
 };

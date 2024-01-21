@@ -1,15 +1,16 @@
 #pragma once
+#include <memory>
+#include "PuduCore.h"
 #include "Shader.h"
-#include <Texture2D.h>
+#include "Texture2D.h"
 
 namespace Pudu {
 
 	class Material
 	{
 	public:
-		Shader* Shader;
-		Texture2d Texture;
-
+		SPtr<Shader> Shader;
+		SPtr<Texture2d> Texture;
 	};
 }
 

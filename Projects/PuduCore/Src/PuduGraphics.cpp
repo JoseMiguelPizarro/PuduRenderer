@@ -24,6 +24,8 @@
 #include "ImGui/imgui_impl_vulkan.h"
 
 #include "ImGuiUtils.h"
+#include "TextureManager.h"
+#include "MeshManager.h"
 
 namespace Pudu
 {
@@ -1212,6 +1214,7 @@ namespace Pudu
 		int texWidth, texHeight, texChannels;
 
 		auto texturePath = path.is_absolute() ? path : FileManager::GetAssetPath(path);
+
 		stbi_uc* pixels = stbi_load(texturePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -1421,12 +1424,12 @@ namespace Pudu
 		for (DrawCall drawCall : drawCalls) {
 
 			Model model = drawCall.ModelPtr;
-			Mesh mesh = drawCall.MeshPtr;
+			auto mesh = drawCall.MeshPtr;
 
-			VkBuffer vertexBuffers[] = { mesh.GetVertexBuffer()->Handler };
+			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, mesh.GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
 			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
 				&model.DescriptorSetByFrame[m_currentFrame], 0, nullptr);
@@ -1434,7 +1437,7 @@ namespace Pudu
 			auto ubo = GetUniformBufferObject(*SceneToRender->Camera, drawCall);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh.GetIndices()->size()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
 		}
 
 		// Record dear imgui primitives into command buffer
@@ -1605,14 +1608,14 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	Model PuduGraphics::CreateModel(Mesh& mesh, Material& material)
+	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, Material& material)
 	{
 		LOG("Creating Model");
 		Model model;
 
-		std::vector<Mesh> meshes{ mesh };
+		std::vector<std::shared_ptr<Mesh>> meshes{ mesh };
 		std::vector<Material> materials{ material };
-		model.Meshes = std::vector<Mesh>(meshes);
+		model.Meshes = meshes;
 		model.Materials = materials;
 
 		CreateDescriptorSets(&model);
@@ -1628,7 +1631,7 @@ namespace Pudu
 
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = material.Texture.ImageViewHandler;
+			imageInfo.imageView = material.Texture->ImageViewHandler;
 			imageInfo.sampler = m_textureSampler;
 
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
@@ -1659,8 +1662,8 @@ namespace Pudu
 
 	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
-		auto mesh = CreateMesh(data);
-		Texture2d tex = CreateTexture(data.Material.BasetTexturePath);
+		auto mesh =  MeshManager::AllocateMesh(data);
+		auto tex = TextureManager::AllocateTexture(data.Material.BasetTexturePath);
 		Material material = Material();
 		material.Texture = tex;
 
@@ -2036,10 +2039,10 @@ namespace Pudu
 		vkDestroySwapchainKHR(Device, m_swapChain, nullptr);
 	}
 
-	void PuduGraphics::DestroyMesh(Mesh* mesh)
+	void PuduGraphics::DestroyMesh(Mesh& mesh)
 	{
-		DestroyBuffer(*mesh->GetIndexBuffer());
-		DestroyBuffer(*mesh->GetVertexBuffer());
+		DestroyBuffer(*mesh.GetIndexBuffer());
+		DestroyBuffer(*mesh.GetVertexBuffer());
 	}
 	void PuduGraphics::DestroyTexture(Texture2d& texture)
 	{

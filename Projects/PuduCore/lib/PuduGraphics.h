@@ -82,12 +82,19 @@ namespace Pudu
 		bool FramebufferResized = false;
 		void InitPipeline();
 		void Cleanup();
-		Model CreateModel(Mesh& mesh, Material& material);
+		Model CreateModel(std::shared_ptr<Mesh> mesh, Material& material);
 		Model CreateModel(MeshCreationData const& data);
 		Mesh CreateMesh(MeshCreationData const& meshData);
-		void DestroyMesh(Mesh* mesh);
+		void DestroyMesh(Mesh& mesh);
 		void DestroyTexture(Texture2d& texture);
 		Texture2d CreateTexture(std::filesystem::path const& path);
+
+		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
+			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
+			VkImageTiling tiling, VkImageUsageFlags usage,
+			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
 	private:
 		static PuduGraphics* s_instance;
@@ -155,11 +162,7 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
-		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
-			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
-			VkImageTiling tiling, VkImageUsageFlags usage,
-			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+		
 
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 

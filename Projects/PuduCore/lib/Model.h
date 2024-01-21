@@ -13,7 +13,7 @@ namespace Pudu {
 	public:
 		std::string Name;
 		Transform Transform;
-		std::vector<Mesh> Meshes;
+		std::vector<std::shared_ptr<Mesh>> Meshes;
 		std::vector<Material> Materials;
 		std::vector<VkDescriptorSet> DescriptorSetByFrame;
 	};

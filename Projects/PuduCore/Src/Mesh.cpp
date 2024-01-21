@@ -1,4 +1,5 @@
-﻿#include "Mesh.h"
+﻿#include "PuduGraphics.h"
+#include "Mesh.h"
 
 namespace Pudu
 {
@@ -20,5 +21,15 @@ namespace Pudu
     std::vector<uint32_t>* Mesh::GetIndices()
     {
         return &m_indices;
+    }
+
+    void Mesh::Dispose()
+    {
+        if (!m_disposed)
+        {
+            PuduGraphics::Instance()->DestroyMesh(*this);
+
+            m_disposed = true;
+        }
     }
 }

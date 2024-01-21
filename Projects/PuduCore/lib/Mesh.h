@@ -27,6 +27,8 @@ namespace Pudu
             m_vertexBuffer = buffer;
         }
 
+        void Dispose();
+
         Mesh(
             GraphicsBuffer vertexBuffer,
             GraphicsBuffer indexBuffer,
@@ -42,5 +44,6 @@ namespace Pudu
         GraphicsBuffer m_indexBuffer;
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
+        bool m_disposed;
     };
 }
