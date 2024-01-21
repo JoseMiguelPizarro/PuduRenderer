@@ -297,14 +297,16 @@ namespace Pudu
 		attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-		VkAttachmentReference color_attachment = {};
-		color_attachment.attachment = 0;
-		color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		VkAttachmentReference colorAttachment = {};
+		colorAttachment.attachment = 0;
+		colorAttachment.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		//colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		//colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkSubpassDescription subpass = {};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &color_attachment;
+		subpass.pColorAttachments = &colorAttachment;
 
 		VkSubpassDependency dependency = {};
 		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -341,6 +343,34 @@ namespace Pudu
 		{
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
+	}
+
+	void PuduGraphics::CreateImGUIFrameBuffers()
+	{
+		LOG("Create ImGUI FrameBuffers");
+		m_ImGuiFrameBuffers.resize(m_swapChainImagesViews.size());
+
+		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
+		{
+			std::array<VkImageView, 1> attachments = {
+				m_swapChainImagesViews[i]
+			};
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = m_ImGuiRenderPass;
+			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+			framebufferInfo.pAttachments = attachments.data();
+			framebufferInfo.width = m_swapChainExtent.width;
+			framebufferInfo.height = m_swapChainExtent.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(Device, &framebufferInfo, nullptr, &m_ImGuiFrameBuffers[i]) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create framebuffer!");
+			}
+		}
+		Print("Created frame buffers");
 	}
 
 	void PuduGraphics::DrawFrame()
@@ -381,7 +411,7 @@ namespace Pudu
 			imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass;
 
-			imGuiRenderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
+			imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[imageIndex];
 			imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
 			imGuiRenderPassInfo.renderArea.extent = m_swapChainExtent;
 			VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
@@ -858,12 +888,12 @@ namespace Pudu
 		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; //Images to be presented in the swap chain
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //Images to be presented in the swap chain
 
 		VkAttachmentReference colorAttachmentRef{};
 
 		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		//Depth & Stencil
 		VkAttachmentDescription depthAttachment{};
@@ -1690,6 +1720,7 @@ namespace Pudu
 
 		CreateImGuiRenderPass();
 		CreateCommandPool(&m_ImGuiCommandPool);
+		CreateImGUIFrameBuffers();
 		CreateImGUICommandBuffers();
 
 		ImGui_ImplVulkan_InitInfo initInfo{};

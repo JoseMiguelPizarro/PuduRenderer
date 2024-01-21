@@ -128,9 +128,11 @@ namespace Pudu
 		VkPipeline m_imguiPipeline;
 		VkDescriptorPool m_ImGuiDescriptorPool;
 		std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
+		std::vector<VkFramebuffer> m_ImGuiFrameBuffers;
 
 		void CreateImGuiRenderPass();
 		void CreateImGUICommandBuffers();
+		void CreateImGUIFrameBuffers();
 #pragma endregion
 
 #pragma region DepthBuffer
