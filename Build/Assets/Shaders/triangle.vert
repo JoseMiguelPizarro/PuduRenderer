@@ -1,34 +1,20 @@
-struct VSInput
-{
-[[vk::location(0)]] float3 Position : POSITION0;
-[[vk::location(1)]] float3 Color : COLOR0;
-[[vk::location(2)]] float2 uv : TEXCOORD0;
-};
+#version 450
 
-struct UBO
-{
-	float4x4 modelMatrix;
-	float4x4 viewMatrix;
-	float4x4 projectionMatrix;
-};
+layout(push_constant,std430) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+} ubo;
 
-[[vk::push_constant]]
-ConstantBuffer<UBO> ubo: register(b0);
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inColor;
+layout(location = 2) in vec2 inTexCoord;
 
-struct VSOutput
-{
-	float4 Pos : SV_POSITION;
-    float3 Color : COLOR0;
-    float2 uv:TEXCOORD0;
-};
+layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec2 fragTexCoord;
 
-VSOutput main(VSInput input, uint VertexIndex : SV_VertexID)
-{
-	VSOutput output = (VSOutput)0;
-	output.Color = input.Color * float(VertexIndex);
-    output.uv = input.uv;
-	float4x4 modelMatrix =ubo.modelMatrix; 
-	float4x4 viewMatrix = ubo.viewMatrix;
-	output.Pos = mul(ubo.projectionMatrix, mul(viewMatrix, mul(modelMatrix, float4(input.Position.xyz, 1.0))));
-	return output;
+void main() {
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+    fragColor = inColor;
+    fragTexCoord = inTexCoord;
 }

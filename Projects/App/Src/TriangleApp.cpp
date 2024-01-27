@@ -5,7 +5,6 @@
 #include <FileManager.h>
 #include "TriangleApp.h"
 #include "EntityManager.h"
-#include "TextureManager.h"
 #include "MeshManager.h"
 
 namespace fs = std::filesystem;
@@ -26,17 +25,17 @@ void TriangleApp::OnInit()
 	m_scene = Scene(&Time);
 	m_scene.Camera = &m_camera;
 
-	m_planeTexture = TextureManager::AllocateTexture(planeTexturePath);
-	auto planeModelData = FileManager::LoadModelObj(planeModelPath.string());
+	//m_planeTexture = Graphics.GetResources().AllocateTexture(planeTexturePath);
+	//auto planeModelData = FileManager::LoadModelObj(planeModelPath.string());
 
-	m_planeMesh = MeshManager::AllocateMesh(planeModelData);
-	Material planeMaterial{};
-	planeMaterial.Texture = m_planeTexture;
-	m_planeModel = Graphics.CreateModel(m_planeMesh, planeMaterial);
+	//m_planeMesh = MeshManager::AllocateMesh(planeModelData);
+	//Material planeMaterial{};
+	//planeMaterial.Texture = m_planeTexture;
+	//m_planeModel = Graphics.CreateModel(m_planeMesh, planeMaterial);
 
-	auto name = std::string("Plane");
-	auto planeEntity = EntityManager::AllocateRenderEntity(name, m_planeModel);
-	m_scene.AddEntity(planeEntity);
+	//auto name = std::string("Plane");
+	//auto planeEntity = EntityManager::AllocateRenderEntity(name, m_planeModel);
+	//m_scene.AddEntity(planeEntity);
 
 	LoadGameboyModel();
 	Graphics.SceneToRender = &m_scene;

@@ -24,7 +24,6 @@
 #include "ImGui/imgui_impl_vulkan.h"
 
 #include "ImGuiUtils.h"
-#include "TextureManager.h"
 #include "MeshManager.h"
 
 namespace Pudu
@@ -42,6 +41,9 @@ namespace Pudu
 		Print("Graphics Init");
 		WindowWidth = windowWidth;
 		WindowHeight = windowHeight;
+
+		m_resourcesManager = std::make_shared<GPUResourcesManager>();
+		m_resourcesManager->Init(this);
 
 		InitWindow();
 		InitVulkan();
@@ -61,19 +63,19 @@ namespace Pudu
 		CreateSwapChain();
 		CreateImageViews();
 		CreateRenderPass();
+		CreateDescriptorPool();
 		CreateDescriptorSetLayout();
+		CreateBindlessDescriptorSet();
 		CreateGraphicsPipeline();
 		CreateCommandPool(&m_commandPool);
 		CreateDepthResources();
 		CreateFrameBuffers();
 
-		CreateTextureSampler();
 		CreateUniformBuffers();
 
 		CreateCommandBuffer();
 		CreateSyncObjects();
 
-		CreateDescriptorPool();
 	}
 
 	void PuduGraphics::InitPipeline()
@@ -120,6 +122,14 @@ namespace Pudu
 		}
 
 		return true;
+	}
+
+	void PuduGraphics::UpdateTexture(Texture2d& texture)
+	{
+		ResourceUpdate resourceToUpdate{};
+		resourceToUpdate.handle = texture.Handler;
+
+		m_bindlessResourcesToUpdate.push_back(resourceToUpdate);
 	}
 
 	void PuduGraphics::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
@@ -216,25 +226,25 @@ namespace Pudu
 		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+		if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create buffer!");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(Device, buffer, &memRequirements);
+		vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(Device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+		if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate buffer memory!");
 		}
 
-		vkBindBufferMemory(Device, buffer, bufferMemory, 0);
+		vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
 	}
 
 	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -267,11 +277,11 @@ namespace Pudu
 
 	void PuduGraphics::DestroyBuffer(GraphicsBuffer buffer)
 	{
-		vkDestroyBuffer(Device, buffer.Handler, m_allocatorPtr);
-		vkFreeMemory(Device, buffer.DeviceMemoryHandler, m_allocatorPtr);
+		vkDestroyBuffer(m_device, buffer.Handler, m_allocatorPtr);
+		vkFreeMemory(m_device, buffer.DeviceMemoryHandler, m_allocatorPtr);
 	}
 
-	std::vector<const char*> PuduGraphics::GetRequiredExtensions()
+	std::vector<const char*> PuduGraphics::GetInstanceExtensions()
 	{
 		uint32_t glfwExtensionsCount = 0;
 		const char** glfwExtensions;
@@ -283,6 +293,9 @@ namespace Pudu
 		{
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
+
+		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
 
 		return extensions;
 	}
@@ -301,7 +314,7 @@ namespace Pudu
 
 		VkAttachmentReference colorAttachment = {};
 		colorAttachment.attachment = 0;
-		colorAttachment.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		//colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		//colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
@@ -327,7 +340,7 @@ namespace Pudu
 		info.dependencyCount = 1;
 		info.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(Device, &info, nullptr, &m_ImGuiRenderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_device, &info, nullptr, &m_ImGuiRenderPass) != VK_SUCCESS)
 			throw std::runtime_error("failed to create render pass!");
 	}
 
@@ -341,7 +354,7 @@ namespace Pudu
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		allocInfo.commandBufferCount = (uint32_t)m_ImGuiCommandBuffers.size();
 
-		if (vkAllocateCommandBuffers(Device, &allocInfo, m_ImGuiCommandBuffers.data()) != VK_SUCCESS)
+		if (vkAllocateCommandBuffers(m_device, &allocInfo, m_ImGuiCommandBuffers.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate command buffers!");
 		}
@@ -367,7 +380,7 @@ namespace Pudu
 			framebufferInfo.height = m_swapChainExtent.height;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(Device, &framebufferInfo, nullptr, &m_ImGuiFrameBuffers[i]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_ImGuiFrameBuffers[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create framebuffer!");
 			}
@@ -378,10 +391,12 @@ namespace Pudu
 	void PuduGraphics::DrawFrame()
 	{
 		Frame frame = m_Frames[m_currentFrame];
-		vkWaitForFences(Device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
+		UpdateBindlessResources();
+
+		vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
 		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(Device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore,
+		VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore,
 			VK_NULL_HANDLE, &imageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -394,7 +409,8 @@ namespace Pudu
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
 
-		vkResetFences(Device, 1, &frame.InFlightFence);
+
+		vkResetFences(m_device, 1, &frame.InFlightFence);
 
 		float deltaTime = SceneToRender->Time->DeltaTime();
 		Camera* cam = SceneToRender->Camera;
@@ -552,7 +568,7 @@ namespace Pudu
 			createInfo.enabledLayerCount = 0;
 		}
 
-		auto extensions = GetRequiredExtensions();
+		auto extensions = GetInstanceExtensions();
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 		createInfo.ppEnabledExtensionNames = extensions.data();
@@ -600,17 +616,17 @@ namespace Pudu
 				stagingBufferMemory);
 
 			void* data;
-			vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+			vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
 			memcpy(data, bufferData, (size_t)bufferSize);
-			vkUnmapMemory(Device, stagingBufferMemory);
+			vkUnmapMemory(m_device, stagingBufferMemory);
 
 			CreateBuffer(bufferSize, usage, flags, vkBuffer,
 				vkdeviceMemory);
 
 			CopyBuffer(stagingBuffer, vkBuffer, bufferSize);
 
-			vkDestroyBuffer(Device, stagingBuffer, nullptr);
-			vkFreeMemory(Device, stagingBufferMemory, nullptr);
+			vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+			vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 		}
 		else
 		{
@@ -641,25 +657,25 @@ namespace Pudu
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.flags = 0;
 
-		if (vkCreateImage(Device, &imageInfo, nullptr, &image) != VK_SUCCESS)
+		if (vkCreateImage(m_device, &imageInfo, nullptr, &image) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image!");
 		}
 
 		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(Device, image, &memRequirements);
+		vkGetImageMemoryRequirements(m_device, image, &memRequirements);
 
 		VkMemoryAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(Device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+		if (vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate image memory!");
 		}
 
-		vkBindImageMemory(Device, image, imageMemory, 0);
+		vkBindImageMemory(m_device, image, imageMemory, 0);
 	}
 
 	VkImageView PuduGraphics::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
@@ -676,7 +692,7 @@ namespace Pudu
 		viewInfo.subresourceRange.layerCount = 1;
 
 		VkImageView imageView;
-		if (vkCreateImageView(Device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+		if (vkCreateImageView(m_device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
 		{
 			PUDU_ERROR("failed to create texture image view!");
 		}
@@ -704,14 +720,16 @@ namespace Pudu
 			{
 				m_physicalDevice = device;
 				//For now just pick the first suitable device, later we can pick the most fancy one
-				VkPhysicalDeviceProperties deviceProperties;
-				VkPhysicalDeviceFeatures deviceFeatures;
+				VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+				VkPhysicalDeviceFeatures2 deviceFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+				VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+				indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
-				vkGetPhysicalDeviceProperties(device, &deviceProperties);
-				vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+				vkGetPhysicalDeviceProperties2(device, &deviceProperties);
+				vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
 
-				Print("Picked device name %s", deviceProperties.deviceName);
-				Print("Device type %i", deviceProperties.deviceType);
+				Print("Picked device name %s", deviceProperties.properties.deviceName);
+				Print("Device type %i", deviceProperties.properties.deviceType);
 
 				break;
 			}
@@ -750,8 +768,9 @@ namespace Pudu
 
 		queueCreateInfo.pQueuePriorities = &queuePriority;
 
-		VkPhysicalDeviceFeatures deviceFeatures{};
-		deviceFeatures.samplerAnisotropy = VK_TRUE;
+		VkPhysicalDeviceFeatures2 deviceFeatures{};
+		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -759,7 +778,7 @@ namespace Pudu
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-		createInfo.pEnabledFeatures = &deviceFeatures;
+		createInfo.pNext = &deviceFeatures;
 
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = DeviceExtensions.data();
@@ -770,7 +789,6 @@ namespace Pudu
 
 		//createInfo.pNext = &cacheFeatures;
 
-
 		if (enableValidationLayers)
 		{
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -780,14 +798,19 @@ namespace Pudu
 		{
 			createInfo.enabledLayerCount = 0;
 		}
+		if (m_physicalDeviceData.SupportsBindless)
+		{
 
-		if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &Device) != VK_SUCCESS)
+			deviceFeatures.pNext = &m_physicalDeviceData.IndexingFeatures;
+		}
+
+		if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create logical device!");
 		}
 
-		vkGetDeviceQueue(Device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
-		vkGetDeviceQueue(Device, indices.presentFamily.value(), 0, &m_presentationQueue);
+		vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
+		vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentationQueue);
 	}
 
 	void PuduGraphics::CreateSurface()
@@ -845,7 +868,7 @@ namespace Pudu
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(Device, &createInfo, m_allocatorPtr, &m_swapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_swapChain) != VK_SUCCESS)
 		{
 			PUDU_ERROR("failed to create swap chain!");
 		}
@@ -855,8 +878,8 @@ namespace Pudu
 		}
 
 		m_swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, nullptr);
-		vkGetSwapchainImagesKHR(Device, m_swapChain, &imageCount, m_swapChainImages.data());
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
+		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
 
 		m_imageCount = imageCount;
 		m_swapChainImageFormat = surfaceFormat.format;
@@ -940,7 +963,7 @@ namespace Pudu
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(Device, &renderPassInfo, m_allocatorPtr, &m_renderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_device, &renderPassInfo, m_allocatorPtr, &m_renderPass) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create render pass");
 		}
@@ -956,7 +979,7 @@ namespace Pudu
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-			vkMapMemory(Device, m_uniformBuffers[i].DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i].MappedMemory);
+			vkMapMemory(m_device, m_uniformBuffers[i].DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i].MappedMemory);
 		}
 	}
 
@@ -978,48 +1001,86 @@ namespace Pudu
 
 	void PuduGraphics::CreateDescriptorPool()
 	{
-		uint32_t maxDescriptorCount = 100;
+		LOG("Creating desciptor Pool");
 
-		std::array<VkDescriptorPoolSize, 2> poolSizes{};
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * maxDescriptorCount;
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * maxDescriptorCount;
+		const uint32_t poolsSizesCount = 1;
+		std::array< VkDescriptorPoolSize, poolsSizesCount> poolSizesBindless =
+		{
+			VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,k_MAX_BINDLESS_RESOURCES},
+		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		//poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * maxDescriptorCount;
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT; //support bindless
+		poolInfo.maxSets = k_MAX_BINDLESS_RESOURCES * poolSizesBindless.size();
+		poolInfo.poolSizeCount = poolSizesBindless.size();
+		poolInfo.pPoolSizes = poolSizesBindless.data();
 
-		if (vkCreateDescriptorPool(Device, &poolInfo, m_allocatorPtr, &m_descriptorPool) != VK_SUCCESS)
+		m_physicalDeviceData.PoolSizesCount = poolsSizesCount;
+
+		if (vkCreateDescriptorPool(m_device, &poolInfo, m_allocatorPtr, &m_descriptorPool) != VK_SUCCESS)
 		{
 			PUDU_ERROR("Failed to create descriptor pool!");
 		}
 	}
 
-	void PuduGraphics::CreateDescriptorSets(Model* model)
+	void PuduGraphics::CreateDescriptorSetLayout()
 	{
-		std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_descriptorSetLayout);
+		const uint32_t poolCount = m_physicalDeviceData.PoolSizesCount;
+
+		VkDescriptorSetLayoutBinding vk_binding[4];
+
+		LOG("CreateDescriptorSetLayout");
+		VkDescriptorSetLayoutBinding& textureLayoutBinding = vk_binding[0];
+		textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		textureLayoutBinding.descriptorCount = k_MAX_BINDLESS_RESOURCES;
+		textureLayoutBinding.binding = k_BINDLESS_TEXTURE_BINDING;
+		textureLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+		textureLayoutBinding.pImmutableSamplers = nullptr;
+
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = static_cast<uint32_t>(poolCount);
+		layoutInfo.pBindings = vk_binding;
+		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+
+		VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
+
+		std::array< VkDescriptorBindingFlags, 4> bindingFlags;
+
+		bindingFlags[0] = bindlessFlags;
+		bindingFlags[1] = bindlessFlags;
+
+		VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
+		extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+		extendedInfo.bindingCount = poolCount;
+		extendedInfo.pBindingFlags = bindingFlags.data();
+		layoutInfo.pNext = &extendedInfo;
+
+		if (vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+	}
+
+	void PuduGraphics::CreateBindlessDescriptorSet()
+	{
+		LOG("Creating descriptor set");
+
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = m_descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		allocInfo.pSetLayouts = layouts.data();
+		allocInfo.descriptorSetCount = 1;
+		allocInfo.pSetLayouts = &m_descriptorSetLayout;
 
-		std::vector<VkDescriptorSet> descriptorSets(MAX_FRAMES_IN_FLIGHT);
-		if (vkAllocateDescriptorSets(Device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate descriptor sets!");
-		}
-
-		model->DescriptorSetByFrame = descriptorSets;
+		vkAllocateDescriptorSets(m_device, &allocInfo, &m_bindlessDescriptorSet);
 	}
 
 	void PuduGraphics::CreateGraphicsPipeline()
 	{
 		LOG("CreateGraphicsPipeline");
+		LOG("Loading shaders");
 		auto vertShaderCode = FileManager::ReadAssetFile("Shaders/Compiled/triangle.vert.spv");
 		auto fragShaderCode = FileManager::ReadAssetFile("Shaders/Compiled/triangle.frag.spv");
 
@@ -1103,20 +1164,27 @@ namespace Pudu
 		dynamicState.pDynamicStates = dynamicStates.data();
 
 
-
 		VkPushConstantRange pushConstant{};
 		pushConstant.offset = 0;
 		pushConstant.size = sizeof(UniformBufferObject);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
+		VkPushConstantRange fragmentConstant{};
+		fragmentConstant.offset = sizeof(UniformBufferObject);
+		fragmentConstant.size = sizeof(uint32_t);
+		fragmentConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+
+		VkPushConstantRange constants[2]{ pushConstant, fragmentConstant };
+
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
-		pipelineLayoutInfo.pPushConstantRanges = &pushConstant;
-		pipelineLayoutInfo.pushConstantRangeCount = 1;
+		pipelineLayoutInfo.pPushConstantRanges = constants;
+		pipelineLayoutInfo.pushConstantRangeCount = 2;
 
-		if (vkCreatePipelineLayout(Device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -1148,13 +1216,13 @@ namespace Pudu
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(Device, nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(m_device, nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create graphics pipeline!");
 		}
 
-		vkDestroyShaderModule(Device, fragShaderModule, nullptr);
-		vkDestroyShaderModule(Device, vertShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
 	}
 
 	void PuduGraphics::CreateFrameBuffers()
@@ -1178,7 +1246,7 @@ namespace Pudu
 			framebufferInfo.height = m_swapChainExtent.height;
 			framebufferInfo.layers = 1;
 
-			if (vkCreateFramebuffer(Device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create framebuffer!");
 			}
@@ -1201,7 +1269,7 @@ namespace Pudu
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(Device, &poolInfo, nullptr, cmdPool) != VK_SUCCESS)
+		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, cmdPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create command pool");
 		}
@@ -1209,7 +1277,7 @@ namespace Pudu
 		Print("Created command pool");
 	}
 
-	Texture2d PuduGraphics::CreateTexture(std::filesystem::path const& path)
+	Texture2d PuduGraphics::CreateTexture(std::filesystem::path const& path, Handle handle)
 	{
 		int texWidth, texHeight, texChannels;
 
@@ -1229,9 +1297,9 @@ namespace Pudu
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		void* data;
-		vkMapMemory(Device, stagingBuffer.DeviceMemoryHandler, 0, imageSize, 0, &data);
+		vkMapMemory(m_device, stagingBuffer.DeviceMemoryHandler, 0, imageSize, 0, &data);
 		memcpy(data, pixels, static_cast<size_t>(imageSize));
-		vkUnmapMemory(Device, stagingBuffer.DeviceMemoryHandler);
+		vkUnmapMemory(m_device, stagingBuffer.DeviceMemoryHandler);
 
 		stbi_image_free(pixels);
 
@@ -1239,30 +1307,32 @@ namespace Pudu
 
 		CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture.ImageHandler, texture.MemoryHandler);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture.vkImageHandler, texture.vkMemoryHandler);
 
-		TransitionImageLayout(texture.ImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+		TransitionImageLayout(texture.vkImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		CopyBufferToImage(stagingBuffer.Handler, texture.ImageHandler, static_cast<uint32_t>(texWidth),
+		CopyBufferToImage(stagingBuffer.Handler, texture.vkImageHandler, static_cast<uint32_t>(texWidth),
 			static_cast<uint32_t>(texHeight));
 
-		TransitionImageLayout(texture.ImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		TransitionImageLayout(texture.vkImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-		vkDestroyBuffer(Device, stagingBuffer.Handler, nullptr);
-		vkFreeMemory(Device, stagingBuffer.DeviceMemoryHandler, nullptr);
+		vkDestroyBuffer(m_device, stagingBuffer.Handler, nullptr);
+		vkFreeMemory(m_device, stagingBuffer.DeviceMemoryHandler, nullptr);
 
 		CreateTextureImageView(texture);
 
+		CreateTextureSampler(texture.Sampler.vkHandle);
+		texture.Handler = handle;
 		return texture;
 	}
 
 	void PuduGraphics::CreateTextureImageView(Texture2d& texture2d)
 	{
-		texture2d.ImageViewHandler = CreateImageView(texture2d.ImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		texture2d.vkImageViewHandler = CreateImageView(texture2d.vkImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
-	void PuduGraphics::CreateTextureSampler()
+	void PuduGraphics::CreateTextureSampler(VkSampler& sampler)
 	{
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1288,7 +1358,7 @@ namespace Pudu
 		samplerInfo.minLod = 0.0f;
 		samplerInfo.maxLod = 0.0f;
 
-		if (vkCreateSampler(Device, &samplerInfo, nullptr, &m_textureSampler) != VK_SUCCESS)
+		if (vkCreateSampler(m_device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
 		{
 			PUDU_ERROR("failed to create texture sampler!");
 		}
@@ -1305,7 +1375,7 @@ namespace Pudu
 		std::vector<VkCommandBuffer> buffers;
 		buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-		if (vkAllocateCommandBuffers(Device, &allocInfo, buffers.data()) != VK_SUCCESS)
+		if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to allocate command buffer!");
 		}
@@ -1317,38 +1387,9 @@ namespace Pudu
 			frame.CommandBuffer = buffers[i];
 		}
 
-		Print("Created command buffer");
+		LOG("Created command buffer");
 	}
 
-	void PuduGraphics::CreateDescriptorSetLayout()
-	{
-		LOG("CreateDescriptorSetLayout");
-		VkDescriptorSetLayoutBinding uboLayoutBinding{};
-		uboLayoutBinding.binding = 0;
-		uboLayoutBinding.descriptorCount = 1;
-		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		uboLayoutBinding.pImmutableSamplers = nullptr;
-
-		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-		samplerLayoutBinding.binding = 1;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-		std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo{};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-		layoutInfo.pBindings = bindings.data();
-
-		if (vkCreateDescriptorSetLayout(Device, &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create descriptor set layout!");
-		}
-	}
 
 	void PuduGraphics::CreateSyncObjects()
 	{
@@ -1361,11 +1402,11 @@ namespace Pudu
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			if (vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &m_Frames[i].ImageAvailableSemaphore) != VK_SUCCESS
+			if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].ImageAvailableSemaphore) != VK_SUCCESS
 				||
-				vkCreateSemaphore(Device, &semaphoreInfo, nullptr, &m_Frames[i].RenderFinishedSemaphore) != VK_SUCCESS
+				vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].RenderFinishedSemaphore) != VK_SUCCESS
 				||
-				vkCreateFence(Device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence) != VK_SUCCESS
+				vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence) != VK_SUCCESS
 				)
 			{
 				throw std::runtime_error("Failed to create semaphores");
@@ -1421,6 +1462,9 @@ namespace Pudu
 		VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		std::vector<VkDescriptorSet> descriptorSets(drawCalls.size());
 
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
+			&m_bindlessDescriptorSet, 0, nullptr);
+
 		for (DrawCall drawCall : drawCalls) {
 
 			Model model = drawCall.ModelPtr;
@@ -1431,11 +1475,12 @@ namespace Pudu
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 			vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-				&model.DescriptorSetByFrame[m_currentFrame], 0, nullptr);
-
 			auto ubo = GetUniformBufferObject(*SceneToRender->Camera, drawCall);
+			uint32_t materialid = drawCall.MaterialPtr.Texture->Handler;
+
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
+			LOG("Material Id {}", materialid);
+			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
 
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
 		}
@@ -1465,7 +1510,7 @@ namespace Pudu
 			}
 		}
 
-		vkDeviceWaitIdle(Device);
+		vkDeviceWaitIdle(m_device);
 
 		CleanupSwapChain();
 
@@ -1496,6 +1541,47 @@ namespace Pudu
 		ubo.ProjectionMatrix = cam.GetPerspectiveMatrix();
 
 		return ubo;
+	}
+
+	void PuduGraphics::UpdateBindlessResources()
+	{
+		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
+		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
+		size_t currentWriteIndex = 0;
+
+		for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
+		{
+			ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
+
+			auto texture = m_resourcesManager->GetTexture(textureToUpdate.handle);
+			VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
+			descriptorWrite = {};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.dstArrayElement = textureToUpdate.handle;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrite.dstSet = m_bindlessDescriptorSet;
+			descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
+
+			auto textureSampler = texture->Sampler;
+
+			VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
+			descriptorImageInfo = {};
+			descriptorImageInfo.sampler = textureSampler.vkHandle;
+			descriptorImageInfo.imageView = texture->vkImageViewHandler;
+			descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+			descriptorWrite.pImageInfo = &descriptorImageInfo;
+
+			currentWriteIndex++;
+		}
+
+		m_bindlessResourcesToUpdate.clear();
+
+		if (currentWriteIndex)
+		{
+			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
+		}
 	}
 
 	void PuduGraphics::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
@@ -1610,7 +1696,6 @@ namespace Pudu
 
 	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, Material& material)
 	{
-		LOG("Creating Model");
 		Model model;
 
 		std::vector<std::shared_ptr<Mesh>> meshes{ mesh };
@@ -1618,52 +1703,13 @@ namespace Pudu
 		model.Meshes = meshes;
 		model.Materials = materials;
 
-		CreateDescriptorSets(&model);
-
-		std::vector<VkDescriptorSet> descriptorSets = model.DescriptorSetByFrame;
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		{
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = m_uniformBuffers[i].Handler;
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
-
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = material.Texture->ImageViewHandler;
-			imageInfo.sampler = m_textureSampler;
-
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = descriptorSets[i];
-			descriptorWrites[0].dstBinding = 0;
-			descriptorWrites[0].dstArrayElement = 0;
-			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount = 1;
-			descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = descriptorSets[i];
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
-
-			vkUpdateDescriptorSets(Device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-				nullptr);
-		}
-
-
 		return model;
 	}
 
 	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
-		auto mesh =  MeshManager::AllocateMesh(data);
-		auto tex = TextureManager::AllocateTexture(data.Material.BasetTexturePath);
+		auto mesh = MeshManager::AllocateMesh(data);
+		auto tex = m_resourcesManager->AllocateTexture(data.Material.BasetTexturePath);
 		Material material = Material();
 		material.Texture = tex;
 
@@ -1683,6 +1729,8 @@ namespace Pudu
 
 	void PuduGraphics::InitImgui()
 	{
+		LOG("ImGUI Init");
+
 		ImGui::CreateContext();
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
@@ -1716,7 +1764,7 @@ namespace Pudu
 				pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
 				pool_info.pPoolSizes = pool_sizes;
 
-				if (vkCreateDescriptorPool(Device, &pool_info, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
+				if (vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
 					throw std::runtime_error("Create DescriptorPool for m_ImGuiDescriptorPool failed!");
 			}
 		}
@@ -1729,7 +1777,7 @@ namespace Pudu
 		ImGui_ImplVulkan_InitInfo initInfo{};
 		initInfo.Instance = m_vkInstance;
 		initInfo.PhysicalDevice = m_physicalDevice;
-		initInfo.Device = Device;
+		initInfo.Device = m_device;
 		initInfo.QueueFamily = FindQueueFamilies(m_physicalDevice).graphicsFamily.value();
 		initInfo.Queue = m_graphicsQueue;
 		initInfo.PipelineCache = VK_NULL_HANDLE;
@@ -1744,9 +1792,10 @@ namespace Pudu
 		//initInfo.PipelineCache = m_pipelineCache;
 
 		ImGui_ImplVulkan_Init(&initInfo, m_ImGuiRenderPass);
-		vkDeviceWaitIdle(Device);
+		vkDeviceWaitIdle(m_device);
 
 		//ImGui_ImplVulkan_DestroyFontsTexture();
+		LOG("ImGUI init end");
 	}
 
 	void PuduGraphics::CreateDepthResources()
@@ -1808,7 +1857,7 @@ namespace Pudu
 		allocInfo.commandBufferCount = 1;
 
 		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(Device, &allocInfo, &commandBuffer);
+		vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1831,7 +1880,7 @@ namespace Pudu
 		vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 		vkQueueWaitIdle(m_graphicsQueue);
 
-		vkFreeCommandBuffers(Device, m_commandPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
 	}
 
 	VkShaderModule PuduGraphics::CreateShaderModule(const std::vector<char>& code)
@@ -1842,7 +1891,7 @@ namespace Pudu
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(Device, &createInfo, m_allocatorPtr, &shaderModule) != VK_SUCCESS)
+		if (vkCreateShaderModule(m_device, &createInfo, m_allocatorPtr, &shaderModule) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create shader module!");
 		}
@@ -1880,14 +1929,28 @@ namespace Pudu
 
 	bool PuduGraphics::IsDeviceSuitable(VkPhysicalDevice device)
 	{
-		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
-		vkGetPhysicalDeviceProperties(device, &deviceProperties);
-		vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+		VkPhysicalDeviceProperties2 deviceProperties{};
+		deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+
+		VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
+		indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+
+
+		VkPhysicalDeviceFeatures2 deviceFeatures{};
+		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+		deviceFeatures.pNext = &indexingFeatures;
+
+		vkGetPhysicalDeviceProperties2(device, &deviceProperties);
+		vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
 
 		QueueFamilyIndices indices = FindQueueFamilies(device);
 
-		if (deviceProperties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+		bool bindlessSupported =
+			indexingFeatures.descriptorBindingPartiallyBound &&
+			indexingFeatures.runtimeDescriptorArray;
+
+		if (deviceProperties.properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
 		{
 			return false; //Force not using integrated for now
 		}
@@ -1901,7 +1964,16 @@ namespace Pudu
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 
-		return indices.IsComplete() && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy;
+		// These are required to support the 4 descriptor binding flags we use in this sample.
+		indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+		// Enables use of runtimeDescriptorArrays in SPIR-V shaders.
+		indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+
+		LOG("Bindless suported {}", bindlessSupported);
+		m_physicalDeviceData.IndexingFeatures = indexingFeatures;
+		m_physicalDeviceData.SupportsBindless = bindlessSupported;
+
+		return indices.IsComplete() && extensionsSupported && swapChainAdequate && deviceFeatures.features.samplerAnisotropy && bindlessSupported;
 	}
 
 	bool PuduGraphics::CheckDeviceExtensionSupport(VkPhysicalDevice device)
@@ -1970,11 +2042,9 @@ namespace Pudu
 
 		CleanupSwapChain();
 
-		vkDestroySampler(Device, m_textureSampler, m_allocatorPtr);
-
-		vkDestroyPipeline(Device, m_graphicsPipeline, m_allocatorPtr);
-		vkDestroyPipelineLayout(Device, m_pipelineLayout, m_allocatorPtr);
-		vkDestroyRenderPass(Device, m_renderPass, m_allocatorPtr);
+		vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
+		vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
+		vkDestroyRenderPass(m_device, m_renderPass, m_allocatorPtr);
 
 
 		for (int i = 0; i < m_uniformBuffers.size(); i++)
@@ -1982,24 +2052,24 @@ namespace Pudu
 			DestroyBuffer(m_uniformBuffers[i]);
 		}
 
-		vkDestroyDescriptorPool(Device, m_descriptorPool, m_allocatorPtr);
+		vkDestroyDescriptorPool(m_device, m_descriptorPool, m_allocatorPtr);
 
-		vkDestroyDescriptorSetLayout(Device, m_descriptorSetLayout, m_allocatorPtr);
+		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, m_allocatorPtr);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			vkDestroySemaphore(Device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
-			vkDestroySemaphore(Device, m_Frames[i].ImageAvailableSemaphore, m_allocatorPtr);
-			vkDestroyFence(Device, m_Frames[i].InFlightFence, m_allocatorPtr);
+			vkDestroySemaphore(m_device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
+			vkDestroySemaphore(m_device, m_Frames[i].ImageAvailableSemaphore, m_allocatorPtr);
+			vkDestroyFence(m_device, m_Frames[i].InFlightFence, m_allocatorPtr);
 		}
 
-		vkDestroyCommandPool(Device, m_commandPool, m_allocatorPtr);
+		vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
 
 		//ImGui
 		{
-			vkDestroyCommandPool(Device, m_ImGuiCommandPool, m_allocatorPtr);
-			vkDestroyRenderPass(Device, m_ImGuiRenderPass, m_allocatorPtr);
-			vkDestroyDescriptorPool(Device, m_ImGuiDescriptorPool, m_allocatorPtr);
+			vkDestroyCommandPool(m_device, m_ImGuiCommandPool, m_allocatorPtr);
+			vkDestroyRenderPass(m_device, m_ImGuiRenderPass, m_allocatorPtr);
+			vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
 		}
 
 		if (enableValidationLayers)
@@ -2009,7 +2079,7 @@ namespace Pudu
 
 		vkDestroySurfaceKHR(m_vkInstance, m_surface, m_allocatorPtr); //Be sure to destroy surface before instance
 
-		vkDestroyDevice(Device, m_allocatorPtr);
+		vkDestroyDevice(m_device, m_allocatorPtr);
 
 		vkDestroyInstance(m_vkInstance, nullptr);
 
@@ -2022,21 +2092,21 @@ namespace Pudu
 
 	void PuduGraphics::CleanupSwapChain()
 	{
-		vkDestroyImageView(Device, m_depthImageView, nullptr);
-		vkDestroyImage(Device, m_depthImage, nullptr);
-		vkFreeMemory(Device, m_depthImageMemory, nullptr);
+		vkDestroyImageView(m_device, m_depthImageView, nullptr);
+		vkDestroyImage(m_device, m_depthImage, nullptr);
+		vkFreeMemory(m_device, m_depthImageMemory, nullptr);
 
 		for (size_t i = 0; i < m_swapChainFrameBuffers.size(); i++)
 		{
-			vkDestroyFramebuffer(Device, m_swapChainFrameBuffers[i], nullptr);
+			vkDestroyFramebuffer(m_device, m_swapChainFrameBuffers[i], nullptr);
 		}
 
 		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
 		{
-			vkDestroyImageView(Device, m_swapChainImagesViews[i], nullptr);
+			vkDestroyImageView(m_device, m_swapChainImagesViews[i], nullptr);
 		}
 
-		vkDestroySwapchainKHR(Device, m_swapChain, nullptr);
+		vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 	}
 
 	void PuduGraphics::DestroyMesh(Mesh& mesh)
@@ -2046,9 +2116,14 @@ namespace Pudu
 	}
 	void PuduGraphics::DestroyTexture(Texture2d& texture)
 	{
-		vkDestroyImageView(Device, texture.ImageViewHandler, m_allocatorPtr);
+		vkDestroyImageView(m_device, texture.vkImageViewHandler, m_allocatorPtr);
+		vkDestroySampler(m_device, texture.Sampler.vkHandle, m_allocatorPtr);
 
-		vkDestroyImage(Device, texture.ImageHandler, m_allocatorPtr);
-		vkFreeMemory(Device, texture.MemoryHandler, m_allocatorPtr);
+		vkDestroyImage(m_device, texture.vkImageHandler, m_allocatorPtr);
+		vkFreeMemory(m_device, texture.vkMemoryHandler, m_allocatorPtr);
+	}
+	void PuduGraphics::WaitIdle()
+	{
+		vkDeviceWaitIdle(m_device);
 	}
 }

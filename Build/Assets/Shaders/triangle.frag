@@ -1,15 +1,23 @@
-Texture2D mainTex : register(t1);
-SamplerState mainTexSampler : register(s1);
+#version 450
 
-struct PS_INPUT {
-    float3 fragColor : COLOR0;
-    float2 uv : TEXCOORD0;
+// Bindless support
+// Enable non uniform qualifier extension
+#extension GL_EXT_nonuniform_qualifier: enable
+layout (set = 0, binding = 32) uniform sampler2D global_textures[];
+
+layout (push_constant, std430) uniform Material {
+    layout (offset = 192) uint materialId;
 };
 
-float4 main(PS_INPUT input):SV_TARGET {
-    float4 output;
-    output = float4(mainTex.Sample(mainTexSampler, input.uv).rgb,1.0);
-    //output = float4(input.uv,0,1);
-    //return float4(1.0f,0.0f,0.0f,1.0f);
-    return pow(output,1/2.2);
+layout (location = 0) in vec3 inColor;
+layout (location = 1) in vec2 inTexCoord;
+
+layout (location = 0) out vec4 outColor;
+
+void main() {
+    uint id = materialId;
+    vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord);
+    //base_colour = vec4(1, 0, 0, 1);
+    // base_colour = vec4(materialId, materialId, materialId, 1);
+    outColor = pow(base_colour, vec4(1.0 / 2.2));
 }

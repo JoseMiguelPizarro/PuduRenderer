@@ -30,7 +30,7 @@ namespace Pudu {
 		auto& model = renderEntity->GetModel();
 		for (size_t i = 0; i < model.Meshes.size(); i++)
 		{
-			Material material = {};
+			Material material = model.Materials[0];
 			if (i >= model.Materials.size())
 			{
 				material = model.Materials[0];

@@ -15,6 +15,5 @@ namespace Pudu {
 		Transform Transform;
 		std::vector<std::shared_ptr<Mesh>> Meshes;
 		std::vector<Material> Materials;
-		std::vector<VkDescriptorSet> DescriptorSetByFrame;
 	};
 }

@@ -10,8 +10,8 @@ namespace Pudu
 	{
 		printf("PuduApp Init");
 		Graphics.Init(1024, 1024);
-		OnInit();
 		Graphics.InitPipeline();
+		OnInit();
 
 		Time.m_startTime = std::chrono::high_resolution_clock::now();
 		Time.m_lastFrameTime = std::chrono::high_resolution_clock::now();
@@ -19,8 +19,7 @@ namespace Pudu
 
 	void PuduApp::Cleanup()
 	{
-		vkDeviceWaitIdle(Graphics.Device);
-
+		Graphics.WaitIdle();
 		OnCleanup();
 		Graphics.Cleanup();
 	}

@@ -26,6 +26,9 @@
 #include "Model.h"
 #include "UniformBufferObject.h"
 #include "MeshCreationData.h"
+#include <PhysicalDeviceCreationData.h>
+#include <ResourceUpdate.h>
+#include <GPUResourcesManager.h>
 
 namespace Pudu
 {
@@ -52,7 +55,12 @@ namespace Pudu
 	};
 
 	const std::vector<const char*> DeviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+		// Works around a validation layer bug with descriptor pool allocation with VARIABLE_COUNT.
+	// See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
+		VK_KHR_MAINTENANCE1_EXTENSION_NAME
 	};
 
 	class PuduGraphics
@@ -77,7 +85,6 @@ namespace Pudu
 		const bool enableValidationLayers = true;
 #endif
 
-		VkDevice Device;
 		GLFWwindow* WindowPtr;
 		bool FramebufferResized = false;
 		void InitPipeline();
@@ -87,7 +94,9 @@ namespace Pudu
 		Mesh CreateMesh(MeshCreationData const& meshData);
 		void DestroyMesh(Mesh& mesh);
 		void DestroyTexture(Texture2d& texture);
-		Texture2d CreateTexture(std::filesystem::path const& path);
+		void WaitIdle();
+
+		SPtr<GPUResourcesManager> m_resourcesManager = nullptr;
 
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -96,9 +105,20 @@ namespace Pudu
 			VkImageTiling tiling, VkImageUsageFlags usage,
 			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
-	private:
-		static PuduGraphics* s_instance;
+		GPUResourcesManager& GetResources() {
+			return *m_resourcesManager;
+		}
 
+	private:
+		friend class GPUResourcesManager;
+
+		static PuduGraphics* s_instance;
+		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
+		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
+		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
+		VkDevice m_device;
+
+		Texture2d CreateTexture(std::filesystem::path const& path, Handle handle);
 		void InitVulkan();
 		void CreateVulkanInstance();
 		void PickPhysicalDevice();
@@ -114,9 +134,10 @@ namespace Pudu
 		void CreateCommandPool(VkCommandPool* cmdPool);
 
 		void CreateTextureImageView(Texture2d& texture2d);
-		void CreateTextureSampler();
+		void CreateTextureSampler(VkSampler& sampler);
 
 		void CreateDescriptorPool();
+		void CreateBindlessDescriptorSet();
 		void CreateDescriptorSets(Model* model);
 		void CreateCommandBuffer();
 		void CreateSyncObjects();
@@ -124,10 +145,12 @@ namespace Pudu
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
 		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
+		void UpdateBindlessResources();
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
+		PhysicalDeviceCreationData m_physicalDeviceData;
 #pragma region  ImGUI
 		void InitImgui();
 		VkCommandPool m_ImGuiCommandPool;
@@ -141,7 +164,6 @@ namespace Pudu
 		void CreateImGUICommandBuffers();
 		void CreateImGUIFrameBuffers();
 #pragma endregion
-
 #pragma region DepthBuffer
 		VkImage m_depthImage;
 		VkDeviceMemory m_depthImageMemory;
@@ -162,14 +184,9 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
-		
-
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		VkShaderModule CreateShaderModule(const std::vector<char>& code);
-
-
-		VkSampler m_textureSampler;
 
 		void CreateUniformBuffers();
 
@@ -179,6 +196,7 @@ namespace Pudu
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 		void InitWindow();
 		bool CheckValidationLayerSupport();
+		void UpdateTexture(Texture2d& texture);
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		void SetupDebugMessenger();
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -189,7 +207,7 @@ namespace Pudu
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void DestroyBuffer(GraphicsBuffer buffer);
-		std::vector<const char*> GetRequiredExtensions();
+		std::vector<const char*> GetInstanceExtensions();
 		std::vector<VkImageView> m_swapChainImagesViews;
 		VkInstance m_vkInstance;
 		VkSurfaceKHR m_surface;
@@ -206,10 +224,9 @@ namespace Pudu
 		std::vector<VkFramebuffer> m_swapChainFrameBuffers;
 		VkCommandPool m_commandPool;
 
-
-
 		std::vector<GraphicsBuffer> m_uniformBuffers;
 
+		VkDescriptorSet m_bindlessDescriptorSet;
 		VkDescriptorSetLayout m_descriptorSetLayout;
 		VkPipelineLayout m_pipelineLayout;
 
