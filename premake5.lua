@@ -62,6 +62,12 @@ function includeAndLinkFastGltf()
     links {"fastgltf", "simdjson"}
 end
 
+function includeAndLinkSPIRV_Reflect()
+    includedirs "lib/SPIRV-Reflect"
+    libdirs "lib/SPIRV-Reflect"
+    links "SPIRV-Reflect"
+end
+
 function includeStb_Image()
     includedirs "lib/stb"
 end
@@ -123,28 +129,8 @@ function useCoreLib()
     filter {"system:windows"}
 end
 
-project "PuduCore"
-kind "StaticLib"
-language "C++"
-targetdir "bin/%{cfg.buildcfg}"
-CppVer()
 
-files "Projects/PuduCore/**"
-includedirs "Projects/PuduCore/lib"
-
-includeGLFW()
-includedxc()
-includeStb_Image()
-includeTinyObjLoader()
-includeAndLinkFastGltf()
-includeAndLinkFmtlib()
-
-includedirs {"%{IncludeDir.VulkanSDK}"}
-
-vpaths {
-    -- leave it empty to generate filters respecting the folder structure
-}
-
+--Dependencies projects
 project "simdjson"
 kind "StaticLib"
 language "C++"
@@ -164,6 +150,40 @@ files "lib/fastgltf/src/**"
 includedirs {"lib/fastgltf/include","lib/simdjson"}
 
 links "simdjson"
+
+
+project "SPIRV-Reflect"
+kind "StaticLib"
+language "C++"
+CppVer()
+targetdir "lib/SPIRV-Reflect/%{cfg.buildcfg}"
+objdir("lib/SPIRV-Reflect/SPIRV-Reflect.dir/%{cfg.buildcfg}")
+files "lib/SPIRV-Reflect/spirv_reflect.cpp"
+includedirs {"lib/SPIRV-Reflect","include"}
+
+--Projects
+project "PuduCore"
+kind "StaticLib"
+language "C++"
+targetdir "bin/%{cfg.buildcfg}"
+CppVer()
+
+files "Projects/PuduCore/**"
+includedirs "Projects/PuduCore/lib"
+
+includeGLFW()
+includedxc()
+includeStb_Image()
+includeTinyObjLoader()
+includeAndLinkFastGltf()
+includeAndLinkFmtlib()
+includeAndLinkSPIRV_Reflect()
+
+includedirs {"%{IncludeDir.VulkanSDK}"}
+
+vpaths {
+    -- leave it empty to generate filters respecting the folder structure
+}
 
 
 project "App"
