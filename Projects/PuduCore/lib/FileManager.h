@@ -31,15 +31,15 @@ namespace Pudu {
 		/// Read asset relative to the assets folder
 		/// </summary>
 		static std::vector<char> ReadAssetFile(const std::string& fileName);
-
-
-		static std::vector<char> ReadShaderFile(std::string const& shaderPath);
+		static std::vector<char> ReadAssetFile(const fs::path& path);
 
 		static MeshCreationData LoadModelObj(std::string const& assetPath);
 
 		static std::vector<MeshCreationData> LoadModelGltf(fs::path const& path);
 
 		static std::vector<EntitySPtr> LoadGltfScene(fs::path const& path);
+
+		static std::vector<char> LoadShader(fs::path const& path);
 
 	private:
 		static std::vector<MeshCreationData> GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset);

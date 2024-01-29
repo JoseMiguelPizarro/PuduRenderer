@@ -17,7 +17,5 @@ layout (location = 0) out vec4 outColor;
 void main() {
     uint id = materialId;
     vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord);
-    //base_colour = vec4(1, 0, 0, 1);
-    // base_colour = vec4(materialId, materialId, materialId, 1);
     outColor = pow(base_colour, vec4(1.0 / 2.2));
 }

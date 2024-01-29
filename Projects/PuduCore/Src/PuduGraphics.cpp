@@ -25,6 +25,7 @@
 
 #include "ImGuiUtils.h"
 #include "MeshManager.h"
+#include "SPIRVParser.h"
 
 namespace Pudu
 {
@@ -63,11 +64,23 @@ namespace Pudu
 		CreateSwapChain();
 		CreateImageViews();
 		CreateRenderPass();
+
+		PipelineCreationData pipelineCreationData;
+		pipelineCreationData.fragmentShaderData = FileManager::LoadShader("Shaders/triangle.frag");
+		pipelineCreationData.vertexShaderData = FileManager::LoadShader("Shaders/triangle.vert");
+
+		SPIRVParser::GetDescriptorSetLayout(pipelineCreationData, pipelineCreationData.descriptorSetLayoutData);
+
+		//Descriptors
 		CreateDescriptorPool();
-		CreateDescriptorSetLayout();
+		CreateDescriptorSetLayout(pipelineCreationData.descriptorSetLayoutData);
 		CreateBindlessDescriptorSet();
-		CreateGraphicsPipeline();
+
+		//Pipeline
+		CreateGraphicsPipeline(pipelineCreationData);
+
 		CreateCommandPool(&m_commandPool);
+
 		CreateDepthResources();
 		CreateFrameBuffers();
 
@@ -1024,26 +1037,10 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateDescriptorSetLayout()
+	void PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData)
 	{
-		const uint32_t poolCount = m_physicalDeviceData.PoolSizesCount;
-
-		VkDescriptorSetLayoutBinding vk_binding[4];
-
 		LOG("CreateDescriptorSetLayout");
-		VkDescriptorSetLayoutBinding& textureLayoutBinding = vk_binding[0];
-		textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		textureLayoutBinding.descriptorCount = k_MAX_BINDLESS_RESOURCES;
-		textureLayoutBinding.binding = k_BINDLESS_TEXTURE_BINDING;
-		textureLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
-		textureLayoutBinding.pImmutableSamplers = nullptr;
-
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo{};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = static_cast<uint32_t>(poolCount);
-		layoutInfo.pBindings = vk_binding;
-		layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+		const uint32_t poolCount = m_physicalDeviceData.PoolSizesCount;
 
 		VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
 
@@ -1052,15 +1049,32 @@ namespace Pudu
 		bindingFlags[0] = bindlessFlags;
 		bindingFlags[1] = bindlessFlags;
 
-		VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
-		extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-		extendedInfo.bindingCount = poolCount;
-		extendedInfo.pBindingFlags = bindingFlags.data();
-		layoutInfo.pNext = &extendedInfo;
-
-		if (vkCreateDescriptorSetLayout(m_device, &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
+		for (auto data : creationData)
 		{
-			throw std::runtime_error("failed to create descriptor set layout!");
+			for (auto& binding : data.Bindings) {
+				binding.descriptorCount = k_MAX_BINDLESS_RESOURCES;
+			}
+
+			VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
+			extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+			extendedInfo.bindingCount = data.Bindings.size();
+			extendedInfo.pBindingFlags = bindingFlags.data();
+
+			VkDescriptorSetLayoutCreateInfo createInfo{};
+			createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			createInfo.bindingCount = data.CreateInfo.bindingCount;
+			createInfo.flags = data.CreateInfo.flags;
+			createInfo.pBindings = data.Bindings.data();
+			createInfo.pNext = &extendedInfo;
+
+			VkDescriptorSetLayout layout{};
+
+			if (vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &layout) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create descriptor set layout!");
+			}
+
+			m_descriptorSetLayouts.push_back(layout);
 		}
 	}
 
@@ -1072,20 +1086,18 @@ namespace Pudu
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = m_descriptorPool;
 		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = &m_descriptorSetLayout;
+		allocInfo.pSetLayouts = m_descriptorSetLayouts.data();
 
 		vkAllocateDescriptorSets(m_device, &allocInfo, &m_bindlessDescriptorSet);
 	}
 
-	void PuduGraphics::CreateGraphicsPipeline()
+	void PuduGraphics::CreateGraphicsPipeline(PipelineCreationData& creationData)
 	{
 		LOG("CreateGraphicsPipeline");
 		LOG("Loading shaders");
-		auto vertShaderCode = FileManager::ReadAssetFile("Shaders/Compiled/triangle.vert.spv");
-		auto fragShaderCode = FileManager::ReadAssetFile("Shaders/Compiled/triangle.frag.spv");
 
-		VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
-		VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
+		VkShaderModule vertShaderModule = CreateShaderModule(creationData.vertexShaderData);
+		VkShaderModule fragShaderModule = CreateShaderModule(creationData.fragmentShaderData);
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -1163,7 +1175,6 @@ namespace Pudu
 		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicState.pDynamicStates = dynamicStates.data();
 
-
 		VkPushConstantRange pushConstant{};
 		pushConstant.offset = 0;
 		pushConstant.size = sizeof(UniformBufferObject);
@@ -1174,13 +1185,12 @@ namespace Pudu
 		fragmentConstant.size = sizeof(uint32_t);
 		fragmentConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-
 		VkPushConstantRange constants[2]{ pushConstant, fragmentConstant };
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
+		pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
 		pipelineLayoutInfo.pPushConstantRanges = constants;
 		pipelineLayoutInfo.pushConstantRangeCount = 2;
 
@@ -1561,6 +1571,7 @@ namespace Pudu
 			descriptorWrite.dstArrayElement = textureToUpdate.handle;
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrite.dstSet = m_bindlessDescriptorSet;
+			
 			descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
 
 			auto textureSampler = texture->Sampler;
@@ -2054,7 +2065,10 @@ namespace Pudu
 
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, m_allocatorPtr);
 
-		vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, m_allocatorPtr);
+		for (auto layout : m_descriptorSetLayouts)
+		{
+			vkDestroyDescriptorSetLayout(m_device, layout, m_allocatorPtr);
+		}
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{

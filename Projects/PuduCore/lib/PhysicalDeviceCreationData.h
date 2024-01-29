@@ -3,5 +3,9 @@
 struct PhysicalDeviceCreationData {
 	VkPhysicalDeviceDescriptorIndexingFeatures IndexingFeatures;
 	bool SupportsBindless;
-	size_t PoolSizesCount;
+
+	/// <summary>
+	/// Number of resources pools
+	/// </summary>
+	size_t PoolSizesCount; 
 };

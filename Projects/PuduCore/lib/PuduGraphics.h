@@ -29,6 +29,7 @@
 #include <PhysicalDeviceCreationData.h>
 #include <ResourceUpdate.h>
 #include <GPUResourcesManager.h>
+#include <PipelineCreationData.h>
 
 namespace Pudu
 {
@@ -127,8 +128,8 @@ namespace Pudu
 		void CreateSwapChain();
 		void CreateImageViews();
 		void CreateRenderPass();
-		void CreateDescriptorSetLayout();
-		void CreateGraphicsPipeline();
+		void CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData);
+		void CreateGraphicsPipeline(PipelineCreationData& creationData);
 		void CreateFrameBuffers();
 		void CreateFrames();
 		void CreateCommandPool(VkCommandPool* cmdPool);
@@ -227,7 +228,7 @@ namespace Pudu
 		std::vector<GraphicsBuffer> m_uniformBuffers;
 
 		VkDescriptorSet m_bindlessDescriptorSet;
-		VkDescriptorSetLayout m_descriptorSetLayout;
+		std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 		VkPipelineLayout m_pipelineLayout;
 
 		VkDescriptorPool m_descriptorPool;

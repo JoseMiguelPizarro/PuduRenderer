@@ -10,3 +10,5 @@ Bin
 Imgui.ini
 *.vcxproj
 *.filters
+/lib/simdjson.dir/Debug/**
+/lib/simdjson/Release/**

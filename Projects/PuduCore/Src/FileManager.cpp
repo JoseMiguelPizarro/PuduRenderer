@@ -46,6 +46,10 @@ namespace Pudu {
 		return buffer;
 	}
 
+
+
+
+
 	/// <summary>
 	/// Get path relative to assets folder
 	/// </summary>
@@ -59,22 +63,20 @@ namespace Pudu {
 	/// </summary>
 	std::vector<char> FileManager::ReadAssetFile(const std::string& fileName)
 	{
-		auto path = std::filesystem::path(ASSETS_FOLDER_PATH);
+		auto path = fs::path(ASSETS_FOLDER_PATH);
 		path.append(fileName);
-		auto absPath = std::filesystem::absolute(path);
+		auto absPath = fs::absolute(path);
 		//auto path = std::format("{}/{}", ASSETS_FOLDER_PATH, fileName);
 
 		return ReadFile(absPath);
 	}
 
-	std::vector<char> FileManager::ReadShaderFile(const std::string& shaderPath)
+	std::vector<char> FileManager::ReadAssetFile(const fs::path& path)
 	{
-		auto path = GetAssetPath(shaderPath).string();
-		//	path = std::format("{}/{}.spv", path, "Compiled");
+		auto root = fs::path(ASSETS_FOLDER_PATH);
+		root = root / path;
 
-		return std::vector<char>();
-
-		//return ReadFile(path);
+		return ReadFile(fs::absolute(root));
 	}
 
 	MeshCreationData FileManager::LoadModelObj(std::string const& assetPath)
@@ -137,7 +139,7 @@ namespace Pudu {
 		std::vector<EntitySPtr> entities;
 
 		for (auto node : asset->nodes) {
-			LOG("{}",node.name);
+			LOG("{}", node.name);
 
 			auto name = std::string(node.name);
 			auto meshIndex = node.meshIndex;
@@ -169,6 +171,12 @@ namespace Pudu {
 		}
 
 		return entities;
+	}
+
+	std::vector<char> FileManager::LoadShader(fs::path const& path)
+	{
+		auto compiledShaderPath = path.parent_path() / "Compiled" / path.filename().concat(".spv");
+		return ReadAssetFile(compiledShaderPath);
 	}
 
 	GltfAsset FileManager::LoadGltfAsset(fs::path const& path)
