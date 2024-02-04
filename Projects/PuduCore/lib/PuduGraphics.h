@@ -30,6 +30,9 @@
 #include <ResourceUpdate.h>
 #include <GPUResourcesManager.h>
 #include <PipelineCreationData.h>
+#include <Resources/Resources.h>
+#include <Resources/RenderPassCreationData.h>
+#include <Resources/FrameBufferCreationData.h>
 
 namespace Pudu
 {
@@ -97,7 +100,13 @@ namespace Pudu
 		void DestroyTexture(Texture2d& texture);
 		void WaitIdle();
 
+		void DestroyRenderPass(RenderPassHandle handle);
+		void DestroyFrameBuffer(FramebufferHandle handle);
+
 		SPtr<GPUResourcesManager> m_resourcesManager = nullptr;
+
+		RenderPassHandle CreateRenderPass(RenderPassCreationData creationData);
+		FramebufferHandle CreateFramebuffer(FrameBufferCreationData creationData);
 
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -150,6 +159,9 @@ namespace Pudu
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+
+		
 
 		PhysicalDeviceCreationData m_physicalDeviceData;
 #pragma region  ImGUI

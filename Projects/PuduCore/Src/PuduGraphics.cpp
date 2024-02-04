@@ -613,6 +613,19 @@ namespace Pudu
 		}
 	}
 
+	RenderPassHandle PuduGraphics::CreateRenderPass(RenderPassCreationData creationData)
+	{
+		PUDU_ERROR("Implement");
+		return RenderPassHandle();
+	}
+
+	FramebufferHandle PuduGraphics::CreateFramebuffer(FrameBufferCreationData creationData)
+	{
+		PUDU_ERROR("Implement");
+		return FramebufferHandle();
+
+	}
+
 	GraphicsBuffer PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags flags)
 	{
@@ -1063,7 +1076,7 @@ namespace Pudu
 			VkDescriptorSetLayoutCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			createInfo.bindingCount = data.CreateInfo.bindingCount;
-			createInfo.flags = data.CreateInfo.flags;
+			createInfo.flags = data.CreateInfo.flags | VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 			createInfo.pBindings = data.Bindings.data();
 			createInfo.pNext = &extendedInfo;
 
@@ -1489,7 +1502,6 @@ namespace Pudu
 			uint32_t materialid = drawCall.MaterialPtr.Texture->Handler;
 
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
-			LOG("Material Id {}", materialid);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
 
 			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
@@ -1703,6 +1715,15 @@ namespace Pudu
 		);
 
 		EndSingleTimeCommands(commandBuffer);
+	}
+
+	void PuduGraphics::DestroyRenderPass(RenderPassHandle handle)
+	{
+
+	}
+
+	void PuduGraphics::DestroyFrameBuffer(FramebufferHandle handle)
+	{
 	}
 
 	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, Material& material)
