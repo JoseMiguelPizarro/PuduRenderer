@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include "PipelineCreationData.h"
 #include <DescriptorSetLayoutData.h>
+#include "Resources/Resources.h"
 
 namespace Pudu {
 

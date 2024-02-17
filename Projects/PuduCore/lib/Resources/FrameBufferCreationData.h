@@ -2,14 +2,14 @@
 #include "Resources.h"
 namespace Pudu
 {
-	struct FrameBufferCreationData
+	struct FramebufferCreationData
 	{
-		RenderPassHandle renderPass;
+		RenderPassHandle renderPassHandle;
 
 		uint16_t numRenderTargets = 0;
 
-		TextureHandle outputTextures[K_MAX_IMAGE_OUTPUTS];
-		TextureHandle depthStencilTexture = { k_INVALID_HANDLE };
+		TextureHandle outputTexturesHandle[K_MAX_IMAGE_OUTPUTS];
+		TextureHandle depthStencilTextureHandle = { k_INVALID_HANDLE };
 
 		uint16_t width = 0;
 		uint16_t height = 0;
@@ -20,10 +20,10 @@ namespace Pudu
 
 		const char* name = nullptr;
 
-		FrameBufferCreationData& Reset( );
-		FrameBufferCreationData& AddRenderTexture(TextureHandle texture);
-		FrameBufferCreationData& SetDepthStencilTexture(TextureHandle texture);
-		FrameBufferCreationData& SetScaling(float scale_x, float scale_y, uint8_t resize);
-		FrameBufferCreationData& SetName(const char* name);
+		FramebufferCreationData& Reset( );
+		FramebufferCreationData& AddRenderTexture(TextureHandle texture);
+		FramebufferCreationData& SetDepthStencilTexture(TextureHandle texture);
+		FramebufferCreationData& SetScaling(float scale_x, float scale_y, uint8_t resize);
+		FramebufferCreationData& SetName(const char* name);
 	};
 }

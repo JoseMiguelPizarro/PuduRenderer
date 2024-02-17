@@ -1,5 +1,8 @@
 #pragma once
-#include "Scene.h"
+#include <GPUCommands.h>
+#include "Resources/Resources.h"
+#include "RenderFrameData.h"
+#include "DrawCall.h"
 
 namespace Pudu
 {
@@ -7,10 +10,10 @@ namespace Pudu
 
 	struct FrameGraphRenderPass
 	{
-		virtual void AddUI() { }
-		virtual void PreRender(VkCommandBuffer* gpu_commands, Scene* render_scene) { }
-		virtual void Render(VkCommandBuffer* gpu_commands, Scene* render_scene) { }
-		virtual void OnResize(PuduGraphics& gpu, uint32_t new_width, uint32_t new_height) {}
+		virtual Pipeline* GetPipeline(RenderFrameData& frameData, DrawCall& drawcall);
+		virtual void PreRender(RenderFrameData& renderData) { }
+		virtual void Render(RenderFrameData& frameData);
+		virtual void OnResize(PuduGraphics& gpu, uint32_t newWidth, uint32_t newHeight) {}
 	};
 
 }

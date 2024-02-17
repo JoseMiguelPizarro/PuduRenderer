@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <string>
 #include <typeinfo>
-#include "Resources/Resources.h"
 #include <vulkan/vulkan_core.h>
 
 namespace Pudu
@@ -20,32 +19,17 @@ namespace Pudu
 	template <typename T>
 	struct ResourcePool : BaseResourcePool
 	{
-		T* GetResource(uint32_t handle);
+		T* GetResourcePtr(uint32_t handle);
+		T GetResource(uint32_t handle);
+
 		uint32_t AddResource(T resource);
 		uint32_t ObtainResource();
+
+		size_t Size();
 
 	private:
 		std::vector<T> m_resources;
 	};
-
-
-	class ResourcesManager {
-	public:
-		template <class T>
-		T* GetResource(uint32_t handle);
-
-		template<class T>
-		uint32_t AddResource(T resource);
-
-
-		static VkFormat VkFormatFromString(char const* format);
-
-	private:
-		std::unordered_map<type_info, BaseResourcePool> m_resourcesPools;
-
-
-	};
-
 }
 
 

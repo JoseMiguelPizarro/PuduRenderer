@@ -1,12 +1,14 @@
 #include "Scene.h"
+#include <ImGui/imgui.h>
+#include "ImGuiUtils.h"
 
 namespace Pudu {
 	void Scene::AddEntity(EntitySPtr entity)
 	{
 		m_entities.push_back(entity);
-		if (entity != SceneRoot && entity->GetParent() == nullptr)
+		if (entity != sceneRoot && entity->GetParent() == nullptr)
 		{
-			entity->SetParent(SceneRoot);
+			entity->SetParent(sceneRoot);
 		}
 
 		entity->AttatchToScene(*this);
@@ -46,6 +48,29 @@ namespace Pudu {
 	void Scene::RemoveRenderEntity(RenderEntitySPtr renderEntity)
 	{
 		//TODO
+	}
+	void Scene::DrawImGui()
+	{
+		ImGui::NewFrame();
+		ImGui::Begin("Pudu Renderer Debug");
+		ImGui::Text("Camera:");
+
+		vec3 cameraFwd = camera->Transform.GetForward();
+
+		ImGuiUtils::DrawTransform(camera->Transform);
+
+		ImGui::Text(std::format("Cam Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
+		ImGui::Text(std::format("FPS: {}", Time->GetFPS()).c_str());
+		ImGui::Text(std::format("Delta Time: {}", time->DeltaTime()).c_str());
+
+		auto entities = GetEntities();
+
+		//Tree begin
+		ImGuiUtils::DrawEntityTree(entities);
+
+		//Tree end
+		ImGui::End();
+		ImGui::Render();
 	}
 	std::vector<EntitySPtr> Scene::GetEntities()
 	{

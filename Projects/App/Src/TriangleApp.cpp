@@ -23,7 +23,7 @@ void TriangleApp::OnInit()
 	m_camera.Height = Graphics.WindowHeight;
 
 	m_scene = Scene(&Time);
-	m_scene.Camera = &m_camera;
+	m_scene.camera = &m_camera;
 
 	//m_planeTexture = Graphics.GetResources().AllocateTexture(planeTexturePath);
 	//auto planeModelData = FileManager::LoadModelObj(planeModelPath.string());

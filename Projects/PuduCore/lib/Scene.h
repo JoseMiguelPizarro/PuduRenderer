@@ -6,29 +6,34 @@
 #include "Entity.h"
 #include "RenderEntity.h"
 #include "EntityManager.h"
+#include "Resources/Resources.h"
 
 namespace Pudu {
 	class Scene
 	{
 	public:
+		Camera* camera = nullptr;
+
 		void AddEntity(EntitySPtr entity);
 		void AddEntities(std::vector<EntitySPtr> entities);
 		void RemoveEntity(EntitySPtr entity);
 		void RemoveRenderEntity(RenderEntitySPtr renderEntity);
+		void DrawImGui();
 		std::vector<EntitySPtr> GetEntities();
 		std::vector<RenderEntitySPtr> GetRenderEntities();
-		EntitySPtr SceneRoot;
+		EntitySPtr sceneRoot;
+		PuduTime* time;
+		PipelineHandle pipelineHandle;
 
 		std::vector<DrawCall> GetDrawCalls() {
 			return m_DrawCalls;
 		}
 
-		Camera* Camera = nullptr;
 
 		Scene() {
-			SceneRoot = EntityManager::AllocateEntity();
-			SceneRoot->SetName("SceneRoot");
-			AddEntity(SceneRoot);
+			sceneRoot = EntityManager::AllocateEntity();
+			sceneRoot->SetName("SceneRoot");
+			AddEntity(sceneRoot);
 		}
 		Scene(PuduTime* time) :Scene() {
 			Time = time;

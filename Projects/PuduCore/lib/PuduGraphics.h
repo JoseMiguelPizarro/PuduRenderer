@@ -18,7 +18,6 @@
 
 #include "DrawCall.h"
 #include "Mesh.h"
-#include "FileManager.h"
 #include "Texture2D.h"
 
 #include "Camera.h"
@@ -33,6 +32,9 @@
 #include <Resources/Resources.h>
 #include <Resources/RenderPassCreationData.h>
 #include <Resources/FrameBufferCreationData.h>
+#include <FrameGraph/FrameGraphRenderPass.h>
+#include <RenderFrameData.h>
+#include "GPUCommands.h"
 
 namespace Pudu
 {
@@ -72,7 +74,7 @@ namespace Pudu
 	public:
 		static PuduGraphics* Instance();
 		void Init(int windowWidth, int windowHeight);
-		void DrawFrame();
+		void DrawFrame(RenderFrameData& frameData);
 
 		uint32_t WindowWidth = 800;
 		uint32_t WindowHeight = 600;
@@ -103,10 +105,16 @@ namespace Pudu
 		void DestroyRenderPass(RenderPassHandle handle);
 		void DestroyFrameBuffer(FramebufferHandle handle);
 
-		SPtr<GPUResourcesManager> m_resourcesManager = nullptr;
+		SPtr<GPUResourcesManager> m_resources = nullptr;
 
-		RenderPassHandle CreateRenderPass(RenderPassCreationData creationData);
-		FramebufferHandle CreateFramebuffer(FrameBufferCreationData creationData);
+		void CreateVkRenderPass();
+
+		/// <summary>
+		/// Creates a vkRenderPass and attach it to the passed RenderPass object
+		/// </summary>
+		/// <param name="renderPass"></param>
+		void CreateVkRenderPass(RenderPass* renderPass);
+		void CreateVkFramebuffer(Framebuffer* creationData);
 
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -116,8 +124,21 @@ namespace Pudu
 			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
 		GPUResourcesManager& GetResources() {
-			return *m_resourcesManager;
+			return *m_resources;
 		}
+
+		PipelineHandle CreateGraphicsPipeline(PipelineCreationData& creationData);
+		VkPipeline* GetPipeline() { return &m_graphicsPipeline; }
+
+		
+		void DrawImGui(RenderFrameData& frameData);
+		void SubmitFrame(RenderFrameData& frameData);
+		void EndDrawFrame();
+		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
+		Shader* CreateShader(char* fragmentPath, char* vertexPath);
+
+		TextureHandle CreateTexture(TextureCreationData const& creationData);
+		SPtr<Texture2d> CreateTexture(std::filesystem::path const& path);
 
 	private:
 		friend class GPUResourcesManager;
@@ -128,17 +149,22 @@ namespace Pudu
 		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
 		VkDevice m_device;
 
-		Texture2d CreateTexture(std::filesystem::path const& path, Handle handle);
+		GPUCommands m_commandBuffer;
+		uint32_t m_imageIndex;
+
+		
 		void InitVulkan();
+		void InitVMA();
 		void CreateVulkanInstance();
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateSurface();
 		void CreateSwapChain();
 		void CreateImageViews();
-		void CreateRenderPass();
-		void CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData);
-		void CreateGraphicsPipeline(PipelineCreationData& creationData);
+		
+		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
+		std::vector<DescriptorSetLayoutHandle> CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData);
+
 		void CreateFrameBuffers();
 		void CreateFrames();
 		void CreateCommandPool(VkCommandPool* cmdPool);
@@ -146,22 +172,21 @@ namespace Pudu
 		void CreateTextureImageView(Texture2d& texture2d);
 		void CreateTextureSampler(VkSampler& sampler);
 
-		void CreateDescriptorPool();
-		void CreateBindlessDescriptorSet();
-		void CreateDescriptorSets(Model* model);
+		void CreateBindlessDescriptorPool();
+		void CreateBindlessDescriptorSet(VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts);
 		void CreateCommandBuffer();
 		void CreateSyncObjects();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
-		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
+		
 		void UpdateBindlessResources();
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
-		
+		VmaAllocator m_VmaAllocator;
 
 		PhysicalDeviceCreationData m_physicalDeviceData;
 #pragma region  ImGUI
@@ -199,7 +224,7 @@ namespace Pudu
 
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
-		VkShaderModule CreateShaderModule(const std::vector<char>& code);
+		VkShaderModule CreateShaderModule(char const* code, size_t size);
 
 		void CreateUniformBuffers();
 
@@ -209,7 +234,7 @@ namespace Pudu
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 		void InitWindow();
 		bool CheckValidationLayerSupport();
-		void UpdateTexture(Texture2d& texture);
+		void UpdateBindlessTexture(TextureHandle texture);
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		void SetupDebugMessenger();
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -240,7 +265,6 @@ namespace Pudu
 		std::vector<GraphicsBuffer> m_uniformBuffers;
 
 		VkDescriptorSet m_bindlessDescriptorSet;
-		std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
 		VkPipelineLayout m_pipelineLayout;
 
 		VkDescriptorPool m_descriptorPool;
@@ -250,7 +274,7 @@ namespace Pudu
 		std::vector<Frame> m_Frames;
 
 		const int MAX_FRAMES_IN_FLIGHT = 2;
-		uint32_t m_currentFrame = 0;
+		uint32_t m_currentFrameIndex = 0;
 		uint32_t m_imageCount;
 
 		bool m_initialized = false;

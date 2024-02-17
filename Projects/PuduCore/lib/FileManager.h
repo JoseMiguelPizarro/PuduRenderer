@@ -1,14 +1,16 @@
 #pragma once
+#define NOMINMAX
+
 #include <fstream>
-#include <vector>
 #include <fastgltf/types.hpp>
+#include <fastgltf/parser.hpp>
+#include <vector>
+#include <filesystem>
+
 
 #include "Mesh.h"
 #include "MeshCreationData.h"
-#include <filesystem>
-#include <RenderEntity.h>
-#include <fastgltf/parser.hpp>
-
+#include "RenderEntity.h"
 
 namespace fs = std::filesystem;
 namespace fg = fastgltf;

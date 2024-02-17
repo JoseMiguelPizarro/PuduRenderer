@@ -1,13 +1,10 @@
 #pragma once
 #include <vector>
+#include <glm/fwd.hpp>
+#include "Resources/Resources.h"
 #include "DescriptorSetLayoutData.h"
 
 namespace Pudu {
-	struct PipelineCreationData
-	{
-		std::vector<char> vertexShaderData;
-		std::vector<char> fragmentShaderData;
-		std::vector<DescriptorSetLayoutData> descriptorSetLayoutData;
-	};
+	
 }
 

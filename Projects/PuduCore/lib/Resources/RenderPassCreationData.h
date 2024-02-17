@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 #include "Resources.h"
+
 namespace Pudu
 {
 	struct RenderPassCreationData

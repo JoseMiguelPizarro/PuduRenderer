@@ -17,6 +17,8 @@
 #include "UniformBufferObject.h"
 #include <chrono>
 #include <PuduMath.h>
+#include <vma/vk_mem_alloc.h>
+
 #include "FileManager.h"
 
 #include "DrawCall.h"
@@ -26,9 +28,13 @@
 #include "ImGuiUtils.h"
 #include "MeshManager.h"
 #include "SPIRVParser.h"
+#include "Frame.h"
+#include "FrameGraph/FrameGraph.h"
 
 namespace Pudu
 {
+	struct FrameGraph;
+
 	PuduGraphics* PuduGraphics::s_instance = nullptr;
 
 	PuduGraphics* PuduGraphics::Instance()
@@ -43,8 +49,8 @@ namespace Pudu
 		WindowWidth = windowWidth;
 		WindowHeight = windowHeight;
 
-		m_resourcesManager = std::make_shared<GPUResourcesManager>();
-		m_resourcesManager->Init(this);
+		m_resources = std::make_shared<GPUResourcesManager>();
+		m_resources->Init(this);
 
 		InitWindow();
 		InitVulkan();
@@ -61,38 +67,51 @@ namespace Pudu
 		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDevice();
+		InitVMA();
 		CreateSwapChain();
 		CreateImageViews();
-		CreateRenderPass();
+		CreateVkRenderPass();
 
 		PipelineCreationData pipelineCreationData;
-		pipelineCreationData.fragmentShaderData = FileManager::LoadShader("Shaders/triangle.frag");
-		pipelineCreationData.vertexShaderData = FileManager::LoadShader("Shaders/triangle.vert");
+		auto fragmentData = FileManager::LoadShader("Shaders/triangle.frag");
+		auto vertexData = FileManager::LoadShader("Shaders/triangle.vert");
+
+		pipelineCreationData.shadersStateCreationData.AddStage(fragmentData.data(), sizeof(char) * fragmentData.size(), VK_SHADER_STAGE_FRAGMENT_BIT);
+		pipelineCreationData.shadersStateCreationData.AddStage(vertexData.data(), sizeof(char) * vertexData.size(), VK_SHADER_STAGE_VERTEX_BIT);
 
 		SPIRVParser::GetDescriptorSetLayout(pipelineCreationData, pipelineCreationData.descriptorSetLayoutData);
 
 		//Descriptors
-		CreateDescriptorPool();
-		CreateDescriptorSetLayout(pipelineCreationData.descriptorSetLayoutData);
-		CreateBindlessDescriptorSet();
+		CreateBindlessDescriptorPool();
+		auto descriptorLayoutHandles = CreateDescriptorSetLayout(pipelineCreationData.descriptorSetLayoutData);
+
+		std::vector<VkDescriptorSetLayout> vkDescriptorSetLayout;
+
+		for (auto layoutHandle : descriptorLayoutHandles)
+		{
+			vkDescriptorSetLayout.push_back(m_resources->GetDescriptorSetLayout(layoutHandle)->vkHandle);
+		}
+
+		CreateBindlessDescriptorSet(m_bindlessDescriptorSet, vkDescriptorSetLayout.data());
 
 		//Pipeline
-		CreateGraphicsPipeline(pipelineCreationData);
 
 		CreateCommandPool(&m_commandPool);
-
-		CreateDepthResources();
 		CreateFrameBuffers();
-
 		CreateUniformBuffers();
 
 		CreateCommandBuffer();
 		CreateSyncObjects();
-
 	}
 
-	void PuduGraphics::InitPipeline()
+	void PuduGraphics::InitVMA()
 	{
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = m_physicalDevice;
+		allocatorInfo.device = m_device;
+		allocatorInfo.instance = m_vkInstance;
+
+		vmaCreateAllocator(&allocatorInfo, &m_VmaAllocator);
 	}
 
 	void PuduGraphics::InitWindow()
@@ -137,10 +156,10 @@ namespace Pudu
 		return true;
 	}
 
-	void PuduGraphics::UpdateTexture(Texture2d& texture)
+	void PuduGraphics::UpdateBindlessTexture(TextureHandle texture)
 	{
 		ResourceUpdate resourceToUpdate{};
-		resourceToUpdate.handle = texture.Handler;
+		resourceToUpdate.handle = { texture.index };
 
 		m_bindlessResourcesToUpdate.push_back(resourceToUpdate);
 	}
@@ -401,9 +420,11 @@ namespace Pudu
 		Print("Created frame buffers");
 	}
 
-	void PuduGraphics::DrawFrame()
+
+	void PuduGraphics::DrawFrame(RenderFrameData& frameData)
 	{
-		Frame frame = m_Frames[m_currentFrame];
+		auto frameGraph = frameData.frameGraph;
+		Frame frame = m_Frames[m_currentFrameIndex];
 		UpdateBindlessResources();
 
 		vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
@@ -419,30 +440,49 @@ namespace Pudu
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		{
-			throw std::runtime_error("failed to acquire swap chain image!");
+			PUDU_ERROR("failed to acquire swap chain image!");
 		}
 
+		m_commandBuffer.vkHandle = frame.CommandBuffer;
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
-		float deltaTime = SceneToRender->Time->DeltaTime();
-		Camera* cam = SceneToRender->Camera;
-
 		vkResetCommandBuffer(frame.CommandBuffer, 0);
 
-		RecordCommandBuffer(frame.CommandBuffer, imageIndex);
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Optional
+		beginInfo.pInheritanceInfo = nullptr; // Optional
 
-		std::vector<VkCommandBuffer> submitCommandBuffers;
+		if (vkBeginCommandBuffer(frame.CommandBuffer, &beginInfo) != VK_SUCCESS)
+		{
+			PUDU_ERROR("failed to begin recording command buffer!");
+		}
 
-		submitCommandBuffers.push_back(frame.CommandBuffer);
 
+		frameData.frame = &m_Frames[m_currentFrameIndex];
+		frameData.frameIndex = m_currentFrameIndex;
+		frameData.currentCommand = &m_commandBuffer;
+		frameData.scene = SceneToRender;
+		frameData.graphics = this;
+
+		frameData.commandsToSubmit.push_back(m_commandBuffer.vkHandle);
+		frameGraph->Render(frameData);
+
+
+		DrawImGui(frameData);
+		SubmitFrame(frameData);
+	}
+
+	void PuduGraphics::DrawImGui(RenderFrameData& frameData)
+	{
 		//ImGui Pass
 		if (true) {
 			VkRenderPassBeginInfo imGuiRenderPassInfo = {};
 			imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass;
 
-			imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[imageIndex];
+			imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[m_imageIndex];
 			imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
 			imGuiRenderPassInfo.renderArea.extent = m_swapChainExtent;
 			VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
@@ -453,63 +493,47 @@ namespace Pudu
 			VkCommandBufferBeginInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-			vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame], &info);
+			vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrameIndex], &info);
 
-			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrame], &imGuiRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrameIndex], &imGuiRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
-			ImGui::Begin("Pudu Renderer Debug");
-			ImGui::Text("Just an aliased rotating chocobo for now");
-			ImGui::Text("Testing hehe");
-			ImGui::Text("Camera:");
-
-			vec3 cameraFwd = cam->Transform.GetForward();
-
-			ImGuiUtils::DrawTransform(cam->Transform);
-
-			ImGui::Text(std::format("Cam Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
-			ImGui::Text(std::format("FPS: {}", SceneToRender->Time->GetFPS()).c_str());
-			ImGui::Text(std::format("Delta Time: {}", deltaTime).c_str());
-
-			auto entities = SceneToRender->GetEntities();
-
-			//Tree begin
-			ImGuiUtils::DrawEntityTree(entities);
-
-			//Tree end
-			ImGui::End();
-			ImGui::Render();
+			SceneToRender->DrawImGui();
 
 			// Record dear imgui primitives into command buffer
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_ImGuiCommandBuffers[m_currentFrame]);
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_ImGuiCommandBuffers[m_currentFrameIndex]);
 
-			vkCmdEndRenderPass(m_ImGuiCommandBuffers[m_currentFrame]);
-			vkEndCommandBuffer(m_ImGuiCommandBuffers[m_currentFrame]);
+			vkCmdEndRenderPass(m_ImGuiCommandBuffers[m_currentFrameIndex]);
+			vkEndCommandBuffer(m_ImGuiCommandBuffers[m_currentFrameIndex]);
 
 			ImGui::EndFrame();
 
-			submitCommandBuffers.push_back(m_ImGuiCommandBuffers[m_currentFrame]);
+			frameData.commandsToSubmit.push_back(m_ImGuiCommandBuffers[m_currentFrameIndex]);
 		}
+	}
+
+	void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
+	{
+		auto frame = frameData.frame;
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { frame.ImageAvailableSemaphore };
+		VkSemaphore waitSemaphores[] = { frame->ImageAvailableSemaphore };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 
-		submitInfo.commandBufferCount = static_cast<uint32_t>(submitCommandBuffers.size());
-		submitInfo.pCommandBuffers = submitCommandBuffers.data();
+		submitInfo.commandBufferCount = static_cast<uint32_t>(frameData.commandsToSubmit.size());
+		submitInfo.pCommandBuffers = frameData.commandsToSubmit.data();
 
-		VkSemaphore signalSemaphores[] = { frame.RenderFinishedSemaphore };
+		VkSemaphore signalSemaphores[] = { frame->RenderFinishedSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame.InFlightFence) != VK_SUCCESS)
+		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame->InFlightFence) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
@@ -523,10 +547,10 @@ namespace Pudu
 		VkSwapchainKHR swapChains[] = { m_swapChain };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
-		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pImageIndices = &m_imageIndex;
 		presentInfo.pResults = nullptr; // Optional
 
-		result = vkQueuePresentKHR(m_presentationQueue, &presentInfo);
+		auto result = vkQueuePresentKHR(m_presentationQueue, &presentInfo);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || FramebufferResized)
 		{
@@ -539,9 +563,13 @@ namespace Pudu
 		}
 
 		//When `MAX_FRAMES_IN_FLIGHT` is a power of 2 you can update the current frame without modulo division
-		m_currentFrame = (m_currentFrame + 1) & (MAX_FRAMES_IN_FLIGHT - 1);
+		m_currentFrameIndex = (m_currentFrameIndex + 1) & (MAX_FRAMES_IN_FLIGHT - 1);
+
 	}
 
+	void PuduGraphics::EndDrawFrame()
+	{
+	}
 
 	void PuduGraphics::CreateVulkanInstance()
 	{
@@ -613,17 +641,39 @@ namespace Pudu
 		}
 	}
 
-	RenderPassHandle PuduGraphics::CreateRenderPass(RenderPassCreationData creationData)
-	{
-		PUDU_ERROR("Implement");
-		return RenderPassHandle();
-	}
 
-	FramebufferHandle PuduGraphics::CreateFramebuffer(FrameBufferCreationData creationData)
-	{
-		PUDU_ERROR("Implement");
-		return FramebufferHandle();
 
+	void PuduGraphics::CreateVkFramebuffer(Framebuffer* framebuffer)
+	{
+		RenderPass* renderPass = m_resources->GetRenderPass(framebuffer->renderPassHandle);
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = renderPass->vkHandle;
+		framebufferInfo.width = framebuffer->width;
+		framebufferInfo.height = framebuffer->height;
+		framebufferInfo.layers = 1;
+
+		VkImageView framebufferAttachments[K_MAX_IMAGE_OUTPUTS + 1]{};
+		uint32_t activeAttachments = 0;
+		for (; activeAttachments < framebuffer->numColorAttachments; activeAttachments++)
+		{
+			auto texture = m_resources->GetTexture(framebuffer->colorAttachmentHandles[activeAttachments]);
+			framebufferAttachments[activeAttachments] = texture->vkImageViewHandle;
+		}
+
+		if (framebuffer->depthStencilAttachmentHandle.index != k_INVALID_HANDLE)
+		{
+			auto depthTexture = m_resources->GetTexture(framebuffer->depthStencilAttachmentHandle);
+			framebufferAttachments[activeAttachments++] = depthTexture->vkImageViewHandle;
+		}
+
+		framebufferInfo.attachmentCount = activeAttachments;
+		framebufferInfo.pAttachments = framebufferAttachments;
+
+		vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &framebuffer->vkHandle);
+
+		//TODO: SET RESOURCE NAME
 	}
 
 	GraphicsBuffer PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
@@ -924,7 +974,137 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateRenderPass()
+	void PuduGraphics::CreateVkRenderPass(RenderPass* renderPass)
+	{
+		auto output = renderPass->output;
+
+		VkAttachmentDescription2 colorAttachments[8] = {};
+		VkAttachmentReference2 colorAttachmentsRef[8] = {};
+
+		VkAttachmentLoadOp depthLoadOp, stencilLoadOp;
+		VkImageLayout depthInitialLayout;
+
+		switch (output.depthOperation)
+		{
+		case Load:
+			depthLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+			depthInitialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+			break;
+		case Clear:
+			depthLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			depthInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			break;
+		default:
+			depthLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			depthInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			break;
+		}
+
+		switch (output.stencilOperation)
+		{
+		case Load:
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+			break;
+		case Clear:
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			break;
+		default:
+			stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			break;
+		}
+
+		//Color attachments
+		uint32_t colorAttachmentsCount = 0;
+
+		for (; colorAttachmentsCount < output.numColorFormats; colorAttachmentsCount++)
+		{
+			VkAttachmentLoadOp colorLoadOp;
+			VkImageLayout colorInitialLayout;
+
+			switch (output.colorOperations[colorAttachmentsCount])
+			{
+			case Load:
+				colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+				colorInitialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				break;
+			case Clear:
+				colorLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+				colorInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				break;
+			default:
+				colorLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+				colorInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				break;
+			}
+
+			VkAttachmentDescription2& colorAttachment = colorAttachments[colorAttachmentsCount];
+			colorAttachment.format = output.colorFormats[colorAttachmentsCount];
+			colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+			colorAttachment.loadOp = colorLoadOp;
+			colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			colorAttachment.stencilLoadOp = stencilLoadOp;
+			colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			colorAttachment.initialLayout = colorInitialLayout;
+			colorAttachment.finalLayout = output.colorFinalLayouts[colorAttachmentsCount];
+
+			VkAttachmentReference2& colorAttachmentRef = colorAttachmentsRef[colorAttachmentsCount];
+			colorAttachmentRef.attachment = colorAttachmentsCount;
+			colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
+
+		//Depth attachment
+		VkAttachmentDescription2 depthAttachment{};
+		VkAttachmentReference2 depthAttachmentRef{};
+
+		if (output.depthStencilFormat != VK_FORMAT_UNDEFINED)
+		{
+			depthAttachment.format = output.depthStencilFormat;
+			depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+			depthAttachment.loadOp = depthLoadOp;
+			depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			depthAttachment.stencilLoadOp = stencilLoadOp;
+			depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			depthAttachment.initialLayout = depthInitialLayout;
+			depthAttachment.finalLayout = output.depthStencilFinalLayout;
+
+			depthAttachmentRef.attachment = colorAttachmentsCount;
+			depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		}
+
+		//Create subpass
+		VkSubpassDescription2 subpass{};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+		VkAttachmentDescription2 attachments[K_MAX_IMAGE_OUTPUTS + 1]{};
+		for (uint32_t activeAttachmentIndex = 0; activeAttachmentIndex < output.numColorFormats; activeAttachmentIndex++)
+		{
+			attachments[activeAttachmentIndex] = colorAttachments[activeAttachmentIndex];
+		}
+
+		subpass.colorAttachmentCount = output.numColorFormats;
+		subpass.pColorAttachments = colorAttachmentsRef;
+		subpass.pDepthStencilAttachment = nullptr;
+
+		uint32_t depthStencilCount = 0;
+		if (output.depthStencilFormat != VK_FORMAT_UNDEFINED)
+		{
+			attachments[subpass.colorAttachmentCount] = depthAttachment;
+			subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+			depthStencilCount++;
+		}
+
+		VkRenderPassCreateInfo2 renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+		renderPassInfo.attachmentCount = colorAttachmentsCount + depthStencilCount;
+		renderPassInfo.pAttachments = attachments;
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpass;
+
+		vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle);
+	}
+
+	void PuduGraphics::CreateVkRenderPass()
 	{
 		LOG("CreateRenderPass");
 		//Color attachment
@@ -995,6 +1175,30 @@ namespace Pudu
 		}
 	}
 
+	ShaderStateHandle PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
+	{
+		ShaderStateHandle handle = m_resources->AllocateShaderState();
+
+		uint32_t compiledShaders = 0;
+
+		ShaderState* shaderState = m_resources->GetShaderState(handle);
+		shaderState->graphicsPipeline = true;
+		shaderState->activeShaders = 0;
+		for (; compiledShaders < creation.stageCount; compiledShaders++)
+		{
+			auto stage = creation.stages[compiledShaders];
+
+			VkPipelineShaderStageCreateInfo& shaderStageInfo = shaderState->shaderStageInfo[compiledShaders];
+			shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+			shaderStageInfo.pName = "main";
+			shaderStageInfo.stage = stage.type;
+
+			shaderStageInfo.module = CreateShaderModule(stage.code, stage.codeSize);
+		}
+
+		return handle;
+	}
+
 	void PuduGraphics::CreateUniformBuffers() {
 		m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -1025,7 +1229,7 @@ namespace Pudu
 		return mesh;
 	}
 
-	void PuduGraphics::CreateDescriptorPool()
+	void PuduGraphics::CreateBindlessDescriptorPool()
 	{
 		LOG("Creating desciptor Pool");
 
@@ -1050,8 +1254,10 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData)
+	std::vector<DescriptorSetLayoutHandle> PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData)
 	{
+		std::vector<DescriptorSetLayoutHandle> handles(creationData.size());
+
 		LOG("CreateDescriptorSetLayout");
 		const uint32_t poolCount = m_physicalDeviceData.PoolSizesCount;
 
@@ -1064,9 +1270,14 @@ namespace Pudu
 
 		for (auto data : creationData)
 		{
+			DescriptorSetLayoutHandle handle = m_resources->AllocateDescriptorSetLayout();
+
 			for (auto& binding : data.Bindings) {
 				binding.descriptorCount = k_MAX_BINDLESS_RESOURCES;
 			}
+
+			auto descriptorSetLayout = m_resources->GetDescriptorSetLayout(handle);
+
 
 			VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
 			extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -1087,11 +1298,15 @@ namespace Pudu
 				throw std::runtime_error("failed to create descriptor set layout!");
 			}
 
-			m_descriptorSetLayouts.push_back(layout);
+			descriptorSetLayout->vkHandle = layout;
+
+			handles.push_back(handle);
 		}
+
+		return handles;
 	}
 
-	void PuduGraphics::CreateBindlessDescriptorSet()
+	void PuduGraphics::CreateBindlessDescriptorSet(VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts)
 	{
 		LOG("Creating descriptor set");
 
@@ -1099,153 +1314,236 @@ namespace Pudu
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = m_descriptorPool;
 		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = m_descriptorSetLayouts.data();
+		allocInfo.pSetLayouts = layouts;
 
-		vkAllocateDescriptorSets(m_device, &allocInfo, &m_bindlessDescriptorSet);
+		vkAllocateDescriptorSets(m_device, &allocInfo, &descriptorSet);
 	}
 
-	void PuduGraphics::CreateGraphicsPipeline(PipelineCreationData& creationData)
+	PipelineHandle PuduGraphics::CreateGraphicsPipeline(PipelineCreationData& creationData)
 	{
 		LOG("CreateGraphicsPipeline");
 		LOG("Loading shaders");
 
-		VkShaderModule vertShaderModule = CreateShaderModule(creationData.vertexShaderData);
-		VkShaderModule fragShaderModule = CreateShaderModule(creationData.fragmentShaderData);
+		PipelineHandle pipelineHandle = m_resources->AllocatePipeline();
 
-		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertShaderStageInfo.module = vertShaderModule;
-		vertShaderStageInfo.pName = "main";
+		ShaderStateHandle shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
 
-		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragShaderStageInfo.module = fragShaderModule;
-		fragShaderStageInfo.pName = "main";
+		Pipeline* pipeline = m_resources->GetPipeline(pipelineHandle);
+		ShaderState* shaderState = m_resources->GetShaderState(shaderStateHandle);
 
-		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+		RenderPass* renderPass = m_resources->GetRenderPass(creationData.renderPassHandle);
+		auto& renderPassOutput = renderPass->output;
+		auto outputCount = renderPassOutput.numColorFormats;
 
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		pipeline->shaderState = shaderStateHandle;
 
-		auto bindingDescription = Vertex::GetBindingDescription();
-		auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+		//Just have 1 set for now (bindless) so let's keep it simple
+		pipeline->descriptorSetLayoutHandles = CreateDescriptorSetLayout(creationData.descriptorSetLayoutData);
+		pipeline->descriptorSetLayouts[0] = m_resources->GetDescriptorSetLayout(pipeline->descriptorSetLayoutHandles[0]);
 
-		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-
-		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-		VkPipelineViewportStateCreateInfo viewportState{};
-		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.viewportCount = 1;
-		viewportState.scissorCount = 1;
-
-		VkPipelineRasterizationStateCreateInfo rasterizer{};
-		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizer.depthClampEnable = VK_FALSE;
-		rasterizer.rasterizerDiscardEnable = VK_FALSE;
-		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-		rasterizer.lineWidth = 1.0f;
-		rasterizer.cullMode = VK_CULL_MODE_NONE;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		rasterizer.depthBiasEnable = VK_FALSE;
-
-		VkPipelineMultisampleStateCreateInfo multisampling{};
-		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisampling.sampleShadingEnable = VK_FALSE;
-		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-			VK_COLOR_COMPONENT_B_BIT
-			| VK_COLOR_COMPONENT_A_BIT;
-		colorBlendAttachment.blendEnable = VK_FALSE;
-
-		VkPipelineColorBlendStateCreateInfo colorBlending{};
-		colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		colorBlending.logicOpEnable = VK_FALSE;
-		colorBlending.logicOp = VK_LOGIC_OP_COPY;
-		colorBlending.attachmentCount = 1;
-		colorBlending.pAttachments = &colorBlendAttachment;
-		colorBlending.blendConstants[0] = 0.0f;
-		colorBlending.blendConstants[1] = 0.0f;
-		colorBlending.blendConstants[2] = 0.0f;
-		colorBlending.blendConstants[3] = 0.0f;
-
-		std::vector<VkDynamicState> dynamicStates = {
-			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
-		};
-		VkPipelineDynamicStateCreateInfo dynamicState{};
-		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-		dynamicState.pDynamicStates = dynamicStates.data();
-
-		VkPushConstantRange pushConstant{};
-		pushConstant.offset = 0;
-		pushConstant.size = sizeof(UniformBufferObject);
-		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-		VkPushConstantRange fragmentConstant{};
-		fragmentConstant.offset = sizeof(UniformBufferObject);
-		fragmentConstant.size = sizeof(uint32_t);
-		fragmentConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-		VkPushConstantRange constants[2]{ pushConstant, fragmentConstant };
+		uint32_t activeLayouts = 1;
+		VkDescriptorSetLayout vkLayouts[1]{};
+		vkLayouts[0] = pipeline->descriptorSetLayouts[0]->vkHandle;
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts = m_descriptorSetLayouts.data();
-		pipelineLayoutInfo.pPushConstantRanges = constants;
-		pipelineLayoutInfo.pushConstantRangeCount = 2;
+		pipelineLayoutInfo.pSetLayouts = vkLayouts;
+		pipelineLayoutInfo.setLayoutCount = activeLayouts;
 
-		if (vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		VkPipelineLayout pipelineLayout;
+		vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
+
+		pipeline->vkPipelineLayoutHandle = pipelineLayout;
+		pipeline->numActiveLayouts = activeLayouts;
+
+		if (shaderState->graphicsPipeline)
 		{
-			throw std::runtime_error("failed to create pipeline layout!");
+			VkGraphicsPipelineCreateInfo graphicsPipelineInfo{};
+			graphicsPipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+			graphicsPipelineInfo.pStages = shaderState->shaderStageInfo;
+			graphicsPipelineInfo.stageCount = shaderState->activeShaders;
+
+			graphicsPipelineInfo.layout = pipelineLayout;
+
+			//Vertex input
+			VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+			vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+			//Vertex attributes
+			std::vector< VkVertexInputAttributeDescription> vertexAttributes(creationData.vertexInput.numVertexAttributes);
+
+			uint32_t vertexAttribsCount = creationData.vertexInput.numVertexAttributes;
+
+			for (size_t i = 0; i < vertexAttribsCount; i++)
+			{
+				VkVertexInputAttributeDescription& vertexAttribute = vertexAttributes[i];
+				vertexAttribute = {};
+
+				auto inputVertexAttrib = creationData.vertexInput.vertexAttributes[i];
+				vertexAttribute.location = inputVertexAttrib.location;
+				vertexAttribute.binding = inputVertexAttrib.binding;
+				vertexAttribute.offset = inputVertexAttrib.offset;
+				vertexAttribute.format = inputVertexAttrib.GetVkFormat();
+			}
+
+			vertexInputInfo.vertexAttributeDescriptionCount = vertexAttribsCount;
+			vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes.data();
+
+			uint32_t vertexStreamsCount = creationData.vertexInput.numVertexStreams;
+
+
+			//Vertex Bindings
+			std::vector<VkVertexInputBindingDescription> vertexBindings(vertexStreamsCount);
+			if (vertexStreamsCount)
+			{
+				for (size_t i = 0; i < vertexStreamsCount; i++)
+				{
+					VertexStream const& vertexStream = creationData.vertexInput.vertexStreams[i];
+					VkVertexInputBindingDescription binding{};
+					binding.binding = vertexStream.binding;
+					binding.inputRate = vertexStream.GetVkInputRate();
+					binding.stride = vertexStream.stride;
+
+					vertexBindings[i] = binding;
+				}
+
+				vertexInputInfo.pVertexBindingDescriptions = vertexBindings.data();
+			}
+
+			graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
+
+			//Input assembly
+			VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+			inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+			inputAssemblyInfo.topology = creationData.topology;
+			inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+			graphicsPipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+
+
+			//Blending
+			size_t blendCount = creationData.blendState.activeStatesCount;
+			std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+
+			if (blendCount)
+			{
+				for (size_t i = 0; i < blendCount; i++)
+				{
+					auto attachment = colorBlendAttachments[i];
+					auto blendState = creationData.blendState.blendStates[i];
+
+					attachment.blendEnable = blendState.blendEnabled;
+					attachment.colorWriteMask = blendState.colorWriteMask;
+
+					attachment.srcColorBlendFactor = blendState.sourceColorFactor;
+					attachment.dstColorBlendFactor = blendState.destinationColorFactor;
+					attachment.colorBlendOp = blendState.colorBlendOperation;
+					attachment.srcAlphaBlendFactor = blendState.sourceAlphaFactor;
+					attachment.dstAlphaBlendFactor = blendState.destinationAlphaFactor;
+				}
+			}
+			else
+			{
+				for (u32 i = 0; i < outputCount; ++i) {
+					colorBlendAttachments[i] = {};
+					colorBlendAttachments[i].blendEnable = VK_FALSE;
+					colorBlendAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+				}
+			}
+
+			VkPipelineColorBlendStateCreateInfo colorBlendingInfo{};
+			colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+			colorBlendingInfo.logicOpEnable = VK_FALSE;
+			colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
+			colorBlendingInfo.attachmentCount = blendCount ? blendCount : renderPassOutput.numColorFormats;
+			colorBlendingInfo.pAttachments = colorBlendAttachments.data();
+
+			graphicsPipelineInfo.pColorBlendState = &colorBlendingInfo;
+
+			//Depth Stencil
+
+			VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
+			auto const& depthStencilState = creationData.depthStencil;
+
+			depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+			depthStencilInfo.depthWriteEnable = depthStencilState.isDepthWriteEnable;
+			depthStencilInfo.stencilTestEnable = depthStencilState.isDepthEnabled;
+			depthStencilInfo.depthTestEnable = depthStencilState.isDepthEnabled;
+			depthStencilInfo.depthCompareOp = depthStencilState.depthComparison;
+			depthStencilInfo.front = depthStencilState.GetVkFront();
+			depthStencilInfo.back = depthStencilState.GetVkBack();
+
+			graphicsPipelineInfo.pDepthStencilState = &depthStencilInfo;
+
+			//Multisample
+			VkPipelineMultisampleStateCreateInfo multisamplingInfo = {};
+			multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+			multisamplingInfo.sampleShadingEnable = VK_FALSE;
+			multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+			multisamplingInfo.minSampleShading = 1.0f; // Optional
+			multisamplingInfo.pSampleMask = nullptr; // Optional
+			multisamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
+			multisamplingInfo.alphaToOneEnable = VK_FALSE; // Optional
+
+			graphicsPipelineInfo.pMultisampleState = &multisamplingInfo;
+
+			//Rasterizer
+			VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+			rasterizer.depthClampEnable = VK_FALSE;
+			rasterizer.rasterizerDiscardEnable = VK_FALSE;
+			rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+			rasterizer.lineWidth = 1.0f;
+			rasterizer.cullMode = creationData.rasterization.cullMode;
+			rasterizer.frontFace = creationData.rasterization.front;
+			rasterizer.depthBiasEnable = VK_FALSE;
+			rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+			rasterizer.depthBiasClamp = 0.0f; // Optional
+			rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+
+			graphicsPipelineInfo.pRasterizationState = &rasterizer;
+
+			//// Viewport state
+			VkViewport viewport = {};
+			viewport.x = 0.0f;
+			viewport.y = 0.0f;
+			viewport.width = (float)m_swapChainExtent.width;
+			viewport.height = (float)m_swapChainExtent.height;
+			viewport.minDepth = 0.0f;
+			viewport.maxDepth = 1.0f;
+
+			VkRect2D scissor = {};
+			scissor.offset = { 0, 0 };
+			scissor.extent = { m_swapChainExtent.width, m_swapChainExtent.height };
+
+			VkPipelineViewportStateCreateInfo viewportStateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+			viewportStateInfo.viewportCount = 1;
+			viewportStateInfo.pViewports = &viewport;
+			viewportStateInfo.scissorCount = 1;
+			viewportStateInfo.pScissors = &scissor;
+
+			graphicsPipelineInfo.pViewportState = &viewportStateInfo;
+
+			//RenderPass
+			VkPipelineRenderingCreateInfoKHR pipelineRenderingInfo{};
+			pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+
+			graphicsPipelineInfo.renderPass = renderPass->vkHandle;
+
+			// Dynamic states
+			VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+			VkPipelineDynamicStateCreateInfo dynamic_state{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+			dynamic_state.dynamicStateCount = 2;
+			dynamic_state.pDynamicStates = dynamicStates;
+
+			graphicsPipelineInfo.pDynamicState = &dynamic_state;
+
+			vkCreateGraphicsPipelines(m_device, nullptr, 1, &graphicsPipelineInfo, m_allocatorPtr, &pipeline->vkHandle);
+			pipeline->vkPipelineBindPoint = VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS; //TODO: ADD SUPPORT FOR COMPUTE
+
 		}
 
-		//Depth
-		VkPipelineDepthStencilStateCreateInfo depthStencil{};
-		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-		depthStencil.depthTestEnable = VK_TRUE;
-		depthStencil.depthWriteEnable = VK_TRUE;
-		depthStencil.stencilTestEnable = VK_FALSE;
-		depthStencil.front = {}; // Optional
-		depthStencil.back = {}; // Optional
-
-		VkGraphicsPipelineCreateInfo pipelineInfo{};
-		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.stageCount = 2;
-		pipelineInfo.pStages = shaderStages;
-		pipelineInfo.pVertexInputState = &vertexInputInfo;
-		pipelineInfo.pInputAssemblyState = &inputAssembly;
-		pipelineInfo.pViewportState = &viewportState;
-		pipelineInfo.pRasterizationState = &rasterizer;
-		pipelineInfo.pMultisampleState = &multisampling;
-		pipelineInfo.pColorBlendState = &colorBlending;
-		pipelineInfo.pDepthStencilState = &depthStencil;
-		pipelineInfo.pDynamicState = &dynamicState;
-		pipelineInfo.layout = m_pipelineLayout;
-		pipelineInfo.renderPass = m_renderPass;
-		pipelineInfo.subpass = 0;
-		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-		if (vkCreateGraphicsPipelines(m_device, nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create graphics pipeline!");
-		}
-
-		vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
-		vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
+		return pipelineHandle;
 	}
 
 	void PuduGraphics::CreateFrameBuffers()
@@ -1300,7 +1598,72 @@ namespace Pudu
 		Print("Created command pool");
 	}
 
-	Texture2d PuduGraphics::CreateTexture(std::filesystem::path const& path, Handle handle)
+	TextureHandle PuduGraphics::CreateTexture(TextureCreationData const& creationData)
+	{
+		VkImageCreateInfo imageCreateInfo{};
+		imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageCreateInfo.flags = 0;
+		imageCreateInfo.imageType = ToVkImageType(creationData.textureType);
+		imageCreateInfo.extent.width = creationData.width;
+		imageCreateInfo.extent.height = creationData.height;
+		imageCreateInfo.extent.depth = creationData.depth;
+		imageCreateInfo.mipLevels = creationData.mipmaps;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+
+		const bool isRenderTarget = (creationData.flags & TextureFlags::RenderTargetMask) == TextureFlags::RenderTargetMask;
+		const bool isComputeUsed = (creationData.flags & TextureFlags::ComputeMask) == TextureFlags::ComputeMask;
+
+		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
+
+		if (TextureFormat::HasDepthOrStencil(creationData.format))
+		{
+			imageCreateInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		}
+		else
+		{
+			imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; //Read&write but it might but just for read
+			imageCreateInfo.usage |= isRenderTarget ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : 0;
+		}
+
+		VmaAllocationCreateInfo memoryInfo{};
+		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		auto texture = m_resources->AllocateTexture();
+
+		//Allocate image
+		vmaCreateImage(m_VmaAllocator, &imageCreateInfo, &memoryInfo, &texture->vkImageHandle, &texture->vmaAllocation, nullptr);
+
+		//Image view
+		VkImageViewCreateInfo imageViewInfo{};
+
+		imageViewInfo.image = texture->vkImageHandle;
+		imageViewInfo.viewType = ToVkImageViewType(creationData.textureType);
+		imageViewInfo.format = imageCreateInfo.format;
+
+		if (TextureFormat::HasDepthOrStencil(creationData.format))
+		{
+			imageViewInfo.subresourceRange.aspectMask = TextureFormat::HasDepth(creationData.format) ? VK_IMAGE_ASPECT_DEPTH_BIT:0;
+		}
+		else
+		{
+			imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		}
+
+		imageViewInfo.subresourceRange.levelCount = creationData.mipmaps;
+		imageViewInfo.subresourceRange.layerCount = 1;//No idea what this is, investigate
+		vkCreateImageView(m_device, &imageViewInfo, m_allocatorPtr, &texture->vkImageViewHandle);
+
+		texture->vkImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		UpdateBindlessTexture(texture->handle);
+		
+		return texture->handle;
+	}
+
+	SPtr<Texture2d> PuduGraphics::CreateTexture(std::filesystem::path const& path)
 	{
 		int texWidth, texHeight, texChannels;
 
@@ -1326,33 +1689,33 @@ namespace Pudu
 
 		stbi_image_free(pixels);
 
-		Texture2d texture{};
+		auto texture = m_resources->AllocateTexture();
 
 		CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture.vkImageHandler, texture.vkMemoryHandler);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->vkImageHandle, texture->vkMemoryHandle);
 
-		TransitionImageLayout(texture.vkImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+		TransitionImageLayout(texture->vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		CopyBufferToImage(stagingBuffer.Handler, texture.vkImageHandler, static_cast<uint32_t>(texWidth),
+		CopyBufferToImage(stagingBuffer.Handler, texture->vkImageHandle, static_cast<uint32_t>(texWidth),
 			static_cast<uint32_t>(texHeight));
 
-		TransitionImageLayout(texture.vkImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		TransitionImageLayout(texture->vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		vkDestroyBuffer(m_device, stagingBuffer.Handler, nullptr);
 		vkFreeMemory(m_device, stagingBuffer.DeviceMemoryHandler, nullptr);
 
-		CreateTextureImageView(texture);
+		CreateTextureImageView(*texture);
 
-		CreateTextureSampler(texture.Sampler.vkHandle);
-		texture.Handler = handle;
+		CreateTextureSampler(texture->Sampler.vkHandle);
+		
 		return texture;
 	}
 
 	void PuduGraphics::CreateTextureImageView(Texture2d& texture2d)
 	{
-		texture2d.vkImageViewHandler = CreateImageView(texture2d.vkImageHandler, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		texture2d.vkImageViewHandle = CreateImageView(texture2d.vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	void PuduGraphics::CreateTextureSampler(VkSampler& sampler)
@@ -1414,6 +1777,8 @@ namespace Pudu
 	}
 
 
+
+
 	void PuduGraphics::CreateSyncObjects()
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{};
@@ -1437,18 +1802,10 @@ namespace Pudu
 		}
 	}
 
+
+
 	void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	{
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Optional
-		beginInfo.pInheritanceInfo = nullptr; // Optional
-
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
-
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = m_renderPass;
@@ -1498,8 +1855,8 @@ namespace Pudu
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 			vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
-			auto ubo = GetUniformBufferObject(*SceneToRender->Camera, drawCall);
-			uint32_t materialid = drawCall.MaterialPtr.Texture->Handler;
+			auto ubo = GetUniformBufferObject(*SceneToRender->camera, drawCall);
+			uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
@@ -1565,6 +1922,23 @@ namespace Pudu
 		return ubo;
 	}
 
+	Shader* PuduGraphics::CreateShader(char* fragmentPath, char* vertexPath)
+	{
+		auto fragmentData = FileManager::LoadShader(fragmentPath);
+		auto vertexData = FileManager::LoadShader(vertexPath);
+
+		ShaderHandle handle = m_resources->AllocateShader();
+		auto shader = m_resources->GetShader(handle);
+
+		shader->fragmentData = fragmentData;
+		shader->vertexData = vertexData;
+
+		return shader;
+
+		/*pipelineCreationData.shadersStateCreationData.AddStage(fragmentData.data(), sizeof(char) * fragmentData.size(), VK_SHADER_STAGE_FRAGMENT_BIT);
+		pipelineCreationData.shadersStateCreationData.AddStage(vertexData.data(), sizeof(char) * vertexData.size(), VK_SHADER_STAGE_VERTEX_BIT);*/
+	}
+
 	void PuduGraphics::UpdateBindlessResources()
 	{
 		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
@@ -1575,7 +1949,7 @@ namespace Pudu
 		{
 			ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
 
-			auto texture = m_resourcesManager->GetTexture(textureToUpdate.handle);
+			auto texture = m_resources->GetTexture({ textureToUpdate.handle });
 			VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
 			descriptorWrite = {};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1583,7 +1957,7 @@ namespace Pudu
 			descriptorWrite.dstArrayElement = textureToUpdate.handle;
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrite.dstSet = m_bindlessDescriptorSet;
-			
+
 			descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
 
 			auto textureSampler = texture->Sampler;
@@ -1591,7 +1965,7 @@ namespace Pudu
 			VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
 			descriptorImageInfo = {};
 			descriptorImageInfo.sampler = textureSampler.vkHandle;
-			descriptorImageInfo.imageView = texture->vkImageViewHandler;
+			descriptorImageInfo.imageView = texture->vkImageViewHandle;
 			descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 			descriptorWrite.pImageInfo = &descriptorImageInfo;
@@ -1741,7 +2115,7 @@ namespace Pudu
 	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
 		auto mesh = MeshManager::AllocateMesh(data);
-		auto tex = m_resourcesManager->AllocateTexture(data.Material.BasetTexturePath);
+		auto tex = m_resources->AllocateTexture(data.Material.BasetTexturePath);
 		Material material = Material();
 		material.Texture = tex;
 
@@ -1915,12 +2289,12 @@ namespace Pudu
 		vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
 	}
 
-	VkShaderModule PuduGraphics::CreateShaderModule(const std::vector<char>& code)
+	VkShaderModule PuduGraphics::CreateShaderModule(char const* code, size_t size)
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.codeSize = code.size();
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+		createInfo.codeSize = size;
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(code);
 
 		VkShaderModule shaderModule;
 		if (vkCreateShaderModule(m_device, &createInfo, m_allocatorPtr, &shaderModule) != VK_SUCCESS)
@@ -2086,10 +2460,10 @@ namespace Pudu
 
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, m_allocatorPtr);
 
-		for (auto layout : m_descriptorSetLayouts)
+		/*for (auto layout : m_bindlessDescriptorSetLayouts)
 		{
 			vkDestroyDescriptorSetLayout(m_device, layout, m_allocatorPtr);
-		}
+		}*/
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
@@ -2151,11 +2525,11 @@ namespace Pudu
 	}
 	void PuduGraphics::DestroyTexture(Texture2d& texture)
 	{
-		vkDestroyImageView(m_device, texture.vkImageViewHandler, m_allocatorPtr);
+		vkDestroyImageView(m_device, texture.vkImageViewHandle, m_allocatorPtr);
 		vkDestroySampler(m_device, texture.Sampler.vkHandle, m_allocatorPtr);
 
-		vkDestroyImage(m_device, texture.vkImageHandler, m_allocatorPtr);
-		vkFreeMemory(m_device, texture.vkMemoryHandler, m_allocatorPtr);
+		vkDestroyImage(m_device, texture.vkImageHandle, m_allocatorPtr);
+		vkFreeMemory(m_device, texture.vkMemoryHandle, m_allocatorPtr);
 	}
 	void PuduGraphics::WaitIdle()
 	{

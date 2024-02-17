@@ -2,11 +2,11 @@
 
 namespace Pudu
 {
-	FrameBufferCreationData& FrameBufferCreationData::Reset()
+	FramebufferCreationData& FramebufferCreationData::Reset()
 	{
 		numRenderTargets = 0;
 		name = nullptr;
-		depthStencilTexture.index = k_INVALID_HANDLE;
+		depthStencilTextureHandle.index = k_INVALID_HANDLE;
 
 		resize = 0;
 		scaleX = 1.0f;
@@ -14,18 +14,18 @@ namespace Pudu
 
 		return *this;
 	}
-	FrameBufferCreationData& FrameBufferCreationData::AddRenderTexture(TextureHandle texture)
+	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(TextureHandle texture)
 	{
-		outputTextures[numRenderTargets++] = texture;
+		outputTexturesHandle[numRenderTargets++] = texture;
 
 		return *this;
 	}
-	FrameBufferCreationData& FrameBufferCreationData::SetDepthStencilTexture(TextureHandle texture)
+	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(TextureHandle texture)
 	{
-		depthStencilTexture = texture;
+		depthStencilTextureHandle = texture;
 		return *this;
 	}
-	FrameBufferCreationData& FrameBufferCreationData::SetScaling(float scale_x, float scale_y, uint8_t resize)
+	FramebufferCreationData& FramebufferCreationData::SetScaling(float scale_x, float scale_y, uint8_t resize)
 	{
 		scaleX = scale_x;
 		scaleY = scale_y;
@@ -34,7 +34,7 @@ namespace Pudu
 
 		return *this;
 	}
-	FrameBufferCreationData& FrameBufferCreationData::SetName(const char* name)
+	FramebufferCreationData& FramebufferCreationData::SetName(const char* name)
 	{
 		this->name = name;
 

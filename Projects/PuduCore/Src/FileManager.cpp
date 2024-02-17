@@ -46,10 +46,6 @@ namespace Pudu {
 		return buffer;
 	}
 
-
-
-
-
 	/// <summary>
 	/// Get path relative to assets folder
 	/// </summary>

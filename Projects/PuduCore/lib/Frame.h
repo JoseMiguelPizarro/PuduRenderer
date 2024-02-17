@@ -1,10 +1,13 @@
 #pragma once
 #include <vector>
 #include <vulkan/vulkan.h>
-struct Frame {
-public:
-	VkCommandBuffer CommandBuffer;
-	VkSemaphore ImageAvailableSemaphore;
-	VkSemaphore RenderFinishedSemaphore;
-	VkFence InFlightFence;
-};
+
+namespace Pudu
+{
+	struct Frame {
+		VkCommandBuffer CommandBuffer;
+		VkSemaphore ImageAvailableSemaphore;
+		VkSemaphore RenderFinishedSemaphore;
+		VkFence InFlightFence;
+	};
+}

@@ -24,7 +24,7 @@ Z+
  */
 
  //All matrices are in Column Major
-namespace PuduMath {
+namespace Pudu {
 
 	static mat4 LookAt(vec3 eyePosition, vec3 targetPosition, vec3 up) {
 		vec3 direction = normalize(targetPosition - eyePosition);
@@ -32,8 +32,6 @@ namespace PuduMath {
 		vec3 w = direction;
 		vec3 u = normalize(cross(up, w));
 		vec3 v = cross(w, u);
-
-		mat4 m;
 
 		return	mat4{
 			u.x,u.y,u.z,eyePosition.x,
@@ -98,6 +96,13 @@ namespace PuduMath {
 
 		return vec3(pitch, yaw, roll);
 	}
+
+	struct Rect2DInt {
+		i16                             x = 0;
+		i16                             y = 0;
+		u16                             width = 0;
+		u16                             height = 0;
+	};
 }
 
 

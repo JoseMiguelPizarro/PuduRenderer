@@ -11,7 +11,9 @@ namespace Pudu {
 
 		Shader(VkShaderModule module) : m_module(module) {}
 		Shader(std::filesystem::path path, VkShaderModule module) :m_shaderPath(path), m_module(module) {}
-		
+
+		std::vector<char> fragmentData;
+		std::vector<char> vertexData;
 
 	private:
 		std::filesystem::path m_shaderPath;

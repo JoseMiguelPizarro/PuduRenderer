@@ -19,11 +19,12 @@ namespace Pudu {
 		{
 			const SpvReflectDescriptorSet& reflSet = *(sets[setIndex]);
 			DescriptorSetLayoutData layout{};
-
 			layout.Bindings.resize(reflSet.binding_count);
+
 			for (uint32_t bindingIndex = 0; bindingIndex < reflSet.binding_count; ++bindingIndex) {
 				const SpvReflectDescriptorBinding& refl_binding = *(reflSet.bindings[bindingIndex]);
 				VkDescriptorSetLayoutBinding& layoutBinding = layout.Bindings[bindingIndex];
+				
 				layoutBinding.binding = refl_binding.binding;
 				layoutBinding.descriptorType = static_cast<VkDescriptorType>(refl_binding.descriptor_type);
 				layoutBinding.descriptorCount = 1;

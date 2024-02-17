@@ -129,6 +129,25 @@ function useCoreLib()
     filter {"system:windows"}
 end
 
+function  targetDir()
+    targetdir "bin/%{prj.name}/%{cfg.buildcfg}"
+end
+
+function FrameGraphProject()
+    project "PuduFrameGraph"
+    kind "StaticLib"
+    language "C++"
+    CppVer()
+    targetDir()
+    includePath = "Projects/PuduFrameGraph/include"
+    srcPath = "Projects/PuduFrameGraph/src"
+    files "Projects/%{prj.name}/**"
+    includedirs {includePath}
+    includeVulkan()
+    os.mkdir(includePath)
+    os.mkdir(srcPath)
+end
+
 
 --Dependencies projects
 project "simdjson"
@@ -165,11 +184,11 @@ includedirs {"lib/SPIRV-Reflect","include"}
 project "PuduCore"
 kind "StaticLib"
 language "C++"
-targetdir "bin/%{cfg.buildcfg}"
 CppVer()
+targetDir()
 
 files "Projects/PuduCore/**"
-includedirs "Projects/PuduCore/lib"
+includedirs {"Projects/PuduCore/lib","Prjects/PuduCore/vendor"}
 
 includeGLFW()
 includedxc()
@@ -178,13 +197,11 @@ includeTinyObjLoader()
 includeAndLinkFastGltf()
 includeAndLinkFmtlib()
 includeAndLinkSPIRV_Reflect()
-
-includedirs {"%{IncludeDir.VulkanSDK}"}
+includeVulkan()
 
 vpaths {
     -- leave it empty to generate filters respecting the folder structure
 }
-
 
 project "App"
 

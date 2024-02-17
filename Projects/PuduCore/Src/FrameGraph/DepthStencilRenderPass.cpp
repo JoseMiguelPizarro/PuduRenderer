@@ -1,11 +1,10 @@
 #include "FrameGraph/DepthStencilRenderPass.h"
+#include "PuduRenderer.h"
 
 namespace Pudu
 {
-	void DepthStencilRenderPass::PreRender(VkCommandBuffer* gpu_commands, Scene* render_scene)
+	Pipeline* DepthStencilRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
-	}
-	void DepthStencilRenderPass::Render(VkCommandBuffer* commands, Scene* scene)
-	{
+		return frameData.renderer->GetPipeline(drawcall);
 	}
 }

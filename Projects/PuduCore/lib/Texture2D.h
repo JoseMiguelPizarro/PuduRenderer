@@ -1,19 +1,27 @@
 ﻿#pragma once
 
+#include <string>
+#include <vulkan/vulkan_core.h>
+#include <vma/vk_mem_alloc.h>
+
+#include "Resources/Resources.h"
 #include "PuduCore.h"
 #include "TextureSampler.h"
-#include <vulkan/vulkan_core.h>
-#include <string>
 
 namespace Pudu {
 	class Texture2d
 	{
 	public:
-		VkImage vkImageHandler;
-		VkDeviceMemory vkMemoryHandler;
-		VkImageView vkImageViewHandler;
+		VkImage vkImageHandle;
+		VkDeviceMemory vkMemoryHandle;
+		VkImageView vkImageViewHandle;
+		VmaAllocation vmaAllocation;
+		VkImageLayout vkImageLayout;
 		TextureSampler Sampler;
-		Handle Handler;
+		TextureHandle handle;
+		uint32_t width;
+		uint32_t height;
+		VkFormat format;
 
 		void Dispose();
 
