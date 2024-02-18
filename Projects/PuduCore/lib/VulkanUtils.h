@@ -93,4 +93,13 @@ namespace Pudu {
 
         return flags;
     }
+
+
+#ifndef VKCheck
+#define VKCheck(result, message) if(result != VK_SUCCESS)\
+    {\
+    PUDU_ERROR(message);\
+    }
+#endif // !VKCheck
+
 }

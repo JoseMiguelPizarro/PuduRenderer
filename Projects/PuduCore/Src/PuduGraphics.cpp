@@ -8,7 +8,6 @@
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
 
-
 #include <limits>
 
 #include "PuduGraphics.h"
@@ -33,6 +32,8 @@
 #include "SPIRVParser.h"
 #include "Frame.h"
 #include "FrameGraph/FrameGraph.h"
+
+#include "VulkanUtils.h"
 
 namespace Pudu
 {
@@ -70,9 +71,10 @@ namespace Pudu
 		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDevice();
+		InitDebugUtilsObjectName();
 		InitVMA();
 		CreateSwapChain();
-		CreateImageViews();
+		CreateSwapchainImageViews();
 		CreateVkRenderPass();
 
 		PipelineCreationData pipelineCreationData;
@@ -307,7 +309,7 @@ namespace Pudu
 			}
 		}
 
-		throw std::runtime_error("Failed to find suitable memory type!");
+		PUDU_ERROR("Failed to find suitable memory type!");
 	}
 
 	void PuduGraphics::DestroyBuffer(GraphicsBuffer buffer)
@@ -639,6 +641,9 @@ namespace Pudu
 		{
 			printf("Vulkan instance created successfully\n");
 		}
+
+
+		
 	}
 
 
@@ -962,7 +967,7 @@ namespace Pudu
 		m_swapChainExtent = extent;
 	}
 
-	void PuduGraphics::CreateImageViews()
+	void PuduGraphics::CreateSwapchainImageViews()
 	{
 		LOG("CreateImageViews");
 		m_swapChainImagesViews.resize(m_swapChainImages.size());
@@ -971,6 +976,32 @@ namespace Pudu
 		{
 			m_swapChainImagesViews[i] = CreateImageView(m_swapChainImages[i], m_swapChainImageFormat,
 				VK_IMAGE_ASPECT_COLOR_BIT);
+
+			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], fmt::format("Swapchain {}", i).c_str());
+		}
+	}
+
+	void PuduGraphics::SetResourceName(VkObjectType type, u64 handle, const char* name)
+	{
+		const VkDebugUtilsObjectNameInfoEXT resourceNameInfo =
+		{
+			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+			.pNext = NULL,
+			.objectType = type,
+			.objectHandle = (uint64_t)handle,
+			.pObjectName = name,
+		};
+
+		pfnSetDebugUtilsObjectNameEXT(m_device, &resourceNameInfo);
+	}
+
+	void PuduGraphics::InitDebugUtilsObjectName()
+	{
+		pfnSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT");
+
+		if (pfnSetDebugUtilsObjectNameEXT == nullptr)
+		{
+			PUDU_ERROR("Debug utils object function not found");
 		}
 	}
 
@@ -1242,8 +1273,8 @@ namespace Pudu
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT; //support bindless
-		poolInfo.maxSets = k_MAX_BINDLESS_RESOURCES * poolSizesBindless.size();
-		poolInfo.poolSizeCount = poolSizesBindless.size();
+		poolInfo.maxSets = k_MAX_BINDLESS_RESOURCES * (uint32_t)poolSizesBindless.size();
+		poolInfo.poolSizeCount = (uint32_t)poolSizesBindless.size();
 		poolInfo.pPoolSizes = poolSizesBindless.data();
 
 		m_physicalDeviceData.PoolSizesCount = poolsSizesCount;
@@ -1259,7 +1290,7 @@ namespace Pudu
 		std::vector<DescriptorSetLayoutHandle> handles(creationData.size());
 
 		LOG("CreateDescriptorSetLayout");
-		const uint32_t poolCount = m_physicalDeviceData.PoolSizesCount;
+		const uint32_t poolCount = (uint32_t)m_physicalDeviceData.PoolSizesCount;
 
 		VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
 
@@ -1281,7 +1312,7 @@ namespace Pudu
 
 			VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
 			extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-			extendedInfo.bindingCount = data.Bindings.size();
+			extendedInfo.bindingCount = (uint32_t)data.Bindings.size();
 			extendedInfo.pBindingFlags = bindingFlags.data();
 
 			VkDescriptorSetLayoutCreateInfo createInfo{};
@@ -1456,7 +1487,7 @@ namespace Pudu
 			colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 			colorBlendingInfo.logicOpEnable = VK_FALSE;
 			colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
-			colorBlendingInfo.attachmentCount = blendCount ? blendCount : renderPassOutput.numColorFormats;
+			colorBlendingInfo.attachmentCount = blendCount ? (uint32_t)blendCount : renderPassOutput.numColorFormats;
 			colorBlendingInfo.pAttachments = colorBlendAttachments.data();
 
 			graphicsPipelineInfo.pColorBlendState = &colorBlendingInfo;
@@ -1590,10 +1621,7 @@ namespace Pudu
 		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, cmdPool) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create command pool");
-		}
+		VKCheck(vkCreateCommandPool(m_device, &poolInfo, nullptr, cmdPool), "Failed to create command pool");
 
 		Print("Created command pool");
 	}
@@ -1645,7 +1673,7 @@ namespace Pudu
 
 		if (TextureFormat::HasDepthOrStencil(creationData.format))
 		{
-			imageViewInfo.subresourceRange.aspectMask = TextureFormat::HasDepth(creationData.format) ? VK_IMAGE_ASPECT_DEPTH_BIT:0;
+			imageViewInfo.subresourceRange.aspectMask = TextureFormat::HasDepth(creationData.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
 		}
 		else
 		{
@@ -1659,7 +1687,7 @@ namespace Pudu
 		texture->vkImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 		UpdateBindlessTexture(texture->handle);
-		
+
 		return texture->handle;
 	}
 
@@ -1709,7 +1737,7 @@ namespace Pudu
 		CreateTextureImageView(*texture);
 
 		CreateTextureSampler(texture->Sampler.vkHandle);
-		
+
 		return texture;
 	}
 
@@ -1775,8 +1803,6 @@ namespace Pudu
 
 		LOG("Created command buffer");
 	}
-
-
 
 
 	void PuduGraphics::CreateSyncObjects()
@@ -1894,7 +1920,7 @@ namespace Pudu
 		CleanupSwapChain();
 
 		CreateSwapChain();
-		CreateImageViews();
+		CreateSwapchainImageViews();
 		CreateDepthResources();
 		CreateFrameBuffers();
 	}
@@ -1943,7 +1969,7 @@ namespace Pudu
 	{
 		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
-		size_t currentWriteIndex = 0;
+		uint32_t currentWriteIndex = 0;
 
 		for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
 		{

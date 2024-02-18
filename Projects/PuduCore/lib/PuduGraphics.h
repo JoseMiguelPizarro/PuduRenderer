@@ -70,7 +70,7 @@ namespace Pudu
 		VK_KHR_MAINTENANCE3_EXTENSION_NAME,
 		// Works around a validation layer bug with descriptor pool allocation with VARIABLE_COUNT.
 	// See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
-		VK_KHR_MAINTENANCE1_EXTENSION_NAME
+		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
 	};
 
 	class PuduGraphics
@@ -153,7 +153,8 @@ namespace Pudu
 		GPUCommands m_commandBuffer;
 		uint32_t m_imageIndex;
 
-		
+		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
+
 		void InitVulkan();
 		void InitVMA();
 		void CreateVulkanInstance();
@@ -161,8 +162,11 @@ namespace Pudu
 		void CreateLogicalDevice();
 		void CreateSurface();
 		void CreateSwapChain();
-		void CreateImageViews();
+		void CreateSwapchainImageViews();
+		void SetResourceName(VkObjectType type, u64 handle, const char* name);
 		
+		void InitDebugUtilsObjectName();
+
 		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
 		std::vector<DescriptorSetLayoutHandle> CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData);
 
