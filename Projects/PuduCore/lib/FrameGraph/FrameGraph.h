@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <memory>
 
-#include <Resources/ResourcesManager.h>
+#include <Resources/ResourcesPool.h>
 #include <PuduGraphics.h>
 #include <GPUCommands.h>
 #include "FrameGraphRenderPass.h"
@@ -101,6 +101,7 @@ namespace Pudu {
 		std::vector<FrameGraphResourceInputCreation>  inputs;
 		std::vector<FrameGraphResourceOutputCreation> outputs;
 
+		RenderPassType renderType;
 		bool enabled;
 
 		const char* name;
@@ -112,13 +113,13 @@ namespace Pudu {
 		RenderPassHandle  renderPass;
 		FramebufferHandle framebuffer;
 
-		FrameGraphRenderPass* graphRenderPass;
-
 		std::vector<FrameGraphResourceHandle> inputs;
 		std::vector<FrameGraphResourceHandle> outputs;
 
 		//Edges represent nodes this node is connected TO
 		std::vector<FrameGraphNodeHandle> edges;
+		RenderPassType type;
+
 
 		bool enabled = true;
 
@@ -160,8 +161,6 @@ namespace Pudu {
 	struct FrameGraphBuilder {
 		void Init(PuduGraphics* device);
 		void Shutdown();
-
-		void RegisterRenderPass(char* name, FrameGraphRenderPass* renderPass);
 
 		FrameGraphResourceHandle CreateNodeOutput(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer);
 		FrameGraphResourceHandle CreateNodeInput(const FrameGraphResourceInputCreation& creation);
@@ -206,6 +205,8 @@ namespace Pudu {
 		void EnableRenderPass(char* renderPassName);
 		void DisableRenderPass(char* renderPassName);
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
+
+		void AttachRenderPass(FrameGraphRenderPass renderPass, RenderPassType type);
 
 		FrameGraphNode* GetNode(char* name);
 		FrameGraphNode* GetNode(FrameGraphNodeHandle handle);

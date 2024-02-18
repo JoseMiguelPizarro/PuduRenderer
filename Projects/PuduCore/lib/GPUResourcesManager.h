@@ -1,9 +1,10 @@
 #pragma once
 #include <filesystem>
+#include <memory.h>
 #include "PuduCore.h"
 #include "Texture2D.h"
 #include "Resources/Resources.h"
-#include "Resources/ResourcesManager.h"
+#include "Resources/ResourcesPool.h"
 #include "Shader.h"
 #include "Resources/FrameBufferCreationData.h"
 

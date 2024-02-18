@@ -1,6 +1,7 @@
 #include "GPUResourcesManager.h"
 #include "Resources/RenderPassCreationData.h"
 #include "PuduGraphics.h"
+#include "Resources/ResourcesPool.h"
 
 namespace Pudu {
 
@@ -21,8 +22,8 @@ namespace Pudu {
 
 	SPtr<Texture2d> GPUResourcesManager::AllocateTexture()
 	{
-		TextureHandle handle = { m_textures.Size() };
-		auto texture = std::make_shared<Texture2d>();
+		TextureHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
+		SPtr<Texture2d> texture = std::make_shared<Texture2d>();
 		texture->handle = handle;
 		m_textures.AddResource(texture);
 
@@ -90,6 +91,8 @@ namespace Pudu {
 		frameBuffer->renderPassHandle = creationData.renderPassHandle;
 
 		m_graphics->CreateVkFramebuffer(frameBuffer);
+
+		return handle;
 	}
 
 	Pipeline* GPUResourcesManager::GetPipeline(PipelineHandle handle)

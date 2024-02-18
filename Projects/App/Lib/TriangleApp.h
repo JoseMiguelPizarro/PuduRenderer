@@ -1,5 +1,7 @@
 #pragma once
 #include <PuduCore.h>
+#include <PuduRenderer.h>
+#include <FrameGraph/FrameGraph.h>
 #include <PuduApp.h>
 #include "Mesh.h"
 #include "Scene.h"
@@ -21,6 +23,9 @@ private:
 	void LoadGameboyModel();
 
 	std::filesystem::path GameboyModelPath = "models/gameboy/gameboy.gltf";
+
+	std::filesystem::path frameGraphPath = "FrameGraphs/Default.json";
+
 	//std::string GameboyModelPath = "models/gameboy/scene.gltf";
 
 	std::filesystem::path planeTexturePath = "models/floor/Grass.png";
@@ -33,4 +38,5 @@ private:
 	SPtr<Mesh> m_planeMesh;
 	Model m_planeModel;
 	SPtr<Texture2d> m_planeTexture;
+	PuduRenderer m_puduRenderer;
 };

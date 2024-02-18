@@ -139,6 +139,8 @@ namespace Pudu {
 
 			auto name = std::string(node.name);
 			auto meshIndex = node.meshIndex;
+
+			//Node is a Model
 			if (meshIndex.has_value())
 			{
 				auto meshData = meshCreationData[meshIndex.value()];
@@ -147,6 +149,7 @@ namespace Pudu {
 				RenderEntitySPtr e = EntityManager::AllocateRenderEntity(name, model);
 				entities.push_back(e);
 			}
+			//Node is a transform
 			else {
 				EntitySPtr entity = EntityManager::AllocateEntity(name);
 				fg::TRS transform = std::get<fg::TRS>(node.transform);
@@ -268,6 +271,5 @@ namespace Pudu {
 
 		return creationData;
 	}
-
 }
 

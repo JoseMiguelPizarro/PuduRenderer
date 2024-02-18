@@ -7,7 +7,7 @@ namespace Pudu
 {
 	struct RenderPassCreationData
 	{
-		uint16_t numRenderTargets = 0;
+		uint8_t numRenderTargets = 0;
 		VkFormat colorFormats[K_MAX_IMAGE_OUTPUTS];
 		VkImageLayout colorFinalLayouts[K_MAX_IMAGE_OUTPUTS];
 		RenderPassOperation colorOperations[K_MAX_IMAGE_OUTPUTS];

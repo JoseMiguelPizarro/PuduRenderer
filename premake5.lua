@@ -1,6 +1,7 @@
 VULKAN_SDK = os.getenv("VULKAN_SDK")
 IncludeDir = {}
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
+IncludeDir["VulkanVMA"]= "%{VULKAN_SDK}/Include/vma"
 
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
@@ -111,7 +112,7 @@ function linkGLFW()
 end
 
 function includeVulkan()
-    includedirs "%{IncludeDir.VulkanSDK}"
+    includedirs {"%{IncludeDir.VulkanSDK}", "%{IncludeDir.VulkanVMA}"}
 end
 
 function useCoreLib()

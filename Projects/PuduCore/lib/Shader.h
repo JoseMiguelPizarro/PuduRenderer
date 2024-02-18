@@ -9,6 +9,7 @@ namespace Pudu {
 		VkShaderModule GetModule();
 		std::filesystem::path GetPath();
 
+		Shader() = default;
 		Shader(VkShaderModule module) : m_module(module) {}
 		Shader(std::filesystem::path path, VkShaderModule module) :m_shaderPath(path), m_module(module) {}
 

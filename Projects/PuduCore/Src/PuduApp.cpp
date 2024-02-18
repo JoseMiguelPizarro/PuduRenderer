@@ -10,7 +10,6 @@ namespace Pudu
 	{
 		printf("PuduApp Init");
 		Graphics.Init(1024, 1024);
-		Graphics.InitPipeline();
 		OnInit();
 
 		Time.m_startTime = std::chrono::high_resolution_clock::now();

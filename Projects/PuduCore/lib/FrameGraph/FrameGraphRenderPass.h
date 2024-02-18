@@ -8,8 +8,9 @@ namespace Pudu
 {
 	class PuduGraphics;
 
-	struct FrameGraphRenderPass
+	class FrameGraphRenderPass
 	{
+	public:
 		virtual Pipeline* GetPipeline(RenderFrameData& frameData, DrawCall& drawcall);
 		virtual void PreRender(RenderFrameData& renderData) { }
 		virtual void Render(RenderFrameData& frameData);

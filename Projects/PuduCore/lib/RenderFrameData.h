@@ -1,14 +1,17 @@
 #pragma once
 #include <vector>
+#include <unordered_map>
 
 namespace Pudu
 {
-	class Frame;
-	class FrameGraph;
+	struct Frame;
+	struct FrameGraph;
 	class Scene;
 	class GPUCommands;
 	class PuduGraphics;
 	class PuduRenderer;
+	enum RenderPassType;
+	class FrameGraphRenderPass;
 
 	struct RenderFrameData
 	{
@@ -21,5 +24,6 @@ namespace Pudu
 		PuduRenderer* renderer;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
+		std::unordered_map<RenderPassType, FrameGraphRenderPass>* m_renderPassesByType;
 	};
 }

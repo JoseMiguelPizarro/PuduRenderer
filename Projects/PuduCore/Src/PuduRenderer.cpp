@@ -1,9 +1,19 @@
 #include <unordered_map>
 #include <vector>
 #include "PuduRenderer.h"
+#include "FrameGraph/ForwardRenderPass.h"
+#include "FrameGraph/DepthStencilRenderPass.h"
 
 namespace Pudu
 {
+	void PuduRenderer::Init()
+	{
+		DepthStencilRenderPass depthPass;
+		ForwardRenderPass forwardPass;
+
+		AddRenderPass(depthPass, RenderPassType::DepthPrePass);
+		AddRenderPass(forwardPass, RenderPassType::Color);
+	}
 	void PuduRenderer::Render()
 	{
 		RenderFrameData renderData{};
@@ -11,9 +21,16 @@ namespace Pudu
 		renderData.renderer = this;
 		renderData.scene = sceneToRender;
 		renderData.frameGraph = &frameGraph;
+		renderData.m_renderPassesByType = &m_renderPassByType;
 
 		graphics->DrawFrame(renderData);
 	}
+
+	void PuduRenderer::AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype) 
+	{
+		m_renderPassByType.emplace(renderPasstype, renderPass);
+	}
+
 	void PuduRenderer::LoadFrameGraph(std::filesystem::path path)
 	{
 		frameGraph = FrameGraph();

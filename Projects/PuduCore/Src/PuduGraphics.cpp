@@ -5,6 +5,10 @@
 #include <stb_image.h>
 #include <fmt/core.h>
 
+#define VMA_IMPLEMENTATION
+#include <vma/vk_mem_alloc.h>
+
+
 #include <limits>
 
 #include "PuduGraphics.h"
@@ -17,7 +21,6 @@
 #include "UniformBufferObject.h"
 #include <chrono>
 #include <PuduMath.h>
-#include <vma/vk_mem_alloc.h>
 
 #include "FileManager.h"
 
@@ -463,7 +466,6 @@ namespace Pudu
 		frameData.frame = &m_Frames[m_currentFrameIndex];
 		frameData.frameIndex = m_currentFrameIndex;
 		frameData.currentCommand = &m_commandBuffer;
-		frameData.scene = SceneToRender;
 		frameData.graphics = this;
 
 		frameData.commandsToSubmit.push_back(m_commandBuffer.vkHandle);
@@ -499,7 +501,6 @@ namespace Pudu
 
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
-			SceneToRender->DrawImGui();
 
 			// Record dear imgui primitives into command buffer
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_ImGuiCommandBuffers[m_currentFrameIndex]);
@@ -564,7 +565,6 @@ namespace Pudu
 
 		//When `MAX_FRAMES_IN_FLIGHT` is a power of 2 you can update the current frame without modulo division
 		m_currentFrameIndex = (m_currentFrameIndex + 1) & (MAX_FRAMES_IN_FLIGHT - 1);
-
 	}
 
 	void PuduGraphics::EndDrawFrame()
@@ -1806,72 +1806,72 @@ namespace Pudu
 
 	void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
 	{
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = m_renderPass;
-		renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
-		renderPassInfo.renderArea = { 0, 0 };
-		renderPassInfo.renderArea.extent = m_swapChainExtent;
+		//VkRenderPassBeginInfo renderPassInfo{};
+		//renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		//renderPassInfo.renderPass = m_renderPass;
+		//renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
+		//renderPassInfo.renderArea = { 0, 0 };
+		//renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { {0.8860f, 1.0f, 0.996f, 1.0f} };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		//std::array<VkClearValue, 2> clearValues{};
+		//clearValues[0].color = { {0.8860f, 1.0f, 0.996f, 1.0f} };
+		//clearValues[1].depthStencil = { 1.0f, 0 };
 
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
+		//renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		//renderPassInfo.pClearValues = clearValues.data();
 
-		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+		//vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-		VkViewport viewport{};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(m_swapChainExtent.width);
-		viewport.height = static_cast<float>(m_swapChainExtent.height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+		//VkViewport viewport{};
+		//viewport.x = 0.0f;
+		//viewport.y = 0.0f;
+		//viewport.width = static_cast<float>(m_swapChainExtent.width);
+		//viewport.height = static_cast<float>(m_swapChainExtent.height);
+		//viewport.minDepth = 0.0f;
+		//viewport.maxDepth = 1.0f;
+		//vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-		VkRect2D scissor{};
-		scissor.offset = { 0, 0 };
-		scissor.extent = m_swapChainExtent;
-		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+		//VkRect2D scissor{};
+		//scissor.offset = { 0, 0 };
+		//scissor.extent = m_swapChainExtent;
+		//vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-		std::vector<DrawCall> drawCalls = SceneToRender->GetDrawCalls();
+		//std::vector<DrawCall> drawCalls = SceneToRender->GetDrawCalls();
 
-		VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		std::vector<VkDescriptorSet> descriptorSets(drawCalls.size());
+		//VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		//std::vector<VkDescriptorSet> descriptorSets(drawCalls.size());
 
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-			&m_bindlessDescriptorSet, 0, nullptr);
+		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
+		//	&m_bindlessDescriptorSet, 0, nullptr);
 
-		for (DrawCall drawCall : drawCalls) {
+		//for (DrawCall drawCall : drawCalls) {
 
-			Model model = drawCall.ModelPtr;
-			auto mesh = drawCall.MeshPtr;
+		//	Model model = drawCall.ModelPtr;
+		//	auto mesh = drawCall.MeshPtr;
 
-			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
+		//	VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
+		//	VkDeviceSize offsets[] = { 0 };
+		//	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+		//	vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
-			auto ubo = GetUniformBufferObject(*SceneToRender->camera, drawCall);
-			uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
+		//	auto ubo = GetUniformBufferObject(*SceneToRender->camera, drawCall);
+		//	uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 
-			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
-			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
+		//	vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
+		//	vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
 
-			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
-		}
+		//	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
+		//}
 
-		// Record dear imgui primitives into command buffer
+		//// Record dear imgui primitives into command buffer
 
-		vkCmdEndRenderPass(commandBuffer);
+		//vkCmdEndRenderPass(commandBuffer);
 
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-		{
-			PUDU_ERROR("failed to record command buffer!");
-		}
+		//if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		//{
+		//	PUDU_ERROR("failed to record command buffer!");
+		//}
 	}
 
 	void PuduGraphics::RecreateSwapChain()

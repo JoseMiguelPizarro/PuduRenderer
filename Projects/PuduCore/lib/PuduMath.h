@@ -5,7 +5,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-#define PI 3.141592653589
+#define PI 3.1415926535890f
 
 using namespace glm;
 

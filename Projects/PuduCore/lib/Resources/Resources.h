@@ -180,7 +180,7 @@ namespace Pudu
 
 	class PuduGraphics;
 
-	class RenderPassCreationData;
+	struct RenderPassCreationData;
 
 	struct RenderPassOutput
 	{

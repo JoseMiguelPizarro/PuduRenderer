@@ -11,6 +11,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
+#include "vma/vk_mem_alloc.h"
+
 #include <optional>
 #include <Frame.h>
 #include <GraphicsBuffer.h>
@@ -35,6 +37,8 @@
 #include <FrameGraph/FrameGraphRenderPass.h>
 #include <RenderFrameData.h>
 #include "GPUCommands.h"
+
+
 
 namespace Pudu
 {
@@ -76,14 +80,12 @@ namespace Pudu
 		void Init(int windowWidth, int windowHeight);
 		void DrawFrame(RenderFrameData& frameData);
 
-		uint32_t WindowWidth = 800;
-		uint32_t WindowHeight = 600;
+		uint32_t WindowWidth = 1200;
+		uint32_t WindowHeight = 800;
 
 		const std::vector<const char*> validationLayers = {
 			"VK_LAYER_KHRONOS_validation"
 		};
-
-		Scene* SceneToRender;
 
 #ifdef NDEBUG
 		const bool enableValidationLayers = false;
@@ -93,7 +95,6 @@ namespace Pudu
 
 		GLFWwindow* WindowPtr;
 		bool FramebufferResized = false;
-		void InitPipeline();
 		void Cleanup();
 		Model CreateModel(std::shared_ptr<Mesh> mesh, Material& material);
 		Model CreateModel(MeshCreationData const& data);

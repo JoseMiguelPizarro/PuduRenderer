@@ -771,11 +771,22 @@ namespace Pudu
 		{"reference",FrameGraphResourceType_Reference}
 	};
 
-	static FrameGraphResourceType GetResourceType(const char* id) {
+	static std::unordered_map < std::string, RenderPassType> const RenderPassTypeTable =
+	{
+		{"forward", RenderPassType::Color},
+		{"depth", RenderPassType::DepthPrePass}
+	};
+
+	static RenderPassType GetRenderPassType(char const* id) {
+		return RenderPassTypeTable.find(id)->second;
+	}
+
+	static FrameGraphResourceType GetResourceType(char const* id) {
 		//Handle lower/upper case
 		return FrameGraphResourceTypeTable.find(id)->second;
 	}
 
+#pragma endregion
 
 	static void ComputeEdges(FrameGraph* frameGraph, FrameGraphNode* node, FrameGraphNodeHandle nodeHandle)
 	{
@@ -929,9 +940,6 @@ namespace Pudu
 		node->framebuffer = frameBufferHandle;
 	}
 
-#pragma endregion
-
-
 	void FrameGraphBuilder::Init(PuduGraphics* device)
 	{
 		this->graphics = device;
@@ -941,34 +949,6 @@ namespace Pudu
 	}
 	void FrameGraphBuilder::Shutdown()
 	{
-	}
-	void FrameGraphBuilder::RegisterRenderPass(char* name, FrameGraphRenderPass* renderPass)
-	{
-		//Get render pass name hash
-		uint64_t hash = std::hash<char*>{}(name);
-
-		//Find render pass cache
-		auto cache = renderPassCache.renderPassMap.find(hash);
-
-		//Cache exists, return
-		if (cache != renderPassCache.renderPassMap.end())
-		{
-			return;
-		}
-
-		renderPassCache.renderPassMap[hash] = renderPass;
-
-		//Look for node cache
-		auto it = nodeCache.nodeMap.find(hash);
-
-		//If node cache doesn't exists, return
-		if (it == nodeCache.nodeMap.end())
-		{
-			return;
-		}
-
-		auto node = nodeCache.nodes.GetResourcePtr(it->second);
-		node->graphRenderPass = renderPass;
 	}
 
 	FrameGraphResourceHandle FrameGraphBuilder::CreateNodeOutput(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer)
@@ -1124,6 +1104,7 @@ namespace Pudu
 	}
 	void FrameGraph::Parse(std::filesystem::path filePath)
 	{
+		//TODO: ADD NODE TYPE (COLOR,DEPTH)
 		if (!std::filesystem::exists(filePath))
 		{
 			//LOG("File not found {}", filePath.c_str());
@@ -1144,12 +1125,19 @@ namespace Pudu
 		auto passes = object["passes"];
 		for (auto pass : passes)
 		{
+
 			auto passInputs = pass["inputs"];
 			auto passOutputs = pass["outputs"];
 
 			FrameGraphNodeCreation nodeCreation;
+			nodeCreation.name = pass["name"].get_string().value().data();
+			nodeCreation.enabled = pass["enabled"].get_bool();
+			nodeCreation.renderType = GetRenderPassType(pass["type"].get_string().take_value().data());
+
 			nodeCreation.inputs.resize(passInputs.count_elements());
 			nodeCreation.outputs.resize(passOutputs.count_elements());
+
+
 
 			for (auto input : passInputs)
 			{
@@ -1203,8 +1191,7 @@ namespace Pudu
 				nodeCreation.outputs.push_back(outputCreation);
 			}
 
-			nodeCreation.name = pass["name"].get_string().value().data();
-			nodeCreation.enabled = pass["enabled"].get_bool();
+
 
 			FrameGraphNodeHandle nodeHandle = builder->CreateNode(nodeCreation);
 
@@ -1469,10 +1456,12 @@ namespace Pudu
 			commands->SetScissor(0, 0, width, height);
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
-			node->graphRenderPass->PreRender(renderData);
+			auto renderPass = renderData.m_renderPassesByType->find(node->type)->second;
+
+			renderPass.PreRender(renderData);
 			commands->BindRenderPass(node->renderPass, node->framebuffer);
 
-			node->graphRenderPass->Render(renderData);
+			renderPass.Render(renderData);
 
 			commands->EndCurrentRenderPass();
 			//TODO: IMPLEMENT MARKERS
@@ -1481,6 +1470,11 @@ namespace Pudu
 	void FrameGraph::OnResize(PuduGraphics& gpu, uint32_t new_width, uint32_t new_height)
 	{
 	}
+	void FrameGraph::AttachRenderPass(FrameGraphRenderPass renderPass, RenderPassType type)
+	{
+
+	}
+
 	FrameGraphNode* FrameGraph::GetNode(char* name)
 	{
 		return builder->GetNode(name);
