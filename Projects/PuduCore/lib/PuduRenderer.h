@@ -22,7 +22,6 @@ namespace Pudu
 		Pipeline* GetPipeline(DrawCall& drawcall, RenderPassType renderPassType);
 		void AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype);
 
-
 	private:
 		std::unordered_map<RenderPassType, std::unordered_map<SPtr<Shader>, Pipeline*>> m_pipelinesByRenderPass;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass> m_renderPassByType;

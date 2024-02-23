@@ -80,7 +80,6 @@ namespace Pudu
 					.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
 					.SetColorWriteMask(ColorWriteEnabled::All_mask);
 
-
 				RasterizationCreation rasterizationCreation;
 				rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
 				rasterizationCreation.fill = FillMode::Solid;

@@ -30,7 +30,6 @@
 #include <PhysicalDeviceCreationData.h>
 #include <ResourceUpdate.h>
 #include <GPUResourcesManager.h>
-#include <PipelineCreationData.h>
 #include <Resources/Resources.h>
 #include <Resources/RenderPassCreationData.h>
 #include <Resources/FrameBufferCreationData.h>
@@ -108,13 +107,11 @@ namespace Pudu
 
 		SPtr<GPUResourcesManager> m_resources = nullptr;
 
-		void CreateVkRenderPass();
-
 		/// <summary>
 		/// Creates a vkRenderPass and attach it to the passed RenderPass object
 		/// </summary>
 		/// <param name="renderPass"></param>
-		void CreateVkRenderPass(RenderPass* renderPass);
+		void CreateRenderPass(RenderPass* renderPass);
 		void CreateVkFramebuffer(Framebuffer* creationData);
 
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
@@ -170,7 +167,7 @@ namespace Pudu
 		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
 		std::vector<DescriptorSetLayoutHandle> CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData);
 
-		void CreateFrameBuffers();
+		void CreateSwapChainFrameBuffers(RenderPassHandle renderPass);
 		void CreateFrames();
 		void CreateCommandPool(VkCommandPool* cmdPool);
 
@@ -180,7 +177,7 @@ namespace Pudu
 		void CreateBindlessDescriptorPool();
 		void CreateBindlessDescriptorSet(VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts);
 		void CreateCommandBuffer();
-		void CreateSyncObjects();
+		void CreateSwapChainSyncObjects();
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
@@ -261,10 +258,10 @@ namespace Pudu
 		VkFormat m_swapChainImageFormat;
 		VkExtent2D m_swapChainExtent;
 		std::vector<VkImage> m_swapChainImages;
-		VkRenderPass m_renderPass;
+		std::vector<SPtr<Texture2d>> m_swapChainTextures;
 		VkPipeline m_graphicsPipeline;
 
-		std::vector<VkFramebuffer> m_swapChainFrameBuffers;
+		std::vector<FramebufferHandle> m_swapChainFrameBuffers;
 		VkCommandPool m_commandPool;
 
 		std::vector<GraphicsBuffer> m_uniformBuffers;

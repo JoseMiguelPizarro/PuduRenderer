@@ -360,8 +360,8 @@ namespace Pudu
 		VkDescriptorSetLayoutBinding* vkBinding = nullptr;
 		DescriptorBinding* bindings = nullptr;
 		uint8_t* indexToBinding = nullptr; // Mapping between binding point and binding data.
-		uint16_t num_bindings = 0;
-		uint16_t set_index = 0;
+		uint16_t bindingsCount = 0;
+		uint16_t setIndex = 0;
 		uint8_t bindless = 0;
 
 		DescriptorSetLayoutHandle handle;
@@ -673,6 +673,7 @@ namespace Pudu
 		const char* code = nullptr;
 		uint32_t codeSize = 0;
 		VkShaderStageFlagBits type = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+		DescriptorSetLayoutData descriptorSetLayoutData;
 	};
 
 	struct ShaderStateCreationData
@@ -683,6 +684,7 @@ namespace Pudu
 
 		ShaderStateCreationData& SetName(const char* name);
 		ShaderStateCreationData& AddStage(const char* code, size_t code_size, VkShaderStageFlagBits type);
+		ShaderStage& GetStage(VkShaderStageFlagBits stageFlag);
 	};
 
 	struct PipelineCreationData

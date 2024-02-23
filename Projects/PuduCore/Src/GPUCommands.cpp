@@ -31,7 +31,7 @@ namespace Pudu
 		barrier.newLayout = VkImageLayoutFromUsage(newState);
 		barrier.srcAccessMask = VkImageLayoutFromUsage(oldState);
 		barrier.dstAccessMask = VkImageLayoutFromUsage(newState);
-		
+
 
 		const VkPipelineStageFlags sourceStageMask = DeterminePipelineStageFlags(barrier.srcAccessMask, QueueType::Graphics);
 		const VkPipelineStageFlags destionationStageMask = DeterminePipelineStageFlags(barrier.dstAccessMask, QueueType::Graphics);
@@ -127,5 +127,14 @@ namespace Pudu
 
 		// Cache pipeline
 		currentPipeline = pipeline;
+	}
+
+	void GPUCommands::Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout dstLayout)
+	{
+		VkBlitImageInfo2 blitInfo{};
+		blitInfo.srcImage = source->vkImageHandle;
+		blitInfo.srcImageLayout = source->vkImageLayout;
+		blitInfo.dstImage = dst->vkImageHandle;
+		blitInfo.dstImageLayout = dstLayout;
 	}
 }

@@ -22,6 +22,7 @@ namespace Pudu
 		GPUCommands* currentCommand;
 		PuduGraphics* graphics;
 		PuduRenderer* renderer;
+		SPtr<Texture2d> activeRenderTarget;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass>* m_renderPassesByType;

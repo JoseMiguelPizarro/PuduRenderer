@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "PipelineCreationData.h"
 #include <DescriptorSetLayoutData.h>
 #include "Resources/Resources.h"
 

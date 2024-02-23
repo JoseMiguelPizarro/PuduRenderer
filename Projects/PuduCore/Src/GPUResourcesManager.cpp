@@ -55,7 +55,7 @@ namespace Pudu {
 
 		renderPass->output = RenderPassOutput::GetFromCreationData(m_graphics, creationData);
 
-		m_graphics->CreateVkRenderPass(renderPass);
+		m_graphics->CreateRenderPass(renderPass);
 
 		return handle;
 	}

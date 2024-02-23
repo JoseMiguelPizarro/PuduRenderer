@@ -1,4 +1,6 @@
-#include "PipelineCreationData.h"
+#include <fmt/format.h>
+#include "Logger.h"
+#include "Resources/Resources.h"
 
 namespace Pudu
 {
@@ -29,5 +31,20 @@ namespace Pudu
 		stages[stageCount++] = stage;
 
 		return *this;
+	}
+
+	ShaderStage& ShaderStateCreationData::GetStage(VkShaderStageFlagBits stageFlag)
+	{
+		for (uint32_t i; i < stageCount; i++)
+		{
+			auto& stage = stages[i];
+
+			if (stage.type == stageFlag)
+			{
+				return stage;
+			}
+		}
+
+		PUDU_ERROR(fmt::format("Trying to get non valid stage {}", (uint32_t)stageFlag).c_str());
 	}
 }

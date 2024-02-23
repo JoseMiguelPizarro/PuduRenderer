@@ -3,6 +3,8 @@
 #include <glm/fwd.hpp>
 #include <Viewport.h>
 #include "Resources/Resources.h"
+#include "PuduCore.h"
+#include "Texture2D.h"
 
 using namespace glm;
 
@@ -22,6 +24,7 @@ namespace Pudu
 		void BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle);
 		void EndCurrentRenderPass();
 		void BindPipeline(Pipeline* pipeline);
+		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout dstLayout);
 		PuduGraphics* graphics;
 		VkCommandBuffer vkHandle;
 		RenderPass* currentRenderPass;

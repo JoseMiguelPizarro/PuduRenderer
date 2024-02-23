@@ -75,38 +75,38 @@ namespace Pudu
 		InitVMA();
 		CreateSwapChain();
 		CreateSwapchainImageViews();
-		CreateVkRenderPass();
+		CreatePresentRenderPass();
 
-		PipelineCreationData pipelineCreationData;
+		/*PipelineCreationData pipelineCreationData;
 		auto fragmentData = FileManager::LoadShader("Shaders/triangle.frag");
 		auto vertexData = FileManager::LoadShader("Shaders/triangle.vert");
 
 		pipelineCreationData.shadersStateCreationData.AddStage(fragmentData.data(), sizeof(char) * fragmentData.size(), VK_SHADER_STAGE_FRAGMENT_BIT);
 		pipelineCreationData.shadersStateCreationData.AddStage(vertexData.data(), sizeof(char) * vertexData.size(), VK_SHADER_STAGE_VERTEX_BIT);
 
-		SPIRVParser::GetDescriptorSetLayout(pipelineCreationData, pipelineCreationData.descriptorSetLayoutData);
+		SPIRVParser::GetDescriptorSetLayout(pipelineCreationData, pipelineCreationData.descriptorSetLayoutData);*/
 
 		//Descriptors
 		CreateBindlessDescriptorPool();
-		auto descriptorLayoutHandles = CreateDescriptorSetLayout(pipelineCreationData.descriptorSetLayoutData);
+		//auto descriptorLayoutHandles = CreateDescriptorSetLayout(pipelineCreationData.descriptorSetLayoutData);
 
-		std::vector<VkDescriptorSetLayout> vkDescriptorSetLayout;
+	/*	std::vector<VkDescriptorSetLayout> vkDescriptorSetLayout;
 
 		for (auto layoutHandle : descriptorLayoutHandles)
 		{
 			vkDescriptorSetLayout.push_back(m_resources->GetDescriptorSetLayout(layoutHandle)->vkHandle);
 		}
 
-		CreateBindlessDescriptorSet(m_bindlessDescriptorSet, vkDescriptorSetLayout.data());
+		CreateBindlessDescriptorSet(m_bindlessDescriptorSet, vkDescriptorSetLayout.data());*/
 
 		//Pipeline
 
 		CreateCommandPool(&m_commandPool);
-		CreateFrameBuffers();
+		CreateSwapChainFrameBuffers(m_presentRenderPass);
 		CreateUniformBuffers();
 
 		CreateCommandBuffer();
-		CreateSyncObjects();
+		CreateSwapChainSyncObjects();
 	}
 
 	void PuduGraphics::InitVMA()
@@ -347,7 +347,7 @@ namespace Pudu
 		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentReference colorAttachment = {};
 		colorAttachment.attachment = 0;
@@ -434,9 +434,8 @@ namespace Pudu
 
 		vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore,
-			VK_NULL_HANDLE, &imageIndex);
+			VK_NULL_HANDLE, &frameData.frameIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -464,7 +463,6 @@ namespace Pudu
 			PUDU_ERROR("failed to begin recording command buffer!");
 		}
 
-
 		frameData.frame = &m_Frames[m_currentFrameIndex];
 		frameData.frameIndex = m_currentFrameIndex;
 		frameData.currentCommand = &m_commandBuffer;
@@ -475,6 +473,24 @@ namespace Pudu
 
 
 		DrawImGui(frameData);
+		frameData.currentCommand->BindRenderPass(m_presentRenderPass, m_swapChainFrameBuffers[frameData.frameIndex]);
+
+
+		//TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+		VkImageMemoryBarrier2 renderTargetBarrier{};
+		renderTargetBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT; //Wait for all color attachment output
+		renderTargetBarrier.dstStageMask = VK_PIPELINE_STAGE_2_BLIT_BIT; //Make blit operation to wait
+		renderTargetBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT; //Wait for write to end
+		renderTargetBarrier.dstAccessMask = 0; //wait for nothing
+		renderTargetBarrier.image = frameData.activeRenderTarget->vkImageHandle;
+		VkDependencyInfo dependencyInfo{};
+		dependencyInfo.imageMemoryBarrierCount = 1;
+		dependencyInfo.pImageMemoryBarriers = &renderTargetBarrier;
+
+		vkCmdPipelineBarrier2(frameData.currentCommand->vkHandle, &dependencyInfo);
+
+		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 		SubmitFrame(frameData);
 	}
 
@@ -535,6 +551,7 @@ namespace Pudu
 		VkSemaphore signalSemaphores[] = { frame->RenderFinishedSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
+
 
 		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame->InFlightFence) != VK_SUCCESS)
 		{
@@ -643,7 +660,7 @@ namespace Pudu
 		}
 
 
-		
+
 	}
 
 
@@ -974,10 +991,21 @@ namespace Pudu
 
 		for (size_t i = 0; i < m_swapChainImages.size(); i++)
 		{
-			m_swapChainImagesViews[i] = CreateImageView(m_swapChainImages[i], m_swapChainImageFormat,
+			auto imageView = CreateImageView(m_swapChainImages[i], m_swapChainImageFormat,
 				VK_IMAGE_ASPECT_COLOR_BIT);
 
 			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], fmt::format("Swapchain {}", i).c_str());
+
+			auto handle = m_resources->AllocateTexture();
+			auto texture = m_resources->GetTexture(handle->handle);
+
+			texture->vkImageViewHandle = imageView;
+			texture->vkImageHandle = m_swapChainImages[i];
+			texture->format = m_swapChainImageFormat;
+			texture->width = m_swapChainExtent.width;
+			texture->height = m_swapChainExtent.height;
+
+			m_swapChainTextures.push_back(texture);
 		}
 	}
 
@@ -1005,7 +1033,7 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateVkRenderPass(RenderPass* renderPass)
+	void PuduGraphics::CreateRenderPass(RenderPass* renderPass)
 	{
 		auto output = renderPass->output;
 
@@ -1134,77 +1162,7 @@ namespace Pudu
 
 		vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle);
 	}
-
-	void PuduGraphics::CreateVkRenderPass()
-	{
-		LOG("CreateRenderPass");
-		//Color attachment
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = m_swapChainImageFormat;
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; //clear the values to a constant at the start
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		//rendered contents will be stored in memory and can be read later
-
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; //Images to be presented in the swap chain
-
-		VkAttachmentReference colorAttachmentRef{};
-
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		//Depth & Stencil
-		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = FindDepthFormat();
-		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		VkAttachmentReference depthAttachmentRef{};
-		depthAttachmentRef.attachment = 1;
-		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-		//Dependencies
-		VkSubpassDependency dependency{};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-			VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-
-		std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-		VkRenderPassCreateInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		renderPassInfo.pAttachments = attachments.data();
-		renderPassInfo.subpassCount = 1;
-		renderPassInfo.pSubpasses = &subpass;
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
-
-		if (vkCreateRenderPass(m_device, &renderPassInfo, m_allocatorPtr, &m_renderPass) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create render pass");
-		}
-	}
+	
 
 	ShaderStateHandle PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
 	{
@@ -1577,32 +1535,25 @@ namespace Pudu
 		return pipelineHandle;
 	}
 
-	void PuduGraphics::CreateFrameBuffers()
+	void PuduGraphics::CreateSwapChainFrameBuffers(RenderPassHandle renderPass)
 	{
 		LOG("CreateFrameBuffers");
 		m_swapChainFrameBuffers.resize(m_swapChainImagesViews.size());
 
 		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
 		{
-			std::array<VkImageView, 2> attachments = {
-				m_swapChainImagesViews[i],
-				m_depthImageView
-			};
+			auto texture = m_swapChainTextures[i];
 
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = m_renderPass;
-			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-			framebufferInfo.pAttachments = attachments.data();
-			framebufferInfo.width = m_swapChainExtent.width;
-			framebufferInfo.height = m_swapChainExtent.height;
-			framebufferInfo.layers = 1;
+			FramebufferCreationData frameBufferInfo;
+			frameBufferInfo.SetName("FB - Present ");
+			frameBufferInfo.renderPassHandle = renderPass;
+			frameBufferInfo.width = m_swapChainExtent.width;
+			frameBufferInfo.height = m_swapChainExtent.height;
+			frameBufferInfo.AddRenderTexture(texture->handle);
 
-			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFrameBuffers[i]) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to create framebuffer!");
-			}
+			auto FrameBuffer = m_resources->AllocateFrameBuffer(frameBufferInfo);
 		}
+
 		Print("Created frame buffers");
 	}
 
@@ -1805,7 +1756,7 @@ namespace Pudu
 	}
 
 
-	void PuduGraphics::CreateSyncObjects()
+	void PuduGraphics::CreateSwapChainSyncObjects()
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1922,7 +1873,7 @@ namespace Pudu
 		CreateSwapChain();
 		CreateSwapchainImageViews();
 		CreateDepthResources();
-		CreateFrameBuffers();
+		CreateSwapChainFrameBuffers(m_presentRenderPass);
 	}
 
 	void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
@@ -1958,6 +1909,8 @@ namespace Pudu
 
 		shader->fragmentData = fragmentData;
 		shader->vertexData = vertexData;
+
+
 
 		return shader;
 
@@ -2044,8 +1997,8 @@ namespace Pudu
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-		VkPipelineStageFlags sourceStage;
-		VkPipelineStageFlags destinationStage;
+		VkPipelineStageFlags sourceStage{};
+		VkPipelineStageFlags destinationStage{};
 
 		if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 		{
@@ -2074,11 +2027,19 @@ namespace Pudu
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		{
+			barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			barrier.dstAccessMask = 0;
+
+			sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+		}
 		else
 		{
 			PUDU_ERROR("unsupported layout transition!");
 		}
-
 		vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
 		EndSingleTimeCommands(commandBuffer);
@@ -2476,7 +2437,7 @@ namespace Pudu
 
 		vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
-		vkDestroyRenderPass(m_device, m_renderPass, m_allocatorPtr);
+		//vkDestroyRenderPass(m_device, m_presentRenderPass, m_allocatorPtr);
 
 
 		for (int i = 0; i < m_uniformBuffers.size(); i++)
@@ -2533,7 +2494,7 @@ namespace Pudu
 
 		for (size_t i = 0; i < m_swapChainFrameBuffers.size(); i++)
 		{
-			vkDestroyFramebuffer(m_device, m_swapChainFrameBuffers[i], nullptr);
+			//	vkDestroyFramebuffer(m_device, m_swapChainFrameBuffers[i], nullptr);
 		}
 
 		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
