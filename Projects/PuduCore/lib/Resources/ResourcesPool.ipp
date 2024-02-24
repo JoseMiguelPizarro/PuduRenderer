@@ -18,7 +18,7 @@ namespace Pudu
 	uint32_t ResourcePool<T>::AddResource(T resource)
 	{
 		uint32_t id = (uint32_t)m_resources.size();
-		m_resources.reserve(id);
+		m_resources.resize(id + 1);
 		m_resources[id] = resource;
 
 		return id;
@@ -32,7 +32,7 @@ namespace Pudu
 	template<typename T>
 	uint32_t ResourcePool<T>::ObtainResource()
 	{
-		T t = T();
+		T t;
 		m_resources.push_back(t);
 		return (uint32_t)m_resources.size() - 1;
 	}

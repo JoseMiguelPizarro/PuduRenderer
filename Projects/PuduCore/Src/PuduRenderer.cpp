@@ -3,11 +3,14 @@
 #include "PuduRenderer.h"
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
+#include <Logger.h>
 
 namespace Pudu
 {
-	void PuduRenderer::Init()
+	void PuduRenderer::Init(PuduGraphics* graphics)
 	{
+		this->graphics = graphics;
+
 		DepthStencilRenderPass depthPass;
 		ForwardRenderPass forwardPass;
 
@@ -26,24 +29,24 @@ namespace Pudu
 		graphics->DrawFrame(renderData);
 	}
 
-	void PuduRenderer::AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype) 
+	void PuduRenderer::AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype)
 	{
 		m_renderPassByType.emplace(renderPasstype, renderPass);
 	}
 
 	void PuduRenderer::LoadFrameGraph(std::filesystem::path path)
 	{
+		LOG("Loading FrameGraph");
 		frameGraph = FrameGraph();
 		frameGraphBuilder = FrameGraphBuilder();
 		frameGraphBuilder.Init(graphics);
 		frameGraph.Init(&frameGraphBuilder);
 
 		frameGraph.Parse(path);
+		frameGraph.AllocateRequiredResources();
 		frameGraph.Compile();
-	}
-	Pipeline* PuduRenderer::GetPipeline(DrawCall& drawcall)
-	{
-		return nullptr;
+
+		LOG("Loading FrameGraph End");
 	}
 
 	Pipeline* PuduRenderer::GetPipeline(DrawCall& drawcall, RenderPassType renderPassType)
@@ -115,7 +118,7 @@ namespace Pudu
 				shaderData.AddStage(shader->vertexData.data(), shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
 
 				auto handle = graphics->CreateGraphicsPipeline(creationData);
-				Pipeline* pipeline = graphics->m_resources->GetPipeline(handle);
+				Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
 
 				std::unordered_map<SPtr<Shader>, Pipeline*> pipelineByShaderMap;
 				pipelineByShaderMap.insert(std::make_pair(shader, pipeline));

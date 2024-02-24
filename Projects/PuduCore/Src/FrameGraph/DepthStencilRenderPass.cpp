@@ -5,6 +5,6 @@ namespace Pudu
 {
 	Pipeline* DepthStencilRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
-		return frameData.renderer->GetPipeline(drawcall);
+		return frameData.renderer->GetPipeline(drawcall, RenderPassType::DepthPrePass);
 	}
 }

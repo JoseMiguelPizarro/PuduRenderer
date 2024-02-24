@@ -28,7 +28,7 @@ namespace Pudu {
 		/// <summary>
 		/// Resources are laying somewhere in the app, don't need to be produces by a previous node
 		/// </summary>
-		bool external = false; 
+		bool external = false;
 
 		union {
 			struct
@@ -53,7 +53,7 @@ namespace Pudu {
 		};
 	};
 
-	
+
 
 	/// <summary>
 	/// Defines an Input or Output of a Node. Determines the use of the resource for a given Node. 
@@ -78,22 +78,23 @@ namespace Pudu {
 		/// Used to check whether or not the resource can be aliased, not implemented for now
 		/// </summary>
 		int32_t RefCount = 0;
+		bool allocated = false;
 
-		const char* name = nullptr;
+		std::string name;
 	};
 
 	struct FrameGraphResourceInputCreation {
 		FrameGraphResourceType                  type;
 		FrameGraphResourceInfo                  resource_info;
 
-		const char* name;
+		std::string name;
 	};
 
 	struct FrameGraphResourceOutputCreation {
 		FrameGraphResourceType                  type;
-		FrameGraphResourceInfo                  resource_info;
+		FrameGraphResourceInfo                  resourceInfo;
 
-		const char* name;
+		std::string name;
 	};
 
 	struct FrameGraphNodeCreation
@@ -104,7 +105,7 @@ namespace Pudu {
 		RenderPassType renderType;
 		bool enabled;
 
-		const char* name;
+		char const* name;
 	};
 
 	struct FrameGraphNode {
@@ -123,7 +124,7 @@ namespace Pudu {
 
 		bool enabled = true;
 
-		const char* name = nullptr;
+		std::string name;
 	};
 
 	struct FrameGraphRenderPassCache {
@@ -144,7 +145,7 @@ namespace Pudu {
 		/// Second: resource handle
 		/// ONLY output resources are handled by this map during <CreateNodeOutput>
 		/// </summary>
-		std::unordered_map<uint64_t, uint32_t> resourcesMap;
+		std::unordered_map<std::string, uint32_t> resourcesMap;
 		ResourcePool<FrameGraphResource> resources;
 	};
 
@@ -154,7 +155,7 @@ namespace Pudu {
 
 		PuduGraphics* device;
 
-		std::unordered_map<uint64_t, uint32_t> nodeMap;
+		std::unordered_map<std::string, uint32_t> nodeMap;
 		ResourcePool<FrameGraphNode> nodes;
 	};
 
@@ -162,15 +163,15 @@ namespace Pudu {
 		void Init(PuduGraphics* device);
 		void Shutdown();
 
-		FrameGraphResourceHandle CreateNodeOutput(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer);
+		FrameGraphResourceHandle CreateNodeOutputResource(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer);
 		FrameGraphResourceHandle CreateNodeInput(const FrameGraphResourceInputCreation& creation);
 		FrameGraphNodeHandle CreateNode(const FrameGraphNodeCreation& creation);
 
-		FrameGraphNode* GetNode(char const* name);
+		FrameGraphNode* GetNode(std::string name);
 		FrameGraphNode* GetNode(FrameGraphNodeHandle handle);
 
 		FrameGraphResource* GetResource(FrameGraphResourceHandle handle);
-		FrameGraphResource* GetOutputResource(char const * name);
+		FrameGraphResource* GetOutputResource(std::string name);
 
 		FrameGraphResourceCache resourceCache;
 		FrameGraphNodeCache nodeCache;
@@ -199,7 +200,7 @@ namespace Pudu {
 		/// </summary>
 		void Compile();
 
-		
+
 		void Reset();
 		void AllocateRequiredResources();
 		void EnableRenderPass(char* renderPassName);
@@ -211,7 +212,7 @@ namespace Pudu {
 		FrameGraphNode* GetNode(char* name);
 		FrameGraphNode* GetNode(FrameGraphNodeHandle handle);
 
-		FrameGraphResource* GetOutputResource(char const * name);
+		FrameGraphResource* GetOutputResource(char const* name);
 		FrameGraphResource* GetResource(FrameGraphResourceHandle handle);
 
 		void AddNode(FrameGraphNodeCreation& node);
@@ -222,4 +223,4 @@ namespace Pudu {
 
 		const char* name = nullptr;
 	};
-} 
+}

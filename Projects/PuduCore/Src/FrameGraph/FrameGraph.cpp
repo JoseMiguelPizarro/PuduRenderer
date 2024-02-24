@@ -773,7 +773,7 @@ namespace Pudu
 
 	static std::unordered_map < std::string, RenderPassType> const RenderPassTypeTable =
 	{
-		{"forward", RenderPassType::Color},
+		{"color", RenderPassType::Color},
 		{"depth", RenderPassType::DepthPrePass}
 	};
 
@@ -790,11 +790,12 @@ namespace Pudu
 
 	static void ComputeEdges(FrameGraph* frameGraph, FrameGraphNode* node, FrameGraphNodeHandle nodeHandle)
 	{
+		LOG("Compute Edges");
 		for (FrameGraphResourceHandle nodeInput : node->inputs)
 		{
 			FrameGraphResource* inputResource = frameGraph->GetResource(nodeInput);
 
-			FrameGraphResource* outputResource = frameGraph->GetOutputResource(inputResource->name);
+			FrameGraphResource* outputResource = frameGraph->GetOutputResource(inputResource->name.c_str());
 			if (outputResource == nullptr && !inputResource->resourceInfo.external) {
 				continue;
 			}
@@ -807,14 +808,14 @@ namespace Pudu
 
 			parentNode->edges.push_back(nodeHandle);
 		}
+		LOG("Compute Edges End");
 	}
 
 	static void CreateRenderPass(FrameGraph* frameGraph, FrameGraphNode* node) {
+		LOG("FrameGraph: Create RenderPass");
 		RenderPassCreationData renderPassCreation{ };
-		renderPassCreation.SetName(node->name);
+		renderPassCreation.SetName(node->name.c_str());
 
-		// NOTE(marco): first create the outputs, then we can patch the input resources
-		// with the right handles
 		for (auto outputResourceHandle : node->outputs) {
 			FrameGraphResource* outputResource = frameGraph->GetResource(outputResourceHandle);
 
@@ -823,7 +824,6 @@ namespace Pudu
 			if (outputResource->type == FrameGraphResourceType_Attachment) {
 				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
 					renderPassCreation.SetDepthStencilTexture(info.texture.format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
 					renderPassCreation.depthOperation = RenderPassOperation::Clear;
 				}
 				else {
@@ -849,15 +849,16 @@ namespace Pudu
 			}
 		}
 
-		// TODO(marco): make sure formats are valid for attachment
-		auto renderPassHandle = frameGraph->builder->graphics->m_resources->AllocateRenderPass(renderPassCreation);
+		auto renderPassHandle = frameGraph->builder->graphics->Resources()->AllocateRenderPass(renderPassCreation);
 		node->renderPass = renderPassHandle;
+
+		LOG("FrameGraph: Create RenderPass End");
 	}
 
 	static void CreateFrameBuffer(FrameGraph* frameGraph, FrameGraphNode* node) {
 		FramebufferCreationData framebufferCreationData{ };
 		framebufferCreationData.renderPassHandle = node->renderPass;
-		framebufferCreationData.SetName(node->name);
+		framebufferCreationData.SetName(node->name.c_str());
 
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -871,24 +872,14 @@ namespace Pudu
 				continue;
 			}
 
-			if (width == 0) {
-				width = info.texture.width;
-			}
-			else {
-				//Assert
-			}
-
-			if (height == 0) {
-				height = info.texture.height;
-			}
-			else {
-				//Assert
-			}
+			width = info.texture.width;
+			height = info.texture.height;
 
 			if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
 				framebufferCreationData.SetDepthStencilTexture(info.texture.handle);
 			}
-			else {
+			else
+			{
 				framebufferCreationData.AddRenderTexture(info.texture.handle);
 			}
 		}
@@ -900,25 +891,14 @@ namespace Pudu
 				continue;
 			}
 
-			FrameGraphResource* resource = frameGraph->GetOutputResource(inputResource->name);
+			FrameGraphResource* resource = frameGraph->GetOutputResource(inputResource->name.c_str());
 
 			FrameGraphResourceInfo& info = resource->resourceInfo;
 
 			inputResource->resourceInfo.texture.handle = info.texture.handle;
 
-			if (width == 0) {
-				width = info.texture.width;
-			}
-			else {
-				//Assert
-			}
-
-			if (height == 0) {
-				height = info.texture.height;
-			}
-			else {
-				//Assert
-			}
+			width = info.texture.width;
+			height = info.texture.height;
 
 			if (inputResource->type == FrameGraphResourceType_Texture) {
 				continue;
@@ -934,8 +914,8 @@ namespace Pudu
 
 		framebufferCreationData.width = width;
 		framebufferCreationData.height = height;
-		auto frameBufferHandle = frameGraph->builder->graphics->m_resources->AllocateFrameBuffer(framebufferCreationData);
-		auto frameBuffer = frameGraph->builder->graphics->m_resources->GetFramebuffer(frameBufferHandle);
+		auto frameBufferHandle = frameGraph->builder->graphics->Resources()->AllocateFrameBuffer(framebufferCreationData);
+		auto frameBuffer = frameGraph->builder->graphics->Resources()->GetFramebuffer(frameBufferHandle);
 
 		node->framebuffer = frameBufferHandle;
 	}
@@ -951,27 +931,26 @@ namespace Pudu
 	{
 	}
 
-	FrameGraphResourceHandle FrameGraphBuilder::CreateNodeOutput(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer)
+	FrameGraphResourceHandle FrameGraphBuilder::CreateNodeOutputResource(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer)
 	{
 		FrameGraphResourceHandle resourceHandle{ k_INVALID_HANDLE };
 
 		resourceHandle.index = resourceCache.resources.ObtainResource();
 
 		FrameGraphResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
-		resource->name = creation.name;
+		resource->name.append(creation.name);
 		resource->type = creation.type;
 
 		//If node is not a ref, then we'll need to create it
 		if (creation.type != FrameGraphResourceType_Reference)
 		{
-			resource->resourceInfo = creation.resource_info;
+			resource->resourceInfo = creation.resourceInfo;
 			resource->outputHandle = resourceHandle;
 			resource->producer = producer;
 			resource->RefCount = 0;
 
 			//Add to resource cache
-			uint64_t resourceHash = std::hash<const char*>{}(resource->name);
-			resourceCache.resourcesMap[resourceHash] = resourceHandle.index;
+			resourceCache.resourcesMap[resource->name.c_str()] = resourceHandle.index;
 		}
 
 		return resourceHandle;
@@ -1003,20 +982,20 @@ namespace Pudu
 
 		FrameGraphNode* node = nodeCache.nodes.GetResourcePtr(nodeHandle.index);
 
-		node->name = creation.name;
+		node->name.append(creation.name);
 		node->enabled = creation.enabled;
-		node->inputs.resize(creation.inputs.size());
-		node->outputs.resize(creation.outputs.size());
-		node->edges.resize(creation.outputs.size());
+		node->inputs.reserve(creation.inputs.size());
+		node->outputs.reserve(creation.outputs.size());
+		node->edges.reserve(creation.outputs.size());
 		node->framebuffer = { k_INVALID_HANDLE };
 		node->renderPass = { k_INVALID_HANDLE };
 
-		nodeCache.nodeMap[std::hash<const char*>{}(node->name)] = nodeHandle.index;
+		nodeCache.nodeMap[node->name] = nodeHandle.index;
 
 		for (size_t i = 0; i < creation.outputs.size(); ++i) {
-			const FrameGraphResourceOutputCreation& output_creation = creation.outputs[i];
+			const FrameGraphResourceOutputCreation& outputCreation = creation.outputs[i];
 
-			FrameGraphResourceHandle output = CreateNodeOutput(output_creation, nodeHandle);
+			FrameGraphResourceHandle output = CreateNodeOutputResource(outputCreation, nodeHandle);
 
 			node->outputs.push_back(output);
 		}
@@ -1032,9 +1011,9 @@ namespace Pudu
 		return nodeHandle;
 	}
 
-	FrameGraphNode* FrameGraphBuilder::GetNode(char const* name)
+	FrameGraphNode* FrameGraphBuilder::GetNode(std::string name)
 	{
-		auto nodeIt = nodeCache.nodeMap.find(hash(name));
+		auto nodeIt = nodeCache.nodeMap.find(name);
 
 		if (nodeIt == nodeCache.nodeMap.end())
 		{
@@ -1051,9 +1030,9 @@ namespace Pudu
 		return nodeCache.nodes.GetResourcePtr(handle.index);
 	}
 
-	FrameGraphResource* FrameGraphBuilder::GetOutputResource(char const* name)
+	FrameGraphResource* FrameGraphBuilder::GetOutputResource(std::string name)
 	{
-		auto it = resourceCache.resourcesMap.find(hash(name));
+		auto it = resourceCache.resourcesMap.find(name);
 
 		if (it == resourceCache.resourcesMap.end())
 		{
@@ -1089,7 +1068,7 @@ namespace Pudu
 	void FrameGraph::Init(FrameGraphBuilder* builder)
 	{
 		this->builder = builder;
-		nodes.resize(FrameGraphBuilder::K_MAX_NODES_COUNT);
+		nodes.reserve(FrameGraphBuilder::K_MAX_NODES_COUNT);
 	}
 
 	void FrameGraph::Shutdown()
@@ -1104,10 +1083,11 @@ namespace Pudu
 	}
 	void FrameGraph::Parse(std::filesystem::path filePath)
 	{
+		LOG("FrameGraph Parse");
 		//TODO: ADD NODE TYPE (COLOR,DEPTH)
 		if (!std::filesystem::exists(filePath))
 		{
-			//LOG("File not found {}", filePath.c_str());
+			LOG("File not found {}", filePath.string());
 		}
 
 		using namespace simdjson;
@@ -1125,56 +1105,67 @@ namespace Pudu
 		auto passes = object["passes"];
 		for (auto pass : passes)
 		{
+			FrameGraphNodeCreation nodeCreation;
+			auto name = pass["name"].get_string();
+			std::string nameString(name.value());
+			nodeCreation.name = nameString.c_str();
+
+			nodeCreation.enabled = pass["enabled"].get_bool();
+			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value()).c_str()); //We need to store the string_view into a string
 
 			auto passInputs = pass["inputs"];
-			auto passOutputs = pass["outputs"];
-
-			FrameGraphNodeCreation nodeCreation;
-			nodeCreation.name = pass["name"].get_string().value().data();
-			nodeCreation.enabled = pass["enabled"].get_bool();
-			nodeCreation.renderType = GetRenderPassType(pass["type"].get_string().take_value().data());
-
-			nodeCreation.inputs.resize(passInputs.count_elements());
-			nodeCreation.outputs.resize(passOutputs.count_elements());
-
-
 
 			for (auto input : passInputs)
 			{
 				FrameGraphResourceInputCreation inputCreation{};
 
-
-				inputCreation.type = GetResourceType(input["type"].get_string().value().data());
-				inputCreation.name = input["name"].get_string().value().data();
+				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()).c_str());
+				auto inputName = input["name"].get_string();
+				std::string inputNameStr;
+				inputNameStr.append(inputName.value());
+				inputCreation.name = inputNameStr;
 
 				inputCreation.resource_info.external = false;
 
 				nodeCreation.inputs.push_back(inputCreation);
 			}
 
+			auto passOutputs = pass["outputs"];
+
 			for (auto output : passOutputs)
 			{
 				FrameGraphResourceOutputCreation outputCreation{};
-				outputCreation.type = GetResourceType(output["type"].get_string().value().data());
-				outputCreation.name = output["name"].get_string().value().data();
+				outputCreation.type = GetResourceType(std::string(output["type"].get_string().value()).c_str());
+				auto outputName = output["name"].get_string();
+				std::string outputNameStr;
+				outputNameStr.append(outputName.value());
+				outputCreation.name = outputNameStr;
 
 				switch (outputCreation.type)
 				{
 				case FrameGraphResourceType_Attachment:
 				case FrameGraphResourceType_Texture:
 				{
-					std::string format = output["format"].get_string().value().data();
-					outputCreation.resource_info.texture.format = VkFormatFromString(format.c_str());
+					std::string format = std::string(output["format"].get_string().value());
 
-					std::string loadOp = output["op"].get_string().value().data();
+					outputCreation.resourceInfo.texture.format = VkFormatFromString(format.c_str());
 
-					outputCreation.resource_info.texture.loadOp = RenderPassOperationFromString(loadOp.c_str());
+					std::string loadOp = std::string(output["op"].get_string().value());
 
-					auto resolution = output["resolution"];
+					outputCreation.resourceInfo.texture.loadOp = RenderPassOperationFromString(loadOp.c_str());
 
-					outputCreation.resource_info.texture.width = (uint32_t)resolution.at(0).get_uint64();
-					outputCreation.resource_info.texture.height = (uint32_t)resolution.at(1).get_uint64();
-					outputCreation.resource_info.texture.depth = 1;
+					auto resolution = output["resolution"].get_array();
+
+					std::vector<uint32_t> values;
+					for (auto r : resolution)
+					{
+						values.push_back((uint32_t)r.get_int64());
+					}
+
+					outputCreation.resourceInfo.texture.handle = { k_INVALID_HANDLE };
+					outputCreation.resourceInfo.texture.width = values[0];
+					outputCreation.resourceInfo.texture.height = values[1];
+					outputCreation.resourceInfo.texture.depth = 1;
 
 				}break;
 				case FrameGraphResourceType_Buffer:
@@ -1191,12 +1182,12 @@ namespace Pudu
 				nodeCreation.outputs.push_back(outputCreation);
 			}
 
-
-
 			FrameGraphNodeHandle nodeHandle = builder->CreateNode(nodeCreation);
 
 			nodes.push_back(nodeHandle);
 		}
+
+		LOG("FrameGraph Parse End");
 	}
 	void FrameGraph::Reset()
 	{
@@ -1204,22 +1195,31 @@ namespace Pudu
 	}
 	void FrameGraph::AllocateRequiredResources()
 	{
+		LOG("FrameGraph: Allocating Resources");
 		for (auto nodeHandle : nodes)
 		{
 			auto node = builder->GetNode(nodeHandle);
 
-			for (auto inputHandle : node->outputs)
+			for (auto resourceHandle : node->outputs)
 			{
-				auto inputNode = builder->GetResource(inputHandle);
+				auto r = builder->GetResource(resourceHandle);
+				auto resource = builder->GetOutputResource(r->name.c_str());
 
-				switch (inputNode->type)
+				LOG("Allocating {}", r->name);
+
+				if (resource->allocated)
+				{
+					continue;
+				}
+
+				switch (resource->type)
 				{
 				default:
 					break;
 				case FrameGraphResourceType_Invalid:
 					break;
 				case FrameGraphResourceType_Buffer:
-					if (inputNode->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
+					if (resource->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
 					{
 
 					}
@@ -1232,23 +1232,26 @@ namespace Pudu
 					break;
 				}
 
-				if (inputNode->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
+				if (resource->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
 				{
-					auto& info = inputNode->resourceInfo.texture;
+					auto& info = resource->resourceInfo.texture;
 					TextureCreationData textureData;
 					textureData.depth = info.depth;
 					textureData.width = info.width;
 					textureData.height = info.height;
 					textureData.flags = (TextureFlags::Enum)TextureFlags::RenderTargetMask;
 					textureData.format = info.format;
-					textureData.name = inputNode->name;
+					textureData.name = resource->name.c_str();
 					textureData.mipmaps = 1;
 					auto handle = builder->graphics->CreateTexture(textureData);
 
 					info.handle = handle;
 				}
+
+				resource->allocated = true;
 			}
 		}
+		LOG("FrameGraph: Allocating Resources End");
 	}
 
 	void FrameGraph::EnableRenderPass(char* renderPassName)
@@ -1261,6 +1264,7 @@ namespace Pudu
 	}
 	void FrameGraph::Compile()
 	{
+		LOG("FrameGraph Compile");
 		for (auto nodeHande : nodes) {
 			FrameGraphNode* node = builder->GetNode(nodeHande);
 
@@ -1280,14 +1284,13 @@ namespace Pudu
 
 		//Sorted nodes in reverse order
 		std::vector<FrameGraphNodeHandle> sortedNodes;
-		sortedNodes.resize(nodes.size());
+		sortedNodes.reserve(nodes.size());
 
 		std::vector<uint8_t> visited;
 		visited.resize(nodes.size());
 
-
 		std::vector<FrameGraphNodeHandle> nodesToBeVisitedStack;
-		nodesToBeVisitedStack.resize(nodes.size());
+		nodesToBeVisitedStack.reserve(nodes.size());
 
 		//Topological Sorting
 		for (FrameGraphNodeHandle nodeHandle : nodes)
@@ -1340,14 +1343,12 @@ namespace Pudu
 
 		nodes.clear();
 
-		for (size_t i = sortedNodes.size(); i >= 0; i--)
+		for (int32_t i = sortedNodes.size() - 1; i >= 0; i--)
 		{
 			nodes.push_back(sortedNodes[i]);
 		}
 
-
 		//Allocate resource handles
-
 		std::vector<FrameGraphNodeHandle> allocations;
 		allocations.resize(builder->resourceCache.resources.Size(), { k_INVALID_HANDLE });
 
@@ -1396,6 +1397,8 @@ namespace Pudu
 				CreateFrameBuffer(this, node);
 			}
 		}
+
+		LOG("FrameGraph Compile End");
 	}
 	void FrameGraph::Render(RenderFrameData& renderData)
 	{
@@ -1418,13 +1421,13 @@ namespace Pudu
 
 				if (resource->type == FrameGraphResourceType_Texture)
 				{
-					auto texture = commands->graphics->GetResources().GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = commands->graphics->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
 					commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, resource->resourceInfo.texture.format == VK_FORMAT_D32_SFLOAT);
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{
-					auto texture = commands->graphics->GetResources().GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = commands->graphics->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
 					width = texture->width;
 					height = texture->height;
@@ -1437,7 +1440,7 @@ namespace Pudu
 
 				if (resource->type == FrameGraphResourceType_Attachment)
 				{
-					auto texture = commands->graphics->GetResources().GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = commands->graphics->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
 					width = texture->width;
 					height = texture->height;
@@ -1457,7 +1460,7 @@ namespace Pudu
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
 			auto renderPass = renderData.m_renderPassesByType->find(node->type)->second;
-
+			renderData.activeRenderTarget = renderData.graphics->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
 			renderPass.PreRender(renderData);
 			commands->BindRenderPass(node->renderPass, node->framebuffer);
 

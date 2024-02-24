@@ -72,9 +72,9 @@ namespace Pudu
 	}
 	void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
 	{
-		RenderPass* renderPass = graphics->GetResources().GetRenderPass(renderPassHandle);
+		RenderPass* renderPass = graphics->Resources()->GetRenderPass(renderPassHandle);
 
-		Framebuffer* framebuffer = graphics->GetResources().GetFramebuffer(framebufferHandle);
+		Framebuffer* framebuffer = graphics->Resources()->GetFramebuffer(framebufferHandle);
 
 		if (renderPass != currentRenderPass)
 		{

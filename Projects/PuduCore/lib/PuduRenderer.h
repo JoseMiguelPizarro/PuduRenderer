@@ -15,10 +15,9 @@ namespace Pudu
 		FrameGraphBuilder frameGraphBuilder;
 		Pipeline* pipeline;
 
-		void Init();
+		void Init(PuduGraphics* graphics);
 		void Render();
 		void LoadFrameGraph(fs::path path);
-		Pipeline* GetPipeline(DrawCall& drawcall);
 		Pipeline* GetPipeline(DrawCall& drawcall, RenderPassType renderPassType);
 		void AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype);
 

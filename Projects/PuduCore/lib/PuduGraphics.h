@@ -82,7 +82,8 @@ namespace Pudu
 		uint32_t WindowWidth = 1200;
 		uint32_t WindowHeight = 800;
 
-		const std::vector<const char*> validationLayers = {
+		const std::vector<const char*> validationLayers =
+		{
 			"VK_LAYER_KHRONOS_validation"
 		};
 
@@ -105,7 +106,6 @@ namespace Pudu
 		void DestroyRenderPass(RenderPassHandle handle);
 		void DestroyFrameBuffer(FramebufferHandle handle);
 
-		SPtr<GPUResourcesManager> m_resources = nullptr;
 
 		/// <summary>
 		/// Creates a vkRenderPass and attach it to the passed RenderPass object
@@ -119,16 +119,16 @@ namespace Pudu
 
 		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
 			VkImageTiling tiling, VkImageUsageFlags usage,
-			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, char* name = nullptr);
 
-		GPUResourcesManager& GetResources() {
-			return *m_resources;
+		GPUResourcesManager* Resources() {
+			return &m_resources;
 		}
 
 		PipelineHandle CreateGraphicsPipeline(PipelineCreationData& creationData);
 		VkPipeline* GetPipeline() { return &m_graphicsPipeline; }
 
-		
+
 		void DrawImGui(RenderFrameData& frameData);
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
@@ -136,7 +136,7 @@ namespace Pudu
 		Shader* CreateShader(char* fragmentPath, char* vertexPath);
 
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
-		SPtr<Texture2d> CreateTexture(std::filesystem::path const& path);
+		void UploadTextureData(SPtr<Texture2d> texture, void* data);
 
 	private:
 		friend class GPUResourcesManager;
@@ -147,6 +147,7 @@ namespace Pudu
 		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
 		VkDevice m_device;
 
+		GPUResourcesManager m_resources;
 		GPUCommands m_commandBuffer;
 		uint32_t m_imageIndex;
 
@@ -161,7 +162,7 @@ namespace Pudu
 		void CreateSwapChain();
 		void CreateSwapchainImageViews();
 		void SetResourceName(VkObjectType type, u64 handle, const char* name);
-		
+
 		void InitDebugUtilsObjectName();
 
 		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
@@ -181,7 +182,7 @@ namespace Pudu
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
-		
+
 		void UpdateBindlessResources();
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -224,7 +225,7 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, char* name = nullptr);
 
 		VkShaderModule CreateShaderModule(char const* code, size_t size);
 
@@ -249,19 +250,18 @@ namespace Pudu
 		void DestroyBuffer(GraphicsBuffer buffer);
 		std::vector<const char*> GetInstanceExtensions();
 		std::vector<VkImageView> m_swapChainImagesViews;
+		VkFormat m_swapChainImageFormat;
+		VkSwapchainKHR m_swapChain;
 		VkInstance m_vkInstance;
 		VkSurfaceKHR m_surface;
 		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 		VkQueue m_graphicsQueue;
 		VkQueue m_presentationQueue;
-		VkSwapchainKHR m_swapChain;
-		VkFormat m_swapChainImageFormat;
 		VkExtent2D m_swapChainExtent;
 		std::vector<VkImage> m_swapChainImages;
 		std::vector<SPtr<Texture2d>> m_swapChainTextures;
 		VkPipeline m_graphicsPipeline;
 
-		std::vector<FramebufferHandle> m_swapChainFrameBuffers;
 		VkCommandPool m_commandPool;
 
 		std::vector<GraphicsBuffer> m_uniformBuffers;

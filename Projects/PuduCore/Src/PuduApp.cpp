@@ -8,7 +8,7 @@ namespace Pudu
 {
 	void PuduApp::Init()
 	{
-		printf("PuduApp Init");
+		LOG("PuduApp Init");
 		Graphics.Init(1024, 1024);
 		OnInit();
 

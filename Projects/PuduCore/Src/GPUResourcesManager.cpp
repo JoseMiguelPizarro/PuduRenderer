@@ -8,16 +8,12 @@ namespace Pudu {
 	void GPUResourcesManager::Init(PuduGraphics* graphics)
 	{
 		m_graphics = graphics;
+		m_renderPasses.ObtainResource();
 	}
 
 	SPtr<Texture2d> GPUResourcesManager::GetTexture(TextureHandle handle)
 	{
 		return m_textures.GetResource(handle.index);
-	}
-
-	SPtr<Texture2d> GPUResourcesManager::AllocateTexture(fs::path path)
-	{
-		return m_graphics->CreateTexture(path);
 	}
 
 	SPtr<Texture2d> GPUResourcesManager::AllocateTexture()
@@ -78,7 +74,7 @@ namespace Pudu {
 
 		for (uint32_t i = 0; i < creationData.numRenderTargets; i++)
 		{
-			frameBuffer->numColorAttachments = creationData.numRenderTargets;
+			frameBuffer->colorAttachmentHandles[i] = creationData.outputTexturesHandle[i];
 		}
 
 		frameBuffer->depthStencilAttachmentHandle = creationData.depthStencilTextureHandle;

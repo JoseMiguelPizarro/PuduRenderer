@@ -3,36 +3,23 @@
     "passes":
     [
         {
-            "inputs":
-            [
-                {
-                    "type": "attachment",
-                    "name": "depth"
-                }
-            ],
             "name": "forward",
+            "enabled":true,
             "type":"color",
-            "outputs":
-            [
-                {
-                    "type": "attachment",
-                    "name": "forward_color",
-                    "format": "VK_FORMAT_B8G8R8A8_UNORM",
-                    "resolution": [ 1280, 800 ],
-                    "op": "VK_ATTACHMENT_LOAD_OP_CLEAR"
-                }
-            ]
-        },
-        {
-            "inputs": [],
-            "name": "depth_pre_pass",
-            "type":"depth",
+            "inputs":[],
             "outputs":
             [
                 {
                     "type": "attachment",
                     "name": "depth",
                     "format": "VK_FORMAT_D32_SFLOAT",
+                    "resolution": [ 1280, 800 ],
+                    "op": "VK_ATTACHMENT_LOAD_OP_CLEAR"
+                },
+                {
+                    "type": "attachment",
+                    "name": "forward_color",
+                    "format": "VK_FORMAT_B8G8R8A8_UNORM",
                     "resolution": [ 1280, 800 ],
                     "op": "VK_ATTACHMENT_LOAD_OP_CLEAR"
                 }

@@ -17,7 +17,6 @@ namespace Pudu {
 	public:
 		void Init(PuduGraphics* graphics);
 		SPtr<Texture2d> GetTexture(TextureHandle handle);
-		SPtr<Texture2d> AllocateTexture(fs::path path);
 		SPtr<Texture2d> AllocateTexture();
 
 		RenderPass* GetRenderPass(RenderPassHandle handle);
@@ -37,7 +36,6 @@ namespace Pudu {
 
 		ShaderHandle AllocateShader();
 		Shader* GetShader(ShaderHandle handle);
-
 
 	private:
 		PuduGraphics* m_graphics = nullptr;

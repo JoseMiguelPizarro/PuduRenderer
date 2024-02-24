@@ -207,7 +207,9 @@ namespace Pudu
 
 	struct RenderPass
 	{
-		VkRenderPass vkHandle;
+		RenderPass() = default;
+
+		VkRenderPass vkHandle = nullptr;
 
 		RenderPassOutput output;
 
@@ -450,7 +452,8 @@ namespace Pudu
 			Default,
 			RenderTarget,
 			Compute,
-			Count
+			Count,
+			Sample
 		};
 
 		enum Mask
@@ -461,7 +464,7 @@ namespace Pudu
 		};
 
 		static const char* s_value_names[] = {
-			"Default", "RenderTarget", "Compute", "Count"
+			"Default", "RenderTarget", "Compute", "Count","Sample"
 		};
 
 		static const char* ToString(Enum e)
@@ -508,7 +511,6 @@ namespace Pudu
 
 	struct TextureCreationData
 	{
-		void* initialData = nullptr;
 		uint16_t width = 1;
 		uint16_t height = 1;
 		uint16_t depth = 1;
@@ -518,6 +520,8 @@ namespace Pudu
 		VkFormat format;
 		TextureType::Enum textureType = TextureType::Texture2D;
 		TextureHandle handle{ k_INVALID_HANDLE };
+		bool bindless;
+		void* pixels = nullptr;
 		const char* name = nullptr;
 	};
 

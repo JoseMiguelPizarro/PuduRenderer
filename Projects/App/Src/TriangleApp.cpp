@@ -26,7 +26,8 @@ void TriangleApp::OnInit()
 	m_scene = Scene(&Time);
 	m_scene.camera = &m_camera;
 
-	m_puduRenderer.LoadFrameGraph(frameGraphPath);
+	m_puduRenderer.Init(&Graphics);
+	m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));
 
 	LoadGameboyModel();
 }

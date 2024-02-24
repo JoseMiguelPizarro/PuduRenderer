@@ -49,12 +49,11 @@ namespace Pudu
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{
 		PuduGraphics::s_instance = this;
-		Print("Graphics Init");
+		LOG("Graphics Init");
 		WindowWidth = windowWidth;
 		WindowHeight = windowHeight;
 
-		m_resources = std::make_shared<GPUResourcesManager>();
-		m_resources->Init(this);
+		m_resources.Init(this);
 
 		InitWindow();
 		InitVulkan();
@@ -75,34 +74,10 @@ namespace Pudu
 		InitVMA();
 		CreateSwapChain();
 		CreateSwapchainImageViews();
-		CreatePresentRenderPass();
 
-		/*PipelineCreationData pipelineCreationData;
-		auto fragmentData = FileManager::LoadShader("Shaders/triangle.frag");
-		auto vertexData = FileManager::LoadShader("Shaders/triangle.vert");
-
-		pipelineCreationData.shadersStateCreationData.AddStage(fragmentData.data(), sizeof(char) * fragmentData.size(), VK_SHADER_STAGE_FRAGMENT_BIT);
-		pipelineCreationData.shadersStateCreationData.AddStage(vertexData.data(), sizeof(char) * vertexData.size(), VK_SHADER_STAGE_VERTEX_BIT);
-
-		SPIRVParser::GetDescriptorSetLayout(pipelineCreationData, pipelineCreationData.descriptorSetLayoutData);*/
-
-		//Descriptors
 		CreateBindlessDescriptorPool();
-		//auto descriptorLayoutHandles = CreateDescriptorSetLayout(pipelineCreationData.descriptorSetLayoutData);
-
-	/*	std::vector<VkDescriptorSetLayout> vkDescriptorSetLayout;
-
-		for (auto layoutHandle : descriptorLayoutHandles)
-		{
-			vkDescriptorSetLayout.push_back(m_resources->GetDescriptorSetLayout(layoutHandle)->vkHandle);
-		}
-
-		CreateBindlessDescriptorSet(m_bindlessDescriptorSet, vkDescriptorSetLayout.data());*/
-
-		//Pipeline
 
 		CreateCommandPool(&m_commandPool);
-		CreateSwapChainFrameBuffers(m_presentRenderPass);
 		CreateUniformBuffers();
 
 		CreateCommandBuffer();
@@ -472,11 +447,9 @@ namespace Pudu
 		frameGraph->Render(frameData);
 
 
-		DrawImGui(frameData);
-		frameData.currentCommand->BindRenderPass(m_presentRenderPass, m_swapChainFrameBuffers[frameData.frameIndex]);
+		//	DrawImGui(frameData);
 
-
-		//TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+			//TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		VkImageMemoryBarrier2 renderTargetBarrier{};
 		renderTargetBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT; //Wait for all color attachment output
@@ -667,7 +640,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateVkFramebuffer(Framebuffer* framebuffer)
 	{
-		RenderPass* renderPass = m_resources->GetRenderPass(framebuffer->renderPassHandle);
+		RenderPass* renderPass = m_resources.GetRenderPass(framebuffer->renderPassHandle);
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -680,13 +653,13 @@ namespace Pudu
 		uint32_t activeAttachments = 0;
 		for (; activeAttachments < framebuffer->numColorAttachments; activeAttachments++)
 		{
-			auto texture = m_resources->GetTexture(framebuffer->colorAttachmentHandles[activeAttachments]);
+			auto texture = m_resources.GetTexture(framebuffer->colorAttachmentHandles[activeAttachments]);
 			framebufferAttachments[activeAttachments] = texture->vkImageViewHandle;
 		}
 
 		if (framebuffer->depthStencilAttachmentHandle.index != k_INVALID_HANDLE)
 		{
-			auto depthTexture = m_resources->GetTexture(framebuffer->depthStencilAttachmentHandle);
+			auto depthTexture = m_resources.GetTexture(framebuffer->depthStencilAttachmentHandle);
 			framebufferAttachments[activeAttachments++] = depthTexture->vkImageViewHandle;
 		}
 
@@ -737,7 +710,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
 		VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image,
-		VkDeviceMemory& imageMemory)
+		VkDeviceMemory& imageMemory, char* name)
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -760,6 +733,11 @@ namespace Pudu
 			throw std::runtime_error("failed to create image!");
 		}
 
+		if (name != nullptr)
+		{
+			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (uint64_t)image, name);
+		}
+
 		VkMemoryRequirements memRequirements;
 		vkGetImageMemoryRequirements(m_device, image, &memRequirements);
 
@@ -768,15 +746,12 @@ namespace Pudu
 		allocInfo.allocationSize = memRequirements.size;
 		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-		if (vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate image memory!");
-		}
+		VKCheck(vkAllocateMemory(m_device, &allocInfo, nullptr, &imageMemory), "failed to allocate image memory!");
 
 		vkBindImageMemory(m_device, image, imageMemory, 0);
 	}
 
-	VkImageView PuduGraphics::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VkImageView PuduGraphics::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, char* name)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -790,9 +765,11 @@ namespace Pudu
 		viewInfo.subresourceRange.layerCount = 1;
 
 		VkImageView imageView;
-		if (vkCreateImageView(m_device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+		VKCheck(vkCreateImageView(m_device, &viewInfo, nullptr, &imageView), "failed to create texture image view!");
+
+		if (name != nullptr)
 		{
-			PUDU_ERROR("failed to create texture image view!");
+			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)imageView, name);
 		}
 
 		return imageView;
@@ -966,14 +943,7 @@ namespace Pudu
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_swapChain) != VK_SUCCESS)
-		{
-			PUDU_ERROR("failed to create swap chain!");
-		}
-		else
-		{
-			LOG("SwapChain created!");
-		}
+		VKCheck(vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_swapChain), "failed to create swap chain!");
 
 		m_swapChainImages.resize(imageCount);
 		vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
@@ -982,11 +952,19 @@ namespace Pudu
 		m_imageCount = imageCount;
 		m_swapChainImageFormat = surfaceFormat.format;
 		m_swapChainExtent = extent;
+
+
+		for (uint32_t i = 0; i < m_swapChainImages.size(); i++)
+		{
+			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (uint64_t)m_swapChainImages[i], fmt::format("Swapchain Image {}", i).c_str());
+		}
+
+		LOG("Swap chain images created!");
 	}
 
 	void PuduGraphics::CreateSwapchainImageViews()
 	{
-		LOG("CreateImageViews");
+		LOG("Create Swapchain Images Views");
 		m_swapChainImagesViews.resize(m_swapChainImages.size());
 
 		for (size_t i = 0; i < m_swapChainImages.size(); i++)
@@ -994,10 +972,12 @@ namespace Pudu
 			auto imageView = CreateImageView(m_swapChainImages[i], m_swapChainImageFormat,
 				VK_IMAGE_ASPECT_COLOR_BIT);
 
-			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], fmt::format("Swapchain {}", i).c_str());
+			m_swapChainImagesViews[i] = imageView;
 
-			auto handle = m_resources->AllocateTexture();
-			auto texture = m_resources->GetTexture(handle->handle);
+			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], fmt::format("Swapchain Image View {}", i).c_str());
+
+			auto handle = m_resources.AllocateTexture();
+			auto texture = m_resources.GetTexture(handle->handle);
 
 			texture->vkImageViewHandle = imageView;
 			texture->vkImageHandle = m_swapChainImages[i];
@@ -1007,6 +987,8 @@ namespace Pudu
 
 			m_swapChainTextures.push_back(texture);
 		}
+
+		LOG("Swapchain images created");
 	}
 
 	void PuduGraphics::SetResourceName(VkObjectType type, u64 handle, const char* name)
@@ -1097,6 +1079,7 @@ namespace Pudu
 			}
 
 			VkAttachmentDescription2& colorAttachment = colorAttachments[colorAttachmentsCount];
+			colorAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
 			colorAttachment.format = output.colorFormats[colorAttachmentsCount];
 			colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			colorAttachment.loadOp = colorLoadOp;
@@ -1107,13 +1090,17 @@ namespace Pudu
 			colorAttachment.finalLayout = output.colorFinalLayouts[colorAttachmentsCount];
 
 			VkAttachmentReference2& colorAttachmentRef = colorAttachmentsRef[colorAttachmentsCount];
+			colorAttachmentRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 			colorAttachmentRef.attachment = colorAttachmentsCount;
 			colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
 
 		//Depth attachment
 		VkAttachmentDescription2 depthAttachment{};
+		depthAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
+
 		VkAttachmentReference2 depthAttachmentRef{};
+		depthAttachmentRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 
 		if (output.depthStencilFormat != VK_FORMAT_UNDEFINED)
 		{
@@ -1132,6 +1119,7 @@ namespace Pudu
 
 		//Create subpass
 		VkSubpassDescription2 subpass{};
+		subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 		VkAttachmentDescription2 attachments[K_MAX_IMAGE_OUTPUTS + 1]{};
@@ -1162,15 +1150,14 @@ namespace Pudu
 
 		vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle);
 	}
-	
 
 	ShaderStateHandle PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
 	{
-		ShaderStateHandle handle = m_resources->AllocateShaderState();
+		ShaderStateHandle handle = m_resources.AllocateShaderState();
 
 		uint32_t compiledShaders = 0;
 
-		ShaderState* shaderState = m_resources->GetShaderState(handle);
+		ShaderState* shaderState = m_resources.GetShaderState(handle);
 		shaderState->graphicsPipeline = true;
 		shaderState->activeShaders = 0;
 		for (; compiledShaders < creation.stageCount; compiledShaders++)
@@ -1259,13 +1246,13 @@ namespace Pudu
 
 		for (auto data : creationData)
 		{
-			DescriptorSetLayoutHandle handle = m_resources->AllocateDescriptorSetLayout();
+			DescriptorSetLayoutHandle handle = m_resources.AllocateDescriptorSetLayout();
 
 			for (auto& binding : data.Bindings) {
 				binding.descriptorCount = k_MAX_BINDLESS_RESOURCES;
 			}
 
-			auto descriptorSetLayout = m_resources->GetDescriptorSetLayout(handle);
+			auto descriptorSetLayout = m_resources.GetDescriptorSetLayout(handle);
 
 
 			VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
@@ -1313,14 +1300,14 @@ namespace Pudu
 		LOG("CreateGraphicsPipeline");
 		LOG("Loading shaders");
 
-		PipelineHandle pipelineHandle = m_resources->AllocatePipeline();
+		PipelineHandle pipelineHandle = m_resources.AllocatePipeline();
 
 		ShaderStateHandle shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
 
-		Pipeline* pipeline = m_resources->GetPipeline(pipelineHandle);
-		ShaderState* shaderState = m_resources->GetShaderState(shaderStateHandle);
+		Pipeline* pipeline = m_resources.GetPipeline(pipelineHandle);
+		ShaderState* shaderState = m_resources.GetShaderState(shaderStateHandle);
 
-		RenderPass* renderPass = m_resources->GetRenderPass(creationData.renderPassHandle);
+		RenderPass* renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
 		auto& renderPassOutput = renderPass->output;
 		auto outputCount = renderPassOutput.numColorFormats;
 
@@ -1328,7 +1315,7 @@ namespace Pudu
 
 		//Just have 1 set for now (bindless) so let's keep it simple
 		pipeline->descriptorSetLayoutHandles = CreateDescriptorSetLayout(creationData.descriptorSetLayoutData);
-		pipeline->descriptorSetLayouts[0] = m_resources->GetDescriptorSetLayout(pipeline->descriptorSetLayoutHandles[0]);
+		pipeline->descriptorSetLayouts[0] = m_resources.GetDescriptorSetLayout(pipeline->descriptorSetLayoutHandles[0]);
 
 		uint32_t activeLayouts = 1;
 		VkDescriptorSetLayout vkLayouts[1]{};
@@ -1537,24 +1524,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateSwapChainFrameBuffers(RenderPassHandle renderPass)
 	{
-		LOG("CreateFrameBuffers");
-		m_swapChainFrameBuffers.resize(m_swapChainImagesViews.size());
 
-		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
-		{
-			auto texture = m_swapChainTextures[i];
-
-			FramebufferCreationData frameBufferInfo;
-			frameBufferInfo.SetName("FB - Present ");
-			frameBufferInfo.renderPassHandle = renderPass;
-			frameBufferInfo.width = m_swapChainExtent.width;
-			frameBufferInfo.height = m_swapChainExtent.height;
-			frameBufferInfo.AddRenderTexture(texture->handle);
-
-			auto FrameBuffer = m_resources->AllocateFrameBuffer(frameBufferInfo);
-		}
-
-		Print("Created frame buffers");
 	}
 
 	void PuduGraphics::CreateFrames()
@@ -1590,9 +1560,20 @@ namespace Pudu
 		imageCreateInfo.arrayLayers = 1;
 		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageCreateInfo.format = creationData.format;
+		imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+		if (creationData.flags == TextureFlags::Sample)
+		{
+			imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		}
+		else
+		{
+			imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+		}
 
 		const bool isRenderTarget = (creationData.flags & TextureFlags::RenderTargetMask) == TextureFlags::RenderTargetMask;
-		const bool isComputeUsed = (creationData.flags & TextureFlags::ComputeMask) == TextureFlags::ComputeMask;
+		const bool isComputeUsed = creationData.flags  == TextureFlags::Compute;
 
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
@@ -1607,17 +1588,29 @@ namespace Pudu
 			imageCreateInfo.usage |= isRenderTarget ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : 0;
 		}
 
+		if (creationData.flags == TextureFlags::Sample)
+		{
+			imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+		}
+
+
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		auto texture = m_resources->AllocateTexture();
+		auto texture = m_resources.AllocateTexture();
+		texture->name = creationData.name;
+		texture->width = creationData.width;
+		texture->height = creationData.height;
+		texture->format = creationData.format;
+		texture->depth = creationData.depth;
+		
 
 		//Allocate image
 		vmaCreateImage(m_VmaAllocator, &imageCreateInfo, &memoryInfo, &texture->vkImageHandle, &texture->vmaAllocation, nullptr);
 
 		//Image view
 		VkImageViewCreateInfo imageViewInfo{};
-
+		imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		imageViewInfo.image = texture->vkImageHandle;
 		imageViewInfo.viewType = ToVkImageViewType(creationData.textureType);
 		imageViewInfo.format = imageCreateInfo.format;
@@ -1637,60 +1630,49 @@ namespace Pudu
 
 		texture->vkImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-		UpdateBindlessTexture(texture->handle);
+		SetResourceName(VK_OBJECT_TYPE_IMAGE, (uint64_t)texture->vkImageHandle, creationData.name);
+
+		if (creationData.bindless)
+		{
+			UpdateBindlessTexture(texture->handle);
+		}
+
+		if (creationData.pixels != nullptr)
+		{
+			UploadTextureData(texture, creationData.pixels);
+		}
 
 		return texture->handle;
 	}
 
-	SPtr<Texture2d> PuduGraphics::CreateTexture(std::filesystem::path const& path)
+	void PuduGraphics::UploadTextureData(SPtr<Texture2d> texture, void* pixels)
 	{
-		int texWidth, texHeight, texChannels;
-
-		auto texturePath = path.is_absolute() ? path : FileManager::GetAssetPath(path);
-
-		stbi_uc* pixels = stbi_load(texturePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-		VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-		if (!pixels)
-		{
-			PUDU_ERROR(fmt::format(R"(Texture not found {})", texturePath.string()));
-		}
-
+		auto imageSize = texture->width * texture->height * 4; //Assuming 32 bit texture here R8G8B8A8
 		GraphicsBuffer stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+		CreateImage(texture->width, texture->height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->vkImageHandle, texture->vkMemoryHandle);
+
+		VmaAllocationCreateInfo memoryInfo{};
+		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 		void* data;
 		vkMapMemory(m_device, stagingBuffer.DeviceMemoryHandler, 0, imageSize, 0, &data);
 		memcpy(data, pixels, static_cast<size_t>(imageSize));
 		vkUnmapMemory(m_device, stagingBuffer.DeviceMemoryHandler);
 
-		stbi_image_free(pixels);
-
-		auto texture = m_resources->AllocateTexture();
-
-		CreateImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->vkImageHandle, texture->vkMemoryHandle);
-
 		TransitionImageLayout(texture->vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		CopyBufferToImage(stagingBuffer.Handler, texture->vkImageHandle, static_cast<uint32_t>(texWidth),
-			static_cast<uint32_t>(texHeight));
+		CopyBufferToImage(stagingBuffer.Handler, texture->vkImageHandle, static_cast<uint32_t>(texture->width),
+			static_cast<uint32_t>(texture->height));
 
 		TransitionImageLayout(texture->vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-		vkDestroyBuffer(m_device, stagingBuffer.Handler, nullptr);
-		vkFreeMemory(m_device, stagingBuffer.DeviceMemoryHandler, nullptr);
-
-		CreateTextureImageView(*texture);
-
-		CreateTextureSampler(texture->Sampler.vkHandle);
-
-		return texture;
 	}
+
 
 	void PuduGraphics::CreateTextureImageView(Texture2d& texture2d)
 	{
@@ -1873,7 +1855,7 @@ namespace Pudu
 		CreateSwapChain();
 		CreateSwapchainImageViews();
 		CreateDepthResources();
-		CreateSwapChainFrameBuffers(m_presentRenderPass);
+
 	}
 
 	void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
@@ -1904,8 +1886,8 @@ namespace Pudu
 		auto fragmentData = FileManager::LoadShader(fragmentPath);
 		auto vertexData = FileManager::LoadShader(vertexPath);
 
-		ShaderHandle handle = m_resources->AllocateShader();
-		auto shader = m_resources->GetShader(handle);
+		ShaderHandle handle = m_resources.AllocateShader();
+		auto shader = m_resources.GetShader(handle);
 
 		shader->fragmentData = fragmentData;
 		shader->vertexData = vertexData;
@@ -1920,6 +1902,7 @@ namespace Pudu
 
 	void PuduGraphics::UpdateBindlessResources()
 	{
+		LOG("Update Bindless Resources");
 		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
 		uint32_t currentWriteIndex = 0;
@@ -1928,7 +1911,7 @@ namespace Pudu
 		{
 			ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
 
-			auto texture = m_resources->GetTexture({ textureToUpdate.handle });
+			auto texture = m_resources.GetTexture({ textureToUpdate.handle });
 			VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
 			descriptorWrite = {};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -2102,9 +2085,26 @@ namespace Pudu
 	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
 		auto mesh = MeshManager::AllocateMesh(data);
-		auto tex = m_resources->AllocateTexture(data.Material.BasetTexturePath);
+
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(FileManager::GetAssetPath(data.Material.BasetTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+		TextureCreationData creationData;
+		creationData.bindless = true;
+		creationData.depth = 1;
+		creationData.width = texWidth;
+		creationData.height = texHeight;
+		creationData.name = "Albedo";
+		creationData.format = VK_FORMAT_R8G8B8A8_SRGB;
+		creationData.mipmaps = 1;
+		creationData.pixels = pixels;
+		creationData.flags = TextureFlags::Sample;
+
+		auto textureHandle = CreateTexture(creationData);
 		Material material = Material();
-		material.Texture = tex;
+		material.Texture = m_resources.GetTexture(textureHandle);
+
+		stbi_image_free(pixels);
 
 		auto m = CreateModel(mesh, material);
 		m.Name = data.Name;
@@ -2492,10 +2492,7 @@ namespace Pudu
 		vkDestroyImage(m_device, m_depthImage, nullptr);
 		vkFreeMemory(m_device, m_depthImageMemory, nullptr);
 
-		for (size_t i = 0; i < m_swapChainFrameBuffers.size(); i++)
-		{
-			//	vkDestroyFramebuffer(m_device, m_swapChainFrameBuffers[i], nullptr);
-		}
+
 
 		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
 		{
