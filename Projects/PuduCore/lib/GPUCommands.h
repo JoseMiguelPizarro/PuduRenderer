@@ -25,7 +25,7 @@ namespace Pudu
 		void EndCurrentRenderPass();
 		void BindPipeline(Pipeline* pipeline);
 		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout dstLayout);
-		PuduGraphics* graphics;
+		PuduGraphics* graphics = nullptr;
 		VkCommandBuffer vkHandle;
 		RenderPass* currentRenderPass;
 		Framebuffer* currentFramebuffer;

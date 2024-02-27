@@ -40,6 +40,7 @@ namespace Pudu {
 		}
 
 		RenderPass* renderPass = GetRenderPass(handle);
+		renderPass->handle = handle;
 
 		renderPass->numRenderTargets = creationData.numRenderTargets;
 		renderPass->dispatchX = 0;
@@ -123,11 +124,18 @@ namespace Pudu {
 
 	ShaderHandle GPUResourcesManager::AllocateShader()
 	{
-		return { m_shaders.ObtainResource() };
+		ShaderHandle handle = { static_cast<uint32_t>(m_shaders.Size()) };
+		SPtr<Shader> shader = std::make_shared<Shader>();
+
+		shader->handle = handle;
+		m_shaders.AddResource(shader);
+
+
+		return { handle };
 	}
 
-	Shader* GPUResourcesManager::GetShader(ShaderHandle handle)
+	SPtr<Shader> GPUResourcesManager::GetShader(ShaderHandle handle)
 	{
-		return m_shaders.GetResourcePtr(handle.index);
+		return m_shaders.GetResource(handle.index);
 	}
 }

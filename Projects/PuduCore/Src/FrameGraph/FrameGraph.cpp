@@ -777,11 +777,11 @@ namespace Pudu
 		{"depth", RenderPassType::DepthPrePass}
 	};
 
-	static RenderPassType GetRenderPassType(char const* id) {
+	static RenderPassType GetRenderPassType(std::string id) {
 		return RenderPassTypeTable.find(id)->second;
 	}
 
-	static FrameGraphResourceType GetResourceType(char const* id) {
+	static FrameGraphResourceType GetResourceType(std::string id) {
 		//Handle lower/upper case
 		return FrameGraphResourceTypeTable.find(id)->second;
 	}
@@ -989,6 +989,7 @@ namespace Pudu
 		node->edges.reserve(creation.outputs.size());
 		node->framebuffer = { k_INVALID_HANDLE };
 		node->renderPass = { k_INVALID_HANDLE };
+		node->type = creation.renderType;
 
 		nodeCache.nodeMap[node->name] = nodeHandle.index;
 
@@ -1111,7 +1112,7 @@ namespace Pudu
 			nodeCreation.name = nameString.c_str();
 
 			nodeCreation.enabled = pass["enabled"].get_bool();
-			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value()).c_str()); //We need to store the string_view into a string
+			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value())); //We need to store the string_view into a string
 
 			auto passInputs = pass["inputs"];
 
@@ -1119,7 +1120,7 @@ namespace Pudu
 			{
 				FrameGraphResourceInputCreation inputCreation{};
 
-				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()).c_str());
+				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
 				auto inputName = input["name"].get_string();
 				std::string inputNameStr;
 				inputNameStr.append(inputName.value());
@@ -1243,6 +1244,7 @@ namespace Pudu
 					textureData.format = info.format;
 					textureData.name = resource->name.c_str();
 					textureData.mipmaps = 1;
+					textureData.bindless = false;
 					auto handle = builder->graphics->CreateTexture(textureData);
 
 					info.handle = handle;
@@ -1414,6 +1416,8 @@ namespace Pudu
 
 			uint16_t width = 0;
 			uint16_t height = 0;
+
+			renderData.currentRenderPass = renderData.graphics->Resources()->GetRenderPass(node->renderPass);
 
 			for (auto nodeInputHandle : node->inputs)
 			{

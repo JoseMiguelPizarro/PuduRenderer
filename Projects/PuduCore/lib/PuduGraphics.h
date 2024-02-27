@@ -133,10 +133,12 @@ namespace Pudu
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
-		Shader* CreateShader(char* fragmentPath, char* vertexPath);
+		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath);
 
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
 		void UploadTextureData(SPtr<Texture2d> texture, void* data);
+
+		void UpdateBindlessResources(Pipeline* pipeline);
 
 	private:
 		friend class GPUResourcesManager;
@@ -166,7 +168,7 @@ namespace Pudu
 		void InitDebugUtilsObjectName();
 
 		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
-		std::vector<DescriptorSetLayoutHandle> CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData);
+		void CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData, std::vector<DescriptorSetLayoutHandle>& output);
 
 		void CreateSwapChainFrameBuffers(RenderPassHandle renderPass);
 		void CreateFrames();
@@ -176,14 +178,11 @@ namespace Pudu
 		void CreateTextureSampler(VkSampler& sampler);
 
 		void CreateBindlessDescriptorPool();
-		void CreateBindlessDescriptorSet(VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts);
+		void CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateCommandBuffer();
 		void CreateSwapChainSyncObjects();
-		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
-
-		void UpdateBindlessResources();
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
@@ -266,10 +265,10 @@ namespace Pudu
 
 		std::vector<GraphicsBuffer> m_uniformBuffers;
 
-		VkDescriptorSet m_bindlessDescriptorSet;
+		VkDescriptorSet m_bindlessDescriptorSet; //This has to be done per pipeline
 		VkPipelineLayout m_pipelineLayout;
 
-		VkDescriptorPool m_descriptorPool;
+		VkDescriptorPool m_bindlessDescriptorPool;
 
 		VkDebugUtilsMessengerEXT m_debugMessenger;
 

@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <vector>
 #include "PuduRenderer.h"
+#include "SPIRVParser.h"
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
 #include <Logger.h>
@@ -25,6 +26,7 @@ namespace Pudu
 		renderData.scene = sceneToRender;
 		renderData.frameGraph = &frameGraph;
 		renderData.m_renderPassesByType = &m_renderPassByType;
+		renderData.graphics = graphics;
 
 		graphics->DrawFrame(renderData);
 	}
@@ -49,9 +51,9 @@ namespace Pudu
 		LOG("Loading FrameGraph End");
 	}
 
-	Pipeline* PuduRenderer::GetPipeline(DrawCall& drawcall, RenderPassType renderPassType)
+	Pipeline* PuduRenderer::GetPipeline(RenderFrameData& frameData, RenderPassType renderPassType)
 	{
-		auto shader = drawcall.MaterialPtr.Shader;
+		auto shader = frameData.currentDrawCall->MaterialPtr.Shader;
 
 		if (renderPassType == DepthPrePass)
 		{
@@ -70,66 +72,76 @@ namespace Pudu
 					return pipeline->second;
 				}
 			}
-			//Create new graphic pipeline
-			else
-			{
-				PipelineCreationData creationData; //"Question now, how do we populate this?"
-				creationData.vertexShaderData = shader->vertexData;
-				creationData.fragmentShaderData = shader->fragmentData;
-
-				BlendStateCreation blendStateCreation;
-				blendStateCreation.AddBlendState()
-					.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-					.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-					.SetColorWriteMask(ColorWriteEnabled::All_mask);
-
-				RasterizationCreation rasterizationCreation;
-				rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
-				rasterizationCreation.fill = FillMode::Solid;
-				rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
-				DepthStencilCreation depthStencilCreation;
-				depthStencilCreation.SetDepth(true, VK_COMPARE_OP_ALWAYS);
-
-				VertexInputCreation vertexInputCreation;
-				auto attribDescriptions = Vertex::GetAttributeDescriptions();
-				auto bindingDescriptions = Vertex::GetBindingDescription();
-
-				for (auto attrib : attribDescriptions)
-				{
-					VertexAttribute a;
-					a.binding = attrib.binding;
-					a.format = attrib.format;
-					a.location = attrib.location;
-					a.offset = attrib.offset;
-
-					vertexInputCreation.AddVertexAttribute(a);
-				}
-
-				VertexStream vertexStream;
-				vertexStream.binding = bindingDescriptions.binding;
-				vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
-				vertexStream.stride = bindingDescriptions.stride;
-
-				vertexInputCreation.AddVertexStream(vertexStream);
-
-				ShaderStateCreationData shaderData;
-				shaderData.AddStage(shader->fragmentData.data(), shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
-				shaderData.AddStage(shader->vertexData.data(), shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
-
-				auto handle = graphics->CreateGraphicsPipeline(creationData);
-				Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
-
-				std::unordered_map<SPtr<Shader>, Pipeline*> pipelineByShaderMap;
-				pipelineByShaderMap.insert(std::make_pair(shader, pipeline));
-
-				m_pipelinesByRenderPass.insert(std::make_pair(renderPassType, pipelineByShaderMap));
-
-				return pipeline;
-			}
 		}
+		//Create new graphic pipeline
+		else
+		{
+			PipelineCreationData creationData; //"Question now, how do we populate this?"
+			creationData.vertexShaderData = shader->vertexData;
+			creationData.fragmentShaderData = shader->fragmentData;
 
-		return nullptr;
+			BlendStateCreation blendStateCreation;
+			blendStateCreation.AddBlendState()
+				.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+				.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+				.SetColorWriteMask(ColorWriteEnabled::All_mask);
+
+			RasterizationCreation rasterizationCreation;
+			rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
+			rasterizationCreation.fill = FillMode::Solid;
+			rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+			DepthStencilCreation depthStencilCreation;
+			depthStencilCreation.SetDepth(true, VK_COMPARE_OP_ALWAYS);
+
+			VertexInputCreation vertexInputCreation;
+			auto attribDescriptions = Vertex::GetAttributeDescriptions();
+			auto bindingDescriptions = Vertex::GetBindingDescription();
+
+			for (auto attrib : attribDescriptions)
+			{
+				VertexAttribute a;
+				a.binding = attrib.binding;
+				a.format = attrib.format;
+				a.location = attrib.location;
+				a.offset = attrib.offset;
+
+				vertexInputCreation.AddVertexAttribute(a);
+			}
+
+			VertexStream vertexStream;
+			vertexStream.binding = bindingDescriptions.binding;
+			vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
+			vertexStream.stride = bindingDescriptions.stride;
+
+			vertexInputCreation.AddVertexStream(vertexStream);
+
+			ShaderStateCreationData shaderData;
+			shaderData.AddStage(shader->fragmentData.data(), shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
+			shaderData.AddStage(shader->vertexData.data(), shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
+
+			SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorSetLayoutData);
+
+			creationData.blendState = blendStateCreation;
+			creationData.rasterization = rasterizationCreation;
+			creationData.depthStencil = depthStencilCreation;
+			creationData.vertexInput = vertexInputCreation;
+			creationData.shadersStateCreationData = shaderData;
+			
+
+			creationData.renderPassHandle = frameData.currentRenderPass->handle;
+
+
+			auto handle = graphics->CreateGraphicsPipeline(creationData);
+			Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
+
+			std::unordered_map<SPtr<Shader>, Pipeline*> pipelineByShaderMap;
+			pipelineByShaderMap.insert(std::make_pair(shader, pipeline));
+
+			m_pipelinesByRenderPass.insert(std::make_pair(renderPassType, pipelineByShaderMap));
+
+			return pipeline;
+		}
 	}
 }
 

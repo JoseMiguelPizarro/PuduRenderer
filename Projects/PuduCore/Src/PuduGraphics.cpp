@@ -405,7 +405,6 @@ namespace Pudu
 	{
 		auto frameGraph = frameData.frameGraph;
 		Frame frame = m_Frames[m_currentFrameIndex];
-		UpdateBindlessResources();
 
 		vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
@@ -423,6 +422,7 @@ namespace Pudu
 		}
 
 		m_commandBuffer.vkHandle = frame.CommandBuffer;
+		m_commandBuffer.graphics = this;
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
@@ -445,7 +445,6 @@ namespace Pudu
 
 		frameData.commandsToSubmit.push_back(m_commandBuffer.vkHandle);
 		frameGraph->Render(frameData);
-
 
 		//	DrawImGui(frameData);
 
@@ -1159,12 +1158,14 @@ namespace Pudu
 
 		ShaderState* shaderState = m_resources.GetShaderState(handle);
 		shaderState->graphicsPipeline = true;
-		shaderState->activeShaders = 0;
+		shaderState->activeShaders = creation.stageCount;
+
 		for (; compiledShaders < creation.stageCount; compiledShaders++)
 		{
 			auto stage = creation.stages[compiledShaders];
 
 			VkPipelineShaderStageCreateInfo& shaderStageInfo = shaderState->shaderStageInfo[compiledShaders];
+			shaderStageInfo = {};
 			shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStageInfo.pName = "main";
 			shaderStageInfo.stage = stage.type;
@@ -1224,16 +1225,14 @@ namespace Pudu
 
 		m_physicalDeviceData.PoolSizesCount = poolsSizesCount;
 
-		if (vkCreateDescriptorPool(m_device, &poolInfo, m_allocatorPtr, &m_descriptorPool) != VK_SUCCESS)
+		if (vkCreateDescriptorPool(m_device, &poolInfo, m_allocatorPtr, &m_bindlessDescriptorPool) != VK_SUCCESS)
 		{
 			PUDU_ERROR("Failed to create descriptor pool!");
 		}
 	}
 
-	std::vector<DescriptorSetLayoutHandle> PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData)
+	void PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData, std::vector<DescriptorSetLayoutHandle>& output)
 	{
-		std::vector<DescriptorSetLayoutHandle> handles(creationData.size());
-
 		LOG("CreateDescriptorSetLayout");
 		const uint32_t poolCount = (uint32_t)m_physicalDeviceData.PoolSizesCount;
 
@@ -1252,13 +1251,13 @@ namespace Pudu
 				binding.descriptorCount = k_MAX_BINDLESS_RESOURCES;
 			}
 
-			auto descriptorSetLayout = m_resources.GetDescriptorSetLayout(handle);
-
+			DescriptorSetLayout* descriptorSetLayout = m_resources.GetDescriptorSetLayout(handle);
 
 			VkDescriptorSetLayoutBindingFlagsCreateInfoEXT extendedInfo{};
 			extendedInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 			extendedInfo.bindingCount = (uint32_t)data.Bindings.size();
 			extendedInfo.pBindingFlags = bindingFlags.data();
+
 
 			VkDescriptorSetLayoutCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1267,38 +1266,36 @@ namespace Pudu
 			createInfo.pBindings = data.Bindings.data();
 			createInfo.pNext = &extendedInfo;
 
+
 			VkDescriptorSetLayout layout{};
 
-			if (vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &layout) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to create descriptor set layout!");
-			}
+			VKCheck(vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &layout), "failed to create descriptor set layout!");
 
 			descriptorSetLayout->vkHandle = layout;
 
-			handles.push_back(handle);
+			output.push_back(handle);
 		}
-
-		return handles;
+		LOG("CreateDescriptorSetLayout End");
 	}
 
-	void PuduGraphics::CreateBindlessDescriptorSet(VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts)
+	void PuduGraphics::CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
 	{
 		LOG("Creating descriptor set");
 
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = m_descriptorPool;
-		allocInfo.descriptorSetCount = 1;
+		allocInfo.descriptorPool = pool;
+		allocInfo.descriptorSetCount = layoutsCount;
 		allocInfo.pSetLayouts = layouts;
 
-		vkAllocateDescriptorSets(m_device, &allocInfo, &descriptorSet);
+		VKCheck(vkAllocateDescriptorSets(m_device, &allocInfo, &descriptorSet), "Failed creating descriptor set");
+
+		LOG("Creating descriptor set end");
 	}
 
 	PipelineHandle PuduGraphics::CreateGraphicsPipeline(PipelineCreationData& creationData)
 	{
 		LOG("CreateGraphicsPipeline");
-		LOG("Loading shaders");
 
 		PipelineHandle pipelineHandle = m_resources.AllocatePipeline();
 
@@ -1314,23 +1311,55 @@ namespace Pudu
 		pipeline->shaderState = shaderStateHandle;
 
 		//Just have 1 set for now (bindless) so let's keep it simple
-		pipeline->descriptorSetLayoutHandles = CreateDescriptorSetLayout(creationData.descriptorSetLayoutData);
-		pipeline->descriptorSetLayouts[0] = m_resources.GetDescriptorSetLayout(pipeline->descriptorSetLayoutHandles[0]);
+		CreateDescriptorSetLayout(creationData.descriptorSetLayoutData, pipeline->descriptorSetLayoutHandles);
 
-		uint32_t activeLayouts = 1;
+		for (uint32_t i = 0; i < pipeline->descriptorSetLayoutHandles.size(); i++)
+		{
+			pipeline->descriptorSetLayouts[i] = m_resources.GetDescriptorSetLayout(pipeline->descriptorSetLayoutHandles[i]);//DESCRIPTOR SET LAYOUTS NOT SET IN RESOURCES
+		}
+		pipeline->numActiveLayouts = pipeline->descriptorSetLayoutHandles.size();
+
+		/*uint32_t activeLayouts = 1;
 		VkDescriptorSetLayout vkLayouts[1]{};
-		vkLayouts[0] = pipeline->descriptorSetLayouts[0]->vkHandle;
+		vkLayouts[0] = pipeline->descriptorSetLayouts[0]->vkHandle;*/
+
+		VkPushConstantRange pushConstant{};
+		pushConstant.offset = 0;
+		pushConstant.size = sizeof(UniformBufferObject);
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+		VkPushConstantRange fragmentConstant{};
+		fragmentConstant.offset = sizeof(UniformBufferObject);
+		fragmentConstant.size = sizeof(uint32_t);
+		fragmentConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		VkPushConstantRange constants[2]{ pushConstant, fragmentConstant };
+
+		std::vector<VkDescriptorSetLayout> pipelineDescriptorSetLayouts;
+		for (uint32_t i = 0; i < pipeline->numActiveLayouts; i++)
+		{
+			pipelineDescriptorSetLayouts.push_back(pipeline->descriptorSetLayouts[i]->vkHandle);
+		}
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.pSetLayouts = vkLayouts;
-		pipelineLayoutInfo.setLayoutCount = activeLayouts;
+		pipelineLayoutInfo.setLayoutCount = pipelineDescriptorSetLayouts.size();
+		pipelineLayoutInfo.pSetLayouts = pipelineDescriptorSetLayouts.data();
+		pipelineLayoutInfo.pPushConstantRanges = constants;
+		pipelineLayoutInfo.pushConstantRangeCount = 2;
+
+
+		//VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+		//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		//pipelineLayoutInfo.pSetLayouts = vkLayouts;
+		//pipelineLayoutInfo.setLayoutCount = activeLayouts;
+
 
 		VkPipelineLayout pipelineLayout;
 		vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
 
 		pipeline->vkPipelineLayoutHandle = pipelineLayout;
-		pipeline->numActiveLayouts = activeLayouts;
+		pipeline->numActiveLayouts = pipelineDescriptorSetLayouts.size();
 
 		if (shaderState->graphicsPipeline)
 		{
@@ -1404,9 +1433,12 @@ namespace Pudu
 
 			if (blendCount)
 			{
+				colorBlendAttachments.resize(blendCount);
 				for (size_t i = 0; i < blendCount; i++)
 				{
 					auto attachment = colorBlendAttachments[i];
+					attachment = {};
+
 					auto blendState = creationData.blendState.blendStates[i];
 
 					attachment.blendEnable = blendState.blendEnabled;
@@ -1421,6 +1453,7 @@ namespace Pudu
 			}
 			else
 			{
+				colorBlendAttachments.resize(outputCount);
 				for (u32 i = 0; i < outputCount; ++i) {
 					colorBlendAttachments[i] = {};
 					colorBlendAttachments[i].blendEnable = VK_FALSE;
@@ -1516,8 +1549,9 @@ namespace Pudu
 
 			vkCreateGraphicsPipelines(m_device, nullptr, 1, &graphicsPipelineInfo, m_allocatorPtr, &pipeline->vkHandle);
 			pipeline->vkPipelineBindPoint = VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS; //TODO: ADD SUPPORT FOR COMPUTE
-
 		}
+
+		CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
 
 		return pipelineHandle;
 	}
@@ -1573,7 +1607,7 @@ namespace Pudu
 		}
 
 		const bool isRenderTarget = (creationData.flags & TextureFlags::RenderTargetMask) == TextureFlags::RenderTargetMask;
-		const bool isComputeUsed = creationData.flags  == TextureFlags::Compute;
+		const bool isComputeUsed = creationData.flags == TextureFlags::Compute;
 
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
@@ -1603,7 +1637,7 @@ namespace Pudu
 		texture->height = creationData.height;
 		texture->format = creationData.format;
 		texture->depth = creationData.depth;
-		
+
 
 		//Allocate image
 		vmaCreateImage(m_VmaAllocator, &imageCreateInfo, &memoryInfo, &texture->vkImageHandle, &texture->vmaAllocation, nullptr);
@@ -1737,7 +1771,6 @@ namespace Pudu
 		LOG("Created command buffer");
 	}
 
-
 	void PuduGraphics::CreateSwapChainSyncObjects()
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{};
@@ -1759,78 +1792,6 @@ namespace Pudu
 				throw std::runtime_error("Failed to create semaphores");
 			}
 		}
-	}
-
-
-
-	void PuduGraphics::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-	{
-		//VkRenderPassBeginInfo renderPassInfo{};
-		//renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		//renderPassInfo.renderPass = m_renderPass;
-		//renderPassInfo.framebuffer = m_swapChainFrameBuffers[imageIndex];
-		//renderPassInfo.renderArea = { 0, 0 };
-		//renderPassInfo.renderArea.extent = m_swapChainExtent;
-
-		//std::array<VkClearValue, 2> clearValues{};
-		//clearValues[0].color = { {0.8860f, 1.0f, 0.996f, 1.0f} };
-		//clearValues[1].depthStencil = { 1.0f, 0 };
-
-		//renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		//renderPassInfo.pClearValues = clearValues.data();
-
-		//vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
-
-		//VkViewport viewport{};
-		//viewport.x = 0.0f;
-		//viewport.y = 0.0f;
-		//viewport.width = static_cast<float>(m_swapChainExtent.width);
-		//viewport.height = static_cast<float>(m_swapChainExtent.height);
-		//viewport.minDepth = 0.0f;
-		//viewport.maxDepth = 1.0f;
-		//vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
-		//VkRect2D scissor{};
-		//scissor.offset = { 0, 0 };
-		//scissor.extent = m_swapChainExtent;
-		//vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-		//std::vector<DrawCall> drawCalls = SceneToRender->GetDrawCalls();
-
-		//VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		//std::vector<VkDescriptorSet> descriptorSets(drawCalls.size());
-
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1,
-		//	&m_bindlessDescriptorSet, 0, nullptr);
-
-		//for (DrawCall drawCall : drawCalls) {
-
-		//	Model model = drawCall.ModelPtr;
-		//	auto mesh = drawCall.MeshPtr;
-
-		//	VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
-		//	VkDeviceSize offsets[] = { 0 };
-		//	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-		//	vkCmdBindIndexBuffer(commandBuffer, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
-
-		//	auto ubo = GetUniformBufferObject(*SceneToRender->camera, drawCall);
-		//	uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
-
-		//	vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
-		//	vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
-
-		//	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
-		//}
-
-		//// Record dear imgui primitives into command buffer
-
-		//vkCmdEndRenderPass(commandBuffer);
-
-		//if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-		//{
-		//	PUDU_ERROR("failed to record command buffer!");
-		//}
 	}
 
 	void PuduGraphics::RecreateSwapChain()
@@ -1881,7 +1842,7 @@ namespace Pudu
 		return ubo;
 	}
 
-	Shader* PuduGraphics::CreateShader(char* fragmentPath, char* vertexPath)
+	SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath)
 	{
 		auto fragmentData = FileManager::LoadShader(fragmentPath);
 		auto vertexData = FileManager::LoadShader(vertexPath);
@@ -1892,17 +1853,18 @@ namespace Pudu
 		shader->fragmentData = fragmentData;
 		shader->vertexData = vertexData;
 
-
-
 		return shader;
-
-		/*pipelineCreationData.shadersStateCreationData.AddStage(fragmentData.data(), sizeof(char) * fragmentData.size(), VK_SHADER_STAGE_FRAGMENT_BIT);
-		pipelineCreationData.shadersStateCreationData.AddStage(vertexData.data(), sizeof(char) * vertexData.size(), VK_SHADER_STAGE_VERTEX_BIT);*/
 	}
 
-	void PuduGraphics::UpdateBindlessResources()
+	void PuduGraphics::UpdateBindlessResources(Pipeline* pipeline)
 	{
 		LOG("Update Bindless Resources");
+
+		if (pipeline->bindlessUpdated)
+		{
+			return;
+		}
+
 		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
 		uint32_t currentWriteIndex = 0;
@@ -1935,12 +1897,12 @@ namespace Pudu
 			currentWriteIndex++;
 		}
 
-		m_bindlessResourcesToUpdate.clear();
-
 		if (currentWriteIndex)
 		{
 			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
 		}
+
+		pipeline->bindlessUpdated = true;
 	}
 
 	void PuduGraphics::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
@@ -2445,7 +2407,7 @@ namespace Pudu
 			DestroyBuffer(m_uniformBuffers[i]);
 		}
 
-		vkDestroyDescriptorPool(m_device, m_descriptorPool, m_allocatorPtr);
+		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
 		/*for (auto layout : m_bindlessDescriptorSetLayouts)
 		{

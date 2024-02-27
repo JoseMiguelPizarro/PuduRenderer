@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 #include <glm/fwd.hpp>
@@ -210,9 +211,9 @@ namespace Pudu
 		RenderPass() = default;
 
 		VkRenderPass vkHandle = nullptr;
+		RenderPassHandle handle;
 
 		RenderPassOutput output;
-
 		uint16_t dispatchX = 0;
 		uint16_t dispatchY = 0;
 		uint16_t dispatchZ = 0;
@@ -261,7 +262,6 @@ namespace Pudu
 		uint32_t compareMask = 0xff;
 		uint32_t writeMask = 0xff;
 		uint32_t reference = 0xff;
-
 
 		static VkStencilOpState GetVkOpState(StencilOperationState state)
 		{
@@ -376,7 +376,7 @@ namespace Pudu
 		VkPipelineLayout vkPipelineLayoutHandle;
 
 		VkPipelineBindPoint vkPipelineBindPoint;
-
+		VkDescriptorSet vkDescriptorSet;//Just 1 for now, bindless
 		ShaderStateHandle shaderState;
 
 		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
@@ -386,6 +386,8 @@ namespace Pudu
 		DepthStencilCreation depthStencil;
 		BlendStateCreation blendState;
 		RasterizationCreation rasterization;
+
+		bool bindlessUpdated;
 
 		PipelineHandle handle;
 		bool graphicsPipeline = true;
@@ -682,7 +684,7 @@ namespace Pudu
 
 	struct ShaderStateCreationData
 	{
-		const char* name = nullptr;
+		std::string name;
 		ShaderStage stages[K_MAX_SHADER_STAGES];
 		uint32_t stageCount = 0;
 

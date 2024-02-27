@@ -1,11 +1,13 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <filesystem>
+#include "Resources/Resources.h"
 
 namespace Pudu {
 	class Shader
 	{
 	public:
+		ShaderHandle handle;
 		VkShaderModule GetModule();
 		std::filesystem::path GetPath();
 

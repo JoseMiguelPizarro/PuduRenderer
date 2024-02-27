@@ -29,6 +29,10 @@ void TriangleApp::OnInit()
 	m_puduRenderer.Init(&Graphics);
 	m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));
 
+	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");
+	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag");
+	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath);
+
 	LoadGameboyModel();
 }
 
@@ -50,6 +54,16 @@ void TriangleApp::OnCleanup()
 void TriangleApp::LoadGameboyModel()
 {
 	auto gltfScene = FileManager::LoadGltfScene(GameboyModelPath);
+
+	for (auto e : gltfScene)
+	{
+		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
+
+		if (re != nullptr)
+		{
+			re->GetModel().Materials[0].Shader = standardShader;
+		}
+	}
 
 	m_scene.AddEntities(gltfScene);
 }

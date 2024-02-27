@@ -8,7 +8,7 @@ namespace Pudu
 {
 	Pipeline* FrameGraphRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
-		return frameData.renderer->GetPipeline(drawcall, RenderPassType::Color);
+		return frameData.renderer->GetPipeline(frameData, RenderPassType::Color);
 	}
 
 	void FrameGraphRenderPass::Render(RenderFrameData& frameData)
@@ -21,6 +21,8 @@ namespace Pudu
 			Model model = drawCall.ModelPtr;
 			auto mesh = drawCall.MeshPtr;
 
+			frameData.currentDrawCall = &drawCall;
+
 			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commands->vkHandle, 0, 1, vertexBuffers, offsets);
@@ -30,6 +32,7 @@ namespace Pudu
 			uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 
 			Pipeline* pipeline = GetPipeline(frameData, drawCall);
+			frameData.graphics->UpdateBindlessResources(pipeline);
 
 			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);

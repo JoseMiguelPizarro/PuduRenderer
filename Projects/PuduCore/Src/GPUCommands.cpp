@@ -78,7 +78,8 @@ namespace Pudu
 
 		if (renderPass != currentRenderPass)
 		{
-			VkRenderPassBeginInfo renderPassBegin{ VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO };
+			VkRenderPassBeginInfo renderPassBegin{};
+			renderPassBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 			renderPassBegin.framebuffer = framebuffer->vkHandle;
 			renderPassBegin.renderPass = renderPass->vkHandle;
 			renderPassBegin.renderArea.offset = { 0,0 };

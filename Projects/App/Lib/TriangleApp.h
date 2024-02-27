@@ -39,4 +39,5 @@ private:
 	Model m_planeModel;
 	SPtr<Texture2d> m_planeTexture;
 	PuduRenderer m_puduRenderer;
+	SPtr<Shader> standardShader;
 };

@@ -6,6 +6,8 @@ namespace Pudu
 {
 	struct Frame;
 	struct FrameGraph;
+	struct RenderPass;
+	struct DrawCall;
 	class Scene;
 	class GPUCommands;
 	class PuduGraphics;
@@ -23,6 +25,8 @@ namespace Pudu
 		PuduGraphics* graphics;
 		PuduRenderer* renderer;
 		SPtr<Texture2d> activeRenderTarget;
+		RenderPass* currentRenderPass;
+		DrawCall* currentDrawCall;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass>* m_renderPassesByType;

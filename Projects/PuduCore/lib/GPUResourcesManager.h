@@ -35,17 +35,17 @@ namespace Pudu {
 		DescriptorSetLayout* GetDescriptorSetLayout(DescriptorSetLayoutHandle handle);
 
 		ShaderHandle AllocateShader();
-		Shader* GetShader(ShaderHandle handle);
+		SPtr<Shader> GetShader(ShaderHandle handle);
 
 	private:
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture2d>> m_textures;
+		ResourcePool<SPtr<Shader>> m_shaders;
 		ResourcePool<RenderPass> m_renderPasses;
 		ResourcePool<Framebuffer> m_frameBuffers;
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
-		ResourcePool<Shader> m_shaders;
 	};
 }
 
