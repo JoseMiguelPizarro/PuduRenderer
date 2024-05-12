@@ -1,6 +1,7 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
+#include <string>
 #include <filesystem>
+#include <vulkan/vulkan_core.h>
 #include "Resources/Resources.h"
 
 namespace Pudu {
@@ -17,6 +18,7 @@ namespace Pudu {
 
 		std::vector<char> fragmentData;
 		std::vector<char> vertexData;
+		std::string name;
 
 	private:
 		std::filesystem::path m_shaderPath;

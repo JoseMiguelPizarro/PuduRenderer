@@ -151,7 +151,6 @@ namespace Pudu
 
 		GPUResourcesManager m_resources;
 		GPUCommands m_commandBuffer;
-		uint32_t m_imageIndex;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 
@@ -184,7 +183,7 @@ namespace Pudu
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
 
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, GPUCommands* commands = nullptr);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
@@ -226,7 +225,7 @@ namespace Pudu
 
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, char* name = nullptr);
 
-		VkShaderModule CreateShaderModule(char const* code, size_t size);
+		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size);
 
 		void CreateUniformBuffers();
 

@@ -827,7 +827,7 @@ namespace Pudu
 					renderPassCreation.depthOperation = RenderPassOperation::Clear;
 				}
 				else {
-					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, info.texture.loadOp);
+					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, info.texture.loadOp);
 				}
 			}
 		}

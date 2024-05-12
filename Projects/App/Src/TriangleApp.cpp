@@ -29,9 +29,10 @@ void TriangleApp::OnInit()
 	m_puduRenderer.Init(&Graphics);
 	m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));
 
-	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");
-	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag");
+	auto fragmentShaderPath =  FileManager::GetAssetPath("Shaders/triangle.frag");
+	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");
 	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath);
+	standardShader->name = "Standard";
 
 	LoadGameboyModel();
 }

@@ -117,8 +117,9 @@ namespace Pudu
 			vertexInputCreation.AddVertexStream(vertexStream);
 
 			ShaderStateCreationData shaderData;
-			shaderData.AddStage(shader->fragmentData.data(), shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
-			shaderData.AddStage(shader->vertexData.data(), shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
+			shaderData.SetName(shader->name.c_str());
+			shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
+			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
 
 			SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorSetLayoutData);
 
@@ -127,10 +128,8 @@ namespace Pudu
 			creationData.depthStencil = depthStencilCreation;
 			creationData.vertexInput = vertexInputCreation;
 			creationData.shadersStateCreationData = shaderData;
-			
 
 			creationData.renderPassHandle = frameData.currentRenderPass->handle;
-
 
 			auto handle = graphics->CreateGraphicsPipeline(creationData);
 			Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);

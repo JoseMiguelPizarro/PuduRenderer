@@ -18,6 +18,7 @@ namespace Pudu
 	void GPUCommands::AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel, u32 mipCount, bool isDepth)
 	{
 		VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+		VkDependencyInfo dependencyInfo{ VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
 		barrier.image = image;
 		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -32,9 +33,10 @@ namespace Pudu
 		barrier.srcAccessMask = VkImageLayoutFromUsage(oldState);
 		barrier.dstAccessMask = VkImageLayoutFromUsage(newState);
 
-
 		const VkPipelineStageFlags sourceStageMask = DeterminePipelineStageFlags(barrier.srcAccessMask, QueueType::Graphics);
 		const VkPipelineStageFlags destionationStageMask = DeterminePipelineStageFlags(barrier.dstAccessMask, QueueType::Graphics);
+
+		//vkCmdPipelineBarrier2(vkHandle, &dependencyInfo);
 
 		vkCmdPipelineBarrier(vkHandle, sourceStageMask, destionationStageMask, 0,
 			0, nullptr, 0, nullptr, 1, &barrier);
@@ -69,6 +71,9 @@ namespace Pudu
 		vkViewport.y = viewport.rect.y;
 		vkViewport.maxDepth = viewport.maxDepth;
 		vkViewport.minDepth = viewport.minDepth;
+
+		vkCmdSetViewport(vkHandle, 0, 1, &vkViewport);
+
 	}
 	void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
 	{
@@ -130,12 +135,37 @@ namespace Pudu
 		currentPipeline = pipeline;
 	}
 
-	void GPUCommands::Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout dstLayout)
+	void GPUCommands::Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
 	{
-		VkBlitImageInfo2 blitInfo{};
+		VkBlitImageInfo2 blitInfo{ VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2 };
+		VkImageBlit2 blitRegion{ VK_STRUCTURE_TYPE_IMAGE_BLIT_2 };
+		VkOffset3D offset[2] = { {0,0,0},{0,0,0} };
+
+		VkImageSubresourceLayers dstSubresource{};
+		dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		dstSubresource.mipLevel = 0;
+		dstSubresource.layerCount = 1;
+		dstSubresource.baseArrayLayer = 0;
+
+		blitRegion.dstOffsets[0] = { 0,0,0 };
+		blitRegion.dstOffsets[1] = { 0,0,1 };
+		blitRegion.srcOffsets[0] = { 0,0,0 };
+		blitRegion.srcOffsets[1] = { 0,0,1 };
+		blitRegion.dstSubresource = dstSubresource;
+		blitRegion.srcSubresource = dstSubresource;
+
 		blitInfo.srcImage = source->vkImageHandle;
-		blitInfo.srcImageLayout = source->vkImageLayout;
+		blitInfo.srcImageLayout = srcLayout;
 		blitInfo.dstImage = dst->vkImageHandle;
 		blitInfo.dstImageLayout = dstLayout;
+
+		blitInfo.pRegions = &blitRegion;
+		blitInfo.regionCount = 1;
+
+		vkCmdBlitImage2(vkHandle, &blitInfo);
+	}
+	void GPUCommands::EndCommands()
+	{
+		vkEndCommandBuffer(vkHandle);
 	}
 }

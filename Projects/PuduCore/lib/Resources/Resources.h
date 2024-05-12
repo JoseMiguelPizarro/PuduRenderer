@@ -555,7 +555,7 @@ namespace Pudu
 	{
 		VkPipelineShaderStageCreateInfo shaderStageInfo[K_MAX_SHADER_STAGES];
 
-		const char* name = nullptr;
+		std::string name;
 
 		uint32_t activeShaders = 0;
 		bool graphicsPipeline = false;
@@ -676,7 +676,7 @@ namespace Pudu
 
 	struct ShaderStage
 	{
-		const char* code = nullptr;
+		std::vector<char>* code;
 		uint32_t codeSize = 0;
 		VkShaderStageFlagBits type = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 		DescriptorSetLayoutData descriptorSetLayoutData;
@@ -689,7 +689,7 @@ namespace Pudu
 		uint32_t stageCount = 0;
 
 		ShaderStateCreationData& SetName(const char* name);
-		ShaderStateCreationData& AddStage(const char* code, size_t code_size, VkShaderStageFlagBits type);
+		ShaderStateCreationData& AddStage(std::vector<char>* code, size_t code_size, VkShaderStageFlagBits type);
 		ShaderStage& GetStage(VkShaderStageFlagBits stageFlag);
 	};
 

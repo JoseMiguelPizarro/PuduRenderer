@@ -18,13 +18,14 @@ namespace Pudu
 	public:
 		void Clear(vec4 color);
 		void ClearDepthStencil(float depth, float stencil);
-		void AddImageBarrier(VkImage image, ResourceState old_state, ResourceState new_state, u32 base_mip_level, u32 mip_count, bool is_depth);
+		void AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel, u32 mipCount, bool isDepth);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetViewport(Viewport const& viewport);
 		void BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle);
 		void EndCurrentRenderPass();
 		void BindPipeline(Pipeline* pipeline);
-		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout dstLayout);
+		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst,VkImageLayout srcLayout, VkImageLayout dstLayout);
+		void EndCommands();
 		PuduGraphics* graphics = nullptr;
 		VkCommandBuffer vkHandle;
 		RenderPass* currentRenderPass;
