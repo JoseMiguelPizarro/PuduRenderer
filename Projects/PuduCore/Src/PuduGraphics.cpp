@@ -82,7 +82,7 @@ namespace Pudu
 		CreateCommandPool(&m_commandPool);
 		CreateUniformBuffers();
 
-		CreateCommandBuffer();
+		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
 	}
 
@@ -421,64 +421,34 @@ namespace Pudu
 			PUDU_ERROR("failed to acquire swap chain image!");
 		}
 
-		m_commandBuffer.vkHandle = frame.CommandBuffer;
-		m_commandBuffer.graphics = this;
-
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
-		vkResetCommandBuffer(frame.CommandBuffer, 0);
+		vkResetCommandBuffer(frame.CommandBuffer.vkHandle, 0);
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Optional
 		beginInfo.pInheritanceInfo = nullptr; // Optional
 
-		if (vkBeginCommandBuffer(frame.CommandBuffer, &beginInfo) != VK_SUCCESS)
+		if (vkBeginCommandBuffer(frame.CommandBuffer.vkHandle, &beginInfo) != VK_SUCCESS)
 		{
 			PUDU_ERROR("failed to begin recording command buffer!");
 		}
 
 		frameData.frame = &m_Frames[m_currentFrameIndex];
-		//frameData.frameIndex = m_currentFrameIndex;
-		frameData.currentCommand = &m_commandBuffer;
+		frameData.currentCommand = &frame.CommandBuffer;
 		frameData.graphics = this;
 
-		frameData.commandsToSubmit.push_back(m_commandBuffer.vkHandle);
+		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
 		frameGraph->Render(frameData);
 
 		//DrawImGui(frameData);
 
-		//TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-		//VkImageMemoryBarrier2 renderTargetBarrier{};
-		//renderTargetBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-		//renderTargetBarrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT; //Wait for all color attachment output
-		//renderTargetBarrier.dstStageMask = VK_PIPELINE_STAGE_2_BLIT_BIT; //Make blit operation to wait
-		//renderTargetBarrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT; //Wait for write to end
-		//renderTargetBarrier.dstAccessMask = 0; //wait for nothing
-
-		//VkImageSubresourceRange subresource{};
-		//subresource.baseArrayLayer = 0;
-		//subresource.baseMipLevel = 0;
-		//subresource.layerCount = 1;
-		//subresource.levelCount = 1;
-		//subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-		//renderTargetBarrier.subresourceRange = subresource;
-
-
-		//renderTargetBarrier.image = frameData.activeRenderTarget->vkImageHandle;
-		//VkDependencyInfo dependencyInfo{};
-
-		//dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		//dependencyInfo.imageMemoryBarrierCount = 1;
-		//dependencyInfo.pImageMemoryBarriers = &renderTargetBarrier;
-
-		//vkCmdPipelineBarrier2(frameData.currentCommand->vkHandle, &dependencyInfo);
-
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, frameData.currentCommand);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, frameData.currentCommand);
+
+		frame.CommandBuffer.EndCommands();
 
 		SubmitFrame(frameData);
 	}
@@ -503,8 +473,6 @@ namespace Pudu
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		frameData.currentCommand->EndCommands();
-
 		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame->InFlightFence) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to submit draw command buffer!");
@@ -516,11 +484,13 @@ namespace Pudu
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
 
+
 		VkSwapchainKHR swapChains[] = { m_swapChain };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &frameData.frameIndex;
 		presentInfo.pResults = nullptr; // Optional
+
 
 		auto result = vkQueuePresentKHR(m_presentationQueue, &presentInfo);
 
@@ -1478,14 +1448,12 @@ namespace Pudu
 				colorBlendAttachments.resize(blendCount);
 				for (size_t i = 0; i < blendCount; i++)
 				{
-					auto attachment = colorBlendAttachments[i];
-					attachment = {};
+					auto& attachment = colorBlendAttachments[i];
 
 					auto blendState = creationData.blendState.blendStates[i];
 
 					attachment.blendEnable = blendState.blendEnabled;
 					attachment.colorWriteMask = blendState.colorWriteMask;
-
 					attachment.srcColorBlendFactor = blendState.sourceColorFactor;
 					attachment.dstColorBlendFactor = blendState.destinationColorFactor;
 					attachment.colorBlendOp = blendState.colorBlendOperation;
@@ -1778,7 +1746,7 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateCommandBuffer()
+	void PuduGraphics::CreateFramesCommandBuffer()
 	{
 		VkCommandBufferAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1798,7 +1766,7 @@ namespace Pudu
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			Frame& frame = m_Frames[i];
-			frame.CommandBuffer = buffers[i];
+			frame.CommandBuffer = GPUCommands(buffers[i], this);
 		}
 
 		LOG("Created command buffer");

@@ -6,11 +6,15 @@
 
 namespace Pudu
 {
+	GPUCommands::GPUCommands(VkCommandBuffer handle, PuduGraphics* gfx) : vkHandle(handle), m_graphics(gfx)
+	{
+	}
+
 	void GPUCommands::Clear(vec4 color)
 	{
 		m_clearValues[0] = { {color.x,color.y,color.z,color.w} };
-
 	}
+
 	void GPUCommands::ClearDepthStencil(float depth, float stencil)
 	{
 		m_clearValues[1] = { {depth,stencil} };
@@ -77,9 +81,9 @@ namespace Pudu
 	}
 	void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
 	{
-		RenderPass* renderPass = graphics->Resources()->GetRenderPass(renderPassHandle);
+		RenderPass* renderPass = m_graphics->Resources()->GetRenderPass(renderPassHandle);
 
-		Framebuffer* framebuffer = graphics->Resources()->GetFramebuffer(framebufferHandle);
+		Framebuffer* framebuffer = m_graphics->Resources()->GetFramebuffer(framebufferHandle);
 
 		if (renderPass != currentRenderPass)
 		{

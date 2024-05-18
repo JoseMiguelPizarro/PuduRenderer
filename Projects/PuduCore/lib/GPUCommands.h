@@ -12,10 +12,11 @@ namespace Pudu
 {
 	class PuduGraphics;
 
-
 	class GPUCommands
 	{
 	public:
+		GPUCommands() = default;
+		GPUCommands(VkCommandBuffer handle, PuduGraphics* gfx);
 		void Clear(vec4 color);
 		void ClearDepthStencil(float depth, float stencil);
 		void AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel, u32 mipCount, bool isDepth);
@@ -26,13 +27,13 @@ namespace Pudu
 		void BindPipeline(Pipeline* pipeline);
 		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst,VkImageLayout srcLayout, VkImageLayout dstLayout);
 		void EndCommands();
-		PuduGraphics* graphics = nullptr;
 		VkCommandBuffer vkHandle;
 		RenderPass* currentRenderPass;
 		Framebuffer* currentFramebuffer;
 		Pipeline* currentPipeline;
 
 	private:
+		PuduGraphics* m_graphics = nullptr;
 		std::array<VkClearValue, 2> m_clearValues{};
 	};
 }

@@ -827,7 +827,7 @@ namespace Pudu
 					renderPassCreation.depthOperation = RenderPassOperation::Clear;
 				}
 				else {
-					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, info.texture.loadOp);
+					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, info.texture.loadOp); //Hack for now, set to transfer cuz we are going to transfer it to the swapchain
 				}
 			}
 		}
@@ -1405,6 +1405,7 @@ namespace Pudu
 	void FrameGraph::Render(RenderFrameData& renderData)
 	{
 		auto commands = renderData.currentCommand;
+		auto gfx = renderData.graphics;
 
 		for (auto nodeHandle : nodes)
 		{
@@ -1417,7 +1418,7 @@ namespace Pudu
 			uint16_t width = 0;
 			uint16_t height = 0;
 
-			renderData.currentRenderPass = renderData.graphics->Resources()->GetRenderPass(node->renderPass);
+			renderData.currentRenderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 
 			for (auto nodeInputHandle : node->inputs)
 			{
@@ -1425,13 +1426,13 @@ namespace Pudu
 
 				if (resource->type == FrameGraphResourceType_Texture)
 				{
-					auto texture = commands->graphics->Resources()->GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
 					commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, resource->resourceInfo.texture.format == VK_FORMAT_D32_SFLOAT);
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{
-					auto texture = commands->graphics->Resources()->GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
 					width = texture->width;
 					height = texture->height;
@@ -1444,7 +1445,7 @@ namespace Pudu
 
 				if (resource->type == FrameGraphResourceType_Attachment)
 				{
-					auto texture = commands->graphics->Resources()->GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
 					width = texture->width;
 					height = texture->height;
@@ -1464,7 +1465,7 @@ namespace Pudu
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
 			auto renderPass = renderData.m_renderPassesByType->find(node->type)->second;
-			renderData.activeRenderTarget = renderData.graphics->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
+			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
 			renderPass.PreRender(renderData);
 			commands->BindRenderPass(node->renderPass, node->framebuffer);
 

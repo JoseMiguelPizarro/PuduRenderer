@@ -18,4 +18,5 @@ void main() {
     uint id = materialId;
     vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord);
     outColor = pow(base_colour, vec4(1.0 / 2.2));
+    outColor = vec4(1,0,0,1);
 }

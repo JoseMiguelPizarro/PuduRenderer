@@ -150,7 +150,6 @@ namespace Pudu
 		VkDevice m_device;
 
 		GPUResourcesManager m_resources;
-		GPUCommands m_commandBuffer;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 
@@ -178,7 +177,7 @@ namespace Pudu
 
 		void CreateBindlessDescriptorPool();
 		void CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
-		void CreateCommandBuffer();
+		void CreateFramesCommandBuffer();
 		void CreateSwapChainSyncObjects();
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
