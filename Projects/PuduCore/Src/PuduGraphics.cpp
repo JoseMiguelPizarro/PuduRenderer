@@ -1623,7 +1623,7 @@ namespace Pudu
 			imageCreateInfo.usage |= isRenderTarget ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : 0;
 		}
 
-		if (creationData.flags == TextureFlags::Sample)
+		if (creationData.flags & TextureFlags::Sample)
 		{
 			imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
@@ -1638,7 +1638,6 @@ namespace Pudu
 		texture->height = creationData.height;
 		texture->format = creationData.format;
 		texture->depth = creationData.depth;
-
 
 		//Allocate image
 		vmaCreateImage(m_VmaAllocator, &imageCreateInfo, &memoryInfo, &texture->vkImageHandle, &texture->vmaAllocation, nullptr);

@@ -1240,11 +1240,11 @@ namespace Pudu
 					textureData.depth = info.depth;
 					textureData.width = info.width;
 					textureData.height = info.height;
-					textureData.flags = (TextureFlags::Enum)TextureFlags::RenderTargetMask;
+					textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample); //Add sample to set it as bindless 
 					textureData.format = info.format;
 					textureData.name = resource->name.c_str();
 					textureData.mipmaps = 1;
-					textureData.bindless = false;
+					textureData.bindless = true;
 					auto handle = builder->graphics->CreateTexture(textureData);
 
 					info.handle = handle;
