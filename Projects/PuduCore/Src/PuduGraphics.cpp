@@ -1336,10 +1336,6 @@ namespace Pudu
 		}
 		pipeline->numActiveLayouts = pipeline->descriptorSetLayoutHandles.size();
 
-		/*uint32_t activeLayouts = 1;
-		VkDescriptorSetLayout vkLayouts[1]{};
-		vkLayouts[0] = pipeline->descriptorSetLayouts[0]->vkHandle;*/
-
 		VkPushConstantRange pushConstant{};
 		pushConstant.offset = 0;
 		pushConstant.size = sizeof(UniformBufferObject);
@@ -1559,8 +1555,10 @@ namespace Pudu
 
 			vkCreateGraphicsPipelines(m_device, nullptr, 1, &graphicsPipelineInfo, m_allocatorPtr, &pipeline->vkHandle);
 			pipeline->vkPipelineBindPoint = VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS; //TODO: ADD SUPPORT FOR COMPUTE
+			pipeline->bindlessUpdated = false;
 		}
 
+		//Create pipeline descriptor set, only handling bindless
 		CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
 
 		return pipelineHandle;
@@ -1677,6 +1675,8 @@ namespace Pudu
 			UploadTextureData(texture, creationData.pixels);
 		}
 
+
+		CreateTextureSampler(texture->Sampler.vkHandle);
 		return texture->handle;
 	}
 
@@ -1881,14 +1881,13 @@ namespace Pudu
 			descriptorWrite.descriptorCount = 1;
 			descriptorWrite.dstArrayElement = textureToUpdate.handle;
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite.dstSet = m_bindlessDescriptorSet;
+			descriptorWrite.dstSet = pipeline->vkDescriptorSet;
 
 			descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
 
 			auto textureSampler = texture->Sampler;
 
 			VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
-			descriptorImageInfo = {};
 			descriptorImageInfo.sampler = textureSampler.vkHandle;
 			descriptorImageInfo.imageView = texture->vkImageViewHandle;
 			descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
