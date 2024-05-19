@@ -152,9 +152,9 @@ namespace Pudu
 		dstSubresource.baseArrayLayer = 0;
 
 		blitRegion.dstOffsets[0] = { 0,0,0 };
-		blitRegion.dstOffsets[1] = { 0,0,1 };
+		blitRegion.dstOffsets[1] = { (int)dst->width,(int)dst->height,1 };
 		blitRegion.srcOffsets[0] = { 0,0,0 };
-		blitRegion.srcOffsets[1] = { 0,0,1 };
+		blitRegion.srcOffsets[1] = { (int)source->width,(int)source->height,1 };
 		blitRegion.dstSubresource = dstSubresource;
 		blitRegion.srcSubresource = dstSubresource;
 
