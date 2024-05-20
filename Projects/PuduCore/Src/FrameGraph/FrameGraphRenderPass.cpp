@@ -8,7 +8,7 @@ namespace Pudu
 {
 	Pipeline* FrameGraphRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
-		return frameData.renderer->GetPipeline(frameData, RenderPassType::Color);
+		return frameData.renderer->GetOrCreatePipeline(frameData, RenderPassType::Color);
 	}
 
 	void FrameGraphRenderPass::Render(RenderFrameData& frameData)

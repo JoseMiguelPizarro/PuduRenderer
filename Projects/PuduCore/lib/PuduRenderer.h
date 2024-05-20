@@ -18,7 +18,7 @@ namespace Pudu
 		void Init(PuduGraphics* graphics);
 		void Render();
 		void LoadFrameGraph(fs::path path);
-		Pipeline* GetPipeline(RenderFrameData& data, RenderPassType renderPassType);
+		Pipeline* GetOrCreatePipeline(RenderFrameData& data, RenderPassType renderPassType);
 		void AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype);
 
 	private:

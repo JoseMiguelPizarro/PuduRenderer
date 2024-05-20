@@ -18,8 +18,8 @@ void TriangleApp::OnRun()
 void TriangleApp::OnInit()
 {
 	m_camera = {};
-	m_camera.Transform.SetForward(vec3(0, 0, -1), vec3(0, 1, 0));
-	m_camera.Transform.LocalPosition = { 0, 0.0f, 7.0f };
+	m_camera.Transform.SetForward(vec3(0, -.5, -1), vec3(0, 1, 0));
+	m_camera.Transform.LocalPosition = { 0, 10.0f, 25.0f };
 	m_camera.Width = Graphics.WindowWidth;
 	m_camera.Height = Graphics.WindowHeight;
 

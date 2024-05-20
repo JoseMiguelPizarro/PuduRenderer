@@ -222,7 +222,7 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, char* name = nullptr);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,const char* name = nullptr);
 
 		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size);
 

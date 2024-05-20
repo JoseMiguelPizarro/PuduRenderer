@@ -742,7 +742,7 @@ namespace Pudu
 		vkBindImageMemory(m_device, image, imageMemory, 0);
 	}
 
-	VkImageView PuduGraphics::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, char* name)
+	VkImageView PuduGraphics::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, const char* name)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -986,11 +986,11 @@ namespace Pudu
 		for (size_t i = 0; i < m_swapChainImages.size(); i++)
 		{
 			auto imageView = CreateImageView(m_swapChainImages[i], m_swapChainImageFormat,
-				VK_IMAGE_ASPECT_COLOR_BIT);
+				VK_IMAGE_ASPECT_COLOR_BIT, fmt::format("Swapchain Image View {}", i).c_str());
 
 			m_swapChainImagesViews[i] = imageView;
 
-			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], fmt::format("Swapchain Image View {}", i).c_str());
+			//SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], );
 
 			auto handle = m_resources.AllocateTexture();
 			auto texture = m_resources.GetTexture(handle->handle);
@@ -1260,8 +1260,6 @@ namespace Pudu
 
 		bindingFlags[0] = bindlessFlags;
 		bindingFlags[1] = bindlessFlags;
-		bindingFlags[2] = bindlessFlags;
-		bindingFlags[3] = bindlessFlags;
 
 		for (auto data : creationData)
 		{
@@ -1684,14 +1682,10 @@ namespace Pudu
 
 	void PuduGraphics::UploadTextureData(SPtr<Texture2d> texture, void* pixels)
 	{
-		auto imageSize = texture->width * texture->height * 4; //Assuming 32 bit texture here R8G8B8A8
+		auto imageSize = texture->width * texture->height * 4; //TODO: Assuming 32 bit texture here R8G8B8A8
 		GraphicsBuffer stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-		CreateImage(texture->width, texture->height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->vkImageHandle, texture->vkMemoryHandle);
 
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -1824,6 +1818,7 @@ namespace Pudu
 
 	void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
 	{
+		//NOT USED ANYMORE SINCE WE ARE PUSHING CONSTANTS FOR NOW
 		/*UniformBufferObject ubo = GetUniformBufferObject();
 		memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));*/
 	}
@@ -1903,6 +1898,8 @@ namespace Pudu
 		{
 			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
 		}
+
+		m_bindlessResourcesToUpdate.clear();
 
 		pipeline->bindlessUpdated = true;
 	}
@@ -2064,6 +2061,8 @@ namespace Pudu
 
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(FileManager::GetAssetPath(data.Material.BasetTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+		char pixelss[] = { 255,255,255,255 };
 
 		TextureCreationData creationData;
 		creationData.bindless = true;

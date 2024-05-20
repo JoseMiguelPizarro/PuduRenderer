@@ -51,7 +51,7 @@ namespace Pudu
 		LOG("Loading FrameGraph End");
 	}
 
-	Pipeline* PuduRenderer::GetPipeline(RenderFrameData& frameData, RenderPassType renderPassType)
+	Pipeline* PuduRenderer::GetOrCreatePipeline(RenderFrameData& frameData, RenderPassType renderPassType)
 	{
 		auto shader = frameData.currentDrawCall->MaterialPtr.Shader;
 

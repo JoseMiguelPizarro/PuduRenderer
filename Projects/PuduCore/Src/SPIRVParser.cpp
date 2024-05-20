@@ -32,6 +32,7 @@ namespace Pudu {
 					layoutBinding.descriptorCount *= refl_binding.array.dims[i_dim];
 				}
 				layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(module.shader_stage);
+				layoutBinding.pImmutableSamplers = nullptr;
 			}
 
 			layout.SetNumber = reflSet.set;
