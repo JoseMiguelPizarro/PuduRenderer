@@ -1227,10 +1227,11 @@ namespace Pudu
 	{
 		LOG("Creating desciptor Pool");
 
-		const uint32_t poolsSizesCount = 1;
+		const uint32_t poolsSizesCount = 2;
 		std::array< VkDescriptorPoolSize, poolsSizesCount> poolSizesBindless =
 		{
 			VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,k_MAX_BINDLESS_RESOURCES},
+			VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, k_MAX_BINDLESS_RESOURCES}
 		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
@@ -1259,6 +1260,8 @@ namespace Pudu
 
 		bindingFlags[0] = bindlessFlags;
 		bindingFlags[1] = bindlessFlags;
+		bindingFlags[2] = bindlessFlags;
+		bindingFlags[3] = bindlessFlags;
 
 		for (auto data : creationData)
 		{
@@ -1619,7 +1622,7 @@ namespace Pudu
 		}
 		else
 		{
-			imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; //Read&write but it might but just for read
+			imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; //Read&write but it might but just for read
 			imageCreateInfo.usage |= isRenderTarget ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : 0;
 		}
 

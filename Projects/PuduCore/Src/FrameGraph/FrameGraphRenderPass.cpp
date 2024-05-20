@@ -23,7 +23,10 @@ namespace Pudu
 
 			frameData.currentDrawCall = &drawCall;
 			Pipeline* pipeline = GetPipeline(frameData, drawCall);
+			frameData.graphics->UpdateBindlessResources(pipeline);
+
 			commands->BindPipeline(pipeline);
+			vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
 
 			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
 			VkDeviceSize offsets[] = { 0 };
@@ -33,13 +36,11 @@ namespace Pudu
 			auto ubo = frameData.graphics->GetUniformBufferObject(*renderScene->camera, drawCall);
 			uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 
-			frameData.graphics->UpdateBindlessResources(pipeline);
 
 			Viewport viewport;
 			viewport.rect = { 0,0, (uint16)frameData.graphics->WindowWidth,(uint16)frameData.graphics->WindowHeight };
 			viewport.maxDepth = 1;
 			commands->SetViewport(viewport);
-			vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
 			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
 			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
 
