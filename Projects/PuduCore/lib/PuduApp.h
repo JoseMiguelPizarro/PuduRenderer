@@ -13,7 +13,7 @@ namespace  Pudu
 		void Init();
 
 		bool FrameBufferResized;
-		float TargetFPS = 1;
+		float TargetFPS = 30;
 		PuduGraphics Graphics;
 		PuduTime Time;
 

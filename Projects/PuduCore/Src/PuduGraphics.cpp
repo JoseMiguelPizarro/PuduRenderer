@@ -442,7 +442,7 @@ namespace Pudu
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
 		frameGraph->Render(frameData);
 
-		//DrawImGui(frameData);
+		DrawImGui(frameData);
 
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, frameData.currentCommand);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -540,6 +540,17 @@ namespace Pudu
 
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
+			
+			ImGui::NewFrame();
+			ImGui::Begin("Pudu Renderer Debug");
+
+			auto entities = frameData.scene->GetEntities();
+
+			//Tree begin
+			ImGuiUtils::DrawEntityTree(entities);
+
+			ImGui::End();
+			ImGui::Render();
 
 			// Record dear imgui primitives into command buffer
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_ImGuiCommandBuffers[m_currentFrameIndex]);
