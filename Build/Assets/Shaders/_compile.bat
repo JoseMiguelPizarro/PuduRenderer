@@ -1,0 +1,1 @@
+powershell -noexit -File ./compileShaders.ps1
