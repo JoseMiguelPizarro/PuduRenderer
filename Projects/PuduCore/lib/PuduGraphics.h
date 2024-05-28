@@ -70,6 +70,7 @@ namespace Pudu
 		// Works around a validation layer bug with descriptor pool allocation with VARIABLE_COUNT.
 	// See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
 		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME
 	};
 
 	class PuduGraphics
