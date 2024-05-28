@@ -540,7 +540,7 @@ namespace Pudu
 
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
-			
+
 			ImGui::NewFrame();
 			ImGui::Begin("Pudu Renderer Debug");
 
@@ -1853,14 +1853,14 @@ namespace Pudu
 
 	SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath)
 	{
-		auto fragmentData = FileManager::LoadShader(fragmentPath);
-		auto vertexData = FileManager::LoadShader(vertexPath);
-
 		ShaderHandle handle = m_resources.AllocateShader();
 		auto shader = m_resources.GetShader(handle);
 
-		shader->fragmentData.append_range(fragmentData);
-		shader->vertexData.append_range(vertexData);
+		auto fragmentData = fragmentPath.empty() ? std::vector<char>() : FileManager::LoadShader(fragmentPath);
+		auto vertexData = vertexPath.empty() ? std::vector<char>() : FileManager::LoadShader(vertexPath);
+
+		shader->LoadFragmentData(fragmentData);
+		shader->LoadVertexData(vertexData);
 
 		return shader;
 	}
