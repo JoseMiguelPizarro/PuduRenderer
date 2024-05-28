@@ -34,6 +34,7 @@ namespace Pudu
 	{
 		isDepthEnabled = 1;
 		depthComparison = comparisonTest;
+		isDepthWriteEnable = write;
 
 		return *this;
 	}
