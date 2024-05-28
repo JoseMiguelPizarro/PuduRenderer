@@ -92,7 +92,7 @@ namespace Pudu
 			rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
 			DepthStencilCreation depthStencilCreation;
-			depthStencilCreation.SetDepth(true, VK_COMPARE_OP_ALWAYS);
+			depthStencilCreation.SetDepth(true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 			VertexInputCreation vertexInputCreation;
 			auto attribDescriptions = Vertex::GetAttributeDescriptions();
@@ -141,6 +141,9 @@ namespace Pudu
 
 			return pipeline;
 		}
+
+
+		return nullptr;
 	}
 }
 
