@@ -824,7 +824,7 @@ namespace Pudu
 			if (outputResource->type == FrameGraphResourceType_Attachment) {
 				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
 					renderPassCreation.SetDepthStencilTexture(info.texture.format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-					renderPassCreation.depthOperation = RenderPassOperation::Clear;
+					renderPassCreation.depthOperation = info.texture.loadOp;
 				}
 				else {
 					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, info.texture.loadOp); //Hack for now, set to transfer cuz we are going to transfer it to the swapchain
@@ -848,6 +848,7 @@ namespace Pudu
 				}
 			}
 		}
+
 
 		auto renderPassHandle = frameGraph->builder->graphics->Resources()->AllocateRenderPass(renderPassCreation);
 		node->renderPass = renderPassHandle;
@@ -1111,6 +1112,7 @@ namespace Pudu
 			std::string nameString(name.value());
 			nodeCreation.name = nameString.c_str();
 
+			
 			nodeCreation.enabled = pass["enabled"].get_bool();
 			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value())); //We need to store the string_view into a string
 
