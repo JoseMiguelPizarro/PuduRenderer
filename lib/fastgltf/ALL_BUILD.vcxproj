@@ -177,10 +177,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{E743E241-037B-3B6C-8E42-C02BE86E0E46}</Project>
       <Name>fastgltf</Name>
     </ProjectReference>
-    <ProjectReference Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\fastgltf_simdjson.vcxproj">
-      <Project>{E9C68C83-1E9E-30B6-ACC7-A8FE8D1E2235}</Project>
-      <Name>fastgltf_simdjson</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,6 +7,9 @@
     <ClCompile Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\base64.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\deps\simdjson\simdjson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\include\fastgltf\base64.hpp">
@@ -15,7 +18,7 @@
     <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\include\fastgltf\glm_element_traits.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\include\fastgltf\parser.hpp">
+    <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\include\fastgltf\core.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\include\fastgltf\tools.hpp">
@@ -25,6 +28,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\include\fastgltf\util.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\Documents\Repos\PuduRenderer\lib\fastgltf\deps\simdjson\simdjson.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,0 +1,49 @@
+﻿  Building Custom Rule D:/Documents/Repos/PuduRenderer/lib/fastgltf/CMakeLists.txt
+cl : command line  warning D9025: overriding '/Ob2' with '/Ob3'
+  fastgltf.cpp
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4173,54): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4244,52): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4318,56): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4374,52): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4434,51): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4491,51): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4815,54): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4841,77): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4874,64): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4888,49): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4909,51): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4947,50): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4961,49): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5012,78): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5033,50): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5079,53): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5104,52): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5121,51): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5148,47): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5165,50): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5218,53): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5303,60): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5313,64): warning C4018: '<': signed/unsigned mismatch
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5409,21): warning C4267: '=': conversion from 'size_t' to 'uint32_t', possible loss of data
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5414,38): warning C4267: '=': conversion from 'size_t' to 'uint32_t', possible loss of data
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(5424,40): warning C4267: '=': conversion from 'size_t' to 'uint32_t', possible loss of data
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4152,46): warning C4018: '<': signed/unsigned mismatch
+  D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4152,46):
+  the template instantiation context (the oldest one first) is
+  	D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4147,9):
+  	see reference to function template instantiation 'void std::visit<fastgltf::visitor<fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_e8eb3eaf088d2e91107f39e654921aba>,fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_d5bcc144d5db40029f1098acf08fc637>>,const std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double>>,std::vector<int64_t,std::pmr::polymorphic_allocator<int64_t>>>&,void>(_Callable &&,const std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double>>,std::vector<int64_t,std::pmr::polymorphic_allocator<int64_t>>> &)' being compiled
+          with
+          [
+              _Callable=fastgltf::visitor<fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_e8eb3eaf088d2e91107f39e654921aba>,fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_d5bcc144d5db40029f1098acf08fc637>>
+          ]
+  	C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include\variant(1603,19):
+  	see reference to variable template 'const bool _Variant_all_visit_results_same<void,fastgltf::visitor<<lambda_e8eb3eaf088d2e91107f39e654921aba>,<lambda_d5bcc144d5db40029f1098acf08fc637> >,std::_Meta_list<>,std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double> >,std::vector<__int64,std::pmr::polymorphic_allocator<__int64> > > const &>' being compiled
+  	C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include\variant(1582,10):
+  	see reference to variable template 'const bool _Variant_all_visit_results_same<void,fastgltf::visitor<<lambda_e8eb3eaf088d2e91107f39e654921aba>,<lambda_d5bcc144d5db40029f1098acf08fc637> >,std::_Meta_list<std::vector<double,std::pmr::polymorphic_allocator<double> > const &> >' being compiled
+  	C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include\type_traits(1637,1):
+  	see reference to function template instantiation 'auto fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_d5bcc144d5db40029f1098acf08fc637>::operator ()<std::vector<double,std::pmr::polymorphic_allocator<double>>>(std::vector<double,std::pmr::polymorphic_allocator<double>>) const' being compiled
+  
+  base64.cpp
+  simdjson.cpp
+  Generating Code...
+  fastgltf.vcxproj -> D:\Documents\Repos\PuduRenderer\lib\fastgltf\Release\fastgltf.lib
