@@ -1466,13 +1466,13 @@ namespace Pudu
 			commands->SetScissor(0, 0, width, height);
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
-			auto renderPass = renderData.m_renderPassesByType->find(node->type)->second;
+			auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
-			renderPass->PreRender(renderData);
+			graphRenderPass->PreRender(renderData);
 			commands->BindRenderPass(node->renderPass, node->framebuffer);
+			renderData.lastFrameBuffer = gfx->Resources()->GetFramebuffer(node->framebuffer);
 
-			renderPass->Render(renderData);
-
+			graphRenderPass->Render(renderData);
 			commands->EndCurrentRenderPass();
 			//TODO: IMPLEMENT MARKERS
 		}

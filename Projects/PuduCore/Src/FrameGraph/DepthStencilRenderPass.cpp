@@ -35,6 +35,4 @@ namespace Pudu
 	{
 		return frameData.renderer->GetOrCreatePipeline(frameData, RenderPassType::DepthPrePass);
 	}
-
-
 }

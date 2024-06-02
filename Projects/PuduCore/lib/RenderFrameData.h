@@ -14,6 +14,7 @@ namespace Pudu
 	class GPUCommands;
 	class PuduGraphics;
 	class PuduRenderer;
+	class Framebuffer;
 	enum RenderPassType;
 	class FrameGraphRenderPass;
 	class Texture2d;
@@ -30,6 +31,7 @@ namespace Pudu
 		SPtr<Texture2d> activeRenderTarget;
 		RenderPass* currentRenderPass;
 		DrawCall* currentDrawCall;
+		Framebuffer* lastFrameBuffer;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass*>* m_renderPassesByType;
