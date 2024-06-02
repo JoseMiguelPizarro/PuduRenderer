@@ -1463,7 +1463,7 @@ namespace Pudu
 				}
 			}
 
-			commands->SetScissor(0, 0, width, height);
+			commands->SetScissor(0, 0, width, height); 
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
 			auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;

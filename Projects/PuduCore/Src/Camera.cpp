@@ -20,6 +20,6 @@ namespace Pudu {
 	mat4 Camera::GetPerspectiveMatrix()
 	{
 		return Pudu::PerspectiveMatrix(
-			Fov, Height / Width, 0.1f, 1000.0f);
+			Fov, Width / Height, 0.1f, 1000.0f);
 	}
 }

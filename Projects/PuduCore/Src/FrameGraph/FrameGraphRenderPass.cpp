@@ -54,7 +54,10 @@ namespace Pudu
 			if (drawCall.GetRenderMaterial()->Shader->HasFragmentData())
 			{
 				uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
-				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
+				RenderConstants constants{};
+				constants.materialId = materialid;
+				constants.g_LightDirection = normalize(vec3(1, 1, 1)); //HARDCODED LIGHT DIRECTION
+				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(RenderConstants), &constants);
 			}
 
 			vkCmdDrawIndexed(commands->vkHandle, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);

@@ -208,27 +208,20 @@ namespace Pudu
 
 	VkExtent2D PuduGraphics::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-		{
-			return capabilities.currentExtent;
-		}
-		else
-		{
-			int width, height;
-			glfwGetFramebufferSize(WindowPtr, &width, &height);
+		int width, height;
+		glfwGetFramebufferSize(WindowPtr, &width, &height);
 
-			VkExtent2D actualExtent = {
-				static_cast<uint32_t>(width),
-				static_cast<uint32_t>(height)
-			};
+		VkExtent2D actualExtent = {
+			static_cast<uint32_t>(width),
+			static_cast<uint32_t>(height)
+		};
 
-			actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width,
-				capabilities.maxImageExtent.width);
-			actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height,
-				capabilities.maxImageExtent.height);
+		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width,
+			capabilities.maxImageExtent.width);
+		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height,
+			capabilities.maxImageExtent.height);
 
-			return actualExtent;
-		}
+		return actualExtent;
 	}
 
 	void PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
@@ -1356,7 +1349,7 @@ namespace Pudu
 
 		VkPushConstantRange fragmentConstant{};
 		fragmentConstant.offset = sizeof(UniformBufferObject);
-		fragmentConstant.size = sizeof(uint32_t);
+		fragmentConstant.size = sizeof(RenderConstants);
 		fragmentConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		//Push contants support

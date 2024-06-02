@@ -82,7 +82,7 @@ namespace Pudu
 		void Init(int windowWidth, int windowHeight);
 		void DrawFrame(RenderFrameData& frameData);
 
-		uint32_t WindowWidth = 1200;
+		uint32_t WindowWidth = 1280;
 		uint32_t WindowHeight = 800;
 
 		const std::vector<const char*> validationLayers =

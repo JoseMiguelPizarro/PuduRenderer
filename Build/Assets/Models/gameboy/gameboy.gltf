@@ -1,6 +1,6 @@
 {
 	"asset":{
-		"generator":"Khronos glTF Blender I/O v4.0.44",
+		"generator":"Khronos glTF Blender I/O v4.1.63",
 		"version":"2.0"
 	},
 	"scene":0,
@@ -8,7 +8,8 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				9
+				9,
+				10
 			]
 		}
 	],
@@ -137,6 +138,15 @@
 				0,
 				0.70710688829422
 			]
+		},
+		{
+			"mesh":4,
+			"name":"Plane",
+			"scale":[
+				4.322370529174805,
+				4.322370529174805,
+				4.322370529174805
+			]
 		}
 	],
 	"materials":[
@@ -157,6 +167,17 @@
 			"pbrMetallicRoughness":{
 				"baseColorTexture":{
 					"index":1
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"plane",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":2
 				},
 				"metallicFactor":0,
 				"roughnessFactor":0.5
@@ -219,6 +240,20 @@
 					"material":1
 				}
 			]
+		},
+		{
+			"name":"Plane",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":14,
+						"NORMAL":15,
+						"TEXCOORD_0":16
+					},
+					"indices":17,
+					"material":2
+				}
+			]
 		}
 	],
 	"textures":[
@@ -229,6 +264,10 @@
 		{
 			"sampler":0,
 			"source":1
+		},
+		{
+			"sampler":1,
+			"source":2
 		}
 	],
 	"images":[
@@ -241,6 +280,11 @@
 			"mimeType":"image/png",
 			"name":"gameboy_tex_diffuse",
 			"uri":"textures/gameboy_tex_diffuse.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"floor_diff",
+			"uri":"textures/floor_diff.png"
 		}
 	],
 	"accessors":[
@@ -249,14 +293,14 @@
 			"componentType":5126,
 			"count":88,
 			"max":[
-				1.1173467636108398,
+				1.197871446609497,
 				0.1843562126159668,
-				0.5434131622314453
+				0.48124492168426514
 			],
 			"min":[
-				-1.1173467636108398,
+				-1.0368220806121826,
 				-0.1843562126159668,
-				-2.007129192352295
+				-2.0692975521087646
 			],
 			"type":"VEC3"
 		},
@@ -283,14 +327,14 @@
 			"componentType":5126,
 			"count":88,
 			"max":[
-				1.1173467636108398,
+				1.2558460235595703,
 				0.1843562126159668,
-				0.5434131622314453
+				0.5458992719650269
 			],
 			"min":[
-				-1.1173467636108398,
+				-0.9788475036621094,
 				-0.1843562126159668,
-				-2.007129192352295
+				-2.004643201828003
 			],
 			"type":"VEC3"
 		},
@@ -366,6 +410,40 @@
 			"bufferView":13,
 			"componentType":5123,
 			"count":396,
+			"type":"SCALAR"
+		},
+		{
+			"bufferView":14,
+			"componentType":5126,
+			"count":4,
+			"max":[
+				100,
+				0,
+				100
+			],
+			"min":[
+				-100,
+				0,
+				-100
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":15,
+			"componentType":5126,
+			"count":4,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":16,
+			"componentType":5126,
+			"count":4,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":17,
+			"componentType":5123,
+			"count":6,
 			"type":"SCALAR"
 		}
 	],
@@ -453,17 +531,45 @@
 			"byteLength":792,
 			"byteOffset":16456,
 			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":48,
+			"byteOffset":17248,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":48,
+			"byteOffset":17296,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":32,
+			"byteOffset":17344,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":12,
+			"byteOffset":17376,
+			"target":34963
 		}
 	],
 	"samplers":[
 		{
 			"magFilter":9728,
 			"minFilter":9984
+		},
+		{
+			"magFilter":9729,
+			"minFilter":9987
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":17248,
+			"byteLength":17388,
 			"uri":"gameboy.bin"
 		}
 	]

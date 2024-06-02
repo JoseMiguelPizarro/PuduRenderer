@@ -7,7 +7,7 @@ layout (set = 0, binding = 32) uniform sampler2D global_textures[];
 
 layout (push_constant, std430) uniform Material {
     layout (offset = 192) uint materialId;
-    layout (offset = 208) vec3 g_lightDirection;
+    vec3 g_lightDirection;
 };
 
 layout (location = 0) in vec3 inColor;
@@ -16,15 +16,17 @@ layout (location = 2) in vec3 inNormal;
 
 layout (location = 0) out vec4 outColor;
 
-vec3 GetLighting(vec3 normal, vec3 lightDirection)
+vec4 GetLighting(vec3 normal, vec3 lightDirection)
 {
-    float ndl = dot(normal,lightDirection);
-    return vec3(ndl);
+    float ndl = dot(normal, lightDirection) * 0.5 + 0.5;
+    //    return vec4(ndl);
+
+    return mix(vec4(1), vec4(0.54, 0.95, 1, 0), 1 - ndl);
 }
 
 void main() {
     uint id = materialId;
     vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord);
-    //outColor = pow(base_colour, vec4(1.0 / 2.2)) * GetLighting(inNormal, g_lightDirection);
-    outColor = vec4(inNormal, 1);
+    outColor = pow(base_colour, vec4(1.0 / 2.2)) * GetLighting(normalize(inNormal), g_lightDirection);
+    //outColor = vec4(inNormal, 1);
 }

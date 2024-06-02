@@ -13,15 +13,33 @@ void TriangleApp::OnRun()
 {
 	m_puduRenderer.sceneToRender = &m_scene;
 	m_puduRenderer.Render();
+
+	float radius = 20;
+	float pich = 45;
+
+	float speed = 0.35f;
+	float phase = Time.Time() * speed;
+
+	float x = cos(phase) * radius;
+	float z = sin(phase) * radius;
+	float y = sin(glm::radians(60.f)) * radius;
+
+	vec3 pos = vec3(x, y, z);
+	m_camera.Transform.LocalPosition = pos;
+
+	vec3 forward = glm::normalize(vec3(0) - pos);
+
+	m_camera.Transform.SetForward(forward, { 0,1,0 });
 }
 
 void TriangleApp::OnInit()
 {
 	m_camera = {};
-	m_camera.Transform.SetForward(vec3(0, -.5, -1), vec3(0, 1, 0));
-	m_camera.Transform.LocalPosition = { 0, 10.0f, 25.0f };
+	m_camera.Transform.SetForward(vec3(0, -.7, -1), vec3(0, 1, 0));
+	m_camera.Transform.LocalPosition = { 0, 14.0f, 23.0f };
 	m_camera.Width = Graphics.WindowWidth;
 	m_camera.Height = Graphics.WindowHeight;
+	m_camera.Fov = 45;
 
 	m_scene = Scene(&Time);
 	m_scene.camera = &m_camera;
@@ -29,7 +47,7 @@ void TriangleApp::OnInit()
 	m_puduRenderer.Init(&Graphics);
 	m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));
 
-	auto fragmentShaderPath =  FileManager::GetAssetPath("Shaders/triangle.frag");
+	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag");
 	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");
 	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath, "standard");
 	standardShader->name = "Standard";
