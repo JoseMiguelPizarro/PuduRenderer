@@ -1198,7 +1198,7 @@ namespace Pudu
 			shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStageInfo.stage = stage.type;
 			shaderStageInfo.pName = SHADER_ENTRY_POINT;
-			shaderStageInfo.module = CreateShaderModule(*stage.code, stage.codeSize);
+			shaderStageInfo.module = CreateShaderModule(*stage.code, stage.codeSize, shaderState->name.c_str());
 		}
 
 		return handle;
@@ -1851,7 +1851,7 @@ namespace Pudu
 		return ubo;
 	}
 
-	SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath)
+	SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name)
 	{
 		ShaderHandle handle = m_resources.AllocateShader();
 		auto shader = m_resources.GetShader(handle);
@@ -1861,6 +1861,7 @@ namespace Pudu
 
 		shader->LoadFragmentData(fragmentData);
 		shader->LoadVertexData(vertexData);
+		shader->name = name;
 
 		return shader;
 	}
@@ -2262,7 +2263,7 @@ namespace Pudu
 		vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
 	}
 
-	VkShaderModule PuduGraphics::CreateShaderModule(const std::vector<char>& code, size_t size)
+	VkShaderModule PuduGraphics::CreateShaderModule(const std::vector<char>& code, size_t size, const char* name)
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -2273,6 +2274,11 @@ namespace Pudu
 		if (vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create shader module!");
+		}
+
+		if (name != nullptr)
+		{
+			SetResourceName(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)shaderModule, name);
 		}
 
 		return shaderModule;

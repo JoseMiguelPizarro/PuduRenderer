@@ -31,7 +31,7 @@ void TriangleApp::OnInit()
 
 	auto fragmentShaderPath =  FileManager::GetAssetPath("Shaders/triangle.frag");
 	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");
-	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath);
+	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath, "standard");
 	standardShader->name = "Standard";
 
 	LoadGameboyModel();

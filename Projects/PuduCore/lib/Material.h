@@ -11,6 +11,7 @@ namespace Pudu {
 	public:
 		SPtr<Shader> Shader;
 		SPtr<Texture2d> Texture;
+		std::string Name;
 	};
 }
 

@@ -1,12 +1,12 @@
+//NOTE: ONLY INCLUDE THIS IN A .H FILE
+
 #pragma once
 #define NOMINMAX
-
 #include <fstream>
-#include <fastgltf/types.hpp>
-#include <fastgltf/parser.hpp>
-#include <vector>
 #include <filesystem>
-
+#include <vector>
+#include <fastgltf/core.hpp>
+#include "FileManager.h"
 
 #include "Mesh.h"
 #include "MeshCreationData.h"
@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 namespace fg = fastgltf;
 
 namespace Pudu {
-	typedef fastgltf::Expected<fastgltf::Asset> GltfAsset;
+	typedef fg::Expected<fastgltf::Asset> GltfAsset;
 
 	static const fs::path ASSETS_FOLDER_PATH = fs::path("../../../Assets");
 	class FileManager

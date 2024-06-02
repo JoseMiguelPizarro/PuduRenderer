@@ -33,6 +33,8 @@ namespace Pudu
 
 	void PuduRenderer::AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype)
 	{
+		renderPass.Initialize(graphics);
+
 		m_renderPassByType.emplace(renderPasstype, renderPass);
 	}
 
@@ -53,7 +55,7 @@ namespace Pudu
 
 	Pipeline* PuduRenderer::GetOrCreatePipeline(RenderFrameData& frameData, RenderPassType renderPassType)
 	{
-		auto shader = frameData.currentDrawCall->MaterialPtr.Shader;
+		auto shader = frameData.currentDrawCall->GetRenderMaterial()->Shader;
 
 		if (renderPassType == DepthPrePass)
 		{
@@ -81,10 +83,14 @@ namespace Pudu
 			creationData.fragmentShaderData = shader->fragmentData;
 
 			BlendStateCreation blendStateCreation;
-			blendStateCreation.AddBlendState()
-				.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorWriteMask(ColorWriteEnabled::All_mask);
+
+			if (shader->HasFragmentData())
+			{
+				blendStateCreation.AddBlendState()
+					.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+					.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+					.SetColorWriteMask(ColorWriteEnabled::All_mask);
+			}
 
 			RasterizationCreation rasterizationCreation;
 			rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
@@ -118,8 +124,17 @@ namespace Pudu
 
 			ShaderStateCreationData shaderData;
 			shaderData.SetName(shader->name.c_str());
-			shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
-			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
+
+			if (shader->HasFragmentData())
+			{
+				shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
+			}
+
+			if (shader->HasVertexData())
+			{
+				shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
+			}
+
 
 			SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorSetLayoutData);
 

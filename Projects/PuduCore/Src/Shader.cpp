@@ -19,7 +19,7 @@ void Pudu::Shader::LoadFragmentData(std::vector<char> data)
 
 void Pudu::Shader::LoadVertexData(std::vector<char> data)
 {
-	m_hasFragmentData = data.size() > 0;
+	m_hasVertexData = data.size() > 0;
 
 	vertexData.append_range(data);
 }

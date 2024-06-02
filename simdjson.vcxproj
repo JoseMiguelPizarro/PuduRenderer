@@ -91,6 +91,11 @@
   <ItemGroup>
     <ClCompile Include="lib\simdjson\simdjson.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="lib\simdjson\Debug\simdjson.idb" />
+    <None Include="lib\simdjson\Debug\simdjson.lib" />
+    <None Include="lib\simdjson\Debug\simdjson.pdb" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

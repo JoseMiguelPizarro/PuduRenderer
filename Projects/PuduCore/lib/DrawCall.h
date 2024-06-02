@@ -12,6 +12,10 @@ namespace Pudu
 		Material MaterialPtr;
 		mat4 TransformMatrix;
 
+		
+		Material* GetRenderMaterial();
+		void SetReplacementMaterial(SPtr<Material> material);
+
 		DrawCall() {};
 		DrawCall(Model  model, SPtr<Mesh> mesh, Material material)
 		{
@@ -19,5 +23,8 @@ namespace Pudu
 			MeshPtr = mesh;
 			MaterialPtr = material;
 		}
+
+	private:
+		SPtr<Material> m_replacementMaterial;
 	};
 }

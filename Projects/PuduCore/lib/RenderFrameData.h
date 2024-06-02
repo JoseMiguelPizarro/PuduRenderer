@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <unordered_map>
+#include "PuduCore.h"
+#include <vulkan/vulkan_core.h>
 
 namespace Pudu
 {
@@ -14,6 +16,7 @@ namespace Pudu
 	class PuduRenderer;
 	enum RenderPassType;
 	class FrameGraphRenderPass;
+	class Texture2d;
 
 	struct RenderFrameData
 	{

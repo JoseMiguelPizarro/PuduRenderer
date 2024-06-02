@@ -7,6 +7,8 @@
 #include <GLFW/glfw3native.h>
 #include <vector>
 
+#include <vulkan/vulkan_core.h>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -134,7 +136,7 @@ namespace Pudu
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
-		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath);
+		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
 		void UploadTextureData(SPtr<Texture2d> texture, void* data);
@@ -223,9 +225,9 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,const char* name = nullptr);
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, const char* name = nullptr);
 
-		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size);
+		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size, const char* name = nullptr);
 
 		void CreateUniformBuffers();
 

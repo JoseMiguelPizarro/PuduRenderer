@@ -1,13 +1,14 @@
 ﻿#pragma once
+#include "FileManager.h"
+
 #include <filesystem>
 #include <fmt/core.h>
 
-#include <fastgltf/parser.hpp>
+#include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 
-#include "FileManager.h"
 #include "Logger.h"
 #include "PuduGraphics.h"
 
@@ -191,7 +192,11 @@ namespace Pudu {
 
 		fastgltf::Parser parser;
 		fastgltf::GltfDataBuffer data;
+		//data.FromPath(pathAssetFolder);
+
 		data.loadFromFile(pathAssetFolder);
+		fastgltf::GltfDataBuffer*  dataPtr = &data;
+	
 		GltfAsset asset = parser.loadGltf(&data, pathAssetFolder.parent_path(), gltfOptions);
 
 		if (auto error = asset.error() != fastgltf::Error::None)

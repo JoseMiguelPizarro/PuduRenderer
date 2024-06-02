@@ -24,7 +24,7 @@ namespace Pudu {
 			for (uint32_t bindingIndex = 0; bindingIndex < reflSet.binding_count; ++bindingIndex) {
 				const SpvReflectDescriptorBinding& refl_binding = *(reflSet.bindings[bindingIndex]);
 				VkDescriptorSetLayoutBinding& layoutBinding = layout.Bindings[bindingIndex];
-				
+
 				layoutBinding.binding = refl_binding.binding;
 				layoutBinding.descriptorType = static_cast<VkDescriptorType>(refl_binding.descriptor_type);
 				layoutBinding.descriptorCount = 1;
@@ -47,7 +47,14 @@ namespace Pudu {
 	}
 	void SPIRVParser::GetDescriptorSetLayout(PipelineCreationData& creationData, std::vector<DescriptorSetLayoutData>& outDescriptorSetLayoutData)
 	{
-		GetDescriptorSetLayout(creationData.vertexShaderData.data(), creationData.vertexShaderData.size() * sizeof(char), outDescriptorSetLayoutData);
-		GetDescriptorSetLayout(creationData.fragmentShaderData.data(), creationData.fragmentShaderData.size() * sizeof(char), outDescriptorSetLayoutData);
+		if (creationData.vertexShaderData.size() > 0)
+		{
+			GetDescriptorSetLayout(creationData.vertexShaderData.data(), creationData.vertexShaderData.size() * sizeof(char), outDescriptorSetLayoutData);
+		}
+
+		if (creationData.fragmentShaderData.size() > 0)
+		{
+			GetDescriptorSetLayout(creationData.fragmentShaderData.data(), creationData.fragmentShaderData.size() * sizeof(char), outDescriptorSetLayoutData);
+		}
 	}
 }
