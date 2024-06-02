@@ -9,9 +9,6 @@
 
 namespace Pudu
 {
-	void FrameGraphRenderPass::Initialize(PuduGraphics* gpu)
-	{
-	}
 	Pipeline* FrameGraphRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		return frameData.renderer->GetOrCreatePipeline(frameData, RenderPassType::Color);
@@ -24,17 +21,21 @@ namespace Pudu
 
 		for (DrawCall drawCall : renderScene->GetDrawCalls()) {
 
+			frameData.currentDrawCall = &drawCall;
+
 			BeforeRenderDrawcall(frameData, drawCall);
 
 			Model model = drawCall.ModelPtr;
 			auto mesh = drawCall.MeshPtr;
 
-			frameData.currentDrawCall = &drawCall;
 			Pipeline* pipeline = GetPipeline(frameData, drawCall);
 			frameData.graphics->UpdateBindlessResources(pipeline);
 
 			commands->BindPipeline(pipeline);
-			vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
+			if (pipeline->numActiveLayouts > 0)
+			{
+				vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
+			}
 
 			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
 			VkDeviceSize offsets[] = { 0 };
@@ -42,7 +43,6 @@ namespace Pudu
 			vkCmdBindIndexBuffer(commands->vkHandle, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
 			auto ubo = frameData.graphics->GetUniformBufferObject(*renderScene->camera, drawCall);
-			uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 
 
 			Viewport viewport;
@@ -50,7 +50,12 @@ namespace Pudu
 			viewport.maxDepth = 1;
 			commands->SetViewport(viewport);
 			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(UniformBufferObject), &ubo);
-			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
+
+			if (drawCall.GetRenderMaterial()->Shader->HasFragmentData())
+			{
+				uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
+				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(uint32_t), &materialid);
+			}
 
 			vkCmdDrawIndexed(commands->vkHandle, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
 

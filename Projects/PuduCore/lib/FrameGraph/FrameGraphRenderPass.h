@@ -18,7 +18,7 @@ namespace Pudu
 		virtual void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
 		virtual void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
 		virtual PipelineCreationData GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall);
-		virtual void Initialize(PuduGraphics* gpu);
+		virtual void Initialize(PuduGraphics* gpu) {};
 	};
 
 }

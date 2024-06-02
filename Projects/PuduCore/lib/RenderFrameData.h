@@ -32,6 +32,6 @@ namespace Pudu
 		DrawCall* currentDrawCall;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
-		std::unordered_map<RenderPassType, FrameGraphRenderPass>* m_renderPassesByType;
+		std::unordered_map<RenderPassType, FrameGraphRenderPass*>* m_renderPassesByType;
 	};
 }

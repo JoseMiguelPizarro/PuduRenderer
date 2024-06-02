@@ -2,8 +2,4 @@
 
 namespace Pudu
 {
-	void ForwardRenderPass::Render(RenderFrameData& renderData)
-	{
-
-	}
 }

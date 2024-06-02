@@ -442,7 +442,7 @@ namespace Pudu
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
 		frameGraph->Render(frameData);
 
-		DrawImGui(frameData);
+	//	DrawImGui(frameData);
 
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, frameData.currentCommand);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -1570,8 +1570,11 @@ namespace Pudu
 			pipeline->bindlessUpdated = false;
 		}
 
-		//Create pipeline descriptor set, only handling bindless
-		CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
+		if (pipelineDescriptorSetLayouts.size() > 0)
+		{
+			//Create pipeline descriptor set, only handling bindless for now
+			CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
+		}
 
 		return pipelineHandle;
 	}
@@ -1879,39 +1882,41 @@ namespace Pudu
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
 		uint32_t currentWriteIndex = 0;
 
-		for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
+		if (pipeline->vkDescriptorSet != VK_FALSE)
 		{
-			ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
+			for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
+			{
+				ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
 
-			auto texture = m_resources.GetTexture({ textureToUpdate.handle });
-			VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
-			descriptorWrite = {};
-			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.descriptorCount = 1;
-			descriptorWrite.dstArrayElement = textureToUpdate.handle;
-			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite.dstSet = pipeline->vkDescriptorSet;
+				auto texture = m_resources.GetTexture({ textureToUpdate.handle });
+				VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
+				descriptorWrite = {};
+				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite.descriptorCount = 1;
+				descriptorWrite.dstArrayElement = textureToUpdate.handle;
+				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrite.dstSet = pipeline->vkDescriptorSet;
 
-			descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
+				descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
 
-			auto textureSampler = texture->Sampler;
+				auto textureSampler = texture->Sampler;
 
-			VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
-			descriptorImageInfo.sampler = textureSampler.vkHandle;
-			descriptorImageInfo.imageView = texture->vkImageViewHandle;
-			descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
+				descriptorImageInfo.sampler = textureSampler.vkHandle;
+				descriptorImageInfo.imageView = texture->vkImageViewHandle;
+				descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-			descriptorWrite.pImageInfo = &descriptorImageInfo;
+				descriptorWrite.pImageInfo = &descriptorImageInfo;
 
-			currentWriteIndex++;
+				currentWriteIndex++;
+			}
 		}
 
 		if (currentWriteIndex)
 		{
 			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
+			m_bindlessResourcesToUpdate.clear();
 		}
-
-		m_bindlessResourcesToUpdate.clear();
 
 		pipeline->bindlessUpdated = true;
 	}

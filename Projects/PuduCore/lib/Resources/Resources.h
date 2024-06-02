@@ -376,7 +376,7 @@ namespace Pudu
 		VkPipelineLayout vkPipelineLayoutHandle;
 
 		VkPipelineBindPoint vkPipelineBindPoint;
-		VkDescriptorSet vkDescriptorSet;//Just 1 for now, bindless
+		VkDescriptorSet vkDescriptorSet = VK_FALSE;//Just 1 for now, bindless
 		ShaderStateHandle shaderState;
 
 		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];

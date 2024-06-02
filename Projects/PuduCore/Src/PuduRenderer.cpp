@@ -12,11 +12,8 @@ namespace Pudu
 	{
 		this->graphics = graphics;
 
-		DepthStencilRenderPass depthPass;
-		ForwardRenderPass forwardPass;
-
-		AddRenderPass(depthPass, RenderPassType::DepthPrePass);
-		AddRenderPass(forwardPass, RenderPassType::Color);
+		AddRenderPass(&m_depthRenderPass, RenderPassType::DepthPrePass);
+		AddRenderPass(&m_forwardRenderPass, RenderPassType::Color);
 	}
 	void PuduRenderer::Render()
 	{
@@ -31,9 +28,9 @@ namespace Pudu
 		graphics->DrawFrame(renderData);
 	}
 
-	void PuduRenderer::AddRenderPass(FrameGraphRenderPass renderPass, RenderPassType renderPasstype)
+	void PuduRenderer::AddRenderPass(FrameGraphRenderPass* renderPass, RenderPassType renderPasstype)
 	{
-		renderPass.Initialize(graphics);
+		renderPass->Initialize(graphics);
 
 		m_renderPassByType.emplace(renderPasstype, renderPass);
 	}
@@ -57,10 +54,10 @@ namespace Pudu
 	{
 		auto shader = frameData.currentDrawCall->GetRenderMaterial()->Shader;
 
-		if (renderPassType == DepthPrePass)
+		/*if (renderPassType == DepthPrePass)
 		{
 			return m_pipelinesByRenderPass[renderPassType][0];
-		}
+		}*/
 
 		if (m_pipelinesByRenderPass.contains(renderPassType)) {
 			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPassType);
@@ -71,7 +68,7 @@ namespace Pudu
 				auto pipeline = pipelinesByShader.find(shader);
 				if (pipeline != pipelinesByShader.end())
 				{
-					return pipeline->second;
+					return graphics->Resources()->GetPipeline(pipeline->second);
 				}
 			}
 		}
@@ -149,8 +146,8 @@ namespace Pudu
 			auto handle = graphics->CreateGraphicsPipeline(creationData);
 			Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
 
-			std::unordered_map<SPtr<Shader>, Pipeline*> pipelineByShaderMap;
-			pipelineByShaderMap.insert(std::make_pair(shader, pipeline));
+			std::unordered_map<SPtr<Shader>, PipelineHandle> pipelineByShaderMap;
+			pipelineByShaderMap.insert(std::make_pair(shader, handle));
 
 			m_pipelinesByRenderPass.insert(std::make_pair(renderPassType, pipelineByShaderMap));
 

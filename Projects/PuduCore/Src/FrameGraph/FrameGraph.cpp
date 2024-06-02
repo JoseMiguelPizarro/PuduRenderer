@@ -1112,7 +1112,7 @@ namespace Pudu
 			std::string nameString(name.value());
 			nodeCreation.name = nameString.c_str();
 
-			
+
 			nodeCreation.enabled = pass["enabled"].get_bool();
 			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value())); //We need to store the string_view into a string
 
@@ -1468,10 +1468,10 @@ namespace Pudu
 
 			auto renderPass = renderData.m_renderPassesByType->find(node->type)->second;
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
-			renderPass.PreRender(renderData);
+			renderPass->PreRender(renderData);
 			commands->BindRenderPass(node->renderPass, node->framebuffer);
 
-			renderPass.Render(renderData);
+			renderPass->Render(renderData);
 
 			commands->EndCurrentRenderPass();
 			//TODO: IMPLEMENT MARKERS
