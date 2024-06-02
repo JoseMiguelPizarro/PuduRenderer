@@ -11,6 +11,7 @@ namespace Pudu
 		vec3 pos;
 		vec3 color;
 		vec2 texcoord;
+		vec3 normal;
 
 		static VkVertexInputBindingDescription GetBindingDescription() {
 			VkVertexInputBindingDescription bindingDescription{};
@@ -22,8 +23,13 @@ namespace Pudu
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+
+		/// <summary>
+		/// VertexInputAttributeDescription binds the vertex data to the ones used in a shader
+		/// </summary>
+		/// <returns></returns>
+		static std::array<VkVertexInputAttributeDescription, 4> GetAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
@@ -40,6 +46,10 @@ namespace Pudu
 			attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
 			attributeDescriptions[2].offset = offsetof(Vertex, texcoord);
 
+			attributeDescriptions[3].binding = 0;
+			attributeDescriptions[3].location = 3;
+			attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescriptions[3].offset = offsetof(Vertex, normal);
 			return attributeDescriptions;
 		}
 	};

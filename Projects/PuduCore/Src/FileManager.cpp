@@ -195,8 +195,8 @@ namespace Pudu {
 		//data.FromPath(pathAssetFolder);
 
 		data.loadFromFile(pathAssetFolder);
-		fastgltf::GltfDataBuffer*  dataPtr = &data;
-	
+		fastgltf::GltfDataBuffer* dataPtr = &data;
+
 		GltfAsset asset = parser.loadGltf(&data, pathAssetFolder.parent_path(), gltfOptions);
 
 		if (auto error = asset.error() != fastgltf::Error::None)
@@ -249,6 +249,14 @@ namespace Pudu {
 						std::size_t idx = 0;
 						fastgltf::iterateAccessor<vec2>(gltfAsset.get(), accessor, [&](vec2 v) {
 							vertices[idx++].texcoord = v;
+						});
+					}
+
+					if (strcmp(attribName, "NORMAL") == 0)
+					{
+						std::size_t idx = 0;
+						fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v) {
+							vertices[idx++].normal = v;
 						});
 					}
 				}

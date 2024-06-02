@@ -44,6 +44,9 @@ namespace Pudu {
 		static std::vector<char> LoadShader(fs::path const& path);
 
 	private:
+		/// <summary>
+		/// Here is where mesh data gets extracted (Postion, UV, Normals, etc)
+		/// </summary>
 		static std::vector<MeshCreationData> GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset);
 		static GltfAsset LoadGltfAsset(fs::path const& path);
 	};

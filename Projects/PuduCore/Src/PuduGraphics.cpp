@@ -1260,6 +1260,7 @@ namespace Pudu
 		}
 	}
 
+	//A descriptor set layout is the template of the resources that are needed for a given render pipeline
 	void PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData, std::vector<DescriptorSetLayoutHandle>& output)
 	{
 		LOG("CreateDescriptorSetLayout");
