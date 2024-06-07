@@ -72,7 +72,8 @@ namespace Pudu
 		// Works around a validation layer bug with descriptor pool allocation with VARIABLE_COUNT.
 	// See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
 		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME
+		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
 	};
 
 	class PuduGraphics
@@ -153,6 +154,9 @@ namespace Pudu
 		VkDevice m_device;
 
 		GPUResourcesManager m_resources;
+		VkSemaphore m_graphicsTimelineSemaphore;
+		VkSemaphore m_computeTimelineSemaphore;
+		uint64_t m_lastComputeTimelineValue;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 
@@ -177,6 +181,7 @@ namespace Pudu
 
 		void CreateTextureImageView(Texture2d& texture2d);
 		void CreateTextureSampler(VkSampler& sampler);
+		void CreateTimelineSemaphore();
 
 		void CreateBindlessDescriptorPool();
 		void CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
@@ -231,6 +236,7 @@ namespace Pudu
 
 		void CreateUniformBuffers();
 
+
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		bool IsDeviceSuitable(VkPhysicalDevice device);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -248,6 +254,7 @@ namespace Pudu
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void DestroyBuffer(GraphicsBuffer buffer);
+		void AdvanceFrame();
 		std::vector<const char*> GetInstanceExtensions();
 		std::vector<VkImageView> m_swapChainImagesViews;
 		VkFormat m_swapChainImageFormat;
@@ -278,11 +285,14 @@ namespace Pudu
 		const int MAX_FRAMES_IN_FLIGHT = 2;
 		uint32_t m_currentFrameIndex = 0;
 		uint32_t m_imageCount;
+		uint64_t m_absoluteFrame = 1;
 
 		bool m_initialized = false;
 
 		VkAllocationCallbacks* m_allocatorPtr = nullptr;
 	};
+
+
 
 	void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 	{

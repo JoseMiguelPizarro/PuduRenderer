@@ -43,6 +43,7 @@ void TriangleApp::OnInit()
 
 	m_scene = Scene(&Time);
 	m_scene.camera = &m_camera;
+	TargetFPS = 60;
 
 	m_puduRenderer.Init(&Graphics);
 	m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));

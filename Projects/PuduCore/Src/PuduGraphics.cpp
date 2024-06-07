@@ -306,6 +306,9 @@ namespace Pudu
 		return extensions;
 	}
 
+
+
+
 	void PuduGraphics::CreateImGuiRenderPass()
 	{
 		VkAttachmentDescription attachment = {};
@@ -399,7 +402,25 @@ namespace Pudu
 		auto frameGraph = frameData.frameGraph;
 		Frame frame = m_Frames[m_currentFrameIndex];
 
-		vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
+		//don't wait the first frames
+		if (m_absoluteFrame >= MAX_FRAMES_IN_FLIGHT)
+		{
+			uint64_t graphicsTimelineValue = m_absoluteFrame;
+			uint64_t computeTimelineValue = m_lastComputeTimelineValue;
+
+			uint64_t timelineValues[]{ graphicsTimelineValue,computeTimelineValue };
+			VkSemaphore semaphores[]{ m_graphicsTimelineSemaphore, m_computeTimelineSemaphore };
+
+			VkSemaphoreWaitInfo waitInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
+			waitInfo.semaphoreCount = 1; //for now just wait for the graphics
+			waitInfo.pSemaphores = semaphores;
+			waitInfo.pValues = timelineValues;
+
+			vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
+		}
+
+		////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
+		//vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
 		VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore,
 			VK_NULL_HANDLE, &frameData.frameIndex);
@@ -444,16 +465,53 @@ namespace Pudu
 		frame.CommandBuffer.EndCommands();
 
 		SubmitFrame(frameData);
+
+		EndDrawFrame();
 	}
 
 	void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
 	{
 		auto frame = frameData.frame;
 
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		VkSubmitInfo2 submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 
-		VkSemaphore waitSemaphores[] = { frame->ImageAvailableSemaphore };
+		VkSemaphoreSubmitInfo waitSemaphores[]{
+			{
+			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, frame->ImageAvailableSemaphore,0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0 },
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore, m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,0 }
+		};
+
+		VkSemaphoreSubmitInfo signalSemaphores[]{
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,nullptr,frame->RenderFinishedSemaphore,0,VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0},
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,nullptr,m_graphicsTimelineSemaphore, m_absoluteFrame + 1,VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT }
+		};
+
+		VkCommandBufferSubmitInfo commandSubmitInfo;
+
+		std::vector<VkCommandBufferSubmitInfo> commandSubmitInfos;
+		for (auto command : frameData.commandsToSubmit) {
+			VkCommandBufferSubmitInfo commandInfo{};
+			commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+			commandInfo.commandBuffer = command;
+
+			commandSubmitInfos.push_back(commandInfo);
+		}
+
+		VkSemaphore presentWaitSemaphores[]{
+			frame->RenderFinishedSemaphore
+		};
+
+		submitInfo.waitSemaphoreInfoCount = 2;
+		submitInfo.pWaitSemaphoreInfos = waitSemaphores;
+
+		submitInfo.signalSemaphoreInfoCount = 2;
+		submitInfo.pSignalSemaphoreInfos = signalSemaphores;
+
+		submitInfo.commandBufferInfoCount = frameData.commandsToSubmit.size();
+		submitInfo.pCommandBufferInfos = commandSubmitInfos.data();
+
+		/*VkSemaphore waitSemaphores[] = { frame->ImageAvailableSemaphore };
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
@@ -464,9 +522,9 @@ namespace Pudu
 
 		VkSemaphore signalSemaphores[] = { frame->RenderFinishedSemaphore };
 		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = signalSemaphores;
+		submitInfo.pSignalSemaphores = signalSemaphores;*/
 
-		if (vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, frame->InFlightFence) != VK_SUCCESS)
+		if (vkQueueSubmit2(m_graphicsQueue, 1, &submitInfo, frame->InFlightFence) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
@@ -475,7 +533,7 @@ namespace Pudu
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;
+		presentInfo.pWaitSemaphores = presentWaitSemaphores;
 
 
 		VkSwapchainKHR swapChains[] = { m_swapChain };
@@ -496,16 +554,19 @@ namespace Pudu
 		{
 			throw std::runtime_error("Failed to present swap chain image!");
 		}
-
-		//When `MAX_FRAMES_IN_FLIGHT` is a power of 2 you can update the current frame without modulo division
-		m_currentFrameIndex = (m_currentFrameIndex + 1) & (MAX_FRAMES_IN_FLIGHT - 1);
 	}
 
 
+	void PuduGraphics::AdvanceFrame()
+	{
+		//When `MAX_FRAMES_IN_FLIGHT` is a power of 2 you can update the current frame without modulo division
+		m_currentFrameIndex = (m_currentFrameIndex + 1) & (MAX_FRAMES_IN_FLIGHT - 1);
+		m_absoluteFrame++;
+	}
 
 	void PuduGraphics::EndDrawFrame()
 	{
-
+		AdvanceFrame();
 	}
 
 	void PuduGraphics::DrawImGui(RenderFrameData& frameData)
@@ -795,6 +856,8 @@ namespace Pudu
 				VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
 				indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
+				VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeature{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
+
 				VkPhysicalDeviceSynchronization2Features synchronization2Feature{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES };
 				synchronization2Feature.synchronization2 = VK_TRUE;
 
@@ -802,6 +865,9 @@ namespace Pudu
 
 				synchronization2Feature.pNext = currentPnext;
 				currentPnext = &synchronization2Feature;
+
+				timelineSemaphoreFeature.pNext = currentPnext;
+				currentPnext = &timelineSemaphoreFeature;
 
 				deviceFeatures.pNext = currentPnext;
 
@@ -1797,6 +1863,8 @@ namespace Pudu
 				throw std::runtime_error("Failed to create semaphores");
 			}
 		}
+
+		CreateTimelineSemaphore();
 	}
 
 	void PuduGraphics::RecreateSwapChain()
@@ -2247,6 +2315,18 @@ namespace Pudu
 		return commandBuffer;
 	}
 
+	void PuduGraphics::CreateTimelineSemaphore()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+		VkSemaphoreTypeCreateInfo semaphoreTypeInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
+		semaphoreTypeInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+		semaphoreInfo.pNext = &semaphoreTypeInfo;
+
+		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &m_graphicsTimelineSemaphore);
+
+	}
+
 	void PuduGraphics::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
 	{
 		vkEndCommandBuffer(commandBuffer);
@@ -2324,6 +2404,7 @@ namespace Pudu
 
 		currentPNext = &indexingFeatures;
 
+		//This feature is to simplify barriers and semaphore
 		VkPhysicalDeviceSynchronization2Features synchronization2Features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES };
 		synchronization2Features.synchronization2 = VK_TRUE;
 
