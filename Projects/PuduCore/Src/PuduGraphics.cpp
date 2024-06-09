@@ -437,23 +437,17 @@ namespace Pudu
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
-		vkResetCommandBuffer(frame.CommandBuffer.vkHandle, 0);
+		frame.CommandBuffer.Reset();
 
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Optional
-		beginInfo.pInheritanceInfo = nullptr; // Optional
-
-		if (vkBeginCommandBuffer(frame.CommandBuffer.vkHandle, &beginInfo) != VK_SUCCESS)
-		{
-			PUDU_ERROR("failed to begin recording command buffer!");
-		}
+		frame.CommandBuffer.BeginCommands();
 
 		frameData.frame = &m_Frames[m_currentFrameIndex];
 		frameData.currentCommand = &frame.CommandBuffer;
 		frameData.graphics = this;
 
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
+		frameData.computeCommandsToSubmit.push_back(frame.ComputeCommandBuffer);
+
 		frameGraph->Render(frameData);
 
 		DrawImGui(frameData);
@@ -464,9 +458,57 @@ namespace Pudu
 
 		frame.CommandBuffer.EndCommands();
 
+		SubmitComputeQueue(frameData);
 		SubmitFrame(frameData);
 
 		EndDrawFrame();
+	}
+
+	void PuduGraphics::SubmitComputeQueue(RenderFrameData& frameData)
+	{
+		auto frame = frameData.frame;
+
+		bool hasWaitSemaphore = m_lastComputeTimelineValue > 0;
+
+		VkSemaphoreSubmitInfo waitSemaphores[]{
+			{
+			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,0 },
+		};
+
+		m_lastComputeTimelineValue++;
+
+		VkSemaphoreSubmitInfo signalSemaphores[]{
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,0 }
+		};
+
+		VkCommandBufferSubmitInfo commandSubmitInfo;
+
+
+		std::vector<VkCommandBufferSubmitInfo> commandSubmitInfos;
+		for (auto command : frameData.computeCommandsToSubmit) {
+			if (!command.HasRecordedCommand())
+			{
+				continue;
+			}
+
+			VkCommandBufferSubmitInfo commandInfo{};
+			commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+			commandInfo.commandBuffer = command.vkHandle;
+
+			commandSubmitInfos.push_back(commandInfo);
+		}
+
+
+		VkSubmitInfo2 submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+		submitInfo.waitSemaphoreInfoCount = hasWaitSemaphore ? 1 : 0;
+		submitInfo.pWaitSemaphoreInfos = waitSemaphores;
+		submitInfo.signalSemaphoreInfoCount = 1;
+		submitInfo.pSignalSemaphoreInfos = signalSemaphores;
+		submitInfo.commandBufferInfoCount = commandSubmitInfos.size();
+		submitInfo.pCommandBufferInfos = commandSubmitInfos.data();
+
+		vkQueueSubmit2(m_computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	}
 
 	void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
@@ -479,7 +521,8 @@ namespace Pudu
 		VkSemaphoreSubmitInfo waitSemaphores[]{
 			{
 			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, frame->ImageAvailableSemaphore,0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0 },
-			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore, m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,0 }
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT,0 },
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore, m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,0 },
 		};
 
 		VkSemaphoreSubmitInfo signalSemaphores[]{
@@ -511,18 +554,6 @@ namespace Pudu
 		submitInfo.commandBufferInfoCount = frameData.commandsToSubmit.size();
 		submitInfo.pCommandBufferInfos = commandSubmitInfos.data();
 
-		/*VkSemaphore waitSemaphores[] = { frame->ImageAvailableSemaphore };
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = waitSemaphores;
-		submitInfo.pWaitDstStageMask = waitStages;
-
-		submitInfo.commandBufferCount = static_cast<uint32_t>(frameData.commandsToSubmit.size());
-		submitInfo.pCommandBuffers = frameData.commandsToSubmit.data();
-
-		VkSemaphore signalSemaphores[] = { frame->RenderFinishedSemaphore };
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = signalSemaphores;*/
 
 		if (vkQueueSubmit2(m_graphicsQueue, 1, &submitInfo, frame->InFlightFence) != VK_SUCCESS)
 		{
@@ -893,7 +924,11 @@ namespace Pudu
 		QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = {
+			indices.graphicsFamily.value(),
+			indices.presentFamily.value(),
+			indices.computeFamily.value(),
+			indices.transferFamily.value() };
 
 		VkDeviceQueueCreateInfo queueCreateInfo{};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -913,6 +948,15 @@ namespace Pudu
 		}
 
 		queueCreateInfo.pQueuePriorities = &queuePriority;
+
+		VkPhysicalDeviceVulkan12Features featuresVulkan12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+		featuresVulkan12.timelineSemaphore = VK_TRUE;
+		featuresVulkan12.descriptorIndexing = VK_TRUE;
+		featuresVulkan12.descriptorBindingPartiallyBound = VK_TRUE;
+		featuresVulkan12.runtimeDescriptorArray = VK_TRUE;
+		featuresVulkan12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		featuresVulkan12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+		
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
 		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -936,6 +980,9 @@ namespace Pudu
 		syncFeatures.pNext = currentPNext;
 		currentPNext = &syncFeatures;
 
+		featuresVulkan12.pNext = currentPNext;
+		currentPNext = &featuresVulkan12;
+
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = DeviceExtensions.data();
 
@@ -955,9 +1002,9 @@ namespace Pudu
 		if (m_physicalDeviceData.SupportsBindless)
 		{
 
-			m_physicalDeviceData.IndexingFeatures.pNext = currentPNext;
+			/*m_physicalDeviceData.IndexingFeatures.pNext = currentPNext;
 
-			currentPNext = &m_physicalDeviceData.IndexingFeatures;
+			currentPNext = &m_physicalDeviceData.IndexingFeatures;*/
 		}
 
 		deviceFeatures.pNext = currentPNext;
@@ -970,8 +1017,13 @@ namespace Pudu
 			throw std::runtime_error("failed to create logical device!");
 		}
 
+		VkDeviceQueueInfo2 computeInfo{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2 };
+		computeInfo.queueFamilyIndex = indices.computeFamily.value();
+		computeInfo.queueIndex = 0;
+
 		vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
 		vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentationQueue);
+		vkGetDeviceQueue2(m_device, &computeInfo, &m_computeQueue);
 	}
 
 	void PuduGraphics::CreateSurface()
@@ -1822,10 +1874,10 @@ namespace Pudu
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = m_commandPool;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT;
+		allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
 
 		std::vector<VkCommandBuffer> buffers;
-		buffers.resize(MAX_FRAMES_IN_FLIGHT);
+		buffers.resize(MAX_FRAMES_IN_FLIGHT * 2); //Multiply by 2 for compute queue buffer
 
 		if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
 		{
@@ -1836,7 +1888,8 @@ namespace Pudu
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			Frame& frame = m_Frames[i];
-			frame.CommandBuffer = GPUCommands(buffers[i], this);
+			frame.CommandBuffer = GPUCommands(buffers[i * 2], this);
+			frame.ComputeCommandBuffer = GPUCommands(buffers[i * 2 + 1], this);
 		}
 
 		LOG("Created command buffer");
@@ -1864,7 +1917,8 @@ namespace Pudu
 			}
 		}
 
-		CreateTimelineSemaphore();
+		CreateTimelineSemaphore(m_graphicsTimelineSemaphore);
+		CreateTimelineSemaphore(m_computeTimelineSemaphore);
 	}
 
 	void PuduGraphics::RecreateSwapChain()
@@ -2260,6 +2314,8 @@ namespace Pudu
 			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 
+
+
 	VkFormat PuduGraphics::FindDepthFormat()
 	{
 		return FindSupportedFormat(
@@ -2315,7 +2371,7 @@ namespace Pudu
 		return commandBuffer;
 	}
 
-	void PuduGraphics::CreateTimelineSemaphore()
+	void PuduGraphics::CreateTimelineSemaphore(VkSemaphore& semaphore)
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 		VkSemaphoreTypeCreateInfo semaphoreTypeInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
@@ -2323,7 +2379,7 @@ namespace Pudu
 
 		semaphoreInfo.pNext = &semaphoreTypeInfo;
 
-		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &m_graphicsTimelineSemaphore);
+		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore);
 
 	}
 
@@ -2408,8 +2464,13 @@ namespace Pudu
 		VkPhysicalDeviceSynchronization2Features synchronization2Features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES };
 		synchronization2Features.synchronization2 = VK_TRUE;
 
+		VkPhysicalDeviceTimelineSemaphoreFeatures semaphoreFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
+		
+
 		synchronization2Features.pNext = currentPNext;
 		currentPNext = &synchronization2Features;
+		semaphoreFeatures.pNext = currentPNext;
+		currentPNext = &semaphoreFeatures;
 
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
@@ -2493,6 +2554,14 @@ namespace Pudu
 			if (queueFamily.queueFlags * VK_QUEUE_GRAPHICS_BIT)
 			{
 				indices.graphicsFamily = i;
+			}
+			if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			{
+				indices.computeFamily = i;
+			}
+			if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+			{
+				indices.transferFamily = i;
 			}
 
 			if (indices.IsComplete())

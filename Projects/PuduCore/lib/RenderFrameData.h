@@ -34,6 +34,7 @@ namespace Pudu
 		Framebuffer* lastFrameBuffer;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
+		std::vector<GPUCommands> computeCommandsToSubmit;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass*>* m_renderPassesByType;
 	};
 }

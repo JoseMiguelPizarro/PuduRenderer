@@ -51,10 +51,12 @@ namespace Pudu
 	{
 		Optional graphicsFamily;
 		Optional presentFamily;
+		Optional computeFamily;
+		Optional transferFamily;
 
 		bool IsComplete()
 		{
-			return graphicsFamily.has_value() && presentFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value() && transferFamily.has_value();
 		}
 	};
 
@@ -156,7 +158,7 @@ namespace Pudu
 		GPUResourcesManager m_resources;
 		VkSemaphore m_graphicsTimelineSemaphore;
 		VkSemaphore m_computeTimelineSemaphore;
-		uint64_t m_lastComputeTimelineValue;
+		uint64_t m_lastComputeTimelineValue = 0;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 
@@ -169,6 +171,7 @@ namespace Pudu
 		void CreateSwapChain();
 		void CreateSwapchainImageViews();
 		void SetResourceName(VkObjectType type, u64 handle, const char* name);
+		void SubmitComputeQueue(RenderFrameData& frameData);
 
 		void InitDebugUtilsObjectName();
 
@@ -181,7 +184,7 @@ namespace Pudu
 
 		void CreateTextureImageView(Texture2d& texture2d);
 		void CreateTextureSampler(VkSampler& sampler);
-		void CreateTimelineSemaphore();
+		void CreateTimelineSemaphore(VkSemaphore& semaphore);
 
 		void CreateBindlessDescriptorPool();
 		void CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
@@ -264,6 +267,7 @@ namespace Pudu
 		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 		VkQueue m_graphicsQueue;
 		VkQueue m_presentationQueue;
+		VkQueue m_computeQueue;
 		VkExtent2D m_swapChainExtent;
 		std::vector<VkImage> m_swapChainImages;
 		std::vector<SPtr<Texture2d>> m_swapChainTextures;

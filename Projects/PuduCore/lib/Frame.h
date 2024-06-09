@@ -7,6 +7,7 @@ namespace Pudu
 {
 	struct Frame {
 		GPUCommands CommandBuffer;
+		GPUCommands ComputeCommandBuffer;
 		VkSemaphore ImageAvailableSemaphore;
 		VkSemaphore RenderFinishedSemaphore;
 		VkFence InFlightFence;

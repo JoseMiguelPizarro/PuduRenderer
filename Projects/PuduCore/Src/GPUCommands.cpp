@@ -3,6 +3,7 @@
 #include "Resources/Resources.h"
 #include "vulkan/vulkan.h"
 #include <VulkanUtils.h>
+#include <Logger.h>
 
 namespace Pudu
 {
@@ -167,6 +168,25 @@ namespace Pudu
 		blitInfo.regionCount = 1;
 
 		vkCmdBlitImage2(vkHandle, &blitInfo);
+	}
+	void GPUCommands::Reset()
+	{
+		m_hasRecordedCommand = false;
+		vkResetCommandBuffer(vkHandle, 0);
+	}
+	void GPUCommands::BeginCommands()
+	{
+		m_hasRecordedCommand = true;
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // Optional
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+
+		if (vkBeginCommandBuffer(vkHandle, &beginInfo) != VK_SUCCESS)
+		{
+			PUDU_ERROR("failed to begin recording command buffer!");
+		}
 	}
 	void GPUCommands::EndCommands()
 	{
