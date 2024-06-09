@@ -34,6 +34,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "VulkanUtils.h"
+#include "PuduApp.h"
 
 namespace Pudu
 {
@@ -629,10 +630,12 @@ namespace Pudu
 			ImGui::NewFrame();
 			ImGui::Begin("Pudu Renderer Debug");
 
-			auto entities = frameData.scene->GetEntities();
 
 			//Tree begin
-			ImGuiUtils::DrawEntityTree(entities);
+			
+			frameData.app->DrawImGUI();
+
+			
 
 			ImGui::End();
 			ImGui::Render();

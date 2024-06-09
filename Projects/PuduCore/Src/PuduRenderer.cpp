@@ -8,9 +8,10 @@
 
 namespace Pudu
 {
-	void PuduRenderer::Init(PuduGraphics* graphics)
+	void PuduRenderer::Init(PuduGraphics* graphics, PuduApp* app)
 	{
 		this->graphics = graphics;
+		this->app = app;
 
 		AddRenderPass(&m_depthRenderPass, RenderPassType::DepthPrePass);
 		AddRenderPass(&m_forwardRenderPass, RenderPassType::Color);
@@ -24,6 +25,7 @@ namespace Pudu
 		renderData.frameGraph = &frameGraph;
 		renderData.m_renderPassesByType = &m_renderPassByType;
 		renderData.graphics = graphics;
+		renderData.app = app;
 
 		graphics->DrawFrame(renderData);
 	}

@@ -5,6 +5,7 @@
 #include <FrameGraph/FrameGraph.h>
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
+#include <PuduApp.h>
 
 namespace Pudu
 {
@@ -16,8 +17,9 @@ namespace Pudu
 		FrameGraph frameGraph;
 		FrameGraphBuilder frameGraphBuilder;
 		Pipeline* pipeline;
+		PuduApp* app;
 
-		void Init(PuduGraphics* graphics);
+		void Init(PuduGraphics* graphics, PuduApp* app);
 		void Render();
 		void LoadFrameGraph(fs::path path);
 		Pipeline* GetOrCreatePipeline(RenderFrameData& data, RenderPassType renderPassType);

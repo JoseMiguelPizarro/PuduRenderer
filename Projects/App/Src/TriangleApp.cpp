@@ -45,7 +45,7 @@ void TriangleApp::OnInit()
 	m_scene.camera = &m_camera;
 	TargetFPS = 60;
 
-	m_puduRenderer.Init(&Graphics);
+	m_puduRenderer.Init(&Graphics, this);
 	m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));
 
 	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag");
@@ -54,6 +54,16 @@ void TriangleApp::OnInit()
 	standardShader->name = "Standard";
 
 	LoadGameboyModel();
+}
+
+void TriangleApp::DrawImGUI()
+{
+	auto entities = m_scene.GetEntities();
+	ImGui::Text(fmt::format("Time: {}", Time.Time()).c_str());
+	ImGui::Text(fmt::format("FPS: {}", Time.GetFPS()).c_str());
+	ImGui::Text(fmt::format("DeltaTime: {}", Time.DeltaTime()).c_str());
+
+	ImGuiUtils::DrawEntityTree(entities);
 }
 
 void TriangleApp::OnCleanup()

@@ -3,6 +3,7 @@
 #include <thread>
 #include "Logger.h"
 #include "PuduApp.h"
+#include <iostream>
 
 namespace Pudu
 {
@@ -13,7 +14,7 @@ namespace Pudu
 		OnInit();
 
 		Time.m_startTime = std::chrono::high_resolution_clock::now();
-		Time.m_lastFrameTime = std::chrono::high_resolution_clock::now();
+		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
 	}
 
 	void PuduApp::Cleanup()
@@ -25,26 +26,42 @@ namespace Pudu
 
 	void PuduApp::Run()
 	{
-		float targetFrameDuration = 1.0f / TargetFPS;
+		auto targetFrameDuration = std::chrono::duration<float, std::milli>(1000.0f / (float)TargetFPS);
+		Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
+		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
 
-		Print("PuduApp Run");
+		//Main Loop
 		while (!glfwWindowShouldClose(Graphics.WindowPtr))
 		{
-			Time.m_currentFrameTime = std::chrono::high_resolution_clock::now();
-			float deltaTime = Time.DeltaTime();
-			float durationDelta = targetFrameDuration - deltaTime * 2; //Multiply by 2 to compensate for frame next to render
-			durationDelta = durationDelta < 0 ? 0 : durationDelta;
-
-			if (durationDelta > 0)
-			{
-				std::this_thread::sleep_for(std::chrono::duration<float>(durationDelta));
-			}
-
-			Time.m_currentFrameTime = std::chrono::high_resolution_clock::now();
-
+			Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
+			auto startFrame = std::chrono::high_resolution_clock::now();
 			glfwPollEvents();
 			OnRun();
-			Time.m_lastFrameTime = Time.m_currentFrameTime;
+
+			auto a = std::chrono::duration<float, std::milli>(1.f);
+			std::this_thread::sleep_for(std::chrono::microseconds(100));
+
+			std::chrono::duration<float, std::milli> elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
+
+			//If load is to low, let's artificially wait before continuing
+			if (elapsed.count() < 2.0f)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+				elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
+			}
+
+			if (elapsed < targetFrameDuration)
+			{
+				auto towait = targetFrameDuration - elapsed * 2; //Multiplied by 2 to compensate to next frame
+
+				std::this_thread::sleep_for(towait);
+			}
+
+			Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
+
+			std::chrono::duration<float, std::milli> deltaTime = std::chrono::high_resolution_clock::now() - startFrame;
+			Time.m_deltaTime = deltaTime.count();
 		}
 
 		Cleanup();

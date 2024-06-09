@@ -18,6 +18,7 @@ namespace Pudu
 	enum RenderPassType;
 	class FrameGraphRenderPass;
 	class Texture2d;
+	class PuduApp;
 
 	struct RenderFrameData
 	{
@@ -32,6 +33,7 @@ namespace Pudu
 		RenderPass* currentRenderPass;
 		DrawCall* currentDrawCall;
 		Framebuffer* lastFrameBuffer;
+		PuduApp* app;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<GPUCommands> computeCommandsToSubmit;

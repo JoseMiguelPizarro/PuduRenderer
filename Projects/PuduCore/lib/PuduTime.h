@@ -13,30 +13,31 @@ namespace Pudu {
 		}
 
 		timePoint GetLastFrameTime() {
-			return m_lastFrameTime;
+			return m_endFrameTime;
 		}
 
 		float Time() {
-			return std::chrono::duration<float, std::chrono::seconds::period>(m_currentFrameTime - m_startTime).count();
+			return std::chrono::duration<float, std::chrono::seconds::period>(m_startFrameTime - m_startTime).count();
 		}
 
 		timePoint GetCurrentFrameTime() {
-			return m_currentFrameTime;
+			return m_startFrameTime;
 		}
 
 		float GetFPS() {
-			return 1.0f / DeltaTime();
+			return 1000.f / DeltaTime();
 		}
 
 		float DeltaTime() {
-			return std::chrono::duration<float>(m_currentFrameTime - m_lastFrameTime).count();
+			return m_deltaTime;
 		}
 
 	private:
 		friend class PuduApp;
 		timePoint m_startTime;
-		timePoint m_lastFrameTime;
-		timePoint m_currentFrameTime;
+		timePoint m_endFrameTime;
+		timePoint m_startFrameTime;
+		float m_deltaTime;
 	};
 }
 

@@ -13,9 +13,12 @@ namespace  Pudu
 		void Init();
 
 		bool FrameBufferResized;
-		float TargetFPS = 30;
+		int TargetFPS = 30;
 		PuduGraphics Graphics;
 		PuduTime Time;
+
+
+		void virtual DrawImGUI() {};
 
 	private:
 		void Cleanup();
@@ -30,6 +33,8 @@ namespace  Pudu
 		void virtual OnCleanup()
 		{
 		};
+
+		
 	};
 
 }

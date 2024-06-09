@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "Model.h"
 #include "Texture2d.h"
+#include "ImGuiUtils.h"
 
 using namespace Pudu;
 
@@ -16,6 +17,8 @@ class TriangleApp : public PuduApp
 public:
 	void OnRun() override;
 	void OnInit() override;
+
+	virtual void DrawImGUI() override;
 
 private:
 	void OnCleanup() override;
