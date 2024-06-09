@@ -956,6 +956,7 @@ namespace Pudu
 		featuresVulkan12.runtimeDescriptorArray = VK_TRUE;
 		featuresVulkan12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 		featuresVulkan12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+		featuresVulkan12.separateDepthStencilLayouts = VK_TRUE;
 		
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
