@@ -138,7 +138,10 @@ namespace Pudu
 
 		// Cache pipeline
 		currentPipeline = pipeline;
+
+		m_hasRecordedCommand = true;
 	}
+
 
 	void GPUCommands::Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
 	{
@@ -168,6 +171,12 @@ namespace Pudu
 		blitInfo.regionCount = 1;
 
 		vkCmdBlitImage2(vkHandle, &blitInfo);
+	}
+	void GPUCommands::Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
+	{
+		vkCmdDispatch(vkHandle, groupCountX, groupCountY, groupCountZ);
+
+		m_hasRecordedCommand = true;
 	}
 	void GPUCommands::Reset()
 	{

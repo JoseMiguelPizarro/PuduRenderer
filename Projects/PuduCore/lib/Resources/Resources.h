@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include <glm/fwd.hpp>
 #include <vector>
+#include "PuduCore.h"
 #include "DescriptorSetLayoutData.h"
 
 namespace Pudu
@@ -21,9 +22,11 @@ namespace Pudu
 	static const uint32_t K_SUBMIT_HEADER_SENTINEL = 0xfefeb7ba;
 	static const uint32_t K_MAX_RESOURCE_DELETIONS = 64;
 
+	
 #pragma region Handles
 	typedef uint32_t FrameGraphHandle;
 	typedef uint32_t ResourceHandle;
+
 
 
 	static const uint32_t k_INVALID_HANDLE = 0xffffffff;
@@ -35,6 +38,10 @@ namespace Pudu
 
 	struct ShaderHandle
 	{
+		ResourceHandle index;
+	};
+
+	struct ComputeShaderHandle {
 		ResourceHandle index;
 	};
 
@@ -369,9 +376,20 @@ namespace Pudu
 		DescriptorSetLayoutHandle handle;
 	}; // struct DesciptorSetLayoutVulkan
 
+	struct ComputePipeline {
+		VkPipeline vkHandle;
+		VkPipelineLayout vkPipelineLayoutHandle;
+
+		VkPipelineBindPoint vkPipelineBindPoint;
+		VkDescriptorSet vkDescriptorSet = VK_FALSE;//Just 1 for now, bindless
+		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
+		std::vector<DescriptorSetLayoutHandle> descriptorSetLayoutHandles;
+		bool bindlessUpdated;
+	};
 
 	struct Pipeline
 	{
+		std::string name;
 		VkPipeline vkHandle;
 		VkPipelineLayout vkPipelineLayoutHandle;
 
@@ -711,6 +729,14 @@ namespace Pudu
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 		const char* name = nullptr;
+	};
+
+	class ComputeShader;
+	struct ComputePipelineCreationData {
+		const char* name;
+		std::vector<char> data;
+		std::vector<DescriptorSetLayoutData> descriptorSetLayoutData;
+		ComputeShaderHandle computeShaderHandle;
 	};
 }
 

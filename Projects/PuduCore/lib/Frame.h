@@ -6,6 +6,7 @@
 namespace Pudu
 {
 	struct Frame {
+		//TODO: ALLOCATE COMMANDS IN RESOURCE MANAGER AND USE POINTERS INSTEAD
 		GPUCommands CommandBuffer;
 		GPUCommands ComputeCommandBuffer;
 		VkSemaphore ImageAvailableSemaphore;

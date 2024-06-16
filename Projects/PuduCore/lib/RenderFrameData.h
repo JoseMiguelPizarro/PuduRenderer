@@ -36,7 +36,7 @@ namespace Pudu
 		PuduApp* app;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
-		std::vector<GPUCommands> computeCommandsToSubmit;
+		std::vector<GPUCommands*> computeCommandsToSubmit;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass*>* m_renderPassesByType;
 	};
 }

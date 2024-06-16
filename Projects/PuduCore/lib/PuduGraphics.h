@@ -38,6 +38,7 @@
 #include <FrameGraph/FrameGraphRenderPass.h>
 #include <RenderFrameData.h>
 #include "GPUCommands.h"
+#include <ComputeShader.h>
 
 
 
@@ -132,6 +133,8 @@ namespace Pudu
 		}
 
 		PipelineHandle CreateGraphicsPipeline(PipelineCreationData& creationData);
+		PipelineHandle CreateComputePipeline(ComputePipelineCreationData& creationData);
+
 		VkPipeline* GetPipeline() { return &m_graphicsPipeline; }
 
 
@@ -140,11 +143,13 @@ namespace Pudu
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
+		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
 		void UploadTextureData(SPtr<Texture2d> texture, void* data);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
+		SPtr<ComputeShader> testComputeShader;
 
 	private:
 		friend class GPUResourcesManager;
@@ -171,7 +176,10 @@ namespace Pudu
 		void CreateSwapChain();
 		void CreateSwapchainImageViews();
 		void SetResourceName(VkObjectType type, u64 handle, const char* name);
-		void SubmitComputeQueue(RenderFrameData& frameData);
+		/// <summary>
+		/// Setup and dispatch compute workload for the frame
+		/// </summary>
+		void SubmitComputeWork(RenderFrameData& frameData);
 
 		void InitDebugUtilsObjectName();
 
@@ -235,6 +243,10 @@ namespace Pudu
 
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, const char* name = nullptr);
 
+		
+		/// <summary>
+		/// size in bytes
+		/// </summary>
 		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size, const char* name = nullptr);
 
 		void CreateUniformBuffers();

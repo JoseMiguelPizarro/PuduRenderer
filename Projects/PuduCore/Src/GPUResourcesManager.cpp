@@ -138,4 +138,21 @@ namespace Pudu {
 	{
 		return m_shaders.GetResource(handle.index);
 	}
+
+	ComputeShaderHandle GPUResourcesManager::AllocateComputeShader()
+	{
+		ComputeShaderHandle handle = { static_cast<uint32_t>(m_computeShaders.Size()) };
+		SPtr<ComputeShader> shader = std::make_shared<ComputeShader>();
+
+		shader->handle = handle;
+
+		m_computeShaders.AddResource(shader);
+
+		return { handle };
+	}
+
+	SPtr<ComputeShader> GPUResourcesManager::GetComputeShader(ComputeShaderHandle handle)
+	{
+		return m_computeShaders.GetResource(handle.index);
+	}
 }

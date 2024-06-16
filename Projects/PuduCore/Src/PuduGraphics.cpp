@@ -85,6 +85,8 @@ namespace Pudu
 
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
+
+		testComputeShader = CreateComputeShader("Shaders/shadows.comp", "Shadows");
 	}
 
 	void PuduGraphics::InitVMA()
@@ -447,7 +449,6 @@ namespace Pudu
 		frameData.graphics = this;
 
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
-		frameData.computeCommandsToSubmit.push_back(frame.ComputeCommandBuffer);
 
 		frameGraph->Render(frameData);
 
@@ -459,13 +460,22 @@ namespace Pudu
 
 		frame.CommandBuffer.EndCommands();
 
-		SubmitComputeQueue(frameData);
+		auto computeCommands = &frame.ComputeCommandBuffer;
+		frameData.computeCommandsToSubmit.push_back(computeCommands);
+		computeCommands->Reset();
+
+		computeCommands->BeginCommands();
+		computeCommands->BindPipeline(m_resources.GetPipeline(testComputeShader->pipelineHandle));
+		computeCommands->Dispatch(1024, 1024, 1);
+		computeCommands->EndCommands();
+
+		SubmitComputeWork(frameData);
 		SubmitFrame(frameData);
 
 		EndDrawFrame();
 	}
 
-	void PuduGraphics::SubmitComputeQueue(RenderFrameData& frameData)
+	void PuduGraphics::SubmitComputeWork(RenderFrameData& frameData)
 	{
 		auto frame = frameData.frame;
 
@@ -487,14 +497,14 @@ namespace Pudu
 
 		std::vector<VkCommandBufferSubmitInfo> commandSubmitInfos;
 		for (auto command : frameData.computeCommandsToSubmit) {
-			if (!command.HasRecordedCommand())
+			if (!command->HasRecordedCommand())
 			{
 				continue;
 			}
 
 			VkCommandBufferSubmitInfo commandInfo{};
 			commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-			commandInfo.commandBuffer = command.vkHandle;
+			commandInfo.commandBuffer = command->vkHandle;
 
 			commandSubmitInfos.push_back(commandInfo);
 		}
@@ -632,10 +642,10 @@ namespace Pudu
 
 
 			//Tree begin
-			
+
 			frameData.app->DrawImGUI();
 
-			
+
 
 			ImGui::End();
 			ImGui::Render();
@@ -960,7 +970,7 @@ namespace Pudu
 		featuresVulkan12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 		featuresVulkan12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 		featuresVulkan12.separateDepthStencilLayouts = VK_TRUE;
-		
+
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
 		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -1695,6 +1705,57 @@ namespace Pudu
 		return pipelineHandle;
 	}
 
+	PipelineHandle PuduGraphics::CreateComputePipeline(ComputePipelineCreationData& creationData)
+	{
+		auto computeShader = m_resources.GetComputeShader(creationData.computeShaderHandle);
+		VkPipelineShaderStageCreateInfo computeShaderStageInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+		computeShaderStageInfo.module = computeShader->vkShaderModule;
+		computeShaderStageInfo.pName = "main";
+
+		auto pipelineHandle = m_resources.AllocatePipeline();
+		Pipeline* pipeline = m_resources.GetPipeline(pipelineHandle);
+		pipeline->vkPipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+
+		if (creationData.name != nullptr)
+		{
+			pipeline->name.append(creationData.name);
+		}
+
+		//Just have 1 set for now (bindless) so let's keep it simple
+		CreateDescriptorSetLayout(creationData.descriptorSetLayoutData, pipeline->descriptorSetLayoutHandles);
+
+		for (uint32_t i = 0; i < pipeline->descriptorSetLayoutHandles.size(); i++)
+		{
+			pipeline->descriptorSetLayouts[i] = m_resources.GetDescriptorSetLayout(pipeline->descriptorSetLayoutHandles[i]);//DESCRIPTOR SET LAYOUTS NOT SET IN RESOURCES
+		}
+
+		pipeline->numActiveLayouts = pipeline->descriptorSetLayoutHandles.size();
+
+		std::vector<VkDescriptorSetLayout> pipelineDescriptorSetLayouts;
+		for (uint32_t i = 0; i < pipeline->numActiveLayouts; i++)
+		{
+			pipelineDescriptorSetLayouts.push_back(pipeline->descriptorSetLayouts[i]->vkHandle);
+		}
+
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+		pipelineLayoutInfo.setLayoutCount = creationData.descriptorSetLayoutData.size();
+		pipelineLayoutInfo.pSetLayouts = pipelineDescriptorSetLayouts.data();
+
+		VKCheck(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipeline->vkPipelineLayoutHandle), "Failed to create compute pipeline layout");
+
+		VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+		pipelineInfo.layout = pipeline->vkPipelineLayoutHandle;
+		pipelineInfo.stage = computeShaderStageInfo;
+
+		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle), "Failed to create compute pipeline");
+
+		SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkPipelineLayoutHandle, pipeline->name.c_str());
+
+		return pipelineHandle;
+	}
+
 	void PuduGraphics::CreateSwapChainFrameBuffers(RenderPassHandle renderPass)
 	{
 
@@ -1839,6 +1900,8 @@ namespace Pudu
 	{
 		texture2d.vkImageViewHandle = CreateImageView(texture2d.vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
+
+
 
 	void PuduGraphics::CreateTextureSampler(VkSampler& sampler)
 	{
@@ -1985,6 +2048,27 @@ namespace Pudu
 		shader->LoadFragmentData(fragmentData);
 		shader->LoadVertexData(vertexData);
 		shader->name = name;
+
+		return shader;
+	}
+
+	SPtr<ComputeShader> PuduGraphics::CreateComputeShader(fs::path shaderPath, const char* name)
+	{
+		LOG("Creating Compute Shader {}:", name);
+		ComputeShaderHandle handle = m_resources.AllocateComputeShader();
+		auto shader = m_resources.GetComputeShader(handle);
+
+		auto data = FileManager::LoadShader(shaderPath);
+		shader->vkShaderModule = CreateShaderModule(data, data.size() * sizeof(char), name);
+
+		ComputePipelineCreationData creationData{};
+		creationData.computeShaderHandle = handle;
+		creationData.data = data;
+		creationData.name = name;
+
+		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char), creationData.descriptorSetLayoutData);
+		
+		shader->pipelineHandle = CreateComputePipeline(creationData);
 
 		return shader;
 	}
@@ -2469,7 +2553,7 @@ namespace Pudu
 		synchronization2Features.synchronization2 = VK_TRUE;
 
 		VkPhysicalDeviceTimelineSemaphoreFeatures semaphoreFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES };
-		
+
 
 		synchronization2Features.pNext = currentPNext;
 		currentPNext = &synchronization2Features;

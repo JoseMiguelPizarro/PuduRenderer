@@ -7,6 +7,7 @@
 #include "Resources/ResourcesPool.h"
 #include "Shader.h"
 #include "Resources/FrameBufferCreationData.h"
+#include "ComputeShader.h"
 
 namespace Pudu {
 	class PuduGraphics;
@@ -37,10 +38,14 @@ namespace Pudu {
 		ShaderHandle AllocateShader();
 		SPtr<Shader> GetShader(ShaderHandle handle);
 
+		ComputeShaderHandle AllocateComputeShader();
+		SPtr<ComputeShader> GetComputeShader(ComputeShaderHandle handle);
+
 	private:
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture2d>> m_textures;
 		ResourcePool<SPtr<Shader>> m_shaders;
+		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
 		ResourcePool<RenderPass> m_renderPasses;
 		ResourcePool<Framebuffer> m_frameBuffers;
 		ResourcePool<Pipeline> m_pipelines;
