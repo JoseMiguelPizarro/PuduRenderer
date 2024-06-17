@@ -142,6 +142,18 @@ namespace Pudu
 		m_hasRecordedCommand = true;
 	}
 
+	void GPUCommands::BindDescriptorSet(VkDescriptorSet handle)
+	{
+		//TODO: IMPLEMENT
+	}
+
+	void GPUCommands::BindDescriptorSetCompute(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount)
+	{
+		vkCmdBindDescriptorSets(vkHandle, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, handlesCount, handles, 0, nullptr);
+
+		m_hasRecordedCommand = true;
+	}
+
 
 	void GPUCommands::Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
 	{

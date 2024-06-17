@@ -146,6 +146,7 @@ namespace Pudu
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
+		
 		void UploadTextureData(SPtr<Texture2d> texture, void* data);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
@@ -180,6 +181,7 @@ namespace Pudu
 		/// Setup and dispatch compute workload for the frame
 		/// </summary>
 		void SubmitComputeWork(RenderFrameData& frameData);
+		void UpdateComputeResources(ComputeShader* shader);
 
 		void InitDebugUtilsObjectName();
 

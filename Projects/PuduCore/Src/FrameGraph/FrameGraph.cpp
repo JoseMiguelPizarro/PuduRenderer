@@ -1242,7 +1242,7 @@ namespace Pudu
 					textureData.depth = info.depth;
 					textureData.width = info.width;
 					textureData.height = info.height;
-					textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample); //Add sample to set it as bindless 
+					textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
 					textureData.format = info.format;
 					textureData.name = resource->name.c_str();
 					textureData.mipmaps = 1;
@@ -1463,7 +1463,7 @@ namespace Pudu
 				}
 			}
 
-			commands->SetScissor(0, 0, width, height); 
+			commands->SetScissor(0, 0, width, height);
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
 			auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;

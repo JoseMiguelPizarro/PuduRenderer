@@ -12,7 +12,7 @@ namespace Pudu {
 	class Texture2d
 	{
 	public:
-		char const* name;
+		std::string name;
 		VkImage vkImageHandle;
 		VkDeviceMemory vkMemoryHandle;
 		VkImageView vkImageViewHandle;

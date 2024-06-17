@@ -18,6 +18,7 @@ namespace Pudu {
 	public:
 		void Init(PuduGraphics* graphics);
 		SPtr<Texture2d> GetTexture(TextureHandle handle);
+		SPtr<Texture2d> GetTextureByName(const char* name);
 		SPtr<Texture2d> AllocateTexture();
 
 		RenderPass* GetRenderPass(RenderPassHandle handle);
@@ -51,6 +52,7 @@ namespace Pudu {
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
+		std::unordered_map<std::string, SPtr<Texture2d>> m_texturesByName;
 	};
 }
 

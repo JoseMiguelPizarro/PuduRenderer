@@ -464,9 +464,17 @@ namespace Pudu
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
 		computeCommands->Reset();
 
+		if (!testComputeShader->ResourcesUpdated())
+		{
+			UpdateComputeResources(testComputeShader.get());
+		}
+
+		auto computePipeline = m_resources.GetPipeline(testComputeShader->pipelineHandle);
 		computeCommands->BeginCommands();
+		//IMPORTANT: Descriptor sets should be binded BEFORE binding the pipeline
+		computeCommands->BindDescriptorSetCompute(computePipeline->vkPipelineLayoutHandle, &computePipeline->vkDescriptorSet, 1);
 		computeCommands->BindPipeline(m_resources.GetPipeline(testComputeShader->pipelineHandle));
-		computeCommands->Dispatch(1024, 1024, 1);
+		computeCommands->Dispatch(std::ceil(1024 / 16.0f), std::ceil(1024 / 16.0f), 1);
 		computeCommands->EndCommands();
 
 		SubmitComputeWork(frameData);
@@ -508,7 +516,6 @@ namespace Pudu
 
 			commandSubmitInfos.push_back(commandInfo);
 		}
-
 
 		VkSubmitInfo2 submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
@@ -597,7 +604,6 @@ namespace Pudu
 			throw std::runtime_error("Failed to present swap chain image!");
 		}
 	}
-
 
 	void PuduGraphics::AdvanceFrame()
 	{
@@ -730,12 +736,7 @@ namespace Pudu
 		{
 			printf("Vulkan instance created successfully\n");
 		}
-
-
-
 	}
-
-
 
 	void PuduGraphics::CreateVkFramebuffer(Framebuffer* framebuffer)
 	{
@@ -1749,11 +1750,39 @@ namespace Pudu
 		pipelineInfo.layout = pipeline->vkPipelineLayoutHandle;
 		pipelineInfo.stage = computeShaderStageInfo;
 
+		if (pipelineDescriptorSetLayouts.size() > 0)
+		{
+			CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
+		}
+
 		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle), "Failed to create compute pipeline");
 
 		SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkPipelineLayoutHandle, pipeline->name.c_str());
 
 		return pipelineHandle;
+	}
+
+	void PuduGraphics::UpdateComputeResources(ComputeShader* shader) {
+
+		auto pipeline = m_resources.GetPipeline(shader->pipelineHandle);
+
+		//PROXY TEX WRITE
+		VkDescriptorImageInfo computeImage{};
+		computeImage.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		computeImage.imageView = m_resources.GetTextureByName("forward_color")->vkImageViewHandle;
+
+		VkWriteDescriptorSet drawImageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		drawImageWrite.pNext = nullptr;
+
+		drawImageWrite.dstBinding = 0;
+		drawImageWrite.dstSet = pipeline->vkDescriptorSet;
+		drawImageWrite.descriptorCount = 1;
+		drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		drawImageWrite.pImageInfo = &computeImage;
+
+		vkUpdateDescriptorSets(m_device, 1, &drawImageWrite, 0, nullptr);
+
+		shader->MarkAsResourcesUpdated();
 	}
 
 	void PuduGraphics::CreateSwapChainFrameBuffers(RenderPassHandle renderPass)
@@ -1791,7 +1820,7 @@ namespace Pudu
 		imageCreateInfo.extent.height = creationData.height;
 		imageCreateInfo.extent.depth = creationData.depth;
 		imageCreateInfo.mipLevels = creationData.mipmaps;
-		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.arrayLayers = creationData.textureType == TextureType::Texture_Cube_Array ? 6 : 1;
 		imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 		imageCreateInfo.format = creationData.format;
@@ -1800,7 +1829,7 @@ namespace Pudu
 
 
 		const bool isRenderTarget = (creationData.flags & TextureFlags::RenderTargetMask) == TextureFlags::RenderTargetMask;
-		const bool isComputeUsed = creationData.flags == TextureFlags::Compute;
+		const bool isComputeUsed = creationData.flags & TextureFlags::Compute;
 
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
@@ -1825,7 +1854,7 @@ namespace Pudu
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 		auto texture = m_resources.AllocateTexture();
-		texture->name = creationData.name;
+		texture->name.append(creationData.name);
 		texture->width = creationData.width;
 		texture->height = creationData.height;
 		texture->format = creationData.format;
@@ -1851,7 +1880,7 @@ namespace Pudu
 		}
 
 		imageViewInfo.subresourceRange.levelCount = creationData.mipmaps;
-		imageViewInfo.subresourceRange.layerCount = 1;//No idea what this is, investigate
+		imageViewInfo.subresourceRange.layerCount = creationData.textureType == TextureType::Texture_Cube_Array ? 6 : 1;//No idea what this is, investigate
 		vkCreateImageView(m_device, &imageViewInfo, m_allocatorPtr, &texture->vkImageViewHandle);
 
 		SetResourceName(VK_OBJECT_TYPE_IMAGE, (uint64_t)texture->vkImageHandle, creationData.name);
@@ -1865,7 +1894,6 @@ namespace Pudu
 		{
 			UploadTextureData(texture, creationData.pixels);
 		}
-
 
 		CreateTextureSampler(texture->Sampler.vkHandle);
 		return texture->handle;
@@ -2067,7 +2095,7 @@ namespace Pudu
 		creationData.name = name;
 
 		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char), creationData.descriptorSetLayoutData);
-		
+
 		shader->pipelineHandle = CreateComputePipeline(creationData);
 
 		return shader;

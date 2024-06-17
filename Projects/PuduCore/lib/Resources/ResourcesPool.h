@@ -29,7 +29,11 @@ namespace Pudu
 		size_t Size();
 
 	private:
+		friend class GPUResourcesManager;
+
 		std::vector<T> m_resources;
+
+
 	};
 }
 

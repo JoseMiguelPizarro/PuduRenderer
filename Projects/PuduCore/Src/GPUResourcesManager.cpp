@@ -16,6 +16,27 @@ namespace Pudu {
 		return m_textures.GetResource(handle.index);
 	}
 
+	SPtr<Texture2d> GPUResourcesManager::GetTextureByName(const char* name)
+	{
+		if (name == nullptr)
+		{
+			return nullptr;
+		}
+
+		for (auto texture : m_textures.m_resources) {
+			if (texture->name.empty())
+			{
+				continue;
+			}
+			if (texture->name.compare(name) == 0)
+			{
+				return texture;
+			}
+		}
+
+		return nullptr;
+	}
+
 	SPtr<Texture2d> GPUResourcesManager::AllocateTexture()
 	{
 		TextureHandle handle = { static_cast<uint32_t>(m_textures.Size()) };

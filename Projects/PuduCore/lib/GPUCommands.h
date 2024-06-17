@@ -28,6 +28,8 @@ namespace Pudu
 		void BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle);
 		void EndCurrentRenderPass();
 		void BindPipeline(Pipeline* pipeline);
+		void BindDescriptorSet(VkDescriptorSet handle);
+		void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);
 		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout srcLayout, VkImageLayout dstLayout);
 		void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ);
 		VkCommandBuffer vkHandle;
