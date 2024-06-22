@@ -4,6 +4,7 @@
 #include "PuduCore.h"
 #include "Texture2D.h"
 #include "Resources/Resources.h"
+#include "Resources/RenderPass.h"
 #include "Resources/ResourcesPool.h"
 #include "Shader.h"
 #include "Resources/FrameBufferCreationData.h"
@@ -22,7 +23,7 @@ namespace Pudu {
 		SPtr<Texture2d> AllocateTexture();
 
 		RenderPass* GetRenderPass(RenderPassHandle handle);
-		RenderPassHandle AllocateRenderPass(RenderPassCreationData const& creationData);
+		RenderPass* AllocateRenderPass();
 
 		Framebuffer* GetFramebuffer(FramebufferHandle handle);
 		FramebufferHandle AllocateFrameBuffer(FramebufferCreationData const& creationData);

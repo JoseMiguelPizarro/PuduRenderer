@@ -86,7 +86,7 @@ namespace Pudu
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
 
-		testComputeShader = CreateComputeShader("Shaders/shadows.comp", "Shadows");
+		testComputeShader = CreateComputeShader("Shaders/shadows.comp", "ShadowsCS");
 	}
 
 	void PuduGraphics::InitVMA()
@@ -969,8 +969,10 @@ namespace Pudu
 		featuresVulkan12.descriptorBindingPartiallyBound = VK_TRUE;
 		featuresVulkan12.runtimeDescriptorArray = VK_TRUE;
 		featuresVulkan12.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+		featuresVulkan12.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
 		featuresVulkan12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 		featuresVulkan12.separateDepthStencilLayouts = VK_TRUE;
+
 
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
@@ -980,6 +982,9 @@ namespace Pudu
 		VkPhysicalDeviceSynchronization2Features syncFeatures{};
 		syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
 		syncFeatures.synchronization2 = VK_TRUE;
+
+		VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES };
+		dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
 
 
 		deviceFeatures.pNext = &syncFeatures;
@@ -994,6 +999,9 @@ namespace Pudu
 
 		syncFeatures.pNext = currentPNext;
 		currentPNext = &syncFeatures;
+
+		dynamicRenderingFeatures.pNext = currentPNext;
+		currentPNext = &dynamicRenderingFeatures;
 
 		featuresVulkan12.pNext = currentPNext;
 		currentPNext = &featuresVulkan12;
@@ -1170,7 +1178,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateRenderPass(RenderPass* renderPass)
 	{
-		auto output = renderPass->output;
+		auto output = renderPass->attachments;
 
 		VkAttachmentDescription2 colorAttachments[8] = {};
 		VkAttachmentReference2 colorAttachmentsRef[8] = {};
@@ -1215,32 +1223,19 @@ namespace Pudu
 			VkAttachmentLoadOp colorLoadOp;
 			VkImageLayout colorInitialLayout;
 
-			switch (output.colorOperations[colorAttachmentsCount])
-			{
-			case Load:
-				colorLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-				colorInitialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-				break;
-			case Clear:
-				colorLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-				colorInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				break;
-			default:
-				colorLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-				colorInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				break;
-			}
+			colorLoadOp = colorAttachments[colorAttachmentsCount].loadOp;
+			colorInitialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 			VkAttachmentDescription2& colorAttachment = colorAttachments[colorAttachmentsCount];
 			colorAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
-			colorAttachment.format = output.colorFormats[colorAttachmentsCount];
+			colorAttachment.format = output.colorAttachmentsFormat[colorAttachmentsCount];
 			colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			colorAttachment.loadOp = colorLoadOp;
 			colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 			colorAttachment.stencilLoadOp = stencilLoadOp;
 			colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			colorAttachment.initialLayout = colorInitialLayout;
-			colorAttachment.finalLayout = output.colorFinalLayouts[colorAttachmentsCount];
+			colorAttachment.finalLayout = output.colorAttachments[colorAttachmentsCount].imageLayout;
 
 			VkAttachmentReference2& colorAttachmentRef = colorAttachmentsRef[colorAttachmentsCount];
 			colorAttachmentRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
@@ -1461,8 +1456,8 @@ namespace Pudu
 		ShaderState* shaderState = m_resources.GetShaderState(shaderStateHandle);
 
 		RenderPass* renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
-		auto& renderPassOutput = renderPass->output;
-		auto outputCount = renderPassOutput.numColorFormats;
+		auto& renderPassOutput = renderPass->attachments;
+		auto outputCount = renderPassOutput.colorAttachmentCount;
 
 		pipeline->shaderState = shaderStateHandle;
 
@@ -1610,7 +1605,7 @@ namespace Pudu
 			colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 			colorBlendingInfo.logicOpEnable = VK_FALSE;
 			colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
-			colorBlendingInfo.attachmentCount = blendCount ? (uint32_t)blendCount : renderPassOutput.numColorFormats;
+			colorBlendingInfo.attachmentCount = blendCount ? (uint32_t)blendCount : outputCount;
 			colorBlendingInfo.pAttachments = colorBlendAttachments.data();
 
 			graphicsPipelineInfo.pColorBlendState = &colorBlendingInfo;
@@ -1681,8 +1676,10 @@ namespace Pudu
 			//RenderPass
 			VkPipelineRenderingCreateInfoKHR pipelineRenderingInfo{};
 			pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+			pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentCount;
+			pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.colorAttachmentsFormat;
 
-			graphicsPipelineInfo.renderPass = renderPass->vkHandle;
+			graphicsPipelineInfo.renderPass = nullptr;
 
 			// Dynamic states
 			VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
@@ -1757,7 +1754,7 @@ namespace Pudu
 
 		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle), "Failed to create compute pipeline");
 
-		SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkPipelineLayoutHandle, pipeline->name.c_str());
+		SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkHandle, pipeline->name.c_str());
 
 		return pipelineHandle;
 	}

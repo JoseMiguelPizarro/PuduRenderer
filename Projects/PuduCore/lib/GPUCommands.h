@@ -11,6 +11,7 @@ using namespace glm;
 namespace Pudu
 {
 	class PuduGraphics;
+	class RenderPass;
 
 	class GPUCommands
 	{
@@ -25,8 +26,8 @@ namespace Pudu
 		void AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel, u32 mipCount, bool isDepth);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetViewport(Viewport const& viewport);
-		void BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle);
-		void EndCurrentRenderPass();
+		void BegingRenderingPass(const VkRenderingInfo& renderInfo);
+		void EndRenderingPass();
 		void BindPipeline(Pipeline* pipeline);
 		void BindDescriptorSet(VkDescriptorSet handle);
 		void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);

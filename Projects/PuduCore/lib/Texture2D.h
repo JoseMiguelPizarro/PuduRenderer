@@ -14,8 +14,8 @@ namespace Pudu {
 	public:
 		std::string name;
 		VkImage vkImageHandle;
-		VkDeviceMemory vkMemoryHandle;
 		VkImageView vkImageViewHandle;
+		VkDeviceMemory vkMemoryHandle;
 		VmaAllocation vmaAllocation;
 		VkImageLayout vkImageLayout;
 		TextureSampler Sampler;

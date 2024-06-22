@@ -27,7 +27,7 @@ private:
 
 	std::filesystem::path GameboyModelPath = "models/gameboy/gameboy.gltf";
 
-	std::filesystem::path frameGraphPath = "FrameGraphs/Default.json";
+	std::filesystem::path frameGraphPath = "FrameGraphs/Standard.sg";
 
 	std::filesystem::path planeTexturePath = "models/floor/Grass.png";
 	std::filesystem::path planeModelPath = "models/floor/floor.obj";

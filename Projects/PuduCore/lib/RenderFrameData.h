@@ -7,14 +7,14 @@
 namespace Pudu
 {
 	struct Frame;
-	struct FrameGraph;
-	struct RenderPass;
+	class FrameGraph;
+	class RenderPass;
 	struct DrawCall;
 	class Scene;
 	class GPUCommands;
 	class PuduGraphics;
 	class PuduRenderer;
-	class Framebuffer;
+	struct Framebuffer;
 	enum RenderPassType;
 	class FrameGraphRenderPass;
 	class Texture2d;
@@ -32,7 +32,6 @@ namespace Pudu
 		SPtr<Texture2d> activeRenderTarget;
 		RenderPass* currentRenderPass;
 		DrawCall* currentDrawCall;
-		Framebuffer* lastFrameBuffer;
 		PuduApp* app;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;

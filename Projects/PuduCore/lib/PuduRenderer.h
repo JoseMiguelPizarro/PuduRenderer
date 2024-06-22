@@ -5,6 +5,8 @@
 #include <FrameGraph/FrameGraph.h>
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
+#include "FrameGraph/ShadowMapRenderPass.h"
+
 #include <PuduApp.h>
 
 namespace Pudu
@@ -28,6 +30,7 @@ namespace Pudu
 	private:
 		DepthStencilRenderPass m_depthRenderPass;
 		ForwardRenderPass m_forwardRenderPass;
+		ShadowMapRenderPass m_shadowMapRenderPass;
 
 		std::unordered_map<RenderPassType, std::unordered_map<SPtr<Shader>, PipelineHandle>> m_pipelinesByRenderPass;
 		std::unordered_map<RenderPassType, FrameGraphRenderPass*> m_renderPassByType;

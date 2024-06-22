@@ -80,54 +80,58 @@ namespace Pudu
 		vkCmdSetViewport(vkHandle, 0, 1, &vkViewport);
 
 	}
-	void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
+	void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)
 	{
-		RenderPass* renderPass = m_graphics->Resources()->GetRenderPass(renderPassHandle);
-
-		Framebuffer* framebuffer = m_graphics->Resources()->GetFramebuffer(framebufferHandle);
-
-		if (renderPass != currentRenderPass)
-		{
-			VkRenderPassBeginInfo renderPassBegin{};
-			renderPassBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassBegin.framebuffer = framebuffer->vkHandle;
-			renderPassBegin.renderPass = renderPass->vkHandle;
-			renderPassBegin.renderArea.offset = { 0,0 };
-			renderPassBegin.renderArea.extent = { framebuffer->width,framebuffer->height };
-
-			VkClearValue clearValues[K_MAX_IMAGE_OUTPUTS + 1]; //+1 for depthstencil
-			uint32_t clearValuesCount = 0;
-			for (uint32_t o = 0; o < renderPass->output.numColorFormats; ++o)
-			{
-				if (renderPass->output.colorOperations[o] == RenderPassOperation::Clear)
-				{
-					clearValues[clearValuesCount++] = m_clearValues[0];
-				}
-			}
-
-			if (renderPass->output.depthStencilFormat != VK_FORMAT_UNDEFINED)
-			{
-				if (renderPass->output.depthOperation == RenderPassOperation::Clear)
-				{
-					clearValues[clearValuesCount++] = m_clearValues[1];
-				}
-			}
-
-			renderPassBegin.clearValueCount = clearValuesCount;
-			renderPassBegin.pClearValues = clearValues;
-
-			vkCmdBeginRenderPass(vkHandle, &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
-		}
-
-		currentRenderPass = renderPass;
-		currentFramebuffer = framebuffer;
+		vkCmdBeginRendering(vkHandle, &renderInfo);
 	}
+	//void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
+	//{
+	//	RenderPass* renderPass = m_graphics->Resources()->GetRenderPass(renderPassHandle);
 
-	void GPUCommands::EndCurrentRenderPass()
+	//	Framebuffer* framebuffer = m_graphics->Resources()->GetFramebuffer(framebufferHandle);
+
+	//	if (renderPass != currentRenderPass)
+	//	{
+	//		VkRenderPassBeginInfo renderPassBegin{};
+	//		renderPassBegin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	//		renderPassBegin.framebuffer = framebuffer->vkHandle;
+	//		renderPassBegin.renderPass = renderPass->vkHandle;
+	//		renderPassBegin.renderArea.offset = { 0,0 };
+	//		renderPassBegin.renderArea.extent = { framebuffer->width,framebuffer->height };
+
+	//		VkClearValue clearValues[K_MAX_IMAGE_OUTPUTS + 1]; //+1 for depthstencil
+	//		uint32_t clearValuesCount = 0;
+	//		for (uint32_t o = 0; o < renderPass->output.numColorFormats; ++o)
+	//		{
+	//			if (renderPass->output.colorOperations[o] == RenderPassOperation::Clear)
+	//			{
+	//				clearValues[clearValuesCount++] = m_clearValues[0];
+	//			}
+	//		}
+
+	//		if (renderPass->output.depthStencilFormat != VK_FORMAT_UNDEFINED)
+	//		{
+	//			if (renderPass->output.depthOperation == RenderPassOperation::Clear)
+	//			{
+	//				clearValues[clearValuesCount++] = m_clearValues[1];
+	//			}
+	//		}
+
+	//		renderPassBegin.clearValueCount = clearValuesCount;
+	//		renderPassBegin.pClearValues = clearValues;
+
+	//		vkCmdBeginRenderPass(vkHandle, &renderPassBegin, VK_SUBPASS_CONTENTS_INLINE);
+	//	}
+
+	//	currentRenderPass = renderPass;
+	//	currentFramebuffer = framebuffer;
+	//}
+
+	void GPUCommands::EndRenderingPass()
 	{
 		if (currentRenderPass)
 		{
-			vkCmdEndRenderPass(vkHandle);
+			vkCmdEndRendering(vkHandle);
 		}
 
 		currentRenderPass = nullptr;

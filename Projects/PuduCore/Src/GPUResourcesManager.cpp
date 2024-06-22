@@ -1,5 +1,4 @@
 #include "GPUResourcesManager.h"
-#include "Resources/RenderPassCreationData.h"
 #include "PuduGraphics.h"
 #include "Resources/ResourcesPool.h"
 
@@ -52,30 +51,18 @@ namespace Pudu {
 		return m_renderPasses.GetResourcePtr(handle.index);
 	}
 
-	RenderPassHandle GPUResourcesManager::AllocateRenderPass(RenderPassCreationData const& creationData)
+	RenderPass* GPUResourcesManager::AllocateRenderPass()
 	{
 		RenderPassHandle handle = { m_renderPasses.ObtainResource() };
 		if (handle.index == k_INVALID_HANDLE)
 		{
-			return handle;
+			return nullptr;
 		}
 
 		RenderPass* renderPass = GetRenderPass(handle);
 		renderPass->handle = handle;
 
-		renderPass->numRenderTargets = creationData.numRenderTargets;
-		renderPass->dispatchX = 0;
-		renderPass->dispatchY = 0;
-		renderPass->dispatchZ = 0;
-
-		renderPass->name = creationData.name;
-		renderPass->vkHandle = VK_NULL_HANDLE;
-
-		renderPass->output = RenderPassOutput::GetFromCreationData(m_graphics, creationData);
-
-		m_graphics->CreateRenderPass(renderPass);
-
-		return handle;
+		return renderPass;
 	}
 
 	Framebuffer* GPUResourcesManager::GetFramebuffer(FramebufferHandle handle)

@@ -2,7 +2,7 @@
 #include <simdjson.h>
 #include "Logger.h"
 #include "FrameGraph/FrameGraph.h"
-#include <Resources/RenderPassCreationData.h>
+#include <Resources/RenderPass.h>
 #include <Resources/FrameBufferCreationData.h>
 #include "FrameGraph/FrameGraphRenderPass.h"
 
@@ -10,6 +10,16 @@ namespace Pudu
 {
 
 #pragma region Utils
+
+	TextureType::Enum TextureTypeFromString(char const* texType) {
+		if (strcmp(texType, "cube"))
+		{
+			return TextureType::Texture_Cube_Array;
+		}
+
+		TextureType::Texture2D;
+	}
+
 	VkFormat  VkFormatFromString(char const* format) {
 		if (strcmp(format, "VK_FORMAT_R4G4_UNORM_PACK8") == 0) {
 			return VK_FORMAT_R4G4_UNORM_PACK8;
@@ -774,7 +784,8 @@ namespace Pudu
 	static std::unordered_map < std::string, RenderPassType> const RenderPassTypeTable =
 	{
 		{"color", RenderPassType::Color},
-		{"depth", RenderPassType::DepthPrePass}
+		{"depth", RenderPassType::DepthPrePass},
+		{"shadowmap",RenderPassType::ShadowMap}
 	};
 
 	static RenderPassType GetRenderPassType(std::string id) {
@@ -813,8 +824,10 @@ namespace Pudu
 
 	static void CreateRenderPass(FrameGraph* frameGraph, FrameGraphNode* node) {
 		LOG("FrameGraph: Create RenderPass");
-		RenderPassCreationData renderPassCreation{ };
-		renderPassCreation.SetName(node->name.c_str());
+		auto gfx = frameGraph->builder->graphics;
+		RenderPass* renderPass = gfx->Resources()->AllocateRenderPass();
+
+		renderPass->SetName(node->name.c_str());
 
 		for (auto outputResourceHandle : node->outputs) {
 			FrameGraphResource* outputResource = frameGraph->GetResource(outputResourceHandle);
@@ -823,11 +836,21 @@ namespace Pudu
 
 			if (outputResource->type == FrameGraphResourceType_Attachment) {
 				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
-					renderPassCreation.SetDepthStencilTexture(info.texture.format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-					renderPassCreation.depthOperation = info.texture.loadOp;
+
+					RenderPassAttachment attachment{};
+					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
+					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
+					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+					renderPass->attachments.SetDepthStencilAttachment(attachment);
 				}
 				else {
-					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, info.texture.loadOp); //Hack for now, set to transfer cuz we are going to transfer it to the swapchain
+					RenderPassAttachment attachment{};
+					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
+					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
+					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					renderPass->attachments.AddColorAttachment(attachment);
 				}
 			}
 		}
@@ -839,19 +862,25 @@ namespace Pudu
 
 			if (inputResource->type == FrameGraphResourceType_Attachment) {
 				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
-					renderPassCreation.SetDepthStencilTexture(info.texture.format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-
-					renderPassCreation.depthOperation = RenderPassOperation::Load;
+					RenderPassAttachment attachment{};
+					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
+					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
+					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+					renderPass->attachments.SetDepthStencilAttachment(attachment);
 				}
 				else {
-					renderPassCreation.AddAttachment(info.texture.format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, RenderPassOperation::Load);
+					RenderPassAttachment attachment{};
+					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
+					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
+					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					renderPass->attachments.AddColorAttachment(attachment);
 				}
 			}
 		}
 
-
-		auto renderPassHandle = frameGraph->builder->graphics->Resources()->AllocateRenderPass(renderPassCreation);
-		node->renderPass = renderPassHandle;
+		node->renderPass = renderPass->handle;
 
 		LOG("FrameGraph: Create RenderPass End");
 	}
@@ -1157,8 +1186,18 @@ namespace Pudu
 
 					outputCreation.resourceInfo.texture.loadOp = RenderPassOperationFromString(loadOp.c_str());
 
-					auto resolution = output["resolution"].get_array();
 
+					auto textureType = output["textureType"].get_string();
+
+					if (textureType.error() == simdjson::error_code::SUCCESS)
+					{
+						outputCreation.resourceInfo.texture.textureType = TextureTypeFromString(textureType.value().data());
+					}
+					else {
+						outputCreation.resourceInfo.texture.textureType = TextureType::Texture2D;
+					}
+
+					auto resolution = output["resolution"].get_array();
 					std::vector<uint32_t> values;
 					for (auto r : resolution)
 					{
@@ -1377,7 +1416,6 @@ namespace Pudu
 					if (resource->type == FrameGraphResourceType_Attachment)
 					{
 						FrameGraphResourceInfo& info = resource->resourceInfo;
-
 					}
 				}
 			}
@@ -1395,10 +1433,6 @@ namespace Pudu
 			if (node->renderPass.index == k_INVALID_HANDLE)
 			{
 				CreateRenderPass(this, node);
-			}
-			if (node->framebuffer.index == k_INVALID_HANDLE)
-			{
-				CreateFrameBuffer(this, node);
 			}
 		}
 
@@ -1430,7 +1464,7 @@ namespace Pudu
 				{
 					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
-					commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, resource->resourceInfo.texture.format == VK_FORMAT_D32_SFLOAT);
+					commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, TextureFormat::HasDepth(resource->resourceInfo.texture.format));
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{
@@ -1452,13 +1486,13 @@ namespace Pudu
 					width = texture->width;
 					height = texture->height;
 
-					if (texture->format == VK_FORMAT_D32_SFLOAT)
+					if (TextureFormat::HasDepth(texture->format))
 					{
-						commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_DEPTH_WRITE, 0, 1, resource->resourceInfo.texture.format == VK_FORMAT_D32_SFLOAT);
+						commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_DEPTH_WRITE, 0, 1, true);
 					}
 					else
 					{
-						commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_RENDER_TARGET, 0, 1, resource->resourceInfo.texture.format == VK_FORMAT_D32_SFLOAT);
+						commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_RENDER_TARGET, 0, 1, false);
 					}
 				}
 			}
@@ -1466,14 +1500,16 @@ namespace Pudu
 			commands->SetScissor(0, 0, width, height);
 			commands->SetViewport({ {0,0,width,height},0,1 });
 
+			RenderPass* renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 			auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
 			graphRenderPass->PreRender(renderData);
-			commands->BindRenderPass(node->renderPass, node->framebuffer);
-			renderData.lastFrameBuffer = gfx->Resources()->GetFramebuffer(node->framebuffer);
+			auto renderInfo = renderPass->GetRenderingInfo();
+			renderInfo.renderArea = { 0,0,width,height };
+			commands->BegingRenderingPass(renderInfo);
 
 			graphRenderPass->Render(renderData);
-			commands->EndCurrentRenderPass();
+			commands->EndRenderingPass();
 			//TODO: IMPLEMENT MARKERS
 		}
 	}
@@ -1509,5 +1545,26 @@ namespace Pudu
 	}
 	void FrameGraphRenderPassCache::Shutdown()
 	{
+	}
+	VkAttachmentLoadOp GetVkAttachmentLoadOp(RenderPassOperation op)
+	{
+		switch (op)
+		{
+		case Pudu::DontCare:
+			return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			break;
+		case Pudu::Load:
+			return VK_ATTACHMENT_LOAD_OP_LOAD;
+			break;
+		case Pudu::Clear:
+			return VK_ATTACHMENT_LOAD_OP_CLEAR;
+			break;
+		case Pudu::Count:
+			return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+			break;
+		default:
+			return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+			break;
+		}
 	}
 }

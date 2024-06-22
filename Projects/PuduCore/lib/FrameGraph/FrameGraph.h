@@ -24,6 +24,9 @@ namespace Pudu {
 
 	};
 
+
+	VkAttachmentLoadOp GetVkAttachmentLoadOp(RenderPassOperation op);
+
 	struct FrameGraphResourceInfo {
 		/// <summary>
 		/// Resources are laying somewhere in the app, don't need to be produces by a previous node
@@ -45,8 +48,8 @@ namespace Pudu {
 
 				VkFormat format;
 				VkImageUsageFlags flags;
-
 				RenderPassOperation loadOp;
+				TextureType::Enum textureType;
 
 				TextureHandle handle;
 			} texture;

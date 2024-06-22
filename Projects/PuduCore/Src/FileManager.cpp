@@ -25,9 +25,6 @@ namespace fs = std::filesystem;
 namespace Pudu {
 	std::vector<char> FileManager::ReadFile(std::filesystem::path const& fileName)
 	{
-		Print("Current file");
-		Print(fs::current_path().string().c_str());
-
 		std::ifstream file(fileName.generic_string(), std::ios::ate | std::ios::binary); //ate: at the end lmao
 
 		if (!file.is_open())

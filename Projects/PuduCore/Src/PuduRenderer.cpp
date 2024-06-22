@@ -15,6 +15,7 @@ namespace Pudu
 
 		AddRenderPass(&m_depthRenderPass, RenderPassType::DepthPrePass);
 		AddRenderPass(&m_forwardRenderPass, RenderPassType::Color);
+		AddRenderPass(&m_shadowMapRenderPass, RenderPassType::ShadowMap);
 	}
 	void PuduRenderer::Render()
 	{

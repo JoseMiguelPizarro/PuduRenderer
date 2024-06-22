@@ -33,7 +33,7 @@
 #include <ResourceUpdate.h>
 #include <GPUResourcesManager.h>
 #include <Resources/Resources.h>
-#include <Resources/RenderPassCreationData.h>
+#include <Resources/RenderPass.h>
 #include <Resources/FrameBufferCreationData.h>
 #include <FrameGraph/FrameGraphRenderPass.h>
 #include <RenderFrameData.h>
@@ -76,7 +76,8 @@ namespace Pudu
 	// See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
 		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
 		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
-		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
+		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 	};
 
 	class PuduGraphics

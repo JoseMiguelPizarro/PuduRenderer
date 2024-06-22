@@ -5,7 +5,12 @@ namespace Pudu
 	template<typename T>
 	T* ResourcePool<T>::GetResourcePtr(uint32_t handle)
 	{
-		return &m_resources[handle];
+		if (handle < m_resources.size())
+		{
+			return &m_resources[handle];
+		}
+
+		return nullptr;
 	}
 
 	template<typename T>

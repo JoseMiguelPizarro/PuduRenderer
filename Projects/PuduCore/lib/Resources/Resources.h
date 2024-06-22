@@ -9,25 +9,9 @@
 
 namespace Pudu
 {
-	static const uint8_t K_MAX_IMAGE_OUTPUTS = 8;
-	// Maximum number of images/render_targets/fbo attachments usable. +1 if we count depth/stencil
-	static const uint8_t K_MAX_DESCRIPTOR_SET_LAYOUTS = 8; // Maximum number of layouts in the pipeline.
-	static const uint8_t K_MAX_SHADER_STAGES = 5;
-	// Maximum simultaneous shader stages. Applicable to all different type of pipelines.
-	static const uint8_t K_MAX_DESCRIPTORS_PER_SET = 16;
-	// Maximum list elements for both descriptor set layout and descriptor sets.
-	static const uint8_t K_MAX_VERTEX_STREAMS = 16;
-	static const uint8_t K_MAX_VERTEX_ATTRIBUTES = 16;
-
-	static const uint32_t K_SUBMIT_HEADER_SENTINEL = 0xfefeb7ba;
-	static const uint32_t K_MAX_RESOURCE_DELETIONS = 64;
-
-	
 #pragma region Handles
 	typedef uint32_t FrameGraphHandle;
 	typedef uint32_t ResourceHandle;
-
-
 
 	static const uint32_t k_INVALID_HANDLE = 0xffffffff;
 
@@ -143,7 +127,8 @@ namespace Pudu
 	enum  RenderPassType
 	{
 		DepthPrePass,
-		Color
+		Color,
+		ShadowMap
 	};
 
 	namespace ColorWriteEnabled
@@ -177,58 +162,12 @@ namespace Pudu
 		}
 	}
 
-	enum RenderPassOperation
-	{
-		DontCare,
-		Load,
-		Clear,
-		Count
-	}; // enum Enum
+	
 
 
 	class PuduGraphics;
 
-	struct RenderPassCreationData;
-
-	struct RenderPassOutput
-	{
-		VkFormat colorFormats[K_MAX_IMAGE_OUTPUTS];
-		VkImageLayout colorFinalLayouts[K_MAX_IMAGE_OUTPUTS];
-		RenderPassOperation colorOperations[K_MAX_IMAGE_OUTPUTS];
-
-		VkFormat depthStencilFormat;
-		VkImageLayout depthStencilFinalLayout;
-
-		uint32_t numColorFormats;
-
-		RenderPassOperation depthOperation = RenderPassOperation::DontCare;
-		RenderPassOperation stencilOperation = RenderPassOperation::DontCare;
-
-		RenderPassOutput& Reset();
-		RenderPassOutput& AddColorOutput(VkFormat format, VkImageLayout layout, RenderPassOperation load_op);
-		RenderPassOutput& SetDepthOutput(VkFormat format, VkImageLayout layout);
-		RenderPassOutput& SetDepthStencilOperations(RenderPassOperation depth, RenderPassOperation stencil);
-
-		static RenderPassOutput GetFromCreationData(PuduGraphics* graphics,
-			RenderPassCreationData const& creationData);
-	};
-
-	struct RenderPass
-	{
-		RenderPass() = default;
-
-		VkRenderPass vkHandle = nullptr;
-		RenderPassHandle handle;
-
-		RenderPassOutput output;
-		uint16_t dispatchX = 0;
-		uint16_t dispatchY = 0;
-		uint16_t dispatchZ = 0;
-
-		uint8_t numRenderTargets = 0;
-
-		const char* name = nullptr;
-	};
+	
 #pragma endregion
 
 
