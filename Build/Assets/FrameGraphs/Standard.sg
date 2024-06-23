@@ -42,11 +42,7 @@
                 {
                     "type":"attachment",
                     "name":"depth"
-                },
-                {
-                    "type":"attachment",
-                    "name":"shadowmap"
-                }
+                }        
             ],
             "outputs":
             [

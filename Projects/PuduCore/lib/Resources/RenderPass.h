@@ -30,6 +30,7 @@ namespace Pudu
 	struct RenderPassAttachments
 	{
 		VkFormat depthStencilFormat;
+		
 		VkImageLayout depthStencilFinalLayout;
 
 		RenderPassOperation depthOperation = RenderPassOperation::DontCare;
@@ -39,6 +40,7 @@ namespace Pudu
 		RenderPassAttachments& AddColorAttachment(RenderPassAttachment attachment);
 		RenderPassAttachments& SetDepthStencilAttachment(RenderPassAttachment attachment);
 		RenderPassAttachments& SetDepthStencilOperations(RenderPassOperation depth, RenderPassOperation stencil);
+		VkFormat GetStencilFormat();
 
 		uint16_t colorAttachmentCount = 0;
 		uint16_t numColorFormats = 0;

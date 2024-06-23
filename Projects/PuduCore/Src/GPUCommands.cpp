@@ -129,12 +129,7 @@ namespace Pudu
 
 	void GPUCommands::EndRenderingPass()
 	{
-		if (currentRenderPass)
-		{
-			vkCmdEndRendering(vkHandle);
-		}
-
-		currentRenderPass = nullptr;
+		vkCmdEndRendering(vkHandle);
 	}
 	void GPUCommands::BindPipeline(Pipeline* pipeline)
 	{

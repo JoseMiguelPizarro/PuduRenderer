@@ -838,8 +838,9 @@ namespace Pudu
 				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
 
 					RenderPassAttachment attachment{};
-					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
+					attachment.clearValue = { 1.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
+					attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					renderPass->attachments.SetDepthStencilAttachment(attachment);

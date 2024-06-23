@@ -35,6 +35,9 @@ namespace Pudu
 		attachmentInfo.imageView = attachment.texture->vkImageViewHandle;
 		attachmentInfo.imageLayout = attachment.layout;
 		
+
+		depthStencilFormat = attachment.texture->format;
+		
 		depthAttachments[depthAttachmentCount++] = attachmentInfo;
 
 		return *this;
@@ -47,6 +50,13 @@ namespace Pudu
 
 		return *this;
 	}
+	VkFormat RenderPassAttachments::GetStencilFormat()
+	{
+		if (stencilOperation == RenderPassOperation::DontCare)
+		{
+			return VK_FORMAT_UNDEFINED;
+		}
+	}
 	VkRenderingInfo RenderPass::GetRenderingInfo()
 	{
 		VkRenderingInfo renderInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
@@ -55,6 +65,7 @@ namespace Pudu
 		renderInfo.colorAttachmentCount = attachments.colorAttachmentCount;
 		renderInfo.pColorAttachments = attachments.colorAttachments;
 		renderInfo.pDepthAttachment = attachments.depthAttachments;
+		renderInfo.pStencilAttachment = nullptr;
 
 		return renderInfo;
 	}

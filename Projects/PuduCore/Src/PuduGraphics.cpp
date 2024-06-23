@@ -452,8 +452,9 @@ namespace Pudu
 
 		frameGraph->Render(frameData);
 
-		DrawImGui(frameData);
+		//DrawImGui(frameData);
 
+		TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle, frameData.activeRenderTarget->format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, frameData.currentCommand);
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, frameData.currentCommand);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, frameData.currentCommand);
@@ -1617,9 +1618,9 @@ namespace Pudu
 
 			depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 			depthStencilInfo.depthWriteEnable = depthStencilState.isDepthWriteEnable;
-			depthStencilInfo.stencilTestEnable = depthStencilState.isDepthEnabled;
+			depthStencilInfo.stencilTestEnable = false;
 			depthStencilInfo.depthTestEnable = depthStencilState.isDepthEnabled;
-			depthStencilInfo.depthCompareOp = depthStencilState.depthComparison;
+			depthStencilInfo.depthCompareOp = depthStencilState.depthComparison; 
 			depthStencilInfo.front = depthStencilState.GetVkFront();
 			depthStencilInfo.back = depthStencilState.GetVkBack();
 
@@ -1678,9 +1679,11 @@ namespace Pudu
 			pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 			pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentCount;
 			pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.colorAttachmentsFormat;
+			pipelineRenderingInfo.depthAttachmentFormat = renderPass->attachments.depthStencilFormat;
+			pipelineRenderingInfo.stencilAttachmentFormat = renderPass->attachments.GetStencilFormat();
 
 			graphicsPipelineInfo.renderPass = nullptr;
-
+			graphicsPipelineInfo.pNext = &pipelineRenderingInfo;
 			// Dynamic states
 			VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 			VkPipelineDynamicStateCreateInfo dynamic_state{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
@@ -2234,6 +2237,13 @@ namespace Pudu
 
 			sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		}
+		else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+		{
+			barrier.srcAccessMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			barrier.dstAccessMask = 0;
+			sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
 		else
 		{
