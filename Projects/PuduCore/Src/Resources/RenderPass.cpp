@@ -1,4 +1,5 @@
 #include "Resources/RenderPass.h"
+#include "GPUCommands.h"
 
 namespace Pudu
 {
@@ -34,10 +35,10 @@ namespace Pudu
 		attachmentInfo.storeOp = attachment.storeOp;
 		attachmentInfo.imageView = attachment.texture->vkImageViewHandle;
 		attachmentInfo.imageLayout = attachment.layout;
-		
+
 
 		depthStencilFormat = attachment.texture->format;
-		
+
 		depthAttachments[depthAttachmentCount++] = attachmentInfo;
 
 		return *this;
@@ -57,7 +58,7 @@ namespace Pudu
 			return VK_FORMAT_UNDEFINED;
 		}
 	}
-	VkRenderingInfo RenderPass::GetRenderingInfo()
+	VkRenderingInfo RenderPass::GetRenderingInfo(RenderFrameData& data)
 	{
 		VkRenderingInfo renderInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
 		renderInfo.renderArea = renderArea;
@@ -67,11 +68,29 @@ namespace Pudu
 		renderInfo.pDepthAttachment = attachments.depthAttachments;
 		renderInfo.pStencilAttachment = nullptr;
 
+		renderInfo.renderArea = { 0,0,data.width,data.height };
+
 		return renderInfo;
+	}
+
+	void RenderPass::BeginRender(RenderFrameData& data)
+	{
+		data.currentCommand->BegingRenderingPass(GetRenderingInfo(data));
+	}
+
+	void RenderPass::EndRender(RenderFrameData& data)
+	{
+		data.currentCommand->EndRenderingPass();
 	}
 
 	void RenderPass::SetName(const char* name)
 	{
 		this->name.append(name);
+	}
+	void ComputeRenderPass::BeginRender(RenderFrameData& data)
+	{
+	}
+	void ComputeRenderPass::EndRender(RenderFrameData& data)
+	{
 	}
 }

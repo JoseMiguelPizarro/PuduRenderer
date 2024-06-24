@@ -107,6 +107,7 @@ namespace Pudu {
 
 		RenderPassType renderType;
 		bool enabled;
+		bool isCompute = false;
 
 		char const* name;
 	};
@@ -123,7 +124,7 @@ namespace Pudu {
 		//Edges represent nodes this node is connected TO
 		std::vector<FrameGraphNodeHandle> edges;
 		RenderPassType type;
-
+		bool isCompute;
 
 		bool enabled = true;
 

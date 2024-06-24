@@ -452,7 +452,7 @@ namespace Pudu
 
 		frameGraph->Render(frameData);
 
-		//DrawImGui(frameData);
+		DrawImGui(frameData);
 
 		TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle, frameData.activeRenderTarget->format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, frameData.currentCommand);
 		TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, frameData.currentCommand);
@@ -470,13 +470,13 @@ namespace Pudu
 			UpdateComputeResources(testComputeShader.get());
 		}
 
-		auto computePipeline = m_resources.GetPipeline(testComputeShader->pipelineHandle);
-		computeCommands->BeginCommands();
-		//IMPORTANT: Descriptor sets should be binded BEFORE binding the pipeline
-		computeCommands->BindDescriptorSetCompute(computePipeline->vkPipelineLayoutHandle, &computePipeline->vkDescriptorSet, 1);
-		computeCommands->BindPipeline(m_resources.GetPipeline(testComputeShader->pipelineHandle));
-		computeCommands->Dispatch(std::ceil(1024 / 16.0f), std::ceil(1024 / 16.0f), 1);
-		computeCommands->EndCommands();
+		//auto computePipeline = m_resources.GetPipeline(testComputeShader->pipelineHandle);
+		//computeCommands->BeginCommands();
+		////IMPORTANT: Descriptor sets should be binded BEFORE binding the pipeline
+		///*computeCommands->BindDescriptorSetCompute(computePipeline->vkPipelineLayoutHandle, &computePipeline->vkDescriptorSet, 1);
+		//computeCommands->BindPipeline(m_resources.GetPipeline(testComputeShader->pipelineHandle));
+		//computeCommands->Dispatch(std::ceil(1024 / 16.0f), std::ceil(1024 / 16.0f), 1);*/
+		//computeCommands->EndCommands();
 
 		SubmitComputeWork(frameData);
 		SubmitFrame(frameData);

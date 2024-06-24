@@ -20,8 +20,9 @@
         },
         {
             "name":"shadowmap",
-            "enabled":false,
+            "enabled":true,
             "type":"shadowmap",
+            "family":"compute",
             "inputs":[],
             "outputs":[
                 {

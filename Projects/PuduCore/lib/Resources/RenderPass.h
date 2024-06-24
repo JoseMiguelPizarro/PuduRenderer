@@ -3,6 +3,7 @@
 #include "PuduConstants.h"
 #include "Resources/Resources.h"
 #include "Texture2D.h"
+#include "RenderFrameData.h"
 
 namespace Pudu
 {
@@ -27,10 +28,15 @@ namespace Pudu
 
 	};
 
+	struct RenderPassCreationData
+	{
+		bool isCompute;
+	};
+
 	struct RenderPassAttachments
 	{
 		VkFormat depthStencilFormat;
-		
+
 		VkImageLayout depthStencilFinalLayout;
 
 		RenderPassOperation depthOperation = RenderPassOperation::DontCare;
@@ -58,11 +64,14 @@ namespace Pudu
 	public:
 		RenderPass() = default;
 
-		VkRenderingInfo GetRenderingInfo();
+		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		VkRect2D renderArea;
 
 		RenderPassHandle handle;
 		VkRenderPass vkHandle;
+
+		virtual void BeginRender(RenderFrameData& data);
+		virtual void EndRender(RenderFrameData& data);
 
 		RenderPassAttachments attachments;
 		uint16_t dispatchX = 0;
@@ -74,6 +83,12 @@ namespace Pudu
 		std::string name;
 
 		void SetName(const char* name);
+	};
+
+	class ComputeRenderPass :public RenderPass
+	{
+		void BeginRender(RenderFrameData& data) override;
+		void EndRender(RenderFrameData& data) override;
 	};
 }
 

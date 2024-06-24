@@ -23,7 +23,7 @@ namespace Pudu {
 		SPtr<Texture2d> AllocateTexture();
 
 		RenderPass* GetRenderPass(RenderPassHandle handle);
-		RenderPass* AllocateRenderPass();
+		RenderPass* AllocateRenderPass(RenderPassCreationData const& creationdata);
 
 		Framebuffer* GetFramebuffer(FramebufferHandle handle);
 		FramebufferHandle AllocateFrameBuffer(FramebufferCreationData const& creationData);

@@ -825,7 +825,9 @@ namespace Pudu
 	static void CreateRenderPass(FrameGraph* frameGraph, FrameGraphNode* node) {
 		LOG("FrameGraph: Create RenderPass");
 		auto gfx = frameGraph->builder->graphics;
-		RenderPass* renderPass = gfx->Resources()->AllocateRenderPass();
+		RenderPassCreationData creationData;
+		creationData.isCompute = node->isCompute;
+		RenderPass* renderPass = gfx->Resources()->AllocateRenderPass(creationData);
 
 		renderPass->SetName(node->name.c_str());
 
@@ -1021,6 +1023,7 @@ namespace Pudu
 		node->framebuffer = { k_INVALID_HANDLE };
 		node->renderPass = { k_INVALID_HANDLE };
 		node->type = creation.renderType;
+		node->isCompute = creation.isCompute;
 
 		nodeCache.nodeMap[node->name] = nodeHandle.index;
 
@@ -1142,6 +1145,15 @@ namespace Pudu
 			std::string nameString(name.value());
 			nodeCreation.name = nameString.c_str();
 
+			auto family = pass["family"].get_string();
+
+			if (family.error() == simdjson::error_code::SUCCESS)
+			{
+				if (family.value().compare("compute") == 0)
+				{
+					nodeCreation.isCompute = true;
+				}
+			}
 
 			nodeCreation.enabled = pass["enabled"].get_bool();
 			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value())); //We need to store the string_view into a string
@@ -1500,17 +1512,19 @@ namespace Pudu
 
 			commands->SetScissor(0, 0, width, height);
 			commands->SetViewport({ {0,0,width,height},0,1 });
+			renderData.width = width;
+			renderData.height = height;
 
 			RenderPass* renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 			auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;
-			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
-			graphRenderPass->PreRender(renderData);
-			auto renderInfo = renderPass->GetRenderingInfo();
-			renderInfo.renderArea = { 0,0,width,height };
-			commands->BegingRenderingPass(renderInfo);
 
+			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
+
+			graphRenderPass->PreRender(renderData);
+			renderPass->BeginRender(renderData);
 			graphRenderPass->Render(renderData);
-			commands->EndRenderingPass();
+			renderPass->EndRender(renderData);
+
 			//TODO: IMPLEMENT MARKERS
 		}
 	}

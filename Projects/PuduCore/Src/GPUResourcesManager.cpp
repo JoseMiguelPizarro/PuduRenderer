@@ -51,18 +51,30 @@ namespace Pudu {
 		return m_renderPasses.GetResourcePtr(handle.index);
 	}
 
-	RenderPass* GPUResourcesManager::AllocateRenderPass()
+	RenderPass* GPUResourcesManager::AllocateRenderPass(RenderPassCreationData const & creationData)
 	{
-		RenderPassHandle handle = { m_renderPasses.ObtainResource() };
+		RenderPass renderPass;
+
+		if (creationData.isCompute)
+		{
+			renderPass = ComputeRenderPass();
+		}
+		else
+		{
+			renderPass = RenderPass();
+		}
+
+		RenderPassHandle handle = { m_renderPasses.AddResource(renderPass)};
+
 		if (handle.index == k_INVALID_HANDLE)
 		{
 			return nullptr;
 		}
 
-		RenderPass* renderPass = GetRenderPass(handle);
-		renderPass->handle = handle;
+		RenderPass* renderPassPtr = GetRenderPass(handle);
+		renderPassPtr->handle = handle;
 
-		return renderPass;
+		return renderPassPtr;
 	}
 
 	Framebuffer* GPUResourcesManager::GetFramebuffer(FramebufferHandle handle)

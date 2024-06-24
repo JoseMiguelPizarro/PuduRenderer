@@ -33,6 +33,8 @@ namespace Pudu
 		RenderPass* currentRenderPass;
 		DrawCall* currentDrawCall;
 		PuduApp* app;
+		uint16_t width;
+		uint16_t height;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<GPUCommands*> computeCommandsToSubmit;
