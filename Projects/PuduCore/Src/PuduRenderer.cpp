@@ -31,7 +31,7 @@ namespace Pudu
 		graphics->DrawFrame(renderData);
 	}
 
-	void PuduRenderer::AddRenderPass(FrameGraphRenderPass* renderPass, RenderPassType renderPasstype)
+	void PuduRenderer::AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype)
 	{
 		renderPass->Initialize(graphics);
 

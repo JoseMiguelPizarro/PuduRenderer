@@ -1,4 +1,4 @@
-#include "FrameGraph/FrameGraphRenderPass.h"
+#include "FrameGraph/RenderPass.h"
 #include "RenderFrameData.h"
 #include "DrawCall.h"
 #include "PuduRenderer.h"
@@ -9,12 +9,72 @@
 
 namespace Pudu
 {
-	Pipeline* FrameGraphRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
+#pragma region attachments
+
+	RenderPassAttachments& RenderPassAttachments::Reset()
+	{
+		colorAttachmentCount = 0;
+		depthStencilFormat = VK_FORMAT_UNDEFINED;
+		depthOperation = stencilOperation = RenderPassOperation::DontCare;
+		return *this;
+	}
+
+	RenderPassAttachments& RenderPassAttachments::AddColorAttachment(RenderPassAttachment attachment)
+	{
+		VkRenderingAttachmentInfo attachmentInfo{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+		attachmentInfo.clearValue = attachment.clearValue;
+		attachmentInfo.loadOp = attachment.loadOperation;
+		attachmentInfo.storeOp = attachment.storeOp;
+		attachmentInfo.imageView = attachment.texture->vkImageViewHandle;
+		attachmentInfo.imageLayout = attachment.layout;
+
+		colorAttachmentsFormat[numColorFormats++] = attachment.texture->format;
+		colorAttachments[colorAttachmentCount++] = attachmentInfo;
+
+		return *this;
+	}
+
+	RenderPassAttachments& RenderPassAttachments::SetDepthStencilAttachment(RenderPassAttachment attachment)
+	{
+		VkRenderingAttachmentInfo attachmentInfo{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+		attachmentInfo.clearValue = attachment.clearValue;
+		attachmentInfo.loadOp = attachment.loadOperation;
+		attachmentInfo.storeOp = attachment.storeOp;
+		attachmentInfo.imageView = attachment.texture->vkImageViewHandle;
+		attachmentInfo.imageLayout = attachment.layout;
+
+
+		depthStencilFormat = attachment.texture->format;
+
+		depthAttachments[depthAttachmentCount++] = attachmentInfo;
+
+		return *this;
+	}
+
+	RenderPassAttachments& RenderPassAttachments::SetDepthStencilOperations(RenderPassOperation depth, RenderPassOperation stencil)
+	{
+		depthOperation = depth;
+		stencilOperation = stencil;
+
+		return *this;
+	}
+	VkFormat RenderPassAttachments::GetStencilFormat()
+	{
+		if (stencilOperation == RenderPassOperation::DontCare)
+		{
+			return VK_FORMAT_UNDEFINED;
+		}
+	}
+
+#pragma endregion 
+
+
+	Pipeline* RenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		return frameData.renderer->GetOrCreatePipeline(frameData, RenderPassType::Color);
 	}
 
-	void FrameGraphRenderPass::Render(RenderFrameData& frameData)
+	void RenderPass::Render(RenderFrameData& frameData)
 	{
 		auto renderScene = frameData.scene;
 		auto commands = frameData.currentCommand;
@@ -65,7 +125,7 @@ namespace Pudu
 			AfterRenderDrawcall(frameData, drawCall);
 		}
 	}
-	PipelineCreationData FrameGraphRenderPass::GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall)
+	PipelineCreationData RenderPass::GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		PipelineCreationData creationData;
 
@@ -132,5 +192,45 @@ namespace Pudu
 		creationData.renderPassHandle = frameData.currentRenderPass->handle;
 
 		return creationData;
+	}
+
+	void RenderPass::SetComputeShader(ComputeShader* shader)
+	{
+		m_computeShader = shader;
+	}
+
+	ComputeShader* RenderPass::GetComputeShader()
+	{
+		return m_computeShader;
+	}
+
+	VkRenderingInfo RenderPass::GetRenderingInfo(RenderFrameData& data)
+	{
+		VkRenderingInfo renderInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+		renderInfo.renderArea = renderArea;
+		renderInfo.layerCount = 1;
+		renderInfo.colorAttachmentCount = attachments.colorAttachmentCount;
+		renderInfo.pColorAttachments = attachments.colorAttachments;
+		renderInfo.pDepthAttachment = attachments.depthAttachments;
+		renderInfo.pStencilAttachment = nullptr;
+
+		renderInfo.renderArea = { 0,0,data.width,data.height };
+
+		return renderInfo;
+	}
+
+	void RenderPass::BeginRender(RenderFrameData& data)
+	{
+		data.currentCommand->BegingRenderingPass(GetRenderingInfo(data));
+	}
+
+	void RenderPass::EndRender(RenderFrameData& data)
+	{
+		data.currentCommand->EndRenderingPass();
+	}
+
+	void RenderPass::SetName(const char* name)
+	{
+		this->name.append(name);
 	}
 }

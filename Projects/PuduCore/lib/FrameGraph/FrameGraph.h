@@ -8,7 +8,7 @@
 #include <Resources/ResourcesPool.h>
 #include <PuduGraphics.h>
 #include <GPUCommands.h>
-#include "FrameGraphRenderPass.h"
+#include "FrameGraph/RenderPass.h"
 
 namespace Pudu {
 
@@ -135,7 +135,7 @@ namespace Pudu {
 		void Init();
 		void Shutdown();
 
-		std::unordered_map<uint64_t, FrameGraphRenderPass*> renderPassMap;
+		std::unordered_map<uint64_t, RenderPass*> renderPassMap;
 	};
 
 	struct FrameGraphResourceCache {
@@ -211,7 +211,7 @@ namespace Pudu {
 		void DisableRenderPass(char* renderPassName);
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
 
-		void AttachRenderPass(FrameGraphRenderPass renderPass, RenderPassType type);
+		void AttachRenderPass(RenderPass renderPass, RenderPassType type);
 
 		FrameGraphNode* GetNode(char* name);
 		FrameGraphNode* GetNode(FrameGraphNodeHandle handle);

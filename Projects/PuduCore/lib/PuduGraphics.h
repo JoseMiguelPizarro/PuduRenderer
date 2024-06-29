@@ -33,9 +33,8 @@
 #include <ResourceUpdate.h>
 #include <GPUResourcesManager.h>
 #include <Resources/Resources.h>
-#include <Resources/RenderPass.h>
+#include "FrameGraph/RenderPass.h"
 #include <Resources/FrameBufferCreationData.h>
-#include <FrameGraph/FrameGraphRenderPass.h>
 #include <RenderFrameData.h>
 #include "GPUCommands.h"
 #include <ComputeShader.h>

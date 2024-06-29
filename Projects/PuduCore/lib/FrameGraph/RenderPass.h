@@ -1,9 +1,8 @@
 #pragma once
-#include <vulkan/vulkan_core.h>
-#include "PuduConstants.h"
+#include <GPUCommands.h>
 #include "Resources/Resources.h"
-#include "Texture2D.h"
 #include "RenderFrameData.h"
+#include "DrawCall.h"
 
 namespace Pudu
 {
@@ -31,6 +30,7 @@ namespace Pudu
 	struct RenderPassCreationData
 	{
 		bool isCompute;
+		ComputeShader* computeShader;
 	};
 
 	struct RenderPassAttachments
@@ -58,17 +58,16 @@ namespace Pudu
 		VkRenderingAttachmentInfo stencilAttachments[K_MAX_IMAGE_OUTPUTS];
 	};
 
-
 	class RenderPass
 	{
 	public:
-		RenderPass() = default;
-
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		VkRect2D renderArea;
 
 		RenderPassHandle handle;
 		VkRenderPass vkHandle;
+
+		bool isCompute;
 
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);
@@ -83,13 +82,21 @@ namespace Pudu
 		std::string name;
 
 		void SetName(const char* name);
+
+
+		virtual Pipeline* GetPipeline(RenderFrameData& frameData, DrawCall& drawcall);
+		virtual void PreRender(RenderFrameData& renderData) { }
+		virtual void Render(RenderFrameData& frameData);
+		virtual void OnResize(PuduGraphics& gpu, uint32_t newWidth, uint32_t newHeight) {}
+		virtual void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
+		virtual void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
+		virtual PipelineCreationData GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall);
+		virtual void Initialize(PuduGraphics* gpu) {};
+		void SetComputeShader(ComputeShader* shader);
+		ComputeShader* GetComputeShader();
+
+	private:
+		ComputeShader* m_computeShader;
 	};
 
-	class ComputeRenderPass :public RenderPass
-	{
-		void BeginRender(RenderFrameData& data) override;
-		void EndRender(RenderFrameData& data) override;
-	};
 }
-
-

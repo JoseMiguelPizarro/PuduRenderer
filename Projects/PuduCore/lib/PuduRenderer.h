@@ -25,7 +25,7 @@ namespace Pudu
 		void Render();
 		void LoadFrameGraph(fs::path path);
 		Pipeline* GetOrCreatePipeline(RenderFrameData& data, RenderPassType renderPassType);
-		void AddRenderPass(FrameGraphRenderPass* renderPass, RenderPassType renderPasstype);
+		void AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype);
 
 	private:
 		DepthStencilRenderPass m_depthRenderPass;
@@ -33,7 +33,7 @@ namespace Pudu
 		ShadowMapRenderPass m_shadowMapRenderPass;
 
 		std::unordered_map<RenderPassType, std::unordered_map<SPtr<Shader>, PipelineHandle>> m_pipelinesByRenderPass;
-		std::unordered_map<RenderPassType, FrameGraphRenderPass*> m_renderPassByType;
+		std::unordered_map<RenderPassType, RenderPass*> m_renderPassByType;
 	};
 }
 

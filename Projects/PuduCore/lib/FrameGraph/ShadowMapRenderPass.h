@@ -1,10 +1,10 @@
 #pragma once
-#include "FrameGraphRenderPass.h"
+#include "FrameGraph/RenderPass.h"
 #include "PuduGraphics.h"
 
 namespace Pudu
 {
-	class ShadowMapRenderPass :public FrameGraphRenderPass
+	class ShadowMapRenderPass :public RenderPass
 	{
 		void Initialize(PuduGraphics* gfx) override;
 		

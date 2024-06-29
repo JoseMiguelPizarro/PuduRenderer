@@ -1,9 +1,9 @@
 #pragma once
-#include "FrameGraphRenderPass.h"
+#include "FrameGraph/RenderPass.h"
 
 namespace Pudu
 {
-	class DepthStencilRenderPass : public FrameGraphRenderPass
+	class DepthStencilRenderPass : public RenderPass
 	{
 	public:
 

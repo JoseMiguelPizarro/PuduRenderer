@@ -57,7 +57,8 @@ namespace Pudu {
 
 		if (creationData.isCompute)
 		{
-			renderPass = ComputeRenderPass();
+			renderPass.isCompute = true;
+			renderPass.SetComputeShader(creationData.computeShader);
 		}
 		else
 		{

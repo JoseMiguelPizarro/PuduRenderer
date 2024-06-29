@@ -1,9 +1,9 @@
 #pragma once
-#include "FrameGraphRenderPass.h"
+#include "FrameGraph/RenderPass.h"
 
 namespace Pudu 
 {
-	class ForwardRenderPass: public FrameGraphRenderPass
+	class ForwardRenderPass: public RenderPass
 	{
 	};
 }

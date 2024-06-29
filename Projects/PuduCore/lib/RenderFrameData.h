@@ -16,7 +16,7 @@ namespace Pudu
 	class PuduRenderer;
 	struct Framebuffer;
 	enum RenderPassType;
-	class FrameGraphRenderPass;
+	class RenderPass;
 	class Texture2d;
 	class PuduApp;
 
@@ -38,6 +38,6 @@ namespace Pudu
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<GPUCommands*> computeCommandsToSubmit;
-		std::unordered_map<RenderPassType, FrameGraphRenderPass*>* m_renderPassesByType;
+		std::unordered_map<RenderPassType, RenderPass*>* m_renderPassesByType;
 	};
 }

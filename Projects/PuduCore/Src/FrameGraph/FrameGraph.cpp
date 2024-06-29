@@ -2,9 +2,8 @@
 #include <simdjson.h>
 #include "Logger.h"
 #include "FrameGraph/FrameGraph.h"
-#include <Resources/RenderPass.h>
+#include "FrameGraph/RenderPass.h"
 #include <Resources/FrameBufferCreationData.h>
-#include "FrameGraph/FrameGraphRenderPass.h"
 
 namespace Pudu
 {
@@ -1516,13 +1515,13 @@ namespace Pudu
 			renderData.height = height;
 
 			RenderPass* renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
-			auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;
+			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
 
-			graphRenderPass->PreRender(renderData);
+			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
-			graphRenderPass->Render(renderData);
+			renderPass->Render(renderData);
 			renderPass->EndRender(renderData);
 
 			//TODO: IMPLEMENT MARKERS
@@ -1531,7 +1530,7 @@ namespace Pudu
 	void FrameGraph::OnResize(PuduGraphics& gpu, uint32_t new_width, uint32_t new_height)
 	{
 	}
-	void FrameGraph::AttachRenderPass(FrameGraphRenderPass renderPass, RenderPassType type)
+	void FrameGraph::AttachRenderPass(RenderPass renderPass, RenderPassType type)
 	{
 
 	}
