@@ -5,6 +5,7 @@
 #include "Resources/Resources.h"
 #include "SPIRVParser.h"
 #include <GPUCommands.h>
+#include "Lighting/Light.h"
 
 
 namespace Pudu
@@ -116,7 +117,8 @@ namespace Pudu
 				uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 				RenderConstants constants{};
 				constants.materialId = materialid;
-				constants.g_LightDirection = normalize(vec3(1, 1, 1)); //HARDCODED LIGHT DIRECTION
+
+				constants.g_LightDirection = renderScene->directionalLight->direction; 
 				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(RenderConstants), &constants);
 			}
 

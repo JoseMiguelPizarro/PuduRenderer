@@ -7,6 +7,7 @@
 #include "RenderEntity.h"
 #include "EntityManager.h"
 #include "Resources/Resources.h"
+#include "Lighting/Light.h"
 
 namespace Pudu {
 	class Scene
@@ -24,6 +25,7 @@ namespace Pudu {
 		EntitySPtr sceneRoot;
 		PuduTime* time;
 		PipelineHandle pipelineHandle;
+		Light* directionalLight;
 
 		std::vector<DrawCall> GetDrawCalls() {
 			return m_DrawCalls;

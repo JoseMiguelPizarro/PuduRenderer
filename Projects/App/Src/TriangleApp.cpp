@@ -53,6 +53,10 @@ void TriangleApp::OnInit()
 	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath, "standard");
 	standardShader->name = "Standard";
 
+	directionalLight = {};
+	directionalLight.direction = { 1.0f,1.0f,1.0f };
+	m_scene.directionalLight = &directionalLight;
+
 	LoadGameboyModel();
 }
 

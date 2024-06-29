@@ -41,4 +41,5 @@ private:
 	SPtr<Texture2d> m_planeTexture;
 	PuduRenderer m_puduRenderer;
 	SPtr<Shader> standardShader;
+	Light directionalLight;
 };
