@@ -30,8 +30,10 @@ namespace Pudu
 	struct RenderPassCreationData
 	{
 		bool isCompute;
+		bool isEnabled;
 		ComputeShader* computeShader;
 		RenderPassType type;
+
 	};
 
 	struct RenderPassAttachments
@@ -69,6 +71,7 @@ namespace Pudu
 		VkRenderPass vkHandle;
 
 		bool isCompute;
+		bool isEnabled;
 
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);

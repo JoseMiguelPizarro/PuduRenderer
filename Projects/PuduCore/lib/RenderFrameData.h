@@ -20,6 +20,7 @@ namespace Pudu
 	class Texture2d;
 	class PuduApp;
 	class Camera;
+	class Pipeline;
 
 	struct RenderFrameData
 	{
@@ -33,6 +34,7 @@ namespace Pudu
 		SPtr<Texture2d> activeRenderTarget;
 		SPtr<RenderPass> currentRenderPass;
 		DrawCall* currentDrawCall;
+		Pipeline* currentPipeline;
 		PuduApp* app;
 		uint16_t width;
 		uint16_t height;

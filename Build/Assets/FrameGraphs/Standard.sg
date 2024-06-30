@@ -19,23 +19,8 @@
             ]
         },
         {
-            "name":"shadowmap",
-            "enabled":false,
-            "type":"shadowmap",
-            "inputs":[],
-            "outputs":[
-                {
-                    "type":"attachment",
-                    "name":"shadowmap",
-                    "format": "VK_FORMAT_D16_UNORM",
-                    "resolution":[2048,2048],
-                    "op":"VK_ATTACHMENT_LOAD_OP_CLEAR"
-                }
-            ]
-        },
-        {
             "name": "forward",
-            "enabled":false,
+            "enabled":true,
             "type":"color",
             "inputs":[
                 {

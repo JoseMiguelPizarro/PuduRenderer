@@ -90,12 +90,17 @@ namespace Pudu
 			auto mesh = drawCall.MeshPtr;
 
 			Pipeline* pipeline = GetPipeline(frameData, drawCall);
-			frameData.graphics->UpdateBindlessResources(pipeline);
-
-			commands->BindPipeline(pipeline);
-			if (pipeline->numActiveLayouts > 0)
+			if (pipeline != frameData.currentPipeline)
 			{
-				vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
+				frameData.graphics->UpdateBindlessResources(pipeline);
+
+				commands->BindPipeline(pipeline);
+				if (pipeline->numActiveLayouts > 0)
+				{
+					vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
+				}
+
+				frameData.currentPipeline = pipeline;
 			}
 
 			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
@@ -118,7 +123,7 @@ namespace Pudu
 				RenderConstants constants{};
 				constants.materialId = materialid;
 
-				constants.g_LightDirection = renderScene->directionalLight->direction; 
+				constants.g_LightDirection = renderScene->directionalLight->direction;
 				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(RenderConstants), &constants);
 			}
 

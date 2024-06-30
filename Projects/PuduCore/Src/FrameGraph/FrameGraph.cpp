@@ -827,6 +827,7 @@ namespace Pudu
 		RenderPassCreationData creationData;
 		creationData.isCompute = node->isCompute;
 		creationData.type = node->type;
+		creationData.isEnabled = node->enabled;
 
 		auto renderPass = gfx->Resources()->AllocateRenderPass(creationData);
 
@@ -1167,6 +1168,7 @@ namespace Pudu
 
 				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
 				auto inputName = input["name"].get_string();
+				
 				std::string inputNameStr;
 				inputNameStr.append(inputName.value());
 				inputCreation.name = inputNameStr;
@@ -1452,23 +1454,29 @@ namespace Pudu
 
 		LOG("FrameGraph Compile End");
 	}
-	void FrameGraph::Render(RenderFrameData& renderData)
+	void FrameGraph::RenderFrame(RenderFrameData& renderData)
 	{
 		auto commands = renderData.currentCommand;
 		auto gfx = renderData.graphics;
 
 		for (auto nodeHandle : nodes)
 		{
-			FrameGraphNode* node = builder->GetNode(nodeHandle);
 			//TODO: PUT MARKERS
+			FrameGraphNode* node = builder->GetNode(nodeHandle);
+			auto renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 
+			if (!renderPass->isEnabled)
+			{
+				continue;
+			}
 			commands->Clear(vec4(0.2, 0.2, 0.3, 1.0));
 			commands->ClearDepthStencil(1.0f, 0);
 
 			uint16_t width = 0;
 			uint16_t height = 0;
 
-			renderData.currentRenderPass = gfx->Resources()->GetRenderPass(node->renderPass);
+			renderData.currentRenderPass = renderPass;
+
 
 			for (auto nodeInputHandle : node->inputs)
 			{
@@ -1516,7 +1524,6 @@ namespace Pudu
 			renderData.width = width;
 			renderData.height = height;
 
-			SPtr<RenderPass> renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);

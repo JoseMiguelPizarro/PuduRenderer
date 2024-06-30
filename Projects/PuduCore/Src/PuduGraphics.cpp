@@ -451,7 +451,7 @@ namespace Pudu
 
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
 
-		frameGraph->Render(frameData);
+		frameGraph->RenderFrame(frameData);
 
 		DrawImGui(frameData);
 

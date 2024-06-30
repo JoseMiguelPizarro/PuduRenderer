@@ -75,6 +75,7 @@ namespace Pudu {
 		}
 
 		SPtr<RenderPass> renderPassPtr = GetRenderPass(handle);
+		renderPassPtr->isEnabled = creationData.isEnabled;
 
 		if (creationData.isCompute)
 		{
@@ -86,6 +87,7 @@ namespace Pudu {
 		{
 			return nullptr;
 		}
+
 
 		renderPassPtr->handle = handle;
 

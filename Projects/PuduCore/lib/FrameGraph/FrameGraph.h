@@ -192,7 +192,7 @@ namespace Pudu {
 		void Init(FrameGraphBuilder* builder);
 		void Shutdown();
 
-		void Render(RenderFrameData& renderData);
+		void RenderFrame(RenderFrameData& renderData);
 		/// <summary>
 		/// Load file from filePath and create frame graph nodes
 		/// </summary>
