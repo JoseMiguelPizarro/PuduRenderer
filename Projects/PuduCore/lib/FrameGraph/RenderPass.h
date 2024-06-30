@@ -31,6 +31,7 @@ namespace Pudu
 	{
 		bool isCompute;
 		ComputeShader* computeShader;
+		RenderPassType type;
 	};
 
 	struct RenderPassAttachments
@@ -87,12 +88,14 @@ namespace Pudu
 		virtual Pipeline* GetPipeline(RenderFrameData& frameData, DrawCall& drawcall);
 		virtual void PreRender(RenderFrameData& renderData) { }
 		virtual void Render(RenderFrameData& frameData);
+		virtual void AfterRender(RenderFrameData& frameData) {};
 		virtual void OnResize(PuduGraphics& gpu, uint32_t newWidth, uint32_t newHeight) {}
 		virtual void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
 		virtual void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
 		virtual PipelineCreationData GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall);
 		virtual void Initialize(PuduGraphics* gpu) {};
 		void SetComputeShader(ComputeShader* shader);
+		virtual RenderPassType GetRenderPassType() { return RenderPassType::Color;};
 		ComputeShader* GetComputeShader();
 
 	private:

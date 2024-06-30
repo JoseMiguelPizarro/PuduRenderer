@@ -40,6 +40,20 @@ namespace Pudu {
 			0,0,0,1 };
 	}
 
+	static mat4 OrthograpicMatrix(float l, float r, float b, float t, float n, float f) {
+
+		mat4 om
+		(
+			2.0f / (r - l), 0.0f, 0.0f, 0.0f,
+			0.0f, -2.0f / (t - b), 0.0f, 0.0f, //Multiply by -1 to remap to vk ndc space
+			0.0f, 0.0f, 1.0f / (f - n), 0.0f,
+			-(r + l) / (r - l), -(t + b) / (t - b), -n / (f - n), 1.0f
+		);
+
+		return om;
+	}
+
+
 	static mat4 PerspectiveMatrix(float vertical_fov, float aspect_ratio, float n, float f)
 	{
 		float fov_rad = vertical_fov * 2.0f * PI / 360.0f;
@@ -64,8 +78,8 @@ namespace Pudu {
 	{
 		//Right handed, since is the inverse the cross producs right and up are inverted
 		vec3 forward_axis = forward;
-		vec3 right_axis = normalize(cross(forward_axis, up)); 
-		vec3 up_axis = cross(right_axis, forward_axis); 
+		vec3 right_axis = normalize(cross(forward_axis, up));
+		vec3 up_axis = cross(right_axis, forward_axis);
 
 		vec3 t = vec3(-dot(eyePosition, right_axis), -dot(eyePosition, up_axis), -dot(eyePosition, forward_axis));
 

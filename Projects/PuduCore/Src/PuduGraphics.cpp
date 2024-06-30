@@ -447,6 +447,7 @@ namespace Pudu
 		frameData.frame = &m_Frames[m_currentFrameIndex];
 		frameData.currentCommand = &frame.CommandBuffer;
 		frameData.graphics = this;
+		frameData.camera = frameData.scene->camera;
 
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
 
@@ -741,7 +742,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateVkFramebuffer(Framebuffer* framebuffer)
 	{
-		RenderPass* renderPass = m_resources.GetRenderPass(framebuffer->renderPassHandle);
+		auto renderPass = m_resources.GetRenderPass(framebuffer->renderPassHandle);
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1456,7 +1457,7 @@ namespace Pudu
 		Pipeline* pipeline = m_resources.GetPipeline(pipelineHandle);
 		ShaderState* shaderState = m_resources.GetShaderState(shaderStateHandle);
 
-		RenderPass* renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
+		auto renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
 		auto& renderPassOutput = renderPass->attachments;
 		auto outputCount = renderPassOutput.colorAttachmentCount;
 

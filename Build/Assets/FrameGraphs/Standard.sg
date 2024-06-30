@@ -20,15 +20,13 @@
         },
         {
             "name":"shadowmap",
-            "enabled":false,
+            "enabled":true,
             "type":"shadowmap",
-            "family":"compute",
             "inputs":[],
             "outputs":[
                 {
                     "type":"attachment",
                     "name":"shadowmap",
-                    "textureType":"cube",
                     "format": "VK_FORMAT_D16_UNORM",
                     "resolution":[2048,2048],
                     "op":"VK_ATTACHMENT_LOAD_OP_CLEAR"

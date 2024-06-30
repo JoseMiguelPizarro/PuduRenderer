@@ -826,7 +826,9 @@ namespace Pudu
 		auto gfx = frameGraph->builder->graphics;
 		RenderPassCreationData creationData;
 		creationData.isCompute = node->isCompute;
-		RenderPass* renderPass = gfx->Resources()->AllocateRenderPass(creationData);
+		creationData.type = node->type;
+
+		auto renderPass = gfx->Resources()->AllocateRenderPass(creationData);
 
 		renderPass->SetName(node->name.c_str());
 
@@ -1514,7 +1516,7 @@ namespace Pudu
 			renderData.width = width;
 			renderData.height = height;
 
-			RenderPass* renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
+			SPtr<RenderPass> renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
@@ -1522,6 +1524,7 @@ namespace Pudu
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
 			renderPass->Render(renderData);
+			renderPass->AfterRender(renderData);
 			renderPass->EndRender(renderData);
 
 			//TODO: IMPLEMENT MARKERS

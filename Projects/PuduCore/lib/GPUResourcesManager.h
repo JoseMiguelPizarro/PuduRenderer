@@ -22,8 +22,8 @@ namespace Pudu {
 		SPtr<Texture2d> GetTextureByName(const char* name);
 		SPtr<Texture2d> AllocateTexture();
 
-		RenderPass* GetRenderPass(RenderPassHandle handle);
-		RenderPass* AllocateRenderPass(RenderPassCreationData const& creationdata);
+		SPtr<RenderPass> GetRenderPass(RenderPassHandle handle);
+		SPtr<RenderPass> AllocateRenderPass(RenderPassCreationData const& creationdata);
 
 		Framebuffer* GetFramebuffer(FramebufferHandle handle);
 		FramebufferHandle AllocateFrameBuffer(FramebufferCreationData const& creationData);
@@ -48,7 +48,7 @@ namespace Pudu {
 		ResourcePool<SPtr<Texture2d>> m_textures;
 		ResourcePool<SPtr<Shader>> m_shaders;
 		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
-		ResourcePool<RenderPass> m_renderPasses;
+		ResourcePool<SPtr<RenderPass>> m_renderPasses;
 		ResourcePool<Framebuffer> m_frameBuffers;
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;

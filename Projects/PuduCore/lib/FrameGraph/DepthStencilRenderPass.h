@@ -13,6 +13,7 @@ namespace Pudu
 		void PreRender(RenderFrameData& renderData) override;
 		void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;
 		void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;
+		RenderPassType GetRenderPassType() override { return RenderPassType::DepthPrePass; };
 
 	private:
 		SPtr<Shader> m_depthShader;

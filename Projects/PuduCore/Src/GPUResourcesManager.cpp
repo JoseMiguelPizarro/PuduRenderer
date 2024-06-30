@@ -1,6 +1,9 @@
 #include "GPUResourcesManager.h"
 #include "PuduGraphics.h"
 #include "Resources/ResourcesPool.h"
+#include "FrameGraph/ForwardRenderPass.h"
+#include "FrameGraph/ShadowMapRenderPass.h"
+#include "FrameGraph/DepthStencilRenderPass.h"
 
 namespace Pudu {
 
@@ -46,33 +49,44 @@ namespace Pudu {
 		return texture;
 	}
 
-	RenderPass* GPUResourcesManager::GetRenderPass(RenderPassHandle handle)
+	SPtr<RenderPass> GPUResourcesManager::GetRenderPass(RenderPassHandle handle)
 	{
-		return m_renderPasses.GetResourcePtr(handle.index);
+		return m_renderPasses.GetResource(handle.index);
 	}
 
-	RenderPass* GPUResourcesManager::AllocateRenderPass(RenderPassCreationData const & creationData)
+	SPtr<RenderPass> GPUResourcesManager::AllocateRenderPass(RenderPassCreationData const& creationData)
 	{
-		RenderPass renderPass;
+		RenderPassHandle handle;
+
+		switch (creationData.type)
+		{
+		case RenderPassType::Color:
+			handle = { m_renderPasses.AddResource(std::make_shared<ForwardRenderPass>())};
+			break;
+		case RenderPassType::ShadowMap:
+			handle = { m_renderPasses.AddResource(std::make_shared<ShadowMapRenderPass>()) };
+			break;
+		case RenderPassType::DepthPrePass:
+			handle = { m_renderPasses.AddResource(std::make_shared <DepthStencilRenderPass>()) };
+			break;
+		default:
+			handle = { m_renderPasses.AddResource(std::make_shared <RenderPass>()) };
+			break;
+		}
+
+		SPtr<RenderPass> renderPassPtr = GetRenderPass(handle);
 
 		if (creationData.isCompute)
 		{
-			renderPass.isCompute = true;
-			renderPass.SetComputeShader(creationData.computeShader);
+			renderPassPtr->isCompute = true;
+			renderPassPtr->SetComputeShader(creationData.computeShader);
 		}
-		else
-		{
-			renderPass = RenderPass();
-		}
-
-		RenderPassHandle handle = { m_renderPasses.AddResource(renderPass)};
 
 		if (handle.index == k_INVALID_HANDLE)
 		{
 			return nullptr;
 		}
 
-		RenderPass* renderPassPtr = GetRenderPass(handle);
 		renderPassPtr->handle = handle;
 
 		return renderPassPtr;

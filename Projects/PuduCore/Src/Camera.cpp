@@ -19,7 +19,17 @@ namespace Pudu {
 
 	mat4 Camera::GetPerspectiveMatrix()
 	{
-		return Pudu::PerspectiveMatrix(
-			Fov, Width / Height, 0.1f, 1000.0f);
+		if (projectionType == Perspective)
+		{
+			return Pudu::PerspectiveMatrix(
+				Fov, Width / Height, 0.1f, 1000.0f);
+		}
+		else {
+
+			float halfWidth = Width * 0.5f;
+			float halfHeight = Height * 0.5f;
+
+			return Pudu::OrthograpicMatrix(-halfWidth, halfWidth, -halfHeight, halfHeight, nearPlane, farPlane);
+		}
 	}
 }

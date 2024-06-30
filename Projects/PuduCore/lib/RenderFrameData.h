@@ -19,6 +19,7 @@ namespace Pudu
 	class RenderPass;
 	class Texture2d;
 	class PuduApp;
+	class Camera;
 
 	struct RenderFrameData
 	{
@@ -30,11 +31,12 @@ namespace Pudu
 		PuduGraphics* graphics;
 		PuduRenderer* renderer;
 		SPtr<Texture2d> activeRenderTarget;
-		RenderPass* currentRenderPass;
+		SPtr<RenderPass> currentRenderPass;
 		DrawCall* currentDrawCall;
 		PuduApp* app;
 		uint16_t width;
 		uint16_t height;
+		Camera* camera;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<GPUCommands*> computeCommandsToSubmit;
