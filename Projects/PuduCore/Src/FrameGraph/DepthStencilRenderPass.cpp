@@ -30,9 +30,4 @@ namespace Pudu
 	{
 		drawcall.SetReplacementMaterial(nullptr);
 	}
-
-	Pipeline* DepthStencilRenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
-	{
-		return frameData.renderer->GetOrCreatePipeline(frameData, RenderPassType::DepthPrePass);
-	}
 }

@@ -72,7 +72,7 @@ namespace Pudu
 
 	Pipeline* RenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
 	{
-		return frameData.renderer->GetOrCreatePipeline(frameData, GetRenderPassType());
+		return frameData.renderer->GetOrCreatePipeline(frameData, this);
 	}
 
 	void RenderPass::Render(RenderFrameData& frameData)

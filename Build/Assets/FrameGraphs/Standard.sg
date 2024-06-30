@@ -20,7 +20,7 @@
         },
         {
             "name":"shadowmap",
-            "enabled":true,
+            "enabled":false,
             "type":"shadowmap",
             "inputs":[],
             "outputs":[
@@ -35,7 +35,7 @@
         },
         {
             "name": "forward",
-            "enabled":true,
+            "enabled":false,
             "type":"color",
             "inputs":[
                 {

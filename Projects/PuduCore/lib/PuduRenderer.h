@@ -24,7 +24,7 @@ namespace Pudu
 		void Init(PuduGraphics* graphics, PuduApp* app);
 		void Render();
 		void LoadFrameGraph(fs::path path);
-		Pipeline* GetOrCreatePipeline(RenderFrameData& data, RenderPassType renderPassType);
+		Pipeline* GetOrCreatePipeline(RenderFrameData& data, RenderPass* renderPass);
 		void AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype);
 
 	private:
@@ -32,8 +32,7 @@ namespace Pudu
 		ForwardRenderPass m_forwardRenderPass;
 		ShadowMapRenderPass m_shadowMapRenderPass;
 
-		std::unordered_map<RenderPassType, std::unordered_map<SPtr<Shader>, PipelineHandle>> m_pipelinesByRenderPass;
-		std::unordered_map<RenderPassType, RenderPass*> m_renderPassByType;
+		std::unordered_map<RenderPass*, std::unordered_map<SPtr<Shader>, PipelineHandle>> m_pipelinesByRenderPass;
 	};
 }
 

@@ -70,7 +70,7 @@ namespace Pudu {
 			handle = { m_renderPasses.AddResource(std::make_shared <DepthStencilRenderPass>()) };
 			break;
 		default:
-			handle = { m_renderPasses.AddResource(std::make_shared <RenderPass>()) };
+			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>()) };
 			break;
 		}
 

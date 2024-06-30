@@ -8,7 +8,6 @@ namespace Pudu
 	public:
 
 		const std::filesystem::path K_DepthShaderPath = "Shaders/depth.vert";
-		Pipeline* GetPipeline(RenderFrameData& frameData, DrawCall& drawcall) override;
 		void Initialize(PuduGraphics* gpu) override;
 		void PreRender(RenderFrameData& renderData) override;
 		void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;

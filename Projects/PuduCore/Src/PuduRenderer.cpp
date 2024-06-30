@@ -24,7 +24,6 @@ namespace Pudu
 		renderData.renderer = this;
 		renderData.scene = sceneToRender;
 		renderData.frameGraph = &frameGraph;
-		renderData.m_renderPassesByType = &m_renderPassByType;
 		renderData.graphics = graphics;
 		renderData.app = app;
 
@@ -34,8 +33,6 @@ namespace Pudu
 	void PuduRenderer::AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype)
 	{
 		renderPass->Initialize(graphics);
-
-		m_renderPassByType.emplace(renderPasstype, renderPass);
 	}
 
 	void PuduRenderer::LoadFrameGraph(std::filesystem::path path)
@@ -53,17 +50,12 @@ namespace Pudu
 		LOG("Loading FrameGraph End");
 	}
 
-	Pipeline* PuduRenderer::GetOrCreatePipeline(RenderFrameData& frameData, RenderPassType renderPassType)
+	Pipeline* PuduRenderer::GetOrCreatePipeline(RenderFrameData& frameData, RenderPass* renderPass)
 	{
 		auto shader = frameData.currentDrawCall->GetRenderMaterial()->Shader;
 
-		/*if (renderPassType == DepthPrePass)
-		{
-			return m_pipelinesByRenderPass[renderPassType][0];
-		}*/
-
-		if (m_pipelinesByRenderPass.contains(renderPassType)) {
-			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPassType);
+		if (m_pipelinesByRenderPass.contains(renderPass)) {
+			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass);
 			if (renderPassPipelines != m_pipelinesByRenderPass.end())
 			{
 				auto pipelinesByShader = renderPassPipelines->second;
@@ -152,7 +144,7 @@ namespace Pudu
 			std::unordered_map<SPtr<Shader>, PipelineHandle> pipelineByShaderMap;
 			pipelineByShaderMap.insert(std::make_pair(shader, handle));
 
-			m_pipelinesByRenderPass.insert(std::make_pair(renderPassType, pipelineByShaderMap));
+			m_pipelinesByRenderPass.insert(std::make_pair(renderPass, pipelineByShaderMap));
 
 			return pipeline;
 		}
