@@ -73,6 +73,7 @@ namespace Pudu
 			PipelineCreationData creationData; //"Question now, how do we populate this?"
 			creationData.vertexShaderData = shader->vertexData;
 			creationData.fragmentShaderData = shader->fragmentData;
+			creationData.name = renderPass->name.c_str();
 
 			BlendStateCreation blendStateCreation;
 
@@ -137,6 +138,7 @@ namespace Pudu
 			creationData.shadersStateCreationData = shaderData;
 
 			creationData.renderPassHandle = frameData.currentRenderPass->handle;
+
 
 			auto handle = graphics->CreateGraphicsPipeline(creationData);
 			Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);

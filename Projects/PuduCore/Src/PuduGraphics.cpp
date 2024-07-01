@@ -1455,6 +1455,8 @@ namespace Pudu
 		ShaderStateHandle shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
 
 		Pipeline* pipeline = m_resources.GetPipeline(pipelineHandle);
+		pipeline->name.append(creationData.name);
+
 		ShaderState* shaderState = m_resources.GetShaderState(shaderStateHandle);
 
 		auto renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
@@ -2148,7 +2150,7 @@ namespace Pudu
 		if (currentWriteIndex)
 		{
 			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
-			m_bindlessResourcesToUpdate.clear();
+			//m_bindlessResourcesToUpdate.clear();
 		}
 
 		pipeline->bindlessUpdated = true;

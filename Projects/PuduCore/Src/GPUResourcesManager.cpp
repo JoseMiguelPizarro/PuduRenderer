@@ -61,7 +61,7 @@ namespace Pudu {
 		switch (creationData.type)
 		{
 		case RenderPassType::Color:
-			handle = { m_renderPasses.AddResource(std::make_shared<ForwardRenderPass>())};
+			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>())};
 			break;
 		case RenderPassType::ShadowMap:
 			handle = { m_renderPasses.AddResource(std::make_shared<ShadowMapRenderPass>()) };
