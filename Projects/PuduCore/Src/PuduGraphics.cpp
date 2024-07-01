@@ -2150,7 +2150,6 @@ namespace Pudu
 		if (currentWriteIndex)
 		{
 			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
-			//m_bindlessResourcesToUpdate.clear();
 		}
 
 		pipeline->bindlessUpdated = true;

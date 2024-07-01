@@ -839,7 +839,7 @@ namespace Pudu
 			FrameGraphResourceInfo& info = outputResource->resourceInfo;
 
 			if (outputResource->type == FrameGraphResourceType_Attachment) {
-				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
+				if (TextureFormat::HasDepth(info.texture.format)) {
 
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 1.f, 0.f, 0.f, 0.f };
@@ -866,7 +866,7 @@ namespace Pudu
 			FrameGraphResourceInfo& info = inputResource->resourceInfo;
 
 			if (inputResource->type == FrameGraphResourceType_Attachment) {
-				if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
+				if (TextureFormat::HasDepth(info.texture.format)) {
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -910,7 +910,7 @@ namespace Pudu
 			width = info.texture.width;
 			height = info.texture.height;
 
-			if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
+			if (TextureFormat::HasDepth(info.texture.format)) {
 				framebufferCreationData.SetDepthStencilTexture(info.texture.handle);
 			}
 			else
@@ -1168,7 +1168,7 @@ namespace Pudu
 
 				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
 				auto inputName = input["name"].get_string();
-				
+
 				std::string inputNameStr;
 				inputNameStr.append(inputName.value());
 				inputCreation.name = inputNameStr;
