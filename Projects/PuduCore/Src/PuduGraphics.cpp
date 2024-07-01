@@ -1853,7 +1853,6 @@ namespace Pudu
 			imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
 
-
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
@@ -1884,7 +1883,7 @@ namespace Pudu
 		}
 
 		imageViewInfo.subresourceRange.levelCount = creationData.mipmaps;
-		imageViewInfo.subresourceRange.layerCount = creationData.textureType == TextureType::Texture_Cube_Array ? 6 : 1;//No idea what this is, investigate
+		imageViewInfo.subresourceRange.layerCount = creationData.textureType == TextureType::Texture_Cube_Array ? 6 : 1;
 		vkCreateImageView(m_device, &imageViewInfo, m_allocatorPtr, &texture->vkImageViewHandle);
 
 		SetResourceName(VK_OBJECT_TYPE_IMAGE, (uint64_t)texture->vkImageHandle, creationData.name);
@@ -2052,7 +2051,7 @@ namespace Pudu
 		memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));*/
 	}
 
-	UniformBufferObject PuduGraphics::GetUniformBufferObject(Camera& cam, DrawCall& drawCall)
+	UniformBufferObject PuduGraphics::GetUniformBufferObject(Camera* cam, DrawCall& drawCall)
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -2063,8 +2062,8 @@ namespace Pudu
 		UniformBufferObject ubo{};
 
 		ubo.modelMatrix = drawCall.TransformMatrix;
-		ubo.viewMatrix = cam.GetViewMatrix();
-		ubo.ProjectionMatrix = cam.GetPerspectiveMatrix();
+		ubo.viewMatrix = cam->GetViewMatrix();
+		ubo.ProjectionMatrix = cam->GetProjectionMatrix();
 
 		return ubo;
 	}

@@ -141,7 +141,7 @@ namespace Pudu
 		void DrawImGui(RenderFrameData& frameData);
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
-		UniformBufferObject GetUniformBufferObject(Camera& cam, DrawCall& drawCall);
+		UniformBufferObject GetUniformBufferObject(Camera* cam, DrawCall& drawCall);
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 

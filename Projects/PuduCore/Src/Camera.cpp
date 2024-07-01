@@ -17,7 +17,7 @@ namespace Pudu {
 		return Transform.GetTransformationMatrix();
 	}
 
-	mat4 Camera::GetPerspectiveMatrix()
+	mat4 Camera::GetProjectionMatrix()
 	{
 		if (projectionType == Perspective)
 		{

@@ -387,7 +387,7 @@ namespace Pudu
 			RenderTarget,
 			Compute,
 			Count,
-			Sample
+			Sample,
 		};
 
 		enum Mask

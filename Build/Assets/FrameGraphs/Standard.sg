@@ -40,11 +40,13 @@
             "inputs":[
                 {
                     "type":"attachment",
-                    "name":"depth"
+                    "name":"depth",
+                    "isDepth":true
                 },
                 {
-                    "type":"attachment",
-                    "name":"shadowmap"
+                    "type":"texture",
+                    "name":"shadowmap",
+                    "isDepth":false
                 }        
             ],
             "outputs":

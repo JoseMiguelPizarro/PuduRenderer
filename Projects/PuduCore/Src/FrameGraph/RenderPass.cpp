@@ -109,7 +109,7 @@ namespace Pudu
 			vkCmdBindVertexBuffers(commands->vkHandle, 0, 1, vertexBuffers, offsets);
 			vkCmdBindIndexBuffer(commands->vkHandle, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
 
-			auto ubo = frameData.graphics->GetUniformBufferObject(*renderScene->camera, drawCall);
+			auto ubo = frameData.graphics->GetUniformBufferObject(frameData.camera, drawCall);
 
 
 			Viewport viewport;

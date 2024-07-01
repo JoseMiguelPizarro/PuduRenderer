@@ -25,6 +25,6 @@ namespace Pudu {
 
 		mat4 GetViewMatrix();
 		mat4 GetInverseViewMatrix();
-		mat4 GetPerspectiveMatrix();
+		mat4 GetProjectionMatrix();
 	};
 }

@@ -866,7 +866,7 @@ namespace Pudu
 			FrameGraphResourceInfo& info = inputResource->resourceInfo;
 
 			if (inputResource->type == FrameGraphResourceType_Attachment) {
-				if (TextureFormat::HasDepth(info.texture.format)) {
+				if (inputResource->isDepth) {
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -1006,6 +1006,7 @@ namespace Pudu
 		resource->producer.index = k_INVALID_HANDLE;
 		resource->outputHandle.index = k_INVALID_HANDLE;
 		resource->RefCount = 0;
+		resource->isDepth = creation.isDepth;
 
 		return resourceHandle;
 	}
@@ -1168,6 +1169,13 @@ namespace Pudu
 
 				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
 				auto inputName = input["name"].get_string();
+				auto isDepthNode = input["isDepth"];
+				inputCreation.isDepth = false;
+
+				if (isDepthNode.error() == simdjson::error_code::SUCCESS)
+				{
+					inputCreation.isDepth = isDepthNode.get_bool();
+				}
 
 				std::string inputNameStr;
 				inputNameStr.append(inputName.value());
@@ -1484,9 +1492,11 @@ namespace Pudu
 
 				if (resource->type == FrameGraphResourceType_Texture)
 				{
+					bool hasDepth = TextureFormat::HasDepth(resource->resourceInfo.texture.format);
+
 					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
-					commands->AddImageBarrier(texture->vkImageHandle, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, TextureFormat::HasDepth(resource->resourceInfo.texture.format));
+					commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{

@@ -83,12 +83,15 @@ namespace Pudu {
 		int32_t RefCount = 0;
 		bool allocated = false;
 
+		bool isDepth;
+
 		std::string name;
 	};
 
 	struct FrameGraphResourceInputCreation {
 		FrameGraphResourceType                  type;
 		FrameGraphResourceInfo                  resource_info;
+		bool isDepth;
 
 		std::string name;
 	};
