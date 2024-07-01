@@ -6,6 +6,7 @@
 #include "SPIRVParser.h"
 #include <GPUCommands.h>
 #include "Lighting/Light.h"
+#include "Material.h"
 
 
 namespace Pudu
@@ -70,9 +71,9 @@ namespace Pudu
 #pragma endregion 
 
 
-	Pipeline* RenderPass::GetPipeline(RenderFrameData& frameData, DrawCall& drawcall)
+	Pipeline* RenderPass::GetPipeline(PipelineQueryData pipelineQuery)
 	{
-		return frameData.renderer->GetOrCreatePipeline(frameData, this);
+		return pipelineQuery.renderer->GetOrCreatePipeline(pipelineQuery);
 	}
 
 	void RenderPass::Render(RenderFrameData& frameData)
@@ -89,7 +90,7 @@ namespace Pudu
 			Model model = drawCall.ModelPtr;
 			auto mesh = drawCall.MeshPtr;
 
-			Pipeline* pipeline = GetPipeline(frameData, drawCall);
+			Pipeline* pipeline = GetPipeline({ frameData.currentRenderPass.get(), drawCall.MaterialPtr.Shader.get(), frameData.renderer });
 			if (pipeline != frameData.currentPipeline)
 			{
 				frameData.graphics->UpdateBindlessResources(pipeline);

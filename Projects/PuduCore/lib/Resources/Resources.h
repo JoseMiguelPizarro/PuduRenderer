@@ -326,31 +326,6 @@ namespace Pudu
 		bool bindlessUpdated;
 	};
 
-	struct Pipeline
-	{
-		std::string name;
-		VkPipeline vkHandle;
-		VkPipelineLayout vkPipelineLayoutHandle;
-
-		VkPipelineBindPoint vkPipelineBindPoint;
-		VkDescriptorSet vkDescriptorSet = VK_FALSE;//Just 1 for now, bindless
-		ShaderStateHandle shaderState;
-
-		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
-		std::vector<DescriptorSetLayoutHandle> descriptorSetLayoutHandles;
-		uint32_t numActiveLayouts = 0;
-
-		DepthStencilCreation depthStencil;
-		BlendStateCreation blendState;
-		RasterizationCreation rasterization;
-
-		bool bindlessUpdated;
-
-		PipelineHandle handle;
-		bool graphicsPipeline = true;
-	}; // struct Pipeline
-
-
 	namespace TextureType
 	{
 		enum Enum

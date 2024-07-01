@@ -5,6 +5,7 @@
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
 #include <Logger.h>
+#include "Shader.h"
 
 namespace Pudu
 {
@@ -50,9 +51,10 @@ namespace Pudu
 		LOG("Loading FrameGraph End");
 	}
 
-	Pipeline* PuduRenderer::GetOrCreatePipeline(RenderFrameData& frameData, RenderPass* renderPass)
+	Pipeline* PuduRenderer::GetOrCreatePipeline(PipelineQueryData query)
 	{
-		auto shader = frameData.currentDrawCall->GetRenderMaterial()->Shader;
+		auto shader = query.shader;
+		auto renderPass = query.renderPass;
 
 		if (m_pipelinesByRenderPass.contains(renderPass)) {
 			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass);
@@ -137,13 +139,12 @@ namespace Pudu
 			creationData.vertexInput = vertexInputCreation;
 			creationData.shadersStateCreationData = shaderData;
 
-			creationData.renderPassHandle = frameData.currentRenderPass->handle;
-
+			creationData.renderPassHandle = renderPass->handle;
 
 			auto handle = graphics->CreateGraphicsPipeline(creationData);
 			Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
 
-			std::unordered_map<SPtr<Shader>, PipelineHandle> pipelineByShaderMap;
+			std::unordered_map<Shader*, PipelineHandle> pipelineByShaderMap;
 			pipelineByShaderMap.insert(std::make_pair(shader, handle));
 
 			m_pipelinesByRenderPass.insert(std::make_pair(renderPass, pipelineByShaderMap));

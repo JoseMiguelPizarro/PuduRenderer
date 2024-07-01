@@ -35,6 +35,7 @@
 
 #include "VulkanUtils.h"
 #include "PuduApp.h"
+#include "Pipeline.h"
 
 namespace Pudu
 {

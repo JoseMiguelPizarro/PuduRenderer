@@ -12,6 +12,7 @@ namespace Pudu
 {
 	class PuduGraphics;
 	class RenderPass;
+	class Pipeline;
 
 	class GPUCommands
 	{

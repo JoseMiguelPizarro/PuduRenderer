@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "Resources/FrameBufferCreationData.h"
 #include "ComputeShader.h"
+#include "Pipeline.h"
 
 namespace Pudu {
 	class PuduGraphics;

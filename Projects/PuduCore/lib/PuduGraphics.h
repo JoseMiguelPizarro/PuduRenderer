@@ -38,7 +38,7 @@
 #include <RenderFrameData.h>
 #include "GPUCommands.h"
 #include <ComputeShader.h>
-
+#include "Pipeline.h"
 
 
 namespace Pudu

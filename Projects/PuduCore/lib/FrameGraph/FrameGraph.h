@@ -188,7 +188,8 @@ namespace Pudu {
 		static constexpr uint32_t            K_MAX_NODES_COUNT = 1024;
 	};
 
-	struct FrameGraph {
+	class FrameGraph {
+	public:
 		void Init(FrameGraphBuilder* builder);
 		void Shutdown();
 

@@ -3,6 +3,7 @@
 #include "Resources/Resources.h"
 #include "RenderFrameData.h"
 #include "DrawCall.h"
+#include "Pipeline.h"
 
 namespace Pudu
 {
@@ -88,7 +89,7 @@ namespace Pudu
 		void SetName(const char* name);
 
 
-		virtual Pipeline* GetPipeline(RenderFrameData& frameData, DrawCall& drawcall);
+		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
 		virtual void PreRender(RenderFrameData& renderData) { }
 		virtual void Render(RenderFrameData& frameData);
 		virtual void AfterRender(RenderFrameData& frameData) {};
