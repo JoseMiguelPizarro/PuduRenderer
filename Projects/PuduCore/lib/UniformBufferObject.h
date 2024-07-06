@@ -11,5 +11,4 @@ struct UniformBufferObject {
 //16bit alignment 
 struct  RenderConstants {
 	alignas(16) uint32_t materialId;
-	alignas(16) vec3 g_LightDirection;
 };

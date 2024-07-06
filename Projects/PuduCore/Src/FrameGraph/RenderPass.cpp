@@ -141,8 +141,6 @@ namespace Pudu
 				uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 				RenderConstants constants{};
 				constants.materialId = materialid;
-				constants.g_LightDirection = renderScene->directionalLight->direction;
-
 
 				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(RenderConstants), &constants);
 			}

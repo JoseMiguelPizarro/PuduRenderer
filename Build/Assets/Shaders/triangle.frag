@@ -15,7 +15,6 @@ layout(set = 1, binding = 0) uniform LightBuffer{
 
 layout (push_constant, std430) uniform Material {
     layout (offset = 192) uint materialId;
-    vec3 g_lightDirection;
 };
 
 layout (location = 0) in vec3 inColor;
@@ -35,6 +34,5 @@ vec4 GetLighting(vec3 normal, vec3 lightDirection)
 void main() {
     uint id = materialId;
     vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord);
-    outColor = pow(base_colour, vec4(1.0 / 2.2)) * GetLighting(normalize(inNormal), g_lightDirection);
-    //outColor = vec4(inNormal, 1);
+    outColor = pow(base_colour, vec4(1.0 / 2.2)) * GetLighting(normalize(inNormal), lightingBuffer.lightDirection.xyz);
 }
