@@ -9,4 +9,9 @@ namespace Pudu {
 		VkDescriptorSetLayoutCreateInfo CreateInfo;
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;
 	};
+
+	struct DescriptorsCreationData {
+		std::vector<DescriptorSetLayoutData> layoutData;
+		uint16_t setsCount;
+	};
 }

@@ -106,6 +106,7 @@ namespace Pudu
 		Model CreateModel(std::shared_ptr<Mesh> mesh, Material& material);
 		Model CreateModel(MeshCreationData const& data);
 		Mesh CreateMesh(MeshCreationData const& meshData);
+		void UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
 		void DestroyMesh(Mesh& mesh);
 		void DestroyTexture(Texture2d& texture);
 		void WaitIdle();
@@ -122,7 +123,7 @@ namespace Pudu
 		void CreateVkFramebuffer(Framebuffer* creationData);
 
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
-			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,const char* name = nullptr);
 
 		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
 			VkImageTiling tiling, VkImageUsageFlags usage,
@@ -152,12 +153,14 @@ namespace Pudu
 		void UpdateBindlessResources(Pipeline* pipeline);
 		SPtr<ComputeShader> testComputeShader;
 
+		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
+		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
+		static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
 	private:
 		friend class GPUResourcesManager;
 
 		static PuduGraphics* s_instance;
-		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
-		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
+
 		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
 		VkDevice m_device;
 
@@ -197,11 +200,13 @@ namespace Pudu
 		void CreateTimelineSemaphore(VkSemaphore& semaphore);
 
 		void CreateBindlessDescriptorPool();
-		void CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
+		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet,uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
 		void CreateSwapChainSyncObjects();
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
+		
+		void UpdateLightingBuffer(RenderFrameData& frame);
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, GPUCommands* commands = nullptr);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
@@ -252,6 +257,7 @@ namespace Pudu
 		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size, const char* name = nullptr);
 
 		void CreateUniformBuffers();
+		void CreateLightingBuffers();
 
 
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
@@ -267,7 +273,7 @@ namespace Pudu
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-			VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+			VkBuffer& buffer, VkDeviceMemory& bufferMemory,const char* name = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void DestroyBuffer(GraphicsBuffer buffer);
@@ -290,6 +296,7 @@ namespace Pudu
 		VkCommandPool m_commandPool;
 
 		std::vector<GraphicsBuffer> m_uniformBuffers;
+		std::vector<GraphicsBuffer> m_lightingBuffers;
 
 		VkDescriptorSet m_bindlessDescriptorSet; //This has to be done per pipeline
 		VkPipelineLayout m_pipelineLayout;

@@ -629,7 +629,7 @@ namespace Pudu
 	{
 		std::vector<char> vertexShaderData;
 		std::vector<char> fragmentShaderData;
-		std::vector<DescriptorSetLayoutData> descriptorSetLayoutData;
+		DescriptorsCreationData descriptorCreationData;
 
 		RasterizationCreation rasterization;
 		DepthStencilCreation depthStencil;
@@ -649,7 +649,7 @@ namespace Pudu
 	struct ComputePipelineCreationData {
 		const char* name;
 		std::vector<char> data;
-		std::vector<DescriptorSetLayoutData> descriptorSetLayoutData;
+		DescriptorsCreationData descriptorsCreationData;
 		ComputeShaderHandle computeShaderHandle;
 	};
 }

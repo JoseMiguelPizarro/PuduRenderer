@@ -131,7 +131,7 @@ namespace Pudu
 			}
 
 
-			SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorSetLayoutData);
+			SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorCreationData);
 
 			creationData.blendState = blendStateCreation;
 			creationData.rasterization = rasterizationCreation;

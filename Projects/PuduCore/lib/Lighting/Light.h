@@ -10,6 +10,13 @@ namespace Pudu
 	{
 	public:
 		glm::vec3 direction;
+		float radius;
+		float intensity;
+
+		glm::mat4 GetShadowMatrix();
+		glm::mat4 GetLightMatrix();
+
+		float GetIlluminance();
 	};
 }
 

@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace Pudu {
-	void SPIRVParser::GetDescriptorSetLayout(const char* spirvData, uint32_t size, std::vector<DescriptorSetLayoutData>& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(const char* spirvData, uint32_t size, DescriptorsCreationData& outDescriptorSetLayoutData)
 	{
 		SpvReflectShaderModule module{};
 		SpvReflectResult result = spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_NONE, size, spirvData, &module);
@@ -40,12 +40,14 @@ namespace Pudu {
 			layout.CreateInfo.bindingCount = reflSet.binding_count;
 			layout.CreateInfo.pBindings = layout.Bindings.data();
 
-			outDescriptorSetLayoutData.push_back(layout);
+			outDescriptorSetLayoutData.layoutData.push_back(layout);
 		}
+
+		outDescriptorSetLayoutData.setsCount = count;
 
 		spvReflectDestroyShaderModule(&module);
 	}
-	void SPIRVParser::GetDescriptorSetLayout(PipelineCreationData& creationData, std::vector<DescriptorSetLayoutData>& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(PipelineCreationData& creationData, DescriptorsCreationData& outDescriptorSetLayoutData)
 	{
 		if (creationData.vertexShaderData.size() > 0)
 		{

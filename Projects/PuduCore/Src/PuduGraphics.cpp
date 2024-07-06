@@ -36,6 +36,7 @@
 #include "VulkanUtils.h"
 #include "PuduApp.h"
 #include "Pipeline.h"
+#include "Lighting/LightBuffer.h"
 
 namespace Pudu
 {
@@ -83,6 +84,7 @@ namespace Pudu
 
 		CreateCommandPool(&m_commandPool);
 		CreateUniformBuffers();
+		CreateLightingBuffers();
 
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
@@ -229,7 +231,7 @@ namespace Pudu
 	}
 
 	void PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-		VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+		VkBuffer& buffer, VkDeviceMemory& bufferMemory, const char* name)
 	{
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -256,6 +258,30 @@ namespace Pudu
 		}
 
 		vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
+
+		if (name != nullptr)
+		{
+			SetResourceName(VK_OBJECT_TYPE_BUFFER, (glm::u64)buffer, name);
+		}
+	}
+
+	void PuduGraphics::UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount, const VkCopyDescriptorSet* copy)
+	{
+		vkUpdateDescriptorSets(m_device, count, write, copyCount, copy);
+	}
+
+	void PuduGraphics::UpdateLightingBuffer(RenderFrameData& frame)
+	{
+		auto buffer = m_lightingBuffers[frame.frameIndex];
+
+		LightBuffer lightBuffer{};
+		lightBuffer.lightDirection = frame.scene->directionalLight->direction;
+		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
+		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
+
+		memcpy(buffer.MappedMemory, &lightBuffer, sizeof(LightBuffer));
+
+		frame.lightingBuffer = &m_lightingBuffers[frame.frameIndex];
 	}
 
 	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -422,6 +448,8 @@ namespace Pudu
 
 			vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
 		}
+
+		UpdateLightingBuffer(frameData);
 
 		////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
 		//vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
@@ -775,7 +803,7 @@ namespace Pudu
 	}
 
 	GraphicsBuffer PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
-		VkMemoryPropertyFlags flags)
+		VkMemoryPropertyFlags flags, const char* name)
 	{
 		VkDeviceSize bufferSize = size;
 		VkBuffer vkBuffer = {};
@@ -795,7 +823,7 @@ namespace Pudu
 			vkUnmapMemory(m_device, stagingBufferMemory);
 
 			CreateBuffer(bufferSize, usage, flags, vkBuffer,
-				vkdeviceMemory);
+				vkdeviceMemory, name);
 
 			CopyBuffer(stagingBuffer, vkBuffer, bufferSize);
 
@@ -805,7 +833,7 @@ namespace Pudu
 		else
 		{
 			CreateBuffer(bufferSize, usage, flags, vkBuffer,
-				vkdeviceMemory);
+				vkdeviceMemory, name);
 		}
 
 		return GraphicsBuffer(vkBuffer, vkdeviceMemory);
@@ -975,7 +1003,7 @@ namespace Pudu
 		featuresVulkan12.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE;
 		featuresVulkan12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 		featuresVulkan12.separateDepthStencilLayouts = VK_TRUE;
-
+		featuresVulkan12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
 
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
@@ -1336,11 +1364,27 @@ namespace Pudu
 		{
 			m_uniformBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "UniformBufer");
 
 			vkMapMemory(m_device, m_uniformBuffers[i].DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i].MappedMemory);
 		}
 	}
+
+
+	void PuduGraphics::CreateLightingBuffers() {
+		m_lightingBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+		VkDeviceSize const bufferSize = sizeof(LightBuffer);
+		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			m_lightingBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+			vkMapMemory(m_device, m_lightingBuffers[i].DeviceMemoryHandler, 0, bufferSize, 0, &m_lightingBuffers[i].MappedMemory);
+		}
+	}
+
 
 	Mesh PuduGraphics::CreateMesh(MeshCreationData const& data)
 	{
@@ -1362,11 +1406,12 @@ namespace Pudu
 	{
 		LOG("Creating desciptor Pool");
 
-		const uint32_t poolsSizesCount = 2;
+		const uint32_t poolsSizesCount = 3;
 		std::array< VkDescriptorPoolSize, poolsSizesCount> poolSizesBindless =
 		{
 			VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,k_MAX_BINDLESS_RESOURCES},
-			VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, k_MAX_BINDLESS_RESOURCES}
+			VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, k_MAX_BINDLESS_RESOURCES},
+			VkDescriptorPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,k_MAX_BINDLESS_RESOURCES)
 		};
 
 		VkDescriptorPoolCreateInfo poolInfo{};
@@ -1432,7 +1477,7 @@ namespace Pudu
 		LOG("CreateDescriptorSetLayout End");
 	}
 
-	void PuduGraphics::CreateDescriptorSet(VkDescriptorPool pool, VkDescriptorSet& descriptorSet, VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
+	void PuduGraphics::CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
 	{
 		LOG("Creating descriptor set");
 
@@ -1441,8 +1486,9 @@ namespace Pudu
 		allocInfo.descriptorPool = pool;
 		allocInfo.descriptorSetCount = layoutsCount;
 		allocInfo.pSetLayouts = layouts;
+		allocInfo.descriptorSetCount = setsCount;
 
-		VKCheck(vkAllocateDescriptorSets(m_device, &allocInfo, &descriptorSet), "Failed creating descriptor set");
+		VKCheck(vkAllocateDescriptorSets(m_device, &allocInfo, descriptorSet), "Failed creating descriptor set");
 
 		LOG("Creating descriptor set end");
 	}
@@ -1467,7 +1513,7 @@ namespace Pudu
 		pipeline->shaderState = shaderStateHandle;
 
 		//Just have 1 set for now (bindless) so let's keep it simple
-		CreateDescriptorSetLayout(creationData.descriptorSetLayoutData, pipeline->descriptorSetLayoutHandles);
+		CreateDescriptorSetLayout(creationData.descriptorCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
 
 		for (uint32_t i = 0; i < pipeline->descriptorSetLayoutHandles.size(); i++)
 		{
@@ -1624,7 +1670,7 @@ namespace Pudu
 			depthStencilInfo.depthWriteEnable = depthStencilState.isDepthWriteEnable;
 			depthStencilInfo.stencilTestEnable = false;
 			depthStencilInfo.depthTestEnable = depthStencilState.isDepthEnabled;
-			depthStencilInfo.depthCompareOp = depthStencilState.depthComparison; 
+			depthStencilInfo.depthCompareOp = depthStencilState.depthComparison;
 			depthStencilInfo.front = depthStencilState.GetVkFront();
 			depthStencilInfo.back = depthStencilState.GetVkBack();
 
@@ -1704,7 +1750,8 @@ namespace Pudu
 		if (pipelineDescriptorSetLayouts.size() > 0)
 		{
 			//Create pipeline descriptor set, only handling bindless for now
-			CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
+			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets, creationData.descriptorCreationData.setsCount, pipelineDescriptorSetLayouts.data(), 1);
+			pipeline->numDescriptorSets = creationData.descriptorCreationData.setsCount;
 		}
 
 		return pipelineHandle;
@@ -1727,8 +1774,8 @@ namespace Pudu
 			pipeline->name.append(creationData.name);
 		}
 
-		//Just have 1 set for now (bindless) so let's keep it simple
-		CreateDescriptorSetLayout(creationData.descriptorSetLayoutData, pipeline->descriptorSetLayoutHandles);
+		CreateDescriptorSetLayout(creationData.descriptorsCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
+
 
 		for (uint32_t i = 0; i < pipeline->descriptorSetLayoutHandles.size(); i++)
 		{
@@ -1745,8 +1792,9 @@ namespace Pudu
 
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-		pipelineLayoutInfo.setLayoutCount = creationData.descriptorSetLayoutData.size();
+		pipelineLayoutInfo.setLayoutCount = creationData.descriptorsCreationData.layoutData.size();
 		pipelineLayoutInfo.pSetLayouts = pipelineDescriptorSetLayouts.data();
+
 
 		VKCheck(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipeline->vkPipelineLayoutHandle), "Failed to create compute pipeline layout");
 
@@ -1756,8 +1804,11 @@ namespace Pudu
 
 		if (pipelineDescriptorSetLayouts.size() > 0)
 		{
-			CreateDescriptorSet(m_bindlessDescriptorPool, pipeline->vkDescriptorSet, pipelineDescriptorSetLayouts.data(), 1);
+			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets, creationData.descriptorsCreationData.setsCount, pipelineDescriptorSetLayouts.data(), 1);
+			pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
 		}
+
+		pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
 
 		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle), "Failed to create compute pipeline");
 
@@ -1779,7 +1830,7 @@ namespace Pudu
 		drawImageWrite.pNext = nullptr;
 
 		drawImageWrite.dstBinding = 0;
-		drawImageWrite.dstSet = pipeline->vkDescriptorSet;
+		drawImageWrite.dstSet = pipeline->vkDescriptorSets[0];
 		drawImageWrite.descriptorCount = 1;
 		drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		drawImageWrite.pImageInfo = &computeImage;
@@ -2097,7 +2148,7 @@ namespace Pudu
 		creationData.data = data;
 		creationData.name = name;
 
-		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char), creationData.descriptorSetLayoutData);
+		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char), creationData.descriptorsCreationData);
 
 		shader->pipelineHandle = CreateComputePipeline(creationData);
 
@@ -2117,7 +2168,7 @@ namespace Pudu
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
 		uint32_t currentWriteIndex = 0;
 
-		if (pipeline->vkDescriptorSet != VK_FALSE)
+		if (pipeline->numDescriptorSets != VK_FALSE)
 		{
 			for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
 			{
@@ -2130,7 +2181,7 @@ namespace Pudu
 				descriptorWrite.descriptorCount = 1;
 				descriptorWrite.dstArrayElement = textureToUpdate.handle;
 				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				descriptorWrite.dstSet = pipeline->vkDescriptorSet;
+				descriptorWrite.dstSet = pipeline->vkDescriptorSets[0];
 
 				descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
 
@@ -2723,10 +2774,6 @@ namespace Pudu
 
 		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
-		/*for (auto layout : m_bindlessDescriptorSetLayouts)
-		{
-			vkDestroyDescriptorSetLayout(m_device, layout, m_allocatorPtr);
-		}*/
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{

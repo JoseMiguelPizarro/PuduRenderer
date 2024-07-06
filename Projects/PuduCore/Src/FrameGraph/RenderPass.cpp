@@ -8,6 +8,8 @@
 #include "Lighting/Light.h"
 #include "Material.h"
 
+#include <Lighting/LightBuffer.h>
+
 
 namespace Pudu
 {
@@ -96,12 +98,28 @@ namespace Pudu
 				frameData.graphics->UpdateBindlessResources(pipeline);
 
 				commands->BindPipeline(pipeline);
+				frameData.currentPipeline = pipeline;
+
 				if (pipeline->numActiveLayouts > 0)
 				{
-					vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, &pipeline->vkDescriptorSet, 0, nullptr);
-				}
+					//Bind Lighting Buffer
+					VkDescriptorBufferInfo bufferInfo{};
+					bufferInfo.buffer = frameData.lightingBuffer->Handler;
+					bufferInfo.range = sizeof(LightBuffer);
 
-				frameData.currentPipeline = pipeline;
+					VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+					bufferWrite.pNext = nullptr;
+
+					bufferWrite.dstBinding = PuduGraphics::K_LIGHTING_BUFFER_BINDING;
+					bufferWrite.dstSet = pipeline->vkDescriptorSets[1];
+					bufferWrite.descriptorCount = 1;
+					bufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+					bufferWrite.pBufferInfo = &bufferInfo;
+
+					frameData.graphics->UpdateDescriptorSet(1, &bufferWrite);
+
+					vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, pipeline->vkDescriptorSets, 0, nullptr);
+				}
 			}
 
 			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
@@ -123,8 +141,9 @@ namespace Pudu
 				uint32_t materialid = drawCall.MaterialPtr.Texture->handle.index;
 				RenderConstants constants{};
 				constants.materialId = materialid;
-
 				constants.g_LightDirection = renderScene->directionalLight->direction;
+
+
 				vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(UniformBufferObject), sizeof(RenderConstants), &constants);
 			}
 
@@ -189,7 +208,7 @@ namespace Pudu
 			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
 		}
 
-		SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorSetLayoutData);
+		SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorCreationData);
 
 		creationData.blendState = blendStateCreation;
 		creationData.rasterization = rasterizationCreation;
@@ -198,7 +217,7 @@ namespace Pudu
 		creationData.shadersStateCreationData = shaderData;
 
 		creationData.renderPassHandle = frameData.currentRenderPass->handle;
-
+		
 		return creationData;
 	}
 

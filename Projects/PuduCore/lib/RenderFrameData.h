@@ -2,6 +2,7 @@
 #include <vector>
 #include <unordered_map>
 #include "PuduCore.h"
+#include "GraphicsBuffer.h"
 #include <vulkan/vulkan_core.h>
 
 namespace Pudu
@@ -39,6 +40,7 @@ namespace Pudu
 		uint16_t width;
 		uint16_t height;
 		Camera* camera;
+		GraphicsBuffer* lightingBuffer;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<GPUCommands*> computeCommandsToSubmit;
