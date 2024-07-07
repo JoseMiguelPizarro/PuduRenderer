@@ -14,6 +14,8 @@ void TriangleApp::OnRun()
 	m_puduRenderer.sceneToRender = &m_scene;
 	m_puduRenderer.Render();
 
+	return;
+
 	float radius = 20;
 	float pich = 45;
 

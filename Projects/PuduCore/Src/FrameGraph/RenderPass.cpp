@@ -129,7 +129,6 @@ namespace Pudu
 
 			auto ubo = frameData.graphics->GetUniformBufferObject(frameData.camera, drawCall);
 
-
 			Viewport viewport;
 			viewport.rect = { 0,0, (uint16)frameData.graphics->WindowWidth,(uint16)frameData.graphics->WindowHeight };
 			viewport.maxDepth = 1;
