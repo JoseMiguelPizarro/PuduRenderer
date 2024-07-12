@@ -1291,29 +1291,30 @@ namespace Pudu
 					}
 					break;
 				case FrameGraphResourceType_Texture:
-					break;
 				case FrameGraphResourceType_Attachment:
+					if (resource->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
+					{
+						auto& info = resource->resourceInfo.texture;
+						TextureCreationData textureData;
+						textureData.depth = info.depth;
+						textureData.width = info.width;
+						textureData.height = info.height;
+						textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
+						textureData.format = info.format;
+						textureData.name = resource->name.c_str();
+						textureData.mipmaps = 1;
+						textureData.bindless = true;
+						auto handle = builder->graphics->CreateTexture(textureData);
+
+						info.handle = handle;
+					}
 					break;
+
 				case FrameGraphResourceType_Reference:
 					break;
 				}
 
-				if (resource->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
-				{
-					auto& info = resource->resourceInfo.texture;
-					TextureCreationData textureData;
-					textureData.depth = info.depth;
-					textureData.width = info.width;
-					textureData.height = info.height;
-					textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
-					textureData.format = info.format;
-					textureData.name = resource->name.c_str();
-					textureData.mipmaps = 1;
-					textureData.bindless = true;
-					auto handle = builder->graphics->CreateTexture(textureData);
-
-					info.handle = handle;
-				}
+				
 
 				resource->allocated = true;
 			}

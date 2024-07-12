@@ -208,7 +208,7 @@ namespace Pudu
 		
 		void UpdateLightingBuffer(RenderFrameData& frame);
 
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, GPUCommands* commands = nullptr);
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 
@@ -242,8 +242,8 @@ namespace Pudu
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
 			VkFormatFeatureFlags features);
 
-		VkCommandBuffer BeginSingleTimeCommands();
-		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+		GPUCommands BeginSingleTimeCommands();
+		void EndSingleTimeCommands(GPUCommands commandBuffer);
 
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();

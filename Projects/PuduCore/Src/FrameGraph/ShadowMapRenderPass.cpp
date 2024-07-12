@@ -22,6 +22,10 @@ namespace Pudu {
 
 	void ShadowMapRenderPass::AfterRender(RenderFrameData& renderData)
 	{
+		if (m_shadowmap == nullptr) 
+		{
+			m_shadowmap = renderData.graphics->Resources()->GetTextureByName(K_SHADOWMAP_NAME);
+		}
 		renderData.camera = m_previousCamera;
 	}
 	RenderPassType ShadowMapRenderPass::GetRenderPassType()
