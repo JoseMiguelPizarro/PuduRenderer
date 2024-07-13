@@ -2156,12 +2156,10 @@ namespace Pudu
 
 	void PuduGraphics::UpdateBindlessResources(Pipeline* pipeline)
 	{
-		if (pipeline->bindlessUpdated)
+		/*if (pipeline->bindlessUpdated)
 		{
 			return;
-		}
-
-		LOG("Update Bindless Resources");
+		}*/
 
 		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];

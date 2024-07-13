@@ -38,6 +38,6 @@ void main() {
     vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord);
     outColor = pow(base_colour, vec4(1.0 / 2.2)) * GetLighting(normalize(inNormal), lightingBuffer.lightDirection.xyz);
     
-//    vec2 screenUV = gl_FragCoord.xy/1048;
-//    outColor = texture(global_textures[nonuniformEXT(0)],screenUV);
+    vec2 screenUV = gl_FragCoord.xy/1048;
+    outColor = texture(global_textures[nonuniformEXT(4)],screenUV)/2.0;
 }

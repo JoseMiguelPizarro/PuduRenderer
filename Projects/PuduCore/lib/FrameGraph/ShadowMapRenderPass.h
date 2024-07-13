@@ -14,6 +14,9 @@ namespace Pudu
 		virtual RenderPassType GetRenderPassType() override;
 
 	private:
+
+		void InitializeShadowMap(PuduGraphics* gfx);
+
 		SPtr<Texture2d> m_shadowmap;
 		uint16_t m_resolution = 2048;
 		Camera m_renderCamera;

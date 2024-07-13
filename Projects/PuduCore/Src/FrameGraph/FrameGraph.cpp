@@ -1497,7 +1497,7 @@ namespace Pudu
 
 					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
 
-					commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
+				//	commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{
@@ -1542,9 +1542,8 @@ namespace Pudu
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
 			renderPass->Render(renderData);
-			renderPass->AfterRender(renderData);
 			renderPass->EndRender(renderData);
-
+			renderPass->AfterRender(renderData);
 			//TODO: IMPLEMENT MARKERS
 		}
 	}
