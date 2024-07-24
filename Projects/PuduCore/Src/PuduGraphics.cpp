@@ -1433,10 +1433,8 @@ namespace Pudu
 	void PuduGraphics::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData, std::vector<DescriptorSetLayoutHandle>& output)
 	{
 		LOG("CreateDescriptorSetLayout");
-		const uint32_t poolCount = (uint32_t)m_physicalDeviceData.PoolSizesCount;
-
 		VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
-
+		
 		std::array< VkDescriptorBindingFlags, 4> bindingFlags;
 
 		bindingFlags[0] = bindlessFlags;
@@ -1457,13 +1455,13 @@ namespace Pudu
 			extendedInfo.bindingCount = (uint32_t)data.Bindings.size();
 			extendedInfo.pBindingFlags = bindingFlags.data();
 
-
 			VkDescriptorSetLayoutCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 			createInfo.bindingCount = data.CreateInfo.bindingCount;
 			createInfo.flags = data.CreateInfo.flags | VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 			createInfo.pBindings = data.Bindings.data();
 			createInfo.pNext = &extendedInfo;
+			
 
 			VkDescriptorSetLayout layout{};
 

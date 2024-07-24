@@ -118,7 +118,7 @@ namespace Pudu
 
 					frameData.graphics->UpdateDescriptorSet(1, &bufferWrite);
 
-					vkCmdBindDescriptorSets(commands->vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkPipelineLayoutHandle, 0, pipeline->numActiveLayouts, pipeline->vkDescriptorSets, 0, nullptr);
+					commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
 				}
 			}
 

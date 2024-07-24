@@ -31,7 +31,7 @@ namespace Pudu {
 				for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
 					layoutBinding.descriptorCount *= refl_binding.array.dims[i_dim];
 				}
-				layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(module.shader_stage);
+				layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(module.shader_stage) | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT; //Hack, for now let's have all descriptors in vertex and fragment
 				layoutBinding.pImmutableSamplers = nullptr;
 			}
 
