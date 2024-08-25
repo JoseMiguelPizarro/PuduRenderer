@@ -11,6 +11,8 @@ namespace Pudu
 		virtual void Initialize(PuduGraphics* gfx) override;
 		virtual void PreRender(RenderFrameData& renderData) override;
 		virtual void AfterRender(RenderFrameData& renderData) override;
+		virtual void Render(RenderFrameData& frameData) override;
+
 		virtual RenderPassType GetRenderPassType() override;
 
 	private:
@@ -19,6 +21,8 @@ namespace Pudu
 
 		SPtr<Texture2d> m_shadowmap;
 		uint16_t m_resolution = 2048;
+		float m_depthConstantBias = 2.25f;
+		float m_depthBiasSlope = 2.75;
 		Camera m_renderCamera;
 		Camera* m_previousCamera;
 		glm::vec3 m_camOriginalPos;

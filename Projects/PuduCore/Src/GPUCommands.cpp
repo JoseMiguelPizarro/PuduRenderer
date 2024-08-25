@@ -331,6 +331,11 @@ namespace Pudu
 		);
 	}
 
+	void GPUCommands::SetDepthBias(float slopeBias, float constantBias)
+	{
+		vkCmdSetDepthBias(vkHandle, constantBias, 0.0f, slopeBias);
+	}
+
 	void GPUCommands::Reset()
 	{
 		m_hasRecordedCommand = false;

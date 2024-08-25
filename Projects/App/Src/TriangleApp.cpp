@@ -14,8 +14,6 @@ void TriangleApp::OnRun()
 	m_puduRenderer.sceneToRender = &m_scene;
 	m_puduRenderer.Render();
 
-	return;
-
 	float radius = 20;
 	float pich = 45;
 
@@ -39,9 +37,13 @@ void TriangleApp::OnInit()
 	m_camera = {};
 	m_camera.Transform.SetForward(vec3(0, -.7, -1), vec3(0, 1, 0));
 	m_camera.Transform.LocalPosition = { 0, 14.0f, 23.0f };
-	m_camera.Width = Graphics.WindowWidth;
-	m_camera.Height = Graphics.WindowHeight;
-	m_camera.Fov = 45;
+	Projection projection;
+
+	projection.Width = Graphics.WindowWidth;
+	projection.Height = Graphics.WindowHeight;
+	projection.Fov = 45;
+
+	m_camera.Projection = projection;
 
 	m_scene = Scene(&Time);
 	m_scene.camera = &m_camera;
@@ -55,8 +57,12 @@ void TriangleApp::OnInit()
 	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath, "standard");
 	standardShader->name = "Standard";
 
+	projection.nearPlane = 5;
+	projection.farPlane = 50;
 	directionalLight = {};
-	directionalLight.direction = { 1.0f,1.0f,1.0f };
+	directionalLight.Projection = projection;
+	directionalLight.GetTransform().SetForward({ -1.0f, -1.0f,-1.0f }, { 0.0f,1.0f,0.0f });
+	directionalLight.GetTransform().LocalPosition = { 20,20,20 };
 	m_scene.directionalLight = &directionalLight;
 
 	LoadGameboyModel();

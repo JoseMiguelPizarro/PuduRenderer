@@ -8,8 +8,7 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				9,
-				10
+				11
 			]
 		}
 	],
@@ -113,11 +112,27 @@
 			]
 		},
 		{
+			"mesh":4,
+			"name":"Plane",
+			"scale":[
+				4.322370529174805,
+				4.322370529174805,
+				4.322370529174805
+			]
+		},
+		{
+			"children":[
+				8
+			],
+			"name":"Plane_Root"
+		},
+		{
 			"children":[
 				1,
 				3,
 				5,
-				7
+				7,
+				9
 			],
 			"name":"GLTF_SceneRootNode",
 			"rotation":[
@@ -129,7 +144,7 @@
 		},
 		{
 			"children":[
-				8
+				10
 			],
 			"name":"root",
 			"rotation":[
@@ -137,15 +152,6 @@
 				0,
 				0,
 				0.70710688829422
-			]
-		},
-		{
-			"mesh":4,
-			"name":"Plane",
-			"scale":[
-				4.322370529174805,
-				4.322370529174805,
-				4.322370529174805
 			]
 		}
 	],
@@ -283,8 +289,8 @@
 		},
 		{
 			"mimeType":"image/png",
-			"name":"floor_diff",
-			"uri":"textures/floor_diff.png"
+			"name":"Grass",
+			"uri":"textures/Grass.png"
 		}
 	],
 	"accessors":[

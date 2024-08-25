@@ -9,11 +9,11 @@ layout (push_constant, std430) uniform UniformBufferObject {
 #extension GL_EXT_nonuniform_qualifier: enable
 layout (set = 0, binding = 32) uniform sampler2D global_textures[];
 
-layout(set = 1, binding = 0) uniform LightBuffer{
+layout (set = 1, binding = 0) uniform LightBuffer {
     vec4 lightDirection;
     mat4 lightMatrix;
     mat4 shadowMatrix;
-} lightingBuffer ;
+} lightingBuffer;
 
 layout (location = 0) in vec3 inPosition;
 layout (location = 1) in vec3 inColor;
@@ -25,10 +25,17 @@ layout (location = 1) out vec4 fragTexCoord;
 layout (location = 2) out vec4 normal;
 layout (location = 3) out vec4 shadowCoords;
 
+
+const mat4 biasMat = mat4(
+    0.5, 0.0, 0.0, 0.0,
+    0.0, 0.5, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.5, 0.5, 0.0, 1.0 );
+
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
-    fragColor = vec4(inColor,1.0);
-    fragTexCoord = vec4(inTexCoord,0,0);
+    fragColor = vec4(inColor, 1.0);
+    fragTexCoord = vec4(inTexCoord, 0, 0);
     normal = (ubo.model * vec4(inNormal, 0));
-    shadowCoords = lightingBuffer.shadowMatrix * ubo.model * vec4(inPosition,1.0);
+    shadowCoords = biasMat * lightingBuffer.shadowMatrix * lightingBuffer.lightMatrix * ubo.model * vec4(inPosition, 1.0);
 }

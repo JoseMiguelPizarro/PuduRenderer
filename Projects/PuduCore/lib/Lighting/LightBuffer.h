@@ -6,7 +6,7 @@ namespace Pudu
 {
 	struct LightBuffer
 	{
-		alignas(16)	glm::vec3 lightDirection;
+		glm::vec4 lightDirection;
 		glm::mat4 dirLightMatrix;
 		glm::mat4 shadowMatrix;
 	};

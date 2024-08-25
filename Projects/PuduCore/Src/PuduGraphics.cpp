@@ -275,7 +275,7 @@ namespace Pudu
 		auto buffer = m_lightingBuffers[frame.frameIndex];
 
 		LightBuffer lightBuffer{};
-		lightBuffer.lightDirection = frame.scene->directionalLight->direction;
+		lightBuffer.lightDirection = { -frame.scene->directionalLight->Direction(),0.0f };
 		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
 		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
@@ -1434,7 +1434,7 @@ namespace Pudu
 	{
 		LOG("CreateDescriptorSetLayout");
 		VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
-		
+
 		std::array< VkDescriptorBindingFlags, 4> bindingFlags;
 
 		bindingFlags[0] = bindlessFlags;
@@ -1461,7 +1461,7 @@ namespace Pudu
 			createInfo.flags = data.CreateInfo.flags | VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 			createInfo.pBindings = data.Bindings.data();
 			createInfo.pNext = &extendedInfo;
-			
+
 
 			VkDescriptorSetLayout layout{};
 
@@ -1687,16 +1687,16 @@ namespace Pudu
 
 			//Rasterizer
 			VkPipelineRasterizationStateCreateInfo rasterizer{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
-			rasterizer.depthClampEnable = VK_FALSE;
 			rasterizer.rasterizerDiscardEnable = VK_FALSE;
 			rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 			rasterizer.lineWidth = 1.0f;
 			rasterizer.cullMode = creationData.rasterization.cullMode;
 			rasterizer.frontFace = creationData.rasterization.front;
-			rasterizer.depthBiasEnable = VK_FALSE;
-			rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-			rasterizer.depthBiasClamp = 0.0f; // Optional
-			rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+			rasterizer.depthBiasEnable = VK_TRUE; //TODO: This should be enabled only on shadowmapping pass
+			//rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+			//rasterizer.depthClampEnable = VK_FALSE;
+			//rasterizer.depthBiasClamp = 0.0f; // Optional
+			//rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
 			graphicsPipelineInfo.pRasterizationState = &rasterizer;
 
@@ -1732,9 +1732,9 @@ namespace Pudu
 			graphicsPipelineInfo.renderPass = nullptr;
 			graphicsPipelineInfo.pNext = &pipelineRenderingInfo;
 			// Dynamic states
-			VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+			VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS };
 			VkPipelineDynamicStateCreateInfo dynamic_state{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-			dynamic_state.dynamicStateCount = 2;
+			dynamic_state.dynamicStateCount = 3;
 			dynamic_state.pDynamicStates = dynamicStates;
 
 			graphicsPipelineInfo.pDynamicState = &dynamic_state;
@@ -2111,7 +2111,7 @@ namespace Pudu
 
 		ubo.modelMatrix = drawCall.TransformMatrix;
 		ubo.viewMatrix = cam->GetViewMatrix();
-		ubo.ProjectionMatrix = cam->GetProjectionMatrix();
+		ubo.ProjectionMatrix = cam->Projection.GetProjectionMatrix();
 
 		return ubo;
 	}

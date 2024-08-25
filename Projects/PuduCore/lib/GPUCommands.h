@@ -37,6 +37,7 @@ namespace Pudu
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,VkImageLayout newLayout);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void SetDepthBias(float slopeBias, float constantBias);
 
 		VkCommandBuffer vkHandle;
 		Framebuffer* currentFramebuffer;
