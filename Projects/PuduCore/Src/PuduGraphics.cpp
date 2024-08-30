@@ -1945,7 +1945,7 @@ namespace Pudu
 			UploadTextureData(texture, creationData.pixels);
 		}
 
-		CreateTextureSampler(texture->Sampler.vkHandle);
+		CreateTextureSampler(creationData.samplerData ,texture->Sampler.vkHandle);
 		return texture->handle;
 	}
 
@@ -1981,15 +1981,23 @@ namespace Pudu
 
 
 
-	void PuduGraphics::CreateTextureSampler(VkSampler& sampler)
+	void PuduGraphics::CreateTextureSampler(SamplerCreationData data, VkSampler& sampler)
 	{
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 		samplerInfo.magFilter = VK_FILTER_LINEAR;
 		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+		VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+		if (!data.wrap)
+		{
+			addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		}
+
+		samplerInfo.addressModeU = addressMode;
+		samplerInfo.addressModeV = addressMode;
+		samplerInfo.addressModeW = addressMode;
 
 		samplerInfo.anisotropyEnable = VK_TRUE;
 		samplerInfo.maxAnisotropy = 1.0f;

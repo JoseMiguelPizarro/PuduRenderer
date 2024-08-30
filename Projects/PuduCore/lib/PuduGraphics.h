@@ -196,7 +196,7 @@ namespace Pudu
 		void CreateCommandPool(VkCommandPool* cmdPool);
 
 		void CreateTextureImageView(Texture2d& texture2d);
-		void CreateTextureSampler(VkSampler& sampler);
+		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
 		void CreateTimelineSemaphore(VkSemaphore& semaphore);
 
 		void CreateBindlessDescriptorPool();

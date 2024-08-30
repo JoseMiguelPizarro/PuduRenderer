@@ -1304,6 +1304,12 @@ namespace Pudu
 						textureData.name = resource->name.c_str();
 						textureData.mipmaps = 1;
 						textureData.bindless = true;
+
+						SamplerCreationData samplerData;
+						samplerData.wrap = false;
+
+						textureData.samplerData = samplerData;
+
 						auto handle = builder->graphics->CreateTexture(textureData);
 
 						info.handle = handle;

@@ -443,6 +443,10 @@ namespace Pudu
 	} // namespace TextureFormat
 
 
+	struct SamplerCreationData {
+		bool wrap = false;
+	};
+
 	struct TextureCreationData
 	{
 		uint16_t width = 1;
@@ -451,6 +455,7 @@ namespace Pudu
 		uint8_t mipmaps = 1;
 		TextureFlags::Enum flags = TextureFlags::Default;
 
+		SamplerCreationData samplerData;
 		VkFormat format;
 		TextureType::Enum textureType = TextureType::Texture2D;
 		TextureHandle handle{ k_INVALID_HANDLE };
