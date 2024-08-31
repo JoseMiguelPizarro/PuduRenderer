@@ -1,28 +1,32 @@
-#version 450
-
 // Bindless support
-// Enable non uniform qualifier extension
+[[vk::binding(32, 0)]]Sampler2D global_textures[];
 
-#extension GL_EXT_nonuniform_qualifier: enable
-layout (set = 0, binding = 32) uniform sampler2D global_textures[];
-
-layout (set = 1, binding = 0) uniform LightBuffer {
-    vec4 lightDirection;
-    mat4 lightMatrix;
-    mat4 shadowMatrix;
-} lightingBuffer;
-
-layout (push_constant, std430) uniform Material {
-    layout (offset = 192) uint materialId;
+struct LightBuffer {
+float4 lightDirection;
+float4x4 lightMatrix;
+float4x4 shadowMatrix;
 };
 
-layout (location = 0) in vec4 inColor;
-layout (location = 1) in vec4 inTexCoord;
-layout (location = 2) in vec4 inNormal;
-layout (location = 3) in vec4 inShadowCoords;
+[[vk::binding(0, 1)]]ConstantBuffer<LightBuffer> lightingBuffer;
 
-layout (location = 0) out vec4 outColor;
+struct UniformBufferObject {
+float4x4 model;
+float4x4 view;
+float4x4 proj;
+uint materialId;
+};
 
+[[vk::push_constant]]ConstantBuffer<UniformBufferObject> ubo;
+        
+struct VSOut
+{
+        float4 PositionCS:SV_POSITION;
+        float4 Color: COLOR;
+        float4 TexCoord:TEXCOORD;
+        float4 Normal:NORMAL;
+        float4 ShadowCoords:TEXCOORD1;        
+};
+        
 float linearDepth(float d, float near, float far)
 {
     return near * far / (far + d * (near - far));
@@ -35,13 +39,21 @@ vec4 GetLighting(vec3 normal, vec3 lightDirection)
 
     return mix(vec4(1), vec4(0.54, 0.95, 1, 0), 1 - ndl);
 }
+        
 
-float textureProj(vec4 shadowCoord, vec2 off)
+////Percentage-Closer Filtering
+//float PCF(vec4 shadowCoords)
+//{
+//    const int samples = 12;
+//}
+
+float textureProj(float4 shadowCoord, float2 off)
 {
     float shadow = 1.0;
     if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0)
     {
-        float dist = texture(global_textures[nonuniformEXT(4)], shadowCoord.st + off).r;
+        Sampler2D tex = global_textures[NonUniformResourceIndex(4)];
+        float dist = tex.Sample(shadowCoord.xy + off).x;
         if (shadowCoord.w > 0.0 && dist < shadowCoord.z)
         {
             shadow = 0.0f;
@@ -50,12 +62,16 @@ float textureProj(vec4 shadowCoord, vec2 off)
     return shadow;
 }
 
-void main() {
-    uint id = materialId;
-    vec4 base_colour = texture(global_textures[nonuniformEXT(id)], inTexCoord.xy);
+[shader("pixel")]
+float4 main(VSOut input):SV_TARGET {
+    uint id = ubo.materialId;
+    Sampler2D tex = global_textures[NonUniformResourceIndex(id)];
+    float4 base_colour = tex.Sample(input.TexCoord.xy);
 
-    float shadow =clamp( textureProj(inShadowCoords / inShadowCoords.w, vec2(0.0)) + 0.5,0,1);
-    vec4 col =pow(base_colour, vec4(1.0 / 2.2)) * GetLighting(normalize(inNormal.xyz), lightingBuffer.lightDirection.xyz);
-    col = mix(col,vec4(0.2,0.2,0.3,1.0),1 - shadow);
-    outColor = col;
+    //Perspective Devide shadow to map 0-1
+    float shadow =clamp( textureProj(input.ShadowCoords / input.ShadowCoords.w, float2(0.0)) + 0.5,0,1);
+    float4 col =pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), lightingBuffer.lightDirection.xyz);
+    col = lerp(col,float4(0.2,0.2,0.3,1.0),1 - shadow);
+    
+    return col;
 }

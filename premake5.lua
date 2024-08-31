@@ -63,6 +63,10 @@ function includeAndLinkFastGltf()
     links {"fastgltf", "simdjson"}
 end
 
+function includeBooling()
+    includedirs{"lib/boolinq"}
+end
+
 function includeAndLinkSPIRV_Reflect()
     includedirs "lib/SPIRV-Reflect"
     libdirs "lib/SPIRV-Reflect"
@@ -198,6 +202,7 @@ includeTinyObjLoader()
 includeAndLinkFastGltf()
 includeAndLinkFmtlib()
 includeAndLinkSPIRV_Reflect()
+includeBooling()
 includeVulkan()
 
 vpaths {

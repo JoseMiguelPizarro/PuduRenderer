@@ -1518,18 +1518,14 @@ namespace Pudu
 		}
 		pipeline->numActiveLayouts = pipeline->descriptorSetLayoutHandles.size();
 
+
 		VkPushConstantRange pushConstant{};
 		pushConstant.offset = 0;
 		pushConstant.size = sizeof(UniformBufferObject);
-		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-		VkPushConstantRange fragmentConstant{};
-		fragmentConstant.offset = sizeof(UniformBufferObject);
-		fragmentConstant.size = sizeof(RenderConstants);
-		fragmentConstant.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		//Push contants support
-		VkPushConstantRange constants[2]{ pushConstant, fragmentConstant };
+		VkPushConstantRange constants[1]{ pushConstant };
 
 		std::vector<VkDescriptorSetLayout> pipelineDescriptorSetLayouts;
 		for (uint32_t i = 0; i < pipeline->numActiveLayouts; i++)
@@ -1542,7 +1538,7 @@ namespace Pudu
 		pipelineLayoutInfo.setLayoutCount = pipelineDescriptorSetLayouts.size();
 		pipelineLayoutInfo.pSetLayouts = pipelineDescriptorSetLayouts.data();
 		pipelineLayoutInfo.pPushConstantRanges = constants;
-		pipelineLayoutInfo.pushConstantRangeCount = 2;
+		pipelineLayoutInfo.pushConstantRangeCount = 1;
 
 		VkPipelineLayout pipelineLayout;
 		vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
@@ -1945,7 +1941,7 @@ namespace Pudu
 			UploadTextureData(texture, creationData.pixels);
 		}
 
-		CreateTextureSampler(creationData.samplerData ,texture->Sampler.vkHandle);
+		CreateTextureSampler(creationData.samplerData, texture->Sampler.vkHandle);
 		return texture->handle;
 	}
 
@@ -2120,6 +2116,11 @@ namespace Pudu
 		ubo.modelMatrix = drawCall.TransformMatrix;
 		ubo.viewMatrix = cam->GetViewMatrix();
 		ubo.ProjectionMatrix = cam->Projection.GetProjectionMatrix();
+
+		if (drawCall.GetRenderMaterial()->Shader->HasFragmentData())
+		{
+			ubo.materialId = drawCall.MaterialPtr.Texture->handle.index;
+		}
 
 		return ubo;
 	}
