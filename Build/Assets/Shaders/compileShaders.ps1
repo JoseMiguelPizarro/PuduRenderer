@@ -10,5 +10,5 @@ foreach ($file in $files) {
     $outputFile = ".\Compiled\$($file.Name).spv"
 
     # Run the command with the current file
-    & "./slang/bin/slangc.exe" "$($file.FullName)" -profile sm_6_3 -target spirv -o $outputFile
+    & "./slang/bin/slangc.exe" "$($file.FullName)" -profile sm_6_3 -target spirv -matrix-layout-row-major -o $outputFile
 }
