@@ -100,6 +100,17 @@ function linkdxc()
     filter {}
 end
 
+function IncludeKTX()
+    libdirs {"lib/ktx/Debug"}
+    includedirs {"lib/ktx/include","lib/ktx/other_include"}
+    files {"lib/ktx/lib/texture.c",
+    "lib/ktx/lib/hashlist.c",
+    "lib/ktx/lib/checkheader.c",
+    "lib/ktx/lib/swap.c",
+    "lib/ktx/lib/memstream.c",
+    "lib/ktx/lib/filestream.c"}
+end
+
 function includeTinyObjLoader()
     includedirs "lib/tiny_obj_loader/**"
     includedirs "lib/tiny_obj_loader"
@@ -204,6 +215,7 @@ includeAndLinkFmtlib()
 includeAndLinkSPIRV_Reflect()
 includeBooling()
 includeVulkan()
+IncludeKTX()
 
 vpaths {
     -- leave it empty to generate filters respecting the folder structure

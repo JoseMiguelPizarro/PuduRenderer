@@ -38,6 +38,9 @@
 #include "Pipeline.h"
 #include "Lighting/LightBuffer.h"
 
+#include <ktx.h>
+#include <ktxvulkan.h>
+
 namespace Pudu
 {
 	const char* SHADER_ENTRY_POINT = "main";
@@ -1972,10 +1975,8 @@ namespace Pudu
 
 	void PuduGraphics::CreateTextureImageView(Texture2d& texture2d)
 	{
-		texture2d.vkImageViewHandle = CreateImageView(texture2d.vkImageHandle, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		texture2d.vkImageViewHandle = CreateImageView(texture2d.vkImageHandle, texture2d.format, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
-
-
 
 	void PuduGraphics::CreateTextureSampler(SamplerCreationData data, VkSampler& sampler)
 	{
@@ -2253,28 +2254,55 @@ namespace Pudu
 	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
 		auto mesh = MeshManager::AllocateMesh(data);
-
-		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load(FileManager::GetAssetPath(data.Material.BasetTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-		char pixelss[] = { 255,255,255,255 };
-
-		TextureCreationData creationData;
-		creationData.bindless = true;
-		creationData.depth = 1;
-		creationData.width = texWidth;
-		creationData.height = texHeight;
-		creationData.name = "Albedo";
-		creationData.format = VK_FORMAT_R8G8B8A8_SRGB;
-		creationData.mipmaps = 1;
-		creationData.pixels = pixels;
-		creationData.flags = TextureFlags::Sample;
-
-		auto textureHandle = CreateTexture(creationData);
 		Material material = Material();
-		material.Texture = m_resources.GetTexture(textureHandle);
+		if (data.Material.hasBaseTexture)
+		{
+			int texWidth, texHeight, texChannels;
+			stbi_uc* pixels = stbi_load(FileManager::GetAssetPath(data.Material.BaseTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-		stbi_image_free(pixels);
+			TextureCreationData creationData;
+			creationData.bindless = true;
+			creationData.depth = 1;
+			creationData.width = texWidth;
+			creationData.height = texHeight;
+			creationData.name = "Albedo";
+			creationData.format = VK_FORMAT_R8G8B8A8_SRGB;
+			creationData.mipmaps = 1;
+			creationData.pixels = pixels;
+			creationData.flags = TextureFlags::Sample;
+
+			auto textureHandle = CreateTexture(creationData);
+			material.Texture = m_resources.GetTexture(textureHandle);
+			//ktxTexture* ktxTexture;
+			//ktxTexture_CreateFromNamedFile(data.Material.BaseTexturePath.string().c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
+			//
+			// 
+			//ktxTexture_Destroy(ktxTexture);
+
+			stbi_image_free(pixels);
+		}
+
+		if (data.Material.hasNormalMap)
+		{
+			int texWidth, texHeight, texChannels;
+			auto pixels = stbi_load(FileManager::GetAssetPath(data.Material.NormalMapPath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+			TextureCreationData normalCreation;
+			normalCreation.bindless = true;
+			normalCreation.depth = 1;
+			normalCreation.width = texWidth;
+			normalCreation.height = texHeight;
+			normalCreation.name = "Normal";
+			normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
+			normalCreation.mipmaps = 1;
+			normalCreation.pixels = pixels;
+			normalCreation.flags = TextureFlags::Sample;
+
+			stbi_image_free(pixels);
+
+			auto normalHandle = CreateTexture(normalCreation);
+			material.NormalMap = m_resources.GetTexture(normalHandle);
+		}
 
 		auto m = CreateModel(mesh, material);
 		m.Name = data.Name;
@@ -2649,7 +2677,6 @@ namespace Pudu
 		vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
 		//vkDestroyRenderPass(m_device, m_presentRenderPass, m_allocatorPtr);
 
-
 		for (int i = 0; i < m_uniformBuffers.size(); i++)
 		{
 			DestroyBuffer(m_uniformBuffers[i]);
@@ -2678,6 +2705,9 @@ namespace Pudu
 		{
 			DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
 		}
+
+
+		m_resources.DestroyAllResources(this);
 
 		vkDestroySurfaceKHR(m_vkInstance, m_surface, m_allocatorPtr); //Be sure to destroy surface before instance
 

@@ -192,4 +192,12 @@ namespace Pudu {
 	{
 		return m_computeShaders.GetResource(handle.index);
 	}
+	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
+	{
+		for (auto t : m_textures.m_resources)
+		{
+			vkDestroyImage(gfx->m_device, t->vkImageHandle, nullptr);
+			vkDestroyImageView(gfx->m_device, t->vkImageViewHandle, nullptr);
+		}
+	}
 }

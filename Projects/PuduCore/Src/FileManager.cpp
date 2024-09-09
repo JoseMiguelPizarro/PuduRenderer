@@ -205,6 +205,15 @@ namespace Pudu {
 		return asset;
 	}
 
+	fs::path GetPathFromTextureIndex(GltfAsset& asset, uint16_t index, fs::path const& path) {
+
+		auto baseTextSource = asset->images[index].data;
+		auto uri = std::get_if<fastgltf::sources::URI>(&baseTextSource);
+		auto baseTexturePath = fs::path(uri->uri.path());
+		LOG("Base texture path {}", baseTexturePath.string());
+		return path.parent_path().relative_path() / baseTexturePath;
+	}
+
 	std::vector<MeshCreationData> FileManager::GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset)
 	{
 		std::vector<MeshCreationData> creationData;
@@ -260,17 +269,27 @@ namespace Pudu {
 
 				auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
 
-				auto baseTextSource = gltfAsset->images[gltfMat.pbrData.baseColorTexture.value().textureIndex].data;
 
-				auto uri = std::get_if<fastgltf::sources::URI>(&baseTextSource);
+				bool hasBaseTexture, hasNormalMap = false;
 
-				auto baseTexturePath = fs::path(uri->uri.path());
-
-				LOG("Base texture path {}", baseTexturePath.string());
+				hasBaseTexture = gltfMat.pbrData.baseColorTexture.has_value();
+				hasNormalMap = gltfMat.normalTexture.has_value();
 
 				MeshCreationData meshCreationData;
 				MaterialCreationData materialCreationData;
-				materialCreationData.BasetTexturePath = path.parent_path().relative_path() / baseTexturePath;
+				if (hasBaseTexture)
+				{
+					materialCreationData.BaseTexturePath = GetPathFromTextureIndex(gltfAsset, gltfMat.pbrData.baseColorTexture.value().textureIndex, path);
+				}
+				if (hasNormalMap)
+				{
+					materialCreationData.NormalMapPath = GetPathFromTextureIndex(gltfAsset, gltfMat.normalTexture.value().textureIndex, path);
+				}
+
+				materialCreationData.hasBaseTexture = hasBaseTexture;
+				materialCreationData.hasNormalMap = hasNormalMap;
+
+
 				meshCreationData.Indices = indices;
 				meshCreationData.Vertices = vertices;
 				meshCreationData.Material = materialCreationData;

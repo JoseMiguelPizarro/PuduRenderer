@@ -140,6 +140,7 @@ namespace Pudu
 			AfterRenderDrawcall(frameData, drawCall);
 		}
 	}
+
 	PipelineCreationData RenderPass::GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		PipelineCreationData creationData;

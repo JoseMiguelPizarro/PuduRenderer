@@ -44,6 +44,9 @@ namespace Pudu {
 		ComputeShaderHandle AllocateComputeShader();
 		SPtr<ComputeShader> GetComputeShader(ComputeShaderHandle handle);
 
+		void DestroyAllResources(PuduGraphics* gfx);
+
+
 	private:
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture2d>> m_textures;
