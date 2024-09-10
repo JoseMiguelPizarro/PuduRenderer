@@ -138,29 +138,36 @@ namespace Pudu {
 			auto name = std::string(node.name);
 			auto meshIndex = node.meshIndex;
 
+			EntitySPtr entity;
+			bool shouldUpdateTransforms = false;
 			//Node is a Model
 			if (meshIndex.has_value())
 			{
 				auto meshData = meshCreationData[meshIndex.value()];
 				auto model = PuduGraphics::Instance()->CreateModel(meshData);
 
-				RenderEntitySPtr e = EntityManager::AllocateRenderEntity(name, model);
-				entities.push_back(e);
+				entity = EntityManager::AllocateRenderEntity(name, model);
 			}
 			//Node is a transform
 			else {
-				EntitySPtr entity = EntityManager::AllocateEntity(name);
-				fg::TRS transform = std::get<fg::TRS>(node.transform);
+				entity = EntityManager::AllocateEntity(name);
 
-				glm::quat r = glm::quat(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+				shouldUpdateTransforms = true;
+			}
 
-				Transform& t = entity->GetTransform();
-				t.SetRotation(r);
-				t.LocalPosition = vec3(transform.translation[0], transform.translation[1], transform.translation[2]);
-				t.LocalScale = vec3(transform.scale[0], transform.scale[1], transform.scale[2]);
+			entities.push_back(entity);
 
-				entities.push_back(entity);
+			//Set node transform
+			fg::TRS transform = std::get<fg::TRS>(node.transform);
+			glm::quat r = glm::quat(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
 
+			Transform& t = entity->GetTransform();
+			t.SetRotation(r);
+			t.LocalPosition = vec3(transform.translation[0], transform.translation[1], transform.translation[2]);
+			t.LocalScale = vec3(transform.scale[0], transform.scale[1], transform.scale[2]);
+
+			if (shouldUpdateTransforms)
+			{
 				for (auto child : node.children) {
 					entities[child]->SetParent(entity);
 				}
@@ -267,28 +274,35 @@ namespace Pudu {
 					}
 				}
 
-				auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
+				MeshCreationData meshCreationData{};
+				MaterialCreationData materialCreationData{};
 
+				bool hasMat = gltfAsset->materials.size() > 0;
 
-				bool hasBaseTexture, hasNormalMap = false;
-
-				hasBaseTexture = gltfMat.pbrData.baseColorTexture.has_value();
-				hasNormalMap = gltfMat.normalTexture.has_value();
-
-				MeshCreationData meshCreationData;
-				MaterialCreationData materialCreationData;
-				if (hasBaseTexture)
+				if (hasMat)
 				{
-					materialCreationData.BaseTexturePath = GetPathFromTextureIndex(gltfAsset, gltfMat.pbrData.baseColorTexture.value().textureIndex, path);
-				}
-				if (hasNormalMap)
-				{
-					materialCreationData.NormalMapPath = GetPathFromTextureIndex(gltfAsset, gltfMat.normalTexture.value().textureIndex, path);
-				}
 
-				materialCreationData.hasBaseTexture = hasBaseTexture;
-				materialCreationData.hasNormalMap = hasNormalMap;
+					auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
 
+
+					bool hasBaseTexture, hasNormalMap = false;
+
+					hasBaseTexture = gltfMat.pbrData.baseColorTexture.has_value();
+					hasNormalMap = gltfMat.normalTexture.has_value();
+
+
+					if (hasBaseTexture)
+					{
+						materialCreationData.BaseTexturePath = GetPathFromTextureIndex(gltfAsset, gltfMat.pbrData.baseColorTexture.value().textureIndex, path);
+					}
+					if (hasNormalMap)
+					{
+						materialCreationData.NormalMapPath = GetPathFromTextureIndex(gltfAsset, gltfMat.normalTexture.value().textureIndex, path);
+					}
+
+					materialCreationData.hasBaseTexture = hasBaseTexture;
+					materialCreationData.hasNormalMap = hasNormalMap;
+				}
 
 				meshCreationData.Indices = indices;
 				meshCreationData.Vertices = vertices;

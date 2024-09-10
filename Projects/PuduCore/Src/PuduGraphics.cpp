@@ -2120,7 +2120,10 @@ namespace Pudu
 
 		if (drawCall.GetRenderMaterial()->Shader->HasFragmentData())
 		{
-			ubo.materialId = drawCall.MaterialPtr.Texture->handle.index;
+			if (drawCall.MaterialPtr.Texture != nullptr) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
+			{
+				ubo.materialId = drawCall.MaterialPtr.Texture->handle.index;
+			}
 		}
 
 		return ubo;

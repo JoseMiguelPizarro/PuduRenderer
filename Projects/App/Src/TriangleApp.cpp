@@ -67,7 +67,20 @@ void TriangleApp::OnInit()
 	directionalLight.GetTransform().LocalPosition = { 20,20,20 };
 	m_scene.directionalLight = &directionalLight;
 
+
 	LoadGameboyModel();
+	auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
+
+	for (auto e : sphere) {
+		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
+
+		if (re != nullptr)
+		{
+			re->GetModel().Materials[0].Shader = standardShader;
+		}
+	}
+
+	m_scene.AddEntities(sphere);
 }
 
 void TriangleApp::DrawImGUI()
@@ -90,7 +103,10 @@ void TriangleApp::OnCleanup()
 			mesh->Dispose();
 		}
 		for (auto material : model.Materials) {
-			material.Texture->Dispose();
+			if (material.Texture != nullptr)
+			{
+				material.Texture->Dispose();
+			}
 		}
 	}
 }
