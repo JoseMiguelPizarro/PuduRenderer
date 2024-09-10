@@ -2221,6 +2221,11 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
+	SPtr<Texture2d> PuduGraphics::CreateTexture2D(fs::path filePath)
+	{
+		return SPtr<Texture2d>();
+	}
+
 	void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 	{
 		auto commandBuffer = BeginSingleTimeCommands();
@@ -2228,6 +2233,11 @@ namespace Pudu
 		commandBuffer.CopyBufferToImage(buffer, image, width, height);
 
 		EndSingleTimeCommands(commandBuffer);
+	}
+
+	SPtr<Texture> PuduGraphics::CreateTexture(fs::path filePath)
+	{
+		return SPtr<Texture>();
 	}
 
 	void PuduGraphics::DestroyRenderPass(RenderPassHandle handle)
@@ -2257,29 +2267,59 @@ namespace Pudu
 		Material material = Material();
 		if (data.Material.hasBaseTexture)
 		{
-			int texWidth, texHeight, texChannels;
-			stbi_uc* pixels = stbi_load(FileManager::GetAssetPath(data.Material.BaseTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+			auto path = data.Material.BaseTexturePath.string();
+			bool isKTX = path.ends_with("ktx");
+			void* pixelsData = nullptr;
+
+
+			int texWidth, texHeight, texChannels = 0;
+			int depth = 1;
+			TextureType::Enum textureType = TextureType::Texture2D;
+
+			ktxTexture* ktxTexture;
+			if (isKTX)
+			{
+				auto result = ktxTexture_CreateFromNamedFile(path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
+
+				pixelsData = ktxTexture->pData;
+
+				texWidth = ktxTexture->baseWidth;
+				texHeight = ktxTexture->baseHeight;
+				depth = ktxTexture->baseDepth;
+
+				if (ktxTexture->isCubemap)
+				{
+					textureType = TextureType::Texture_Cube_Array;
+				}
+			}
+			else
+			{
+
+				pixelsData = stbi_load(FileManager::GetAssetPath(data.Material.BaseTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+			}
 
 			TextureCreationData creationData;
 			creationData.bindless = true;
-			creationData.depth = 1;
+			creationData.depth = depth;
 			creationData.width = texWidth;
 			creationData.height = texHeight;
 			creationData.name = "Albedo";
 			creationData.format = VK_FORMAT_R8G8B8A8_SRGB;
 			creationData.mipmaps = 1;
-			creationData.pixels = pixels;
+			creationData.pixels = pixelsData;
 			creationData.flags = TextureFlags::Sample;
+			creationData.textureType = textureType;
 
 			auto textureHandle = CreateTexture(creationData);
 			material.Texture = m_resources.GetTexture(textureHandle);
-			//ktxTexture* ktxTexture;
-			//ktxTexture_CreateFromNamedFile(data.Material.BaseTexturePath.string().c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
-			//
-			// 
-			//ktxTexture_Destroy(ktxTexture);
 
-			stbi_image_free(pixels);
+			if (isKTX)
+			{
+				ktxTexture_Destroy(ktxTexture);
+			}
+			else {
+				stbi_image_free(pixelsData);
+			}
 		}
 
 		if (data.Material.hasNormalMap)
@@ -2743,7 +2783,7 @@ namespace Pudu
 		DestroyBuffer(*mesh.GetIndexBuffer());
 		DestroyBuffer(*mesh.GetVertexBuffer());
 	}
-	void PuduGraphics::DestroyTexture(Texture2d& texture)
+	void PuduGraphics::DestroyTexture(Texture& texture)
 	{
 		vkDestroyImageView(m_device, texture.vkImageViewHandle, m_allocatorPtr);
 		vkDestroySampler(m_device, texture.Sampler.vkHandle, m_allocatorPtr);

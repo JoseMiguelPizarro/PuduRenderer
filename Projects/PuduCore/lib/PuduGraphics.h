@@ -22,6 +22,7 @@
 
 #include "DrawCall.h"
 #include "Mesh.h"
+#include "Texture.h"
 #include "Texture2D.h"
 
 #include "Camera.h"
@@ -108,7 +109,7 @@ namespace Pudu
 		Mesh CreateMesh(MeshCreationData const& meshData);
 		void UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
 		void DestroyMesh(Mesh& mesh);
-		void DestroyTexture(Texture2d& texture);
+		void DestroyTexture(Texture& texture);
 		void WaitIdle();
 
 		void DestroyRenderPass(RenderPassHandle handle);
@@ -123,7 +124,7 @@ namespace Pudu
 		void CreateVkFramebuffer(Framebuffer* creationData);
 
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
-			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,const char* name = nullptr);
+			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const char* name = nullptr);
 
 		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
 			VkImageTiling tiling, VkImageUsageFlags usage,
@@ -146,8 +147,10 @@ namespace Pudu
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
+		SPtr<Texture2d> CreateTexture2D(fs::path filePath);
+		SPtr<Texture> CreateTexture(fs::path filePath);
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
-		
+
 		void UploadTextureData(SPtr<Texture2d> texture, void* data);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
@@ -200,12 +203,12 @@ namespace Pudu
 		void CreateTimelineSemaphore(VkSemaphore& semaphore);
 
 		void CreateBindlessDescriptorPool();
-		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet,uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
+		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
 		void CreateSwapChainSyncObjects();
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
-		
+
 		void UpdateLightingBuffer(RenderFrameData& frame);
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -250,7 +253,7 @@ namespace Pudu
 
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, const char* name = nullptr);
 
-		
+
 		/// <summary>
 		/// size in bytes
 		/// </summary>
@@ -273,7 +276,7 @@ namespace Pudu
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-			VkBuffer& buffer, VkDeviceMemory& bufferMemory,const char* name = nullptr);
+			VkBuffer& buffer, VkDeviceMemory& bufferMemory, const char* name = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void DestroyBuffer(GraphicsBuffer buffer);

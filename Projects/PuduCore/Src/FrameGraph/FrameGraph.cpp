@@ -16,7 +16,7 @@ namespace Pudu
 			return TextureType::Texture_Cube_Array;
 		}
 
-		TextureType::Texture2D;
+		return TextureType::Texture2D;
 	}
 
 	VkFormat  VkFormatFromString(char const* format) {

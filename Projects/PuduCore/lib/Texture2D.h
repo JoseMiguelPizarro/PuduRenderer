@@ -7,27 +7,11 @@
 #include "Resources/Resources.h"
 #include "PuduCore.h"
 #include "TextureSampler.h"
+#include "Texture.h"
 
 namespace Pudu {
-	class Texture2d
+	class Texture2d :public Texture
 	{
-	public:
-		std::string name;
-		VkImage vkImageHandle;
-		VkImageView vkImageViewHandle;
-		VkDeviceMemory vkMemoryHandle;
-		VmaAllocation vmaAllocation;
-		VkImageLayout vkImageLayout;
-		TextureSampler Sampler;
-		TextureHandle handle;
-		uint32_t width;
-		uint32_t height;
-		uint32_t depth;
-		VkFormat format;
 
-		void Dispose();
-
-	private:
-		bool m_disposed;
 	};
 }
