@@ -1495,7 +1495,7 @@ namespace Pudu
 
 	PipelineHandle PuduGraphics::CreateGraphicsPipeline(PipelineCreationData& creationData)
 	{
-		LOG("CreateGraphicsPipeline");
+		LOG("CreateGraphicsPipeline Renderpass: {} Shader: {}", m_resources.GetRenderPass(creationData.renderPassHandle)->name.c_str(), creationData.shadersStateCreationData.name.c_str());
 
 		PipelineHandle pipelineHandle = m_resources.AllocatePipeline();
 

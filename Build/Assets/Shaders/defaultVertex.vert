@@ -1,5 +1,6 @@
 [[vk::binding(32, 0)]]Sampler2D global_textures[];
 
+
 struct LightBuffer {
     float4 lightDirection;
     float4x4 lightMatrix;

@@ -34,6 +34,8 @@ namespace Pudu
 		ShadowMapRenderPass m_shadowMapRenderPass;
 
 		std::unordered_map<RenderPass*, std::unordered_map<Shader*, PipelineHandle>> m_pipelinesByRenderPass;
+
+		Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader);
 	};
 }
 
