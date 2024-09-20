@@ -49,10 +49,6 @@ namespace Pudu
 		ResourceHandle index;
 	}; // struct SamplerHandle
 
-	struct DescriptorSetLayoutHandle
-	{
-		ResourceHandle index;
-	}; // struct DescriptorSetLayoutHandle
 
 	struct DescriptorSetHandle
 	{
@@ -162,12 +158,12 @@ namespace Pudu
 		}
 	}
 
-	
+
 
 
 	class PuduGraphics;
 
-	
+
 #pragma endregion
 
 
@@ -291,29 +287,7 @@ namespace Pudu
 	}; // struct RasterizationCreation
 
 
-	struct DescriptorBinding
-	{
-		VkDescriptorType type;
-		uint16_t index = 0;
-		uint16_t count = 0;
-		uint16_t set = 0;
 
-		const char* name = nullptr;
-	}; // struct DescriptorBinding
-
-	struct DescriptorSetLayout
-	{
-		VkDescriptorSetLayout vkHandle;
-
-		VkDescriptorSetLayoutBinding* vkBinding = nullptr;
-		DescriptorBinding* bindings = nullptr;
-		uint8_t* indexToBinding = nullptr; // Mapping between binding point and binding data.
-		uint16_t bindingsCount = 0;
-		uint16_t setIndex = 0;
-		uint8_t bindless = 0;
-
-		DescriptorSetLayoutHandle handle;
-	}; // struct DesciptorSetLayoutVulkan
 
 	struct ComputePipeline {
 		VkPipeline vkHandle;
@@ -445,6 +419,19 @@ namespace Pudu
 
 	struct SamplerCreationData {
 		bool wrap = false;
+	};
+
+
+	/// <summary>
+	/// Struct passed to create texture functions. 
+	/// </summary>
+	struct TextureCreationSettings 
+	{
+		const char* name = nullptr;
+		bool bindless;
+		TextureType::Enum textureType = TextureType::Texture2D;
+		VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+		SamplerCreationData* samplerData;
 	};
 
 	struct TextureCreationData

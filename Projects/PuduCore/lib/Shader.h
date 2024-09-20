@@ -24,8 +24,11 @@ namespace Pudu {
 		std::vector<char> vertexData;
 		std::string name;
 
-		bool HasFragmentData() { return m_hasFragmentData;}
-		bool HasVertexData() { return m_hasVertexData;}
+		bool HasFragmentData() { return m_hasFragmentData; }
+		bool HasVertexData() { return m_hasVertexData; }
+
+		DescriptorsCreationData descriptors;
+
 
 	private:
 		std::filesystem::path m_shaderPath;

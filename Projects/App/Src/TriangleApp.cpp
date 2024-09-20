@@ -69,6 +69,11 @@ void TriangleApp::OnInit()
 
 
 	LoadGameboyModel();
+
+	TextureCreationSettings planeSettings{};
+	planeSettings.bindless = false;
+	planeSettings.name = "Plane";
+	m_planeTexture = Graphics.CreateTexture2D(planeTexturePath,planeSettings);
 	auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
 
 	for (auto e : sphere) {
@@ -76,7 +81,10 @@ void TriangleApp::OnInit()
 
 		if (re != nullptr)
 		{
-			re->GetModel().Materials[0].Shader = cubemapShader;
+			auto mat = &re->GetModel().Materials[0];
+			mat->Shader = cubemapShader;
+			mat->SetProperty("testText", m_planeTexture);
+
 		}
 	}
 

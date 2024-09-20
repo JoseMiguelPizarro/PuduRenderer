@@ -147,8 +147,8 @@ namespace Pudu
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
-		SPtr<Texture2d> CreateTexture2D(fs::path filePath);
-		SPtr<Texture> CreateTexture(fs::path filePath);
+		SPtr<Texture2d> CreateTexture2D(fs::path filePath, TextureCreationSettings& creationData);
+		SPtr<Texture> CreateTexture(fs::path filePath, TextureCreationSettings& creationData);
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
 
 		void UploadTextureData(SPtr<Texture2d> texture, void* data);

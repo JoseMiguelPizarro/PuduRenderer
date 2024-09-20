@@ -111,8 +111,7 @@ namespace Pudu
 			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
 		}
 
-		SPIRVParser::GetDescriptorSetLayout(creationData, creationData.descriptorCreationData);
-
+		creationData.descriptorCreationData = shader->descriptors;
 		creationData.blendState = blendStateCreation;
 		creationData.rasterization = rasterizationCreation;
 		creationData.depthStencil = depthStencilCreation;

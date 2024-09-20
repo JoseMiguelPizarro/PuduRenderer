@@ -4,6 +4,7 @@
 #include <vulkan/vulkan_core.h>
 #include <DescriptorSetLayoutData.h>
 #include "Resources/Resources.h"
+#include "Shader.h"
 
 namespace Pudu {
 
@@ -11,7 +12,7 @@ namespace Pudu {
 	{
 	public:
 		static void GetDescriptorSetLayout(const char* spirvData, uint32_t size, DescriptorsCreationData& outDescriptorSetLayoutData);
-		static void GetDescriptorSetLayout(PipelineCreationData& creationData, DescriptorsCreationData& outDescriptorSetLayoutData);
+		static void GetDescriptorSetLayout(Shader* creationData, DescriptorsCreationData& outDescriptorSetLayoutData);
 	};
 }
 

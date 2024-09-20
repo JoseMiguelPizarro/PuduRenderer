@@ -25,6 +25,9 @@ namespace Pudu
 
 		void Dispose();
 
+		//Virtual to make this a polymorphic class
+		virtual ~Texture() = default;
+
 	private:
 		bool m_disposed;
 	};

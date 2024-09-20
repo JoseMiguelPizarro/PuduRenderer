@@ -1512,6 +1512,11 @@ namespace Pudu
 
 		pipeline->shaderState = shaderStateHandle;
 
+		if (creationData.shadersStateCreationData.name.compare("Cubemap") ==0)
+		{
+			LOG("HERE");
+		}
+
 		//Just have 1 set for now (bindless) so let's keep it simple
 		CreateDescriptorSetLayout(creationData.descriptorCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
 
@@ -2141,6 +2146,8 @@ namespace Pudu
 		shader->LoadVertexData(vertexData);
 		shader->name = name;
 
+		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->descriptors);
+
 		return shader;
 	}
 
@@ -2224,9 +2231,9 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	SPtr<Texture2d> PuduGraphics::CreateTexture2D(fs::path filePath)
+	SPtr<Texture2d> PuduGraphics::CreateTexture2D(fs::path filePath, TextureCreationSettings& settings)
 	{
-		return SPtr<Texture2d>();
+		return std::dynamic_pointer_cast<Texture2d>(CreateTexture(filePath, settings));
 	}
 
 	void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
@@ -2238,9 +2245,59 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	SPtr<Texture> PuduGraphics::CreateTexture(fs::path filePath)
+	SPtr<Texture> PuduGraphics::CreateTexture(fs::path path, TextureCreationSettings& settings)
 	{
-		return SPtr<Texture>();
+		bool isKTX = path.extension() == ".ktx";
+		void* pixelsData = nullptr;
+
+		int texWidth, texHeight, texChannels = 0;
+		int depth = 1;
+		TextureType::Enum textureType = TextureType::Texture2D;
+
+		ktxTexture* ktxTexture;
+		if (isKTX)
+		{
+			auto result = ktxTexture_CreateFromNamedFile(path.string().c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
+
+			pixelsData = ktxTexture->pData;
+
+			texWidth = ktxTexture->baseWidth;
+			texHeight = ktxTexture->baseHeight;
+			depth = ktxTexture->baseDepth;
+
+			if (ktxTexture->isCubemap)
+			{
+				textureType = TextureType::Texture_Cube_Array;
+			}
+		}
+		else
+		{
+			pixelsData = stbi_load(FileManager::GetAssetPath(path).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		}
+
+		TextureCreationData creationData;
+		creationData.bindless = settings.bindless;
+		creationData.depth = depth;
+		creationData.width = texWidth;
+		creationData.height = texHeight;
+		creationData.name = settings.name;
+		creationData.format = settings.format;
+		creationData.mipmaps = 1;
+		creationData.pixels = pixelsData;
+		creationData.flags = TextureFlags::Sample;
+		creationData.textureType = settings.textureType;
+
+		auto textureHandle = CreateTexture(creationData);
+
+		if (isKTX)
+		{
+			ktxTexture_Destroy(ktxTexture);
+		}
+		else {
+			stbi_image_free(pixelsData);
+		}
+
+		return m_resources.GetTexture(textureHandle);
 	}
 
 	void PuduGraphics::DestroyRenderPass(RenderPassHandle handle)
@@ -2270,59 +2327,13 @@ namespace Pudu
 		Material material = Material();
 		if (data.Material.hasBaseTexture)
 		{
-			auto path = data.Material.BaseTexturePath.string();
-			bool isKTX = path.ends_with("ktx");
-			void* pixelsData = nullptr;
+			const std::filesystem::path path = data.Material.BaseTexturePath;
 
+			TextureCreationSettings settings{};
+			settings.bindless = true;
+			settings.name = "Albedo";
 
-			int texWidth, texHeight, texChannels = 0;
-			int depth = 1;
-			TextureType::Enum textureType = TextureType::Texture2D;
-
-			ktxTexture* ktxTexture;
-			if (isKTX)
-			{
-				auto result = ktxTexture_CreateFromNamedFile(path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
-
-				pixelsData = ktxTexture->pData;
-
-				texWidth = ktxTexture->baseWidth;
-				texHeight = ktxTexture->baseHeight;
-				depth = ktxTexture->baseDepth;
-
-				if (ktxTexture->isCubemap)
-				{
-					textureType = TextureType::Texture_Cube_Array;
-				}
-			}
-			else
-			{
-
-				pixelsData = stbi_load(FileManager::GetAssetPath(data.Material.BaseTexturePath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-			}
-
-			TextureCreationData creationData;
-			creationData.bindless = true;
-			creationData.depth = depth;
-			creationData.width = texWidth;
-			creationData.height = texHeight;
-			creationData.name = "Albedo";
-			creationData.format = VK_FORMAT_R8G8B8A8_SRGB;
-			creationData.mipmaps = 1;
-			creationData.pixels = pixelsData;
-			creationData.flags = TextureFlags::Sample;
-			creationData.textureType = textureType;
-
-			auto textureHandle = CreateTexture(creationData);
-			material.Texture = m_resources.GetTexture(textureHandle);
-
-			if (isKTX)
-			{
-				ktxTexture_Destroy(ktxTexture);
-			}
-			else {
-				stbi_image_free(pixelsData);
-			}
+			material.Texture = std::dynamic_pointer_cast<Texture2d>(CreateTexture(path,settings));
 		}
 
 		if (data.Material.hasNormalMap)

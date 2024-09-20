@@ -1,20 +1,7 @@
 [[vk::binding(32, 0)]]Sampler2D global_textures[];
-
-struct LightBuffer {
-    float4 lightDirection;
-    float4x4 lightMatrix;
-    float4x4 shadowMatrix;
-};
+#include "Lib/Lighting.hlsl"
 
 [[vk::binding(0, 1)]] ConstantBuffer<LightBuffer> lightingBuffer;
-
-struct UniformBufferObject {
-float4x4 model;
-float4x4 view;
-float4x4 proj;
-uint materialId;
-};
-
 [[vk::push_constant]]ConstantBuffer<UniformBufferObject> ubo;
 
 struct VertexInput

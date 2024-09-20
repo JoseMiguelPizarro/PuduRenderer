@@ -18,7 +18,6 @@ namespace Pudu {
 		std::vector<SpvReflectDescriptorSet*> sets(count);
 		result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
 
-
 		for (size_t setIndex = 0; setIndex < sets.size(); ++setIndex)
 		{
 			std::vector<DescriptorSetLayoutData*> layoutsPtr;
@@ -74,6 +73,13 @@ namespace Pudu {
 					layoutBinding.pImmutableSamplers = nullptr;
 
 					storedLayout->Bindings.push_back(layoutBinding);
+
+					DescriptorBinding binding;
+					binding.name = refl_binding.name;
+					binding.set = refl_binding.set;
+					binding.index = refl_binding.binding;
+
+					outDescriptorSetLayoutData.bindingsData.push_back(binding);
 				}
 			}
 
@@ -88,7 +94,6 @@ namespace Pudu {
 		}
 
 		outDescriptorSetLayoutData.setsCount = outDescriptorSetLayoutData.layoutData.size();
-
 		spvReflectDestroyShaderModule(&module);
 	}
 
@@ -97,16 +102,16 @@ namespace Pudu {
 		return a.SetNumber < b.SetNumber;
 	}
 
-	void SPIRVParser::GetDescriptorSetLayout(PipelineCreationData& creationData, DescriptorsCreationData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(Shader* creationData, DescriptorsCreationData& outDescriptorSetLayoutData)
 	{
-		if (creationData.vertexShaderData.size() > 0)
+		if (creationData->vertexData.size() > 0)
 		{
-			GetDescriptorSetLayout(creationData.vertexShaderData.data(), creationData.vertexShaderData.size() * sizeof(char), outDescriptorSetLayoutData);
+			GetDescriptorSetLayout(creationData->vertexData.data(), creationData->vertexData.size() * sizeof(char), outDescriptorSetLayoutData);
 		}
 
-		if (creationData.fragmentShaderData.size() > 0)
+		if (creationData->fragmentData.size() > 0)
 		{
-			GetDescriptorSetLayout(creationData.fragmentShaderData.data(), creationData.fragmentShaderData.size() * sizeof(char), outDescriptorSetLayoutData);
+			GetDescriptorSetLayout(creationData->fragmentData.data(), creationData->fragmentData.size() * sizeof(char), outDescriptorSetLayoutData);
 		}
 
 		std::sort(outDescriptorSetLayoutData.layoutData.begin(), outDescriptorSetLayoutData.layoutData.end(), SortBySetNumber);
