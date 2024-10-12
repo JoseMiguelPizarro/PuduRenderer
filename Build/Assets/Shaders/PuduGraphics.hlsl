@@ -5,7 +5,8 @@
 [[vk::binding(32, 0)]]Sampler2D global_textures[];
 [[vk:: binding(0, 1)]]ConstantBuffer < LightBuffer > lightingBuffer;
 
-#define BIND(id) [[vk::binding(id,2)]]
+#define PERSHADERBIND 2
+#define BIND(id) [[vk::binding(id,PERSHADERBIND)]]
 #define CONSTANTS(type) [[vk:: push_constant]] ConstantBuffer<type>
 
 #define GET_GLOBAL_TEXTURE(id) global_textures[NonUniformResourceIndex(id)]

@@ -126,9 +126,38 @@ namespace Pudu
 		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const char* name = nullptr);
 
-		void CreateImage(uint32_t width, uint32_t height, VkFormat format,
-			VkImageTiling tiling, VkImageUsageFlags usage,
-			VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, char* name = nullptr);
+		//TODO: ADD SUPPORT FOR MIPMAPS
+
+		struct ImageCreateData {
+			uint32_t width;
+			uint32_t height;
+			uint32_t depth = 1;
+			uint32_t mipLevels = 1;
+			uint32_t arrayLayers = 1;
+			VkFormat format;
+			VkImageTiling tilling;
+			VkImageUsageFlags usage;
+			VkMemoryPropertyFlags memoryPropertiesFlags;
+			VkImage* image;
+			VkDeviceMemory* imageMemory;
+			char* name;
+		};
+
+		struct ImageViewCreateData
+		{
+			VkImage image;
+			VkFormat format;
+			VkImageViewType imageView = VK_IMAGE_VIEW_TYPE_2D;
+			VkImageAspectFlags aspectFlags;
+			VkImageViewType viewType;
+			uint32_t levelCount = 1;
+			uint32_t baseMipLevel = 0;
+			uint32_t baseArrayLayer = 0;
+			uint32_t layerCount = 1;
+			const char* name;
+		};
+
+		void CreateImage(ImageCreateData data);
 
 		GPUResourcesManager* Resources() {
 			return &m_resources;
@@ -147,15 +176,16 @@ namespace Pudu
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
-		SPtr<Texture2d> CreateTexture2D(fs::path filePath, TextureCreationSettings& creationData);
-		SPtr<Texture> CreateTexture(fs::path filePath, TextureCreationSettings& creationData);
+		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureCreationSettings& creationData);
+		SPtr<Texture> LoadTexture(fs::path filePath, TextureCreationSettings& creationData);
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
 
-		void UploadTextureData(SPtr<Texture2d> texture, void* data);
+		void UploadTextureData(SPtr<Texture> texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
 		SPtr<ComputeShader> testComputeShader;
 
+		static uint32_t const K_BINDLESS_SET_INDEX = 0;
 		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
 		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
 		static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
@@ -192,7 +222,12 @@ namespace Pudu
 		void InitDebugUtilsObjectName();
 
 		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
-		void CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& creationData, std::vector<DescriptorSetLayoutHandle>& output);
+		DescriptorSetLayoutHandle CreateBindlessDescriptorSetLayout(DescriptorSetLayoutData& creationData);
+		DescriptorSetLayoutHandle CreateDescriptorSetLayout(DescriptorSetLayoutData& creationData);
+		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<DescriptorSetLayoutHandle>& out);
+
+		void CreateBindlessDescriptorPool();
+		void CreateDescriptorPool();
 
 		void CreateSwapChainFrameBuffers(RenderPassHandle renderPass);
 		void CreateFrames();
@@ -202,7 +237,6 @@ namespace Pudu
 		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
 		void CreateTimelineSemaphore(VkSemaphore& semaphore);
 
-		void CreateBindlessDescriptorPool();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
 		void CreateSwapChainSyncObjects();
@@ -212,7 +246,7 @@ namespace Pudu
 		void UpdateLightingBuffer(RenderFrameData& frame);
 
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 
 		VmaAllocator m_VmaAllocator;
@@ -251,7 +285,7 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, const char* name = nullptr);
+		VkImageView CreateImageView(ImageViewCreateData data);
 
 
 		/// <summary>

@@ -32,12 +32,10 @@ float4 main(VSOut input): SV_TARGET {
     uint id = ubo.materialId;
 
     float3 coord = input.Normal.xyz;
-    
+    float3 cubeCoord = input.Normal.xyz;
     //float4 col = cubeMap.Sample(coord);
     Sampler2D tex = GET_GLOBAL_TEXTURE(id);
-   // float4 base_color = tex.Sample(input.TexCoord.xy) + cubeMap.Sample(float3(0,0,0));
-
-    float4 baseColor = testText.Sample(input.TexCoord.xy) + tex.Sample(input.TexCoord.xy);
+    float4 baseColor = testText.Sample(input.TexCoord.xy) + saturate(tex.Sample(input.TexCoord.xy))*0.001;
     float4 col = baseColor;
     
     return col;

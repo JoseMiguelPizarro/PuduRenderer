@@ -10,6 +10,7 @@ namespace Pudu {
 	struct DescriptorUpdateRequest {
 		SPtr<Texture> texture;
 		DescriptorBinding* binding;
+		bool uploaded;
 	};
 
 	class Material

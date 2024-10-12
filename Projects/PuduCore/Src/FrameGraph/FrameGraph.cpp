@@ -13,7 +13,7 @@ namespace Pudu
 	TextureType::Enum TextureTypeFromString(char const* texType) {
 		if (strcmp(texType, "cube"))
 		{
-			return TextureType::Texture_Cube_Array;
+			return TextureType::Texture_Cube;
 		}
 
 		return TextureType::Texture2D;
@@ -1304,6 +1304,7 @@ namespace Pudu
 						textureData.name = resource->name.c_str();
 						textureData.mipmaps = 1;
 						textureData.bindless = true;
+						textureData.dataSize = info.width * info.height * 4; //TODO: THIS IS BAD, CHANGE IT LATER
 
 						SamplerCreationData samplerData;
 						samplerData.wrap = false;
@@ -1319,8 +1320,6 @@ namespace Pudu
 				case FrameGraphResourceType_Reference:
 					break;
 				}
-
-				
 
 				resource->allocated = true;
 			}

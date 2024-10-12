@@ -31,6 +31,7 @@ private:
 
 	std::filesystem::path planeTexturePath = "models/floor/Grass.png";
 	std::filesystem::path planeModelPath = "models/floor/floor.obj";
+	fs::path cubeMapPath = "textures/uffizi_cube.ktx";
 
 	std::vector<RenderEntitySPtr> GameboyEntities;
 
@@ -39,6 +40,7 @@ private:
 	SPtr<Mesh> m_planeMesh;
 	Model m_planeModel;
 	SPtr<Texture2d> m_planeTexture;
+	SPtr<Texture2d> m_cubemapTexture;
 	PuduRenderer m_puduRenderer;
 	SPtr<Shader> standardShader;
 	SPtr<Shader> cubemapShader;

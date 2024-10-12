@@ -309,6 +309,7 @@ namespace Pudu
 			Texture3D,
 			Texture_1D_Array,
 			Texture_2D_Array,
+			Texture_Cube,
 			Texture_Cube_Array,
 			Count
 		};
@@ -320,12 +321,13 @@ namespace Pudu
 			Texture3D_mask = 1 << 2,
 			Texture_1D_Array_mask = 1 << 3,
 			Texture_2D_Array_mask = 1 << 4,
-			Texture_Cube_Array_mask = 1 << 5,
-			Count_mask = 1 << 6
+			Texture_Cube_mask = 1 << 5,
+			Texture_Cube_Array_mask = 1 << 6,
+			Count_mask = 1 << 7
 		};
 
 		static const char* s_value_names[] = {
-			"Texture1D", "Texture2D", "Texture3D", "Texture_1D_Array", "Texture_2D_Array", "Texture_Cube_Array",
+			"Texture1D", "Texture2D", "Texture3D", "Texture_1D_Array", "Texture_2D_Array","Texture_Cube", "Texture_Cube_Array",
 			"Count"
 		};
 
@@ -339,6 +341,7 @@ namespace Pudu
 	{
 		static VkImageType s_vk_target[TextureType::Count] = {
 			VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D, VK_IMAGE_TYPE_3D, VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D,
+			VK_IMAGE_TYPE_2D,
 			VK_IMAGE_TYPE_3D
 		};
 		return s_vk_target[type];
@@ -347,8 +350,13 @@ namespace Pudu
 	static VkImageViewType ToVkImageViewType(TextureType::Enum type)
 	{
 		static VkImageViewType s_vk_data[] = {
-			VK_IMAGE_VIEW_TYPE_1D, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_VIEW_TYPE_3D, VK_IMAGE_VIEW_TYPE_1D_ARRAY,
-			VK_IMAGE_VIEW_TYPE_2D_ARRAY, VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
+			VK_IMAGE_VIEW_TYPE_1D, 
+			VK_IMAGE_VIEW_TYPE_2D, 
+			VK_IMAGE_VIEW_TYPE_3D, 
+			VK_IMAGE_VIEW_TYPE_1D_ARRAY,
+			VK_IMAGE_VIEW_TYPE_2D_ARRAY, 
+			VK_IMAGE_VIEW_TYPE_CUBE,
+			VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
 		};
 		return s_vk_data[type];
 	}
@@ -419,6 +427,7 @@ namespace Pudu
 
 	struct SamplerCreationData {
 		bool wrap = false;
+		uint32_t maxLOD = 1;
 	};
 
 
@@ -440,6 +449,9 @@ namespace Pudu
 		uint16_t height = 1;
 		uint16_t depth = 1;
 		uint8_t mipmaps = 1;
+		uint32_t dataSize = -1;
+		uint32_t layers = 1;
+
 		TextureFlags::Enum flags = TextureFlags::Default;
 
 		SamplerCreationData samplerData;
@@ -448,6 +460,7 @@ namespace Pudu
 		TextureHandle handle{ k_INVALID_HANDLE };
 		bool bindless;
 		void* pixels = nullptr;
+		void* sourceData = nullptr; //ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly
 		const char* name = nullptr;
 	};
 

@@ -73,10 +73,17 @@ void TriangleApp::OnInit()
 	TextureCreationSettings planeSettings{};
 	planeSettings.bindless = false;
 	planeSettings.name = "Plane";
-	m_planeTexture = Graphics.CreateTexture2D(planeTexturePath,planeSettings);
-	auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
+	m_planeTexture = Graphics.LoadTexture2D(planeTexturePath,planeSettings);
 
-	for (auto e : sphere) {
+	TextureCreationSettings cubemapSettings{};
+	cubemapSettings.bindless = false;
+	cubemapSettings.name = "Cubemap";
+
+	m_cubemapTexture = Graphics.LoadTexture2D(cubeMapPath, cubemapSettings);
+
+	auto cube = FileManager::LoadGltfScene("models/cube.gltf");
+
+	for (auto e : cube) {
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
 
 		if (re != nullptr)
@@ -84,11 +91,10 @@ void TriangleApp::OnInit()
 			auto mat = &re->GetModel().Materials[0];
 			mat->Shader = cubemapShader;
 			mat->SetProperty("testText", m_planeTexture);
-
 		}
 	}
 
-	m_scene.AddEntities(sphere);
+	m_scene.AddEntities(cube);
 }
 
 void TriangleApp::DrawImGUI()

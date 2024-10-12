@@ -121,21 +121,26 @@ namespace Pudu
 					//Bind the per material properties here
 
 					for (auto mat : model.Materials) {
-						for (auto request : mat.descriptorUpdateRequests) {
-							VkDescriptorImageInfo imageInfo{};
-							imageInfo.imageView = request.texture->vkImageViewHandle;
-							imageInfo.sampler = request.texture->Sampler.vkHandle;
-							imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+						for (auto& request : mat.descriptorUpdateRequests) {
+							if (!request.uploaded)
+							{
 
-							VkWriteDescriptorSet imageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-							imageWrite.descriptorCount = 1;
-							imageWrite.dstBinding = request.binding->index;
-							imageWrite.dstSet = pipeline->vkDescriptorSets[request.binding->set];
-							imageWrite.pImageInfo = &imageInfo;
-							imageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-							
+								VkDescriptorImageInfo imageInfo{};
+								imageInfo.imageView = request.texture->vkImageViewHandle;
+								imageInfo.sampler = request.texture->Sampler.vkHandle;
+								imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-							frameData.graphics->UpdateDescriptorSet(1, &imageWrite);
+								VkWriteDescriptorSet imageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+								imageWrite.descriptorCount = 1;
+								imageWrite.dstBinding = request.binding->index;
+								imageWrite.dstSet = pipeline->vkDescriptorSets[request.binding->set];
+								imageWrite.pImageInfo = &imageInfo;
+								imageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+								frameData.graphics->UpdateDescriptorSet(1, &imageWrite);
+								request.uploaded = true;
+							}
+
 						}
 					}
 

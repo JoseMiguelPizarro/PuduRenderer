@@ -21,7 +21,11 @@ namespace Pudu
 		uint32_t width;
 		uint32_t height;
 		uint32_t depth;
+		uint32_t mipLevels = 1;
 		VkFormat format;
+		uint32_t layers = 1;
+
+		uint32_t size;
 
 		void Dispose();
 

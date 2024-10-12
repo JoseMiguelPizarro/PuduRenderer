@@ -34,9 +34,9 @@ namespace Pudu
 		void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);
 		void Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout srcLayout, VkImageLayout dstLayout);
 		void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ);
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,VkImageLayout newLayout);
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange* range = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions = nullptr);
 		void SetDepthBias(float slopeBias, float constantBias);
 
 		VkCommandBuffer vkHandle;
