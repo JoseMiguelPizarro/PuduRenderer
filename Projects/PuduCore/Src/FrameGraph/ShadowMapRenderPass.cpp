@@ -14,7 +14,7 @@ namespace Pudu {
 		auto dirLight = renderData.scene->directionalLight;
 		auto dir = dirLight->Direction();
 		m_renderCamera.Transform.SetForward(dir, { 0,1,0 });
-		m_renderCamera.Transform.LocalPosition = dirLight->GetTransform().LocalPosition;
+		m_renderCamera.Transform.SetLocalPosition(dirLight->GetTransform().GetLocalPosition());
 		m_renderCamera.Projection = renderData.scene->directionalLight->Projection;
 
 		renderData.camera = &m_renderCamera;
@@ -31,7 +31,7 @@ namespace Pudu {
 	}
 	RenderPassType ShadowMapRenderPass::GetRenderPassType()
 	{
-		return RenderPassType::ShadowMap; 
+		return RenderPassType::ShadowMap;
 	}
 	void ShadowMapRenderPass::InitializeShadowMap(PuduGraphics* gfx)
 	{

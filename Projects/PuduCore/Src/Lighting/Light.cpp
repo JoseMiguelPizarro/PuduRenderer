@@ -12,7 +12,7 @@ namespace Pudu
 	glm::mat4 Light::GetLightMatrix()
 	{
 		vec3 forward = m_transform.GetForward();
-		return Pudu::LookAtInverse(m_transform.LocalPosition, forward, { 0, 1, 0 });
+		return Pudu::LookAtInverse(m_transform.GetLocalPosition(), forward, {0, 1, 0});
 	}
 
 	glm::vec3 Light::Direction() 

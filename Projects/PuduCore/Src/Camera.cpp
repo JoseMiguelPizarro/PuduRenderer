@@ -9,7 +9,7 @@ namespace Pudu {
 	mat4 Camera::GetViewMatrix()
 	{
 		vec3 forward = Transform.GetForward();
-		return Pudu::LookAtInverse(Transform.LocalPosition, forward, { 0, 1, 0 });
+		return Pudu::LookAtInverse(Transform.GetLocalPosition(), forward, {0, 1, 0});
 	}
 
 	mat4 Camera::GetInverseViewMatrix()

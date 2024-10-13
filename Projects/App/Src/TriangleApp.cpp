@@ -25,7 +25,7 @@ void TriangleApp::OnRun()
 	float y = sin(glm::radians(60.f)) * radius;
 
 	vec3 pos = vec3(x, y, z);
-	m_camera.Transform.LocalPosition = pos;
+	m_camera.Transform.SetLocalPosition(pos);
 
 	vec3 forward = glm::normalize(vec3(0) - pos);
 
@@ -36,7 +36,7 @@ void TriangleApp::OnInit()
 {
 	m_camera = {};
 	m_camera.Transform.SetForward(vec3(0, -.7, -1), vec3(0, 1, 0));
-	m_camera.Transform.LocalPosition = { 0, 14.0f, 23.0f };
+	m_camera.Transform.SetLocalPosition({ 0, 14.0f, 23.0f });
 	Projection projection;
 
 	projection.Width = Graphics.WindowWidth;
@@ -64,7 +64,7 @@ void TriangleApp::OnInit()
 	directionalLight = {};
 	directionalLight.Projection = projection;
 	directionalLight.GetTransform().SetForward({ -1.0f, -1.0f,-1.0f }, { 0.0f,1.0f,0.0f });
-	directionalLight.GetTransform().LocalPosition = { 20,20,20 };
+	directionalLight.GetTransform().SetLocalPosition({ 20,20,20 });
 	m_scene.directionalLight = &directionalLight;
 
 	LoadGameboyModel();
@@ -72,7 +72,7 @@ void TriangleApp::OnInit()
 	TextureCreationSettings planeSettings{};
 	planeSettings.bindless = false;
 	planeSettings.name = "Plane";
-	m_planeTexture = Graphics.LoadTexture2D(planeTexturePath,planeSettings);
+	m_planeTexture = Graphics.LoadTexture2D(planeTexturePath, planeSettings);
 
 	TextureCreationSettings cubemapSettings{};
 	cubemapSettings.bindless = false;
@@ -85,8 +85,9 @@ void TriangleApp::OnInit()
 
 	for (auto e : cube) {
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-		re->GetTransform().LocalPosition = { 0,5,0 };
-		re->GetTransform().LocalScale = { 3,3,3 };
+		re->GetTransform().SetLocalPosition({ 0,5,0 });
+		re->GetTransform().SetLocalScale({ 3,3,3 });
+
 		if (re != nullptr)
 		{
 			auto mat = &re->GetModel().Materials[0];

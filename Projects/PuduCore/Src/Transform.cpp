@@ -7,18 +7,57 @@ using namespace glm;
 namespace Pudu {
 	void Transform::SetRotation(quat r)
 	{
-		LocalRotation = degrees(eulerAngles(r));
+		m_localRotation = degrees(eulerAngles(r));
+	}
+
+	void Transform::SetLocalRotationEuler(vec3 eulerAngles) {
+		m_localRotation = eulerAngles;
+	}
+
+
+	vec3 Transform::GetLocalRotationEuler() {
+		return m_localRotation;
 	}
 
 	quat Transform::GetRotationQuat()
 	{
-		return quat(radians(LocalRotation));
+		return quat(radians(m_localRotation));
+	}
+
+	vec3 Transform::GetLocalPosition()
+	{
+		return m_localPosition;
+	}
+
+	void Transform::SetLocalPosition(vec3 position)
+	{
+		m_localPosition = position;
+
+	}
+
+	vec3 Transform::GetLocalScale() {
+		return m_localScale;
+	}
+
+	void Transform::SetLocalScale(vec3 scale)
+	{
+		m_localScale = scale;
 	}
 
 	mat4 Transform::GetTransformationMatrix()
 	{
 		mat4 rot = toMat4(GetRotationQuat());
-		return ParentMatrix * translate(mat4(1.0f), LocalPosition) * scale(mat4(1.0f), LocalScale) * rot;
+		return m_parentMatrix * translate(mat4(1.0f), m_localPosition) * scale(mat4(1.0f), m_localScale) * rot;
+	}
+
+	mat4 Transform::GetParentMatrix()
+	{
+		return m_parentMatrix;
+	}
+
+	void Transform::SetParentMatrix(mat4 m)
+	{
+		m_parentMatrix = m;
 	}
 
 	void Transform::SetForward(vec3 forward, vec3 up)
@@ -27,7 +66,7 @@ namespace Pudu {
 
 		//vec3 rotEuler = degrees(PuduMath::EulerAnglesFromQuat(rot));
 		vec3 rotEuler = degrees(eulerAngles(rot));
-		LocalRotation = rotEuler;
+		m_localRotation = rotEuler;
 	}
 
 	vec3 Transform::GetForward()
@@ -38,14 +77,14 @@ namespace Pudu {
 	{
 		if (m_parentTransform != nullptr)
 		{
-			ParentMatrix = m_parentTransform->GetTransformationMatrix();
+			m_parentMatrix = m_parentTransform->GetTransformationMatrix();
 		}
 		else
 		{
-			ParentMatrix = mat4(1.0f);
+			m_parentMatrix = mat4(1.0f);
 		}
 
-		for (auto child : Children) {
+		for (auto child : m_children) {
 			child->UpdateWorldTransformRecursivelly();
 		}
 	}
@@ -63,7 +102,7 @@ namespace Pudu {
 	}
 	void Transform::AddChild(Transform* child)
 	{
-		Children.push_back(child);
+		m_children.push_back(child);
 		UpdateWorldTransformRecursivelly();
 	}
 
@@ -71,5 +110,7 @@ namespace Pudu {
 	{
 		return m_parentTransform;
 	}
+
+
 }
 

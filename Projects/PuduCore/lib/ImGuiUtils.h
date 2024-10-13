@@ -7,12 +7,10 @@ namespace Pudu {
 	class ImGuiUtils {
 	public:
 		static void DrawTransform(Transform& transform) {
-			ImGui::InputFloat3("Position", &transform.LocalPosition[0]);
-			ImGui::InputFloat3("Scale", &transform.LocalScale[0]);
-			ImGui::InputFloat3("Rotation", &transform.LocalRotation[0]);
+			ImGui::InputFloat3("Position", &transform.m_localPosition[0]);
+			ImGui::InputFloat3("Scale", &transform.m_localScale[0]);
+			ImGui::InputFloat3("Rotation", &transform.m_localRotation[0]);
 		}
-
-
 
 		static void DrawEntityNode(EntitySPtr entity) {
 			ImGui::TableNextRow();

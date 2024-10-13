@@ -163,8 +163,8 @@ namespace Pudu {
 
 			Transform& t = entity->GetTransform();
 			t.SetRotation(r);
-			t.LocalPosition = vec3(transform.translation[0], transform.translation[1], transform.translation[2]);
-			t.LocalScale = vec3(transform.scale[0], transform.scale[1], transform.scale[2]);
+			t.SetLocalPosition( vec3(transform.translation[0], transform.translation[1], transform.translation[2]));
+			t.SetLocalScale(vec3(transform.scale[0], transform.scale[1], transform.scale[2]));
 
 			if (shouldUpdateTransforms)
 			{

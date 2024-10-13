@@ -12,31 +12,45 @@ using namespace glm;
 namespace Pudu {
 	struct Transform
 	{
-		vec3 LocalPosition = vec3(0, 0, 0);
-		vec3 LocalScale = vec3(1, 1, 1);
-
-		/**
-		 *Rotation in euler angles
-		 */
-		vec3 LocalRotation = vec3(0, 0, 0);
 		void SetRotation(quat r);
+		void SetLocalRotationEuler(vec3 eulerAngles);
+		vec3 GetLocalRotationEuler();
 		quat GetRotationQuat();
+
+		vec3 GetLocalPosition();
+		void SetLocalPosition(vec3 pos);
+
+		vec3 GetLocalScale();
+		void SetLocalScale(vec3 scale);
+
 		mat4 GetTransformationMatrix();
+		vec3 GetForward();
 		void SetForward(vec3 forward, vec3 up);
 
-		vec3 GetForward();
-		mat4 ParentMatrix = mat4(1.0f);
+		mat4 GetParentMatrix();
+		void SetParentMatrix(mat4 m);
+
 		void UpdateWorldTransformRecursivelly();
 		void SetParent(Transform* parent);
 		Transform* GetParent();
-		std::vector<Transform*> Children;
+		std::vector<Transform>* GetChildren();
 
+
+		/// <summary>
+		/// Transform Changed event
+		/// </summary>
 		void(*TransformChanged)(Transform&);
 
 	private:
+		friend class ImGuiUtils;
+
+		mat4 m_parentMatrix = mat4(1.0f);
+		vec3 m_localRotation = vec3(0, 0, 0);
+		vec3 m_localPosition = vec3(0, 0, 0);
+		vec3 m_localScale = vec3(1, 1, 1);
+		std::vector<Transform*> m_children;
 		Transform* m_parentTransform = nullptr;
 		void AddChild(Transform* child);
 	};
-
 }
 
