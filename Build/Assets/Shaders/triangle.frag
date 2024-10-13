@@ -1,5 +1,6 @@
 // Bindless support
 #include "Lib/Lighting.hlsl"
+#include "Lib/DefaultVertexInput.hlsl"
 
 [[vk::binding(32, 0)]]Sampler2D global_textures[];
 [[vk::binding(0, 1)]]ConstantBuffer<LightBuffer> lightingBuffer;
@@ -10,15 +11,7 @@
         #endif
 
 [[vk::push_constant]]ConstantBuffer<UniformBufferObject> ubo;
-        
-struct VSOut
-{
-        float4 PositionCS:SV_POSITION;
-        float4 Color: COLOR;
-        float4 TexCoord:TEXCOORD;
-        float4 Normal:NORMAL;
-        float4 ShadowCoords:TEXCOORD1;        
-};
+      
         
 float linearDepth(float d, float near, float far)
 {
@@ -83,6 +76,6 @@ float4 main(VSOut input):SV_TARGET {
     float shadow =clamp(FilterPCF(input.ShadowCoords / input.ShadowCoords.w) + 0.5,0,1);
     float4 col =pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), lightingBuffer.lightDirection.xyz);
     col = lerp(col,float4(0.2,0.2,0.3,1.0),1 - shadow);
-    
+
     return col;
 }

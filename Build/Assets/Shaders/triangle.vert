@@ -1,25 +1,10 @@
 [[vk::binding(32, 0)]]Sampler2D global_textures[];
 #include "Lib/Lighting.hlsl"
+#include "Lib/DefaultVertexInput.hlsl"
 
 [[vk::binding(0, 1)]] ConstantBuffer<LightBuffer> lightingBuffer;
 [[vk::push_constant]]ConstantBuffer<UniformBufferObject> ubo;
 
-struct VertexInput
-{
-    float3 Position:POSITION;
-    float3 Color: COLOR;
-    float2 TexCoord: TEXCOORD;
-    float3 Normal: NORMAL;
-};
-
-struct VSOut
-{
-float4 PositionCS: SV_POSITION;
-float4 Color: COLOR;
-float4 TexCoord:TEXCOORD;
-float4 Normal:NORMAL;
-float4 ShadowCoords:TEXCOORD1;
-};
 
 const float4x4 biasMat = float4x4(
     0.5, 0.0, 0.0, 0.0,
@@ -31,10 +16,11 @@ const float4x4 biasMat = float4x4(
 VSOut main(VertexInput input) {
     VSOut output = (VSOut)0.0;
     output.PositionCS = ubo.proj * ubo.view * ubo.model * vec4(input.Position, 1.0);
+    output.PosWS = (ubo.model * float4(input.Position, 1));
     output.Color = float4(input.Color, 1.0);
     output.TexCoord= float4(input.TexCoord, 0, 0);
-    output.Normal = (ubo.model * float4(input.Normal, 0));
-    
+    output.Normal = float4(input.Normal,0.);
+    output.PosOS = float4(input.Position,0.);
     output.ShadowCoords = biasMat * lightingBuffer.shadowMatrix * lightingBuffer.lightMatrix * ubo.model * float4(input.Position, 1.0);
         
     return output;

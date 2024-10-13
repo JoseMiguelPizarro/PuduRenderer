@@ -67,7 +67,6 @@ void TriangleApp::OnInit()
 	directionalLight.GetTransform().LocalPosition = { 20,20,20 };
 	m_scene.directionalLight = &directionalLight;
 
-
 	LoadGameboyModel();
 
 	TextureCreationSettings planeSettings{};
@@ -78,19 +77,21 @@ void TriangleApp::OnInit()
 	TextureCreationSettings cubemapSettings{};
 	cubemapSettings.bindless = false;
 	cubemapSettings.name = "Cubemap";
+	cubemapSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
 
 	m_cubemapTexture = Graphics.LoadTexture2D(cubeMapPath, cubemapSettings);
 
-	auto cube = FileManager::LoadGltfScene("models/cube.gltf");
+	auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
 
 	for (auto e : cube) {
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-
+		re->GetTransform().LocalPosition = { 0,5,0 };
+		re->GetTransform().LocalScale = { 3,3,3 };
 		if (re != nullptr)
 		{
 			auto mat = &re->GetModel().Materials[0];
 			mat->Shader = cubemapShader;
-			mat->SetProperty("testText", m_planeTexture);
+			mat->SetProperty("testText", m_cubemapTexture);
 		}
 	}
 

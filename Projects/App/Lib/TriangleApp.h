@@ -31,7 +31,7 @@ private:
 
 	std::filesystem::path planeTexturePath = "models/floor/Grass.png";
 	std::filesystem::path planeModelPath = "models/floor/floor.obj";
-	fs::path cubeMapPath = "textures/uffizi_cube.ktx";
+	fs::path cubeMapPath = "textures/cubemap_yokohama_rgba.ktx";
 
 	std::vector<RenderEntitySPtr> GameboyEntities;
 

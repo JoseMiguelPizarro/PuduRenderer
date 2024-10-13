@@ -1483,26 +1483,26 @@ namespace Pudu
 
 	DescriptorSetLayoutHandle PuduGraphics::CreateDescriptorSetLayout(DescriptorSetLayoutData& data)
 	{
-			DescriptorSetLayoutHandle handle = m_resources.AllocateDescriptorSetLayout();
+		DescriptorSetLayoutHandle handle = m_resources.AllocateDescriptorSetLayout();
 
-			for (auto& binding : data.Bindings) {
-				binding.descriptorCount = 1;
-			}
+		for (auto& binding : data.Bindings) {
+			binding.descriptorCount = 1;
+		}
 
-			DescriptorSetLayout* descriptorSetLayout = m_resources.GetDescriptorSetLayout(handle);
+		DescriptorSetLayout* descriptorSetLayout = m_resources.GetDescriptorSetLayout(handle);
 
-			VkDescriptorSetLayoutCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-			createInfo.bindingCount = data.CreateInfo.bindingCount;
-			createInfo.pBindings = data.Bindings.data();
+		VkDescriptorSetLayoutCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		createInfo.bindingCount = data.CreateInfo.bindingCount;
+		createInfo.pBindings = data.Bindings.data();
 
-			VkDescriptorSetLayout layout{};
+		VkDescriptorSetLayout layout{};
 
-			VKCheck(vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &layout), "failed to create descriptor set layout!");
+		VKCheck(vkCreateDescriptorSetLayout(m_device, &createInfo, nullptr, &layout), "failed to create descriptor set layout!");
 
-			descriptorSetLayout->vkHandle = layout;
+		descriptorSetLayout->vkHandle = layout;
 
-			return handle;
+		return handle;
 	}
 
 	void PuduGraphics::CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
@@ -1521,6 +1521,11 @@ namespace Pudu
 		LOG("Creating descriptor set end");
 	}
 
+	/// <summary>
+	/// In Vulkan NOn-Bindless resources shouldn't use a Bindless descriptor so we need to check what kind of descriptor we should create
+	/// </summary>
+	/// <param name="layoutData"></param>
+	/// <param name="out"></param>
 	void PuduGraphics::CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<DescriptorSetLayoutHandle>& out) {
 
 		//Just have 1 set for now (bindless) so let's keep it simple
@@ -1970,7 +1975,7 @@ namespace Pudu
 
 		if (creationData.dataSize == -1)
 		{
-			dataSize = creationData.width * creationData.height * 4;
+			dataSize = creationData.width * creationData.height * 4; //Assume RGBA8
 		}
 
 		texture->size = dataSize;
@@ -1982,6 +1987,9 @@ namespace Pudu
 		std::vector<VkBufferImageCopy2> bufferCopyRegions;
 		if (creationData.textureType == TextureType::Texture_Cube)
 		{
+			subresourceRange.levelCount = creationData.mipmaps;
+			subresourceRange.layerCount = 6;
+
 			uint32_t offset = 0;
 
 			for (uint32_t face = 0; face < 6; face++)
@@ -1996,7 +2004,7 @@ namespace Pudu
 						VkBufferImageCopy2 bufferCopyRegion = { VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2 };
 						bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 						bufferCopyRegion.imageSubresource.mipLevel = level;
-						bufferCopyRegion.imageSubresource.baseArrayLayer = layer * 6 + face;
+						bufferCopyRegion.imageSubresource.baseArrayLayer = face;
 						bufferCopyRegion.imageSubresource.layerCount = 1;
 						bufferCopyRegion.imageExtent.width = texture->width >> level;
 						bufferCopyRegion.imageExtent.height = texture->height >> level;
@@ -2006,9 +2014,6 @@ namespace Pudu
 					}
 				}
 			}
-
-			subresourceRange.levelCount = creationData.mipmaps;
-			subresourceRange.layerCount = 6;
 		}
 
 		//Image view
@@ -2018,21 +2023,13 @@ namespace Pudu
 		imageViewInfo.viewType = ToVkImageViewType(creationData.textureType);
 		imageViewInfo.format = imageCreateInfo.format;
 
-		if (creationData.textureType == TextureType::Texture_Cube)
-		{
-			imageViewInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-		}
 		if (TextureFormat::HasDepthOrStencil(creationData.format))
 		{
-			imageViewInfo.subresourceRange.aspectMask = TextureFormat::HasDepth(creationData.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
-		}
-		else
-		{
-			imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			subresourceRange.aspectMask = TextureFormat::HasDepth(creationData.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
 		}
 
-		imageViewInfo.subresourceRange.levelCount = creationData.mipmaps;
-		imageViewInfo.subresourceRange.layerCount = creationData.textureType == TextureType::Texture_Cube ? 6 : 1;
+		imageViewInfo.subresourceRange = subresourceRange;
+
 		vkCreateImageView(m_device, &imageViewInfo, m_allocatorPtr, &texture->vkImageViewHandle);
 
 		SetResourceName(VK_OBJECT_TYPE_IMAGE, (uint64_t)texture->vkImageHandle, creationData.name);
@@ -2056,7 +2053,7 @@ namespace Pudu
 	void PuduGraphics::UploadTextureData(SPtr<Texture> texture, void* pixels, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions)
 	{
 		//TODO: COMPUTE TEXTURE SIZE
-		auto imageSize = texture->size; //TODO: Assuming 32 bit texture here R8G8B8A8
+		auto imageSize = texture->size;
 		GraphicsBuffer stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
