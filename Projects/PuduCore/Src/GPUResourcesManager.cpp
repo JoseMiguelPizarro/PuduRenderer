@@ -11,7 +11,6 @@ namespace Pudu {
 	void GPUResourcesManager::Init(PuduGraphics* graphics)
 	{
 		m_graphics = graphics;
-		m_renderPasses.ObtainResource();
 	}
 
 	SPtr<Texture> GPUResourcesManager::GetTextureByName(const char* name)
@@ -184,6 +183,23 @@ namespace Pudu {
 		return m_shaders.GetResource(handle.index);
 	}
 
+	SPtr<Mesh> GPUResourcesManager::AllocateMesh()
+	{
+		MeshHandle handle = { static_cast<uint32_t>(m_meshes.Size()) };
+		SPtr<Mesh> mesh = std::make_shared<Mesh>();
+
+		mesh->handle = handle;
+
+		m_meshes.AddResource(mesh);
+
+		return mesh;
+	}
+
+	SPtr<Mesh> GPUResourcesManager::GetMesh(MeshHandle handle)
+	{
+		return m_meshes.GetResource(handle.index);
+	}
+
 	ComputeShaderHandle GPUResourcesManager::AllocateComputeShader()
 	{
 		ComputeShaderHandle handle = { static_cast<uint32_t>(m_computeShaders.Size()) };
@@ -200,12 +216,50 @@ namespace Pudu {
 	{
 		return m_computeShaders.GetResource(handle.index);
 	}
+	SPtr<GraphicsBuffer> GPUResourcesManager::AllocateGraphicsBuffer()
+	{
+		GraphicsBufferHandle handle = { static_cast<uint32_t>(m_graphicsBuffers.Size()) };
+		SPtr<GraphicsBuffer> buffer = std::make_shared<GraphicsBuffer>();
+
+		buffer->handle = handle;
+
+		m_graphicsBuffers.AddResource(buffer);
+
+		return buffer;
+	}
+	SPtr<GraphicsBuffer> GPUResourcesManager::GetGraphicsBuffer(GraphicsBufferHandle handle)
+	{
+		return m_graphicsBuffers.GetResource(handle.index);
+	}
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
 	{
 		for (auto t : m_textures.m_resources)
 		{
-			vkDestroyImage(gfx->m_device, t->vkImageHandle, nullptr);
-			vkDestroyImageView(gfx->m_device, t->vkImageViewHandle, nullptr);
+			gfx->DestroyTexture(t);
+		}
+
+		for (auto t : m_pipelines.m_resources) {
+			vkDestroyPipeline(gfx->m_device, t.vkHandle, nullptr);
+		}
+
+		for (auto f : m_frameBuffers.m_resources)
+		{
+			gfx->DestroyFrameBuffer(f);
+		}
+
+		for (auto rp : m_renderPasses.m_resources)
+		{
+			gfx->DestroyRenderPass(rp);
+		}
+
+		for (auto m : m_meshes.m_resources)
+		{
+			gfx->DestroyMesh(m);
+		}
+
+		for (auto b : m_graphicsBuffers.m_resources)
+		{
+			gfx->DestroyBuffer(b);
 		}
 	}
 }

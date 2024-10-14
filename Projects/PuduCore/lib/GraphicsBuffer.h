@@ -1,18 +1,25 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include "Resources/Resources.h"
 
-class GraphicsBuffer
+
+namespace Pudu
 {
-public:
-    VkBuffer Handler;
-    VkDeviceMemory DeviceMemoryHandler;
-    void* MappedMemory;
+	class GraphicsBuffer
+	{
+	public:
+		VkBuffer vkHandler;
+		VkDeviceMemory DeviceMemoryHandler;
+		GraphicsBufferHandle handle;
+		void* MappedMemory = nullptr;
 
-    GraphicsBuffer() = default;
+		GraphicsBuffer() = default;
 
-    GraphicsBuffer(VkBuffer buffer, VkDeviceMemory deviceMemory)
-        : Handler(buffer), DeviceMemoryHandler(deviceMemory)
-    {
-        MappedMemory = nullptr;
-    }
+		bool IsDestroyed();
+
+	private:
+		friend PuduGraphics;
+		void Destroy();
+		bool m_disposed;
+	};
 };

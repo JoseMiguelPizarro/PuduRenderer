@@ -3,47 +3,46 @@
 
 #include "GraphicsBuffer.h"
 #include "vertex.h"
+#include "Resources/Resources.h"
 
 namespace Pudu
 {
     class Mesh
     {
     public:
-        GraphicsBuffer* GetVertexBuffer();
-        GraphicsBuffer* GetIndexBuffer();
+        SPtr<GraphicsBuffer> GetVertexBuffer();
+        SPtr<GraphicsBuffer> GetIndexBuffer();
 
         std::vector<Vertex>* GetVertices();
         std::vector<uint32_t>* GetIndices();
 
         Mesh() = default;
 
-        void SetIndexBuffer(GraphicsBuffer buffer)
+        void SetIndexBuffer(SPtr<GraphicsBuffer> buffer)
         {
             m_indexBuffer = buffer;
         }
 
-        void SetVertexBuffer(GraphicsBuffer buffer)
+        void SetVertexBuffer(SPtr<GraphicsBuffer> buffer)
         {
             m_vertexBuffer = buffer;
         }
 
-        void Dispose();
+        bool IsDisposed();
 
-        Mesh(
-            GraphicsBuffer vertexBuffer,
-            GraphicsBuffer indexBuffer,
-            std::vector<Vertex> vertices,
-            std::vector<uint32_t> indices):
-            m_vertexBuffer(vertexBuffer), m_indexBuffer(indexBuffer),
-            m_vertices(std::move(vertices)), m_indices(std::move(indices))
-        {
-        }
+        std::string* GetName();
+
+        MeshHandle handle;
 
     private:
-        GraphicsBuffer m_vertexBuffer;
-        GraphicsBuffer m_indexBuffer;
+        friend PuduGraphics;
+
+        void Destroy();
+        SPtr<GraphicsBuffer> m_vertexBuffer;
+        SPtr<GraphicsBuffer> m_indexBuffer;
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
         bool m_disposed;
+        std::string m_name;
     };
 }

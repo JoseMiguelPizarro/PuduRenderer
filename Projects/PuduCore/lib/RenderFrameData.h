@@ -40,7 +40,7 @@ namespace Pudu
 		uint16_t width;
 		uint16_t height;
 		Camera* camera;
-		GraphicsBuffer* lightingBuffer;
+		SPtr<GraphicsBuffer> lightingBuffer;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<GPUCommands*> computeCommandsToSubmit;

@@ -28,7 +28,6 @@
 #include "ImGui/imgui_impl_vulkan.h"
 
 #include "ImGuiUtils.h"
-#include "MeshManager.h"
 #include "SPIRVParser.h"
 #include "Frame.h"
 #include "FrameGraph/FrameGraph.h"
@@ -285,9 +284,9 @@ namespace Pudu
 		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
 		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-		memcpy(buffer.MappedMemory, &lightBuffer, sizeof(LightBuffer));
+		memcpy(buffer->MappedMemory, &lightBuffer, sizeof(LightBuffer));
 
-		frame.lightingBuffer = &m_lightingBuffers[frame.frameIndex];
+		frame.lightingBuffer = m_lightingBuffers[frame.frameIndex];
 	}
 
 	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -316,10 +315,14 @@ namespace Pudu
 		PUDU_ERROR("Failed to find suitable memory type!");
 	}
 
-	void PuduGraphics::DestroyBuffer(GraphicsBuffer buffer)
+	void PuduGraphics::DestroyBuffer(SPtr<GraphicsBuffer> buffer)
 	{
-		vkDestroyBuffer(m_device, buffer.Handler, m_allocatorPtr);
-		vkFreeMemory(m_device, buffer.DeviceMemoryHandler, m_allocatorPtr);
+		if (!buffer->IsDestroyed())
+		{
+			vkDestroyBuffer(m_device, buffer->vkHandler, m_allocatorPtr);
+			vkFreeMemory(m_device, buffer->DeviceMemoryHandler, m_allocatorPtr);
+			buffer->Destroy();
+		}
 	}
 
 	std::vector<const char*> PuduGraphics::GetInstanceExtensions()
@@ -808,7 +811,7 @@ namespace Pudu
 		//TODO: SET RESOURCE NAME
 	}
 
-	GraphicsBuffer PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
+	SPtr<GraphicsBuffer> PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 		VkMemoryPropertyFlags flags, const char* name)
 	{
 		VkDeviceSize bufferSize = size;
@@ -842,49 +845,10 @@ namespace Pudu
 				vkdeviceMemory, name);
 		}
 
-		return GraphicsBuffer(vkBuffer, vkdeviceMemory);
-	}
-
-	void PuduGraphics::CreateImage(ImageCreateData data)
-	{
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.extent.width = static_cast<uint32_t>(data.width);
-		imageInfo.extent.height = static_cast<uint32_t>(data.height);
-		imageInfo.extent.depth = data.depth;
-		imageInfo.mipLevels = data.mipLevels;
-		imageInfo.arrayLayers = data.arrayLayers;
-		imageInfo.format = data.format; //Should be the same format as in the buffer
-		imageInfo.tiling = data.tilling; //Set VK_IMAGE_TILING_LINEAR for access texels directly
-		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.usage = data.usage;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; //Only for graphics queue (with transfer operations)
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		imageInfo.flags = 0;
-
-
-		if (vkCreateImage(m_device, &imageInfo, nullptr, data.image) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create image!");
-		}
-
-		if (data.name != nullptr)
-		{
-			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (uint64_t)data.image, data.name);
-		}
-
-		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(m_device, *data.image, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, data.memoryPropertiesFlags);
-
-		VKCheck(vkAllocateMemory(m_device, &allocInfo, nullptr, data.imageMemory), "failed to allocate image memory!");
-
-		vkBindImageMemory(m_device, *data.image, *data.imageMemory, 0);
+		auto graphicsBuffer = m_resources.AllocateGraphicsBuffer();
+		graphicsBuffer->vkHandler = vkBuffer;
+		graphicsBuffer->DeviceMemoryHandler = vkdeviceMemory;
+		return graphicsBuffer;
 	}
 
 	VkImageView PuduGraphics::CreateImageView(ImageViewCreateData data)
@@ -1186,6 +1150,7 @@ namespace Pudu
 			texture->format = m_swapChainImageFormat;
 			texture->width = m_swapChainExtent.width;
 			texture->height = m_swapChainExtent.height;
+			texture->isSwapChain = true;
 
 			m_swapChainTextures.push_back(texture);
 		}
@@ -1366,6 +1331,25 @@ namespace Pudu
 		return handle;
 	}
 
+	void PuduGraphics::DestroyTexture(SPtr<Texture> texture)
+	{
+		if (!texture->IsDestroyed())
+		{
+			if (texture->isSwapChain)
+			{
+				return; //Swapchain textures are released by destroyswapchain
+			}
+
+			vkDestroyImage(m_device, texture->vkImageHandle, m_allocatorPtr);
+			vkDestroyImageView(m_device, texture->vkImageViewHandle, m_allocatorPtr);
+			vkDestroySampler(m_device, texture->Sampler.vkHandle, m_allocatorPtr);
+
+			vkFreeMemory(m_device, texture->vkMemoryHandle, m_allocatorPtr);
+
+			texture->Destroy();
+		}
+	}
+
 	void PuduGraphics::CreateUniformBuffers() {
 		m_uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -1376,7 +1360,7 @@ namespace Pudu
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "UniformBufer");
 
-			vkMapMemory(m_device, m_uniformBuffers[i].DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i].MappedMemory);
+			vkMapMemory(m_device, m_uniformBuffers[i]->DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i]->MappedMemory);
 		}
 	}
 
@@ -1391,24 +1375,31 @@ namespace Pudu
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "LightingBuffer");
 
-			vkMapMemory(m_device, m_lightingBuffers[i].DeviceMemoryHandler, 0, bufferSize, 0, &m_lightingBuffers[i].MappedMemory);
+			vkMapMemory(m_device, m_lightingBuffers[i]->DeviceMemoryHandler, 0, bufferSize, 0, &m_lightingBuffers[i]->MappedMemory);
 		}
 	}
 
 
-	Mesh PuduGraphics::CreateMesh(MeshCreationData const& data)
+	SPtr<Mesh> PuduGraphics::CreateMesh(MeshCreationData const& data)
 	{
 		auto vertices = data.Vertices;
 		auto indices = data.Indices;
 
-		GraphicsBuffer vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
+		SPtr<GraphicsBuffer> vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		GraphicsBuffer indexBuffer = CreateGraphicsBuffer(sizeof(indices[0]) * indices.size(), indices.data(),
+		SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(indices[0]) * indices.size(), indices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-		Mesh mesh = Mesh(vertexBuffer, indexBuffer, vertices, indices);
+
+		//TODO: Vertices and indices are being copied. Do we want that?
+		auto mesh = m_resources.AllocateMesh();
+		mesh->m_vertexBuffer = vertexBuffer;
+		mesh->m_indexBuffer = indexBuffer;
+		mesh->m_vertices = vertices;
+		mesh->m_indices = indices;
+
 		return mesh;
 	}
 
@@ -2070,7 +2061,7 @@ namespace Pudu
 	{
 		//TODO: COMPUTE TEXTURE SIZE
 		auto imageSize = texture->size;
-		GraphicsBuffer stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		SPtr<GraphicsBuffer> stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
@@ -2078,16 +2069,16 @@ namespace Pudu
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
 		void* data;
-		vkMapMemory(m_device, stagingBuffer.DeviceMemoryHandler, 0, imageSize, 0, &data);
+		vkMapMemory(m_device, stagingBuffer->DeviceMemoryHandler, 0, imageSize, 0, &data);
 		memcpy(data, pixels, static_cast<size_t>(imageSize));
-		vkUnmapMemory(m_device, stagingBuffer.DeviceMemoryHandler);
+		vkUnmapMemory(m_device, stagingBuffer->DeviceMemoryHandler);
 
 		auto cmd = BeginSingleTimeCommands();
 
 		cmd.TransitionImageLayout(texture->vkImageHandle, texture->format, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &range);
 
-		cmd.CopyBufferToImage(stagingBuffer.Handler, texture->vkImageHandle, static_cast<uint32_t>(texture->width),
+		cmd.CopyBufferToImage(stagingBuffer->vkHandler, texture->vkImageHandle, static_cast<uint32_t>(texture->width),
 			static_cast<uint32_t>(texture->height), regions);
 
 		cmd.TransitionImageLayout(texture->vkImageHandle, texture->format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -2446,13 +2437,14 @@ namespace Pudu
 		return m_resources.GetTexture<Texture>(textureHandle);
 	}
 
-	void PuduGraphics::DestroyRenderPass(RenderPassHandle handle)
+	void PuduGraphics::DestroyRenderPass(SPtr<RenderPass> handle)
 	{
-
+		vkDestroyRenderPass(m_device, handle->vkHandle, nullptr);
 	}
 
-	void PuduGraphics::DestroyFrameBuffer(FramebufferHandle handle)
+	void PuduGraphics::DestroyFrameBuffer(Framebuffer& handle)
 	{
+		vkDestroyFramebuffer(m_device, handle.vkHandle, nullptr);
 	}
 
 	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, Material& material)
@@ -2469,7 +2461,8 @@ namespace Pudu
 
 	Model PuduGraphics::CreateModel(MeshCreationData const& data)
 	{
-		auto mesh = MeshManager::AllocateMesh(data);
+		auto mesh = CreateMesh(data);
+
 		Material material = Material();
 		const std::filesystem::path path = data.Material.BaseTexturePath;
 		if (data.Material.hasBaseTexture)
@@ -2581,31 +2574,31 @@ namespace Pudu
 
 	void PuduGraphics::CreateDepthResources()
 	{
-		LOG("CreateDepthResources");
-		VkFormat depthFormat = FindDepthFormat();
+		//LOG("CreateDepthResources");
+		//VkFormat depthFormat = FindDepthFormat();
 
-		ImageCreateData createImageData;
-		createImageData.width = m_swapChainExtent.width;
-		createImageData.height = m_swapChainExtent.height;
-		createImageData.format = depthFormat;
-		createImageData.tilling = VK_IMAGE_TILING_OPTIMAL;
-		createImageData.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-		createImageData.memoryPropertiesFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		createImageData.image = &m_depthImage;
-		createImageData.imageMemory = &m_depthImageMemory;
+		//ImageCreateData createImageData;
+		//createImageData.width = m_swapChainExtent.width;
+		//createImageData.height = m_swapChainExtent.height;
+		//createImageData.format = depthFormat;
+		//createImageData.tilling = VK_IMAGE_TILING_OPTIMAL;
+		//createImageData.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		//createImageData.memoryPropertiesFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		//createImageData.image = &m_depthImage;
+		//createImageData.imageMemory = &m_depthImageMemory;
 
 
-		CreateImage(createImageData);
+		//CreateImage(createImageData);
 
-		ImageViewCreateData imageViewData;
-		imageViewData.image = m_depthImage;
-		imageViewData.format = depthFormat;
-		imageViewData.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+		//ImageViewCreateData imageViewData;
+		//imageViewData.image = m_depthImage;
+		//imageViewData.format = depthFormat;
+		//imageViewData.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		m_depthImageView = CreateImageView(imageViewData);
+		//m_depthImageView = CreateImageView(imageViewData);
 
-		TransitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		//TransitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
+		//	VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 
 
@@ -2870,24 +2863,25 @@ namespace Pudu
 		{
 			return;
 		}
+		CleanupSwapChain();
+
+		m_resources.DestroyAllResources(this);
 
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 
-		CleanupSwapChain();
-
-		vkDestroyPipeline(m_device, m_graphicsPipeline, m_allocatorPtr);
-		vkDestroyPipelineLayout(m_device, m_pipelineLayout, m_allocatorPtr);
-		//vkDestroyRenderPass(m_device, m_presentRenderPass, m_allocatorPtr);
 
 		for (int i = 0; i < m_uniformBuffers.size(); i++)
 		{
 			DestroyBuffer(m_uniformBuffers[i]);
 		}
 
-		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
+		for (auto b : m_lightingBuffers) {
+			DestroyBuffer(b);
+		}
 
+		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
@@ -2910,7 +2904,6 @@ namespace Pudu
 			DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
 		}
 
-		m_resources.DestroyAllResources(this);
 
 		vkDestroySurfaceKHR(m_vkInstance, m_surface, m_allocatorPtr); //Be sure to destroy surface before instance
 
@@ -2927,33 +2920,19 @@ namespace Pudu
 
 	void PuduGraphics::CleanupSwapChain()
 	{
-		vkDestroyImageView(m_device, m_depthImageView, nullptr);
-		vkDestroyImage(m_device, m_depthImage, nullptr);
-		vkFreeMemory(m_device, m_depthImageMemory, nullptr);
-
-
-
-		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
-		{
-			vkDestroyImageView(m_device, m_swapChainImagesViews[i], nullptr);
-		}
-
 		vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 	}
 
-	void PuduGraphics::DestroyMesh(Mesh& mesh)
+	void PuduGraphics::DestroyMesh(SPtr<Mesh> mesh)
 	{
-		DestroyBuffer(*mesh.GetIndexBuffer());
-		DestroyBuffer(*mesh.GetVertexBuffer());
+		if (!mesh->IsDisposed())
+		{
+			DestroyBuffer(mesh->GetIndexBuffer());
+			DestroyBuffer(mesh->GetVertexBuffer());
+			mesh->Destroy();
+		}
 	}
-	void PuduGraphics::DestroyTexture(Texture& texture)
-	{
-		vkDestroyImageView(m_device, texture.vkImageViewHandle, m_allocatorPtr);
-		vkDestroySampler(m_device, texture.Sampler.vkHandle, m_allocatorPtr);
 
-		vkDestroyImage(m_device, texture.vkImageHandle, m_allocatorPtr);
-		vkFreeMemory(m_device, texture.vkMemoryHandle, m_allocatorPtr);
-	}
 	void PuduGraphics::WaitIdle()
 	{
 		vkDeviceWaitIdle(m_device);

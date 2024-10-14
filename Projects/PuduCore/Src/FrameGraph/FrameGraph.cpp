@@ -1110,16 +1110,7 @@ namespace Pudu
 		nodes.reserve(FrameGraphBuilder::K_MAX_NODES_COUNT);
 	}
 
-	void FrameGraph::Shutdown()
-	{
-		for (uint32_t i = 0; i < nodes.size(); i++)
-		{
-			FrameGraphNode* node = builder->GetNode(nodes[i]);
-
-			builder->graphics->DestroyRenderPass(node->renderPass);
-			builder->graphics->DestroyFrameBuffer(node->framebuffer);
-		}
-	}
+	
 	void FrameGraph::Parse(std::filesystem::path filePath)
 	{
 		LOG("FrameGraph Parse");

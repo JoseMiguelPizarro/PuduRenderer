@@ -3,33 +3,43 @@
 
 namespace Pudu
 {
-    GraphicsBuffer* Mesh::GetVertexBuffer()
-    {
-        return &m_vertexBuffer;
-    }
+	SPtr<GraphicsBuffer> Mesh::GetVertexBuffer()
+	{
+		return m_vertexBuffer;
+	}
 
-    GraphicsBuffer* Mesh::GetIndexBuffer()
-    {
-        return &m_indexBuffer;
-    }
+	SPtr<GraphicsBuffer> Mesh::GetIndexBuffer()
+	{
+		return m_indexBuffer;
+	}
 
-    std::vector<Vertex>* Mesh::GetVertices()
-    {
-        return &m_vertices;
-    }
+	std::vector<Vertex>* Mesh::GetVertices()
+	{
+		return &m_vertices;
+	}
 
-    std::vector<uint32_t>* Mesh::GetIndices()
-    {
-        return &m_indices;
-    }
+	std::vector<uint32_t>* Mesh::GetIndices()
+	{
+		return &m_indices;
+	}
 
-    void Mesh::Dispose()
-    {
-        if (!m_disposed)
-        {
-            PuduGraphics::Instance()->DestroyMesh(*this);
-
-            m_disposed = true;
-        }
-    }
+	void Mesh::Destroy()
+	{
+		if (!m_disposed)
+		{
+			m_disposed = true;
+		}
+		else
+		{
+			LOG("Disposing Mesh already disposed");
+		}
+	}
+	bool Mesh::IsDisposed()
+	{
+		return m_disposed;
+	}
+	std::string* Mesh::GetName()
+	{
+		return &m_name;
+	}
 }

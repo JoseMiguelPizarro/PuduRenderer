@@ -49,8 +49,14 @@ namespace Pudu {
 		ShaderHandle AllocateShader();
 		SPtr<Shader> GetShader(ShaderHandle handle);
 
+		SPtr<Mesh> AllocateMesh();
+		SPtr<Mesh> GetMesh(MeshHandle handle);
+
 		ComputeShaderHandle AllocateComputeShader();
 		SPtr<ComputeShader> GetComputeShader(ComputeShaderHandle handle);
+
+		SPtr<GraphicsBuffer> AllocateGraphicsBuffer();
+		SPtr<GraphicsBuffer> GetGraphicsBuffer(GraphicsBufferHandle handle);
 
 		void DestroyAllResources(PuduGraphics* gfx);
 
@@ -64,16 +70,17 @@ namespace Pudu {
 			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
 		}
 
-
 	private:
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture>> m_textures;
 		ResourcePool<SPtr<Shader>> m_shaders;
+		ResourcePool<SPtr<Mesh>> m_meshes;
 		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
 		ResourcePool<SPtr<RenderPass>> m_renderPasses;
 		ResourcePool<Framebuffer> m_frameBuffers;
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;
+		ResourcePool<SPtr<GraphicsBuffer>> m_graphicsBuffers;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};

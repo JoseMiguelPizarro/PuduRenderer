@@ -5,7 +5,6 @@
 #include <FileManager.h>
 #include "TriangleApp.h"
 #include "EntityManager.h"
-#include "MeshManager.h"
 
 namespace fs = std::filesystem;
 
@@ -116,12 +115,12 @@ void TriangleApp::OnCleanup()
 	{
 		auto model = entity->GetModel();
 		for (auto mesh : model.Meshes) {
-			mesh->Dispose();
+			Graphics.DestroyMesh(mesh);
 		}
 		for (auto material : model.Materials) {
 			if (material.Texture != nullptr)
 			{
-				material.Texture->Dispose();
+				Graphics.DestroyTexture(material.Texture);
 			}
 		}
 	}

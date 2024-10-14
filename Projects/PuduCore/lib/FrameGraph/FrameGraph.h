@@ -194,7 +194,6 @@ namespace Pudu {
 	class FrameGraph {
 	public:
 		void Init(FrameGraphBuilder* builder);
-		void Shutdown();
 
 		void RenderFrame(RenderFrameData& renderData);
 		/// <summary>

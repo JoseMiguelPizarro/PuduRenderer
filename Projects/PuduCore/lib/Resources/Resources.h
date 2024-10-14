@@ -25,6 +25,16 @@ namespace Pudu
 		ResourceHandle index;
 	};
 
+	struct GraphicsBufferHandle
+	{
+		ResourceHandle index;
+	};
+
+	struct MeshHandle
+	{
+		ResourceHandle index;
+	};
+
 	struct ComputeShaderHandle {
 		ResourceHandle index;
 	};

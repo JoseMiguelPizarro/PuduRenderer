@@ -104,7 +104,7 @@ namespace Pudu
 				{
 					//Bind Lighting Buffer
 					VkDescriptorBufferInfo bufferInfo{};
-					bufferInfo.buffer = frameData.lightingBuffer->Handler;
+					bufferInfo.buffer = frameData.lightingBuffer->vkHandler;
 					bufferInfo.range = sizeof(LightBuffer);
 
 					VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
@@ -122,9 +122,9 @@ namespace Pudu
 
 					for (auto mat : model.Materials) {
 						for (auto& request : mat.descriptorUpdateRequests) {
+							//For this to work each material will need its own descriptorset that will have to be bind each frame
 							if (!request.uploaded)
 							{
-
 								VkDescriptorImageInfo imageInfo{};
 								imageInfo.imageView = request.texture->vkImageViewHandle;
 								imageInfo.sampler = request.texture->Sampler.vkHandle;
@@ -148,10 +148,10 @@ namespace Pudu
 				}
 			}
 
-			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->Handler };
+			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->vkHandler };
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(commands->vkHandle, 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commands->vkHandle, mesh->GetIndexBuffer()->Handler, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commands->vkHandle, mesh->GetIndexBuffer()->vkHandler, 0, VK_INDEX_TYPE_UINT32);
 
 			auto ubo = frameData.graphics->GetUniformBufferObject(frameData.camera, drawCall);
 

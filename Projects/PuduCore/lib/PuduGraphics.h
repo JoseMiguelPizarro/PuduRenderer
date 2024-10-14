@@ -107,14 +107,14 @@ namespace Pudu
 		void Cleanup();
 		Model CreateModel(std::shared_ptr<Mesh> mesh, Material& material);
 		Model CreateModel(MeshCreationData const& data);
-		Mesh CreateMesh(MeshCreationData const& meshData);
+		SPtr<Mesh> CreateMesh(MeshCreationData const& meshData);
 		void UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
-		void DestroyMesh(Mesh& mesh);
-		void DestroyTexture(Texture& texture);
+		void DestroyMesh(SPtr<Mesh> mesh);
+		void DestroyTexture(SPtr<Texture> texture);
 		void WaitIdle();
 
-		void DestroyRenderPass(RenderPassHandle handle);
-		void DestroyFrameBuffer(FramebufferHandle handle);
+		void DestroyRenderPass(SPtr<RenderPass> renderPass);
+		void DestroyFrameBuffer(Framebuffer& frameBuffer);
 
 
 		/// <summary>
@@ -124,7 +124,7 @@ namespace Pudu
 		void CreateRenderPass(RenderPass* renderPass);
 		void CreateVkFramebuffer(Framebuffer* creationData);
 
-		GraphicsBuffer CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
+		SPtr<GraphicsBuffer> CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const char* name = nullptr);
 
 		//TODO: ADD SUPPORT FOR MIPMAPS
@@ -158,16 +158,12 @@ namespace Pudu
 			const char* name;
 		};
 
-		void CreateImage(ImageCreateData data);
-
 		GPUResourcesManager* Resources() {
 			return &m_resources;
 		}
 
 		PipelineHandle CreateGraphicsPipeline(PipelineCreationData& creationData);
 		PipelineHandle CreateComputePipeline(ComputePipelineCreationData& creationData);
-
-		VkPipeline* GetPipeline() { return &m_graphicsPipeline; }
 
 
 		void DrawImGui(RenderFrameData& frameData);
@@ -268,10 +264,6 @@ namespace Pudu
 		void CreateImGUIFrameBuffers();
 #pragma endregion
 #pragma region DepthBuffer
-		VkImage m_depthImage;
-		VkDeviceMemory m_depthImageMemory;
-		VkImageView m_depthImageView;
-
 		void CreateDepthResources();
 		VkFormat FindDepthFormat();
 
@@ -315,7 +307,7 @@ namespace Pudu
 			VkBuffer& buffer, VkDeviceMemory& bufferMemory, const char* name = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		void DestroyBuffer(GraphicsBuffer buffer);
+		void DestroyBuffer(SPtr<GraphicsBuffer> buffer);
 		void AdvanceFrame();
 		std::vector<const char*> GetInstanceExtensions();
 		std::vector<VkImageView> m_swapChainImagesViews;
@@ -330,15 +322,11 @@ namespace Pudu
 		VkExtent2D m_swapChainExtent;
 		std::vector<VkImage> m_swapChainImages;
 		std::vector<SPtr<Texture2d>> m_swapChainTextures;
-		VkPipeline m_graphicsPipeline;
 
 		VkCommandPool m_commandPool;
 
-		std::vector<GraphicsBuffer> m_uniformBuffers;
-		std::vector<GraphicsBuffer> m_lightingBuffers;
-
-		VkDescriptorSet m_bindlessDescriptorSet; //This has to be done per pipeline
-		VkPipelineLayout m_pipelineLayout;
+		std::vector<SPtr<GraphicsBuffer>> m_uniformBuffers;
+		std::vector<SPtr<GraphicsBuffer>> m_lightingBuffers;
 
 		VkDescriptorPool m_bindlessDescriptorPool;
 

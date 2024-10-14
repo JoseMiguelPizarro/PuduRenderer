@@ -3,13 +3,19 @@
 
 namespace Pudu {
 
-	void Texture::Dispose()
+	void Texture::Destroy()
 	{
 		if (!m_disposed)
 		{
-			PuduGraphics::Instance()->DestroyTexture(*this);
-
 			m_disposed = true;
 		}
+		else
+		{
+			LOG("Trying to dispose an already disposed texture {}", name);
+		}
+	}
+	bool Texture::IsDestroyed()
+	{
+		return m_disposed;
 	}
 }

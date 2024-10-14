@@ -18,6 +18,7 @@ namespace Pudu
 		VkImageLayout vkImageLayout;
 		TextureSampler Sampler;
 		TextureHandle handle;
+		bool isSwapChain = false;
 		uint32_t width;
 		uint32_t height;
 		uint32_t depth;
@@ -27,12 +28,14 @@ namespace Pudu
 
 		uint32_t size;
 
-		void Dispose();
+		bool IsDestroyed();
 
 		//Virtual to make this a polymorphic class
 		virtual ~Texture() = default;
 
 	private:
+		friend PuduGraphics;
+		void Destroy();
 		bool m_disposed;
 	};
 }
