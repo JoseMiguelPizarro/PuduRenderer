@@ -37,6 +37,9 @@
 #include "PuduApp.h"
 #include "Pipeline.h"
 #include "Lighting/LightBuffer.h"
+#include "Texture.h"
+#include "Texture2D.h"
+#include "TextureCube.h"
 
 #include <ktx.h>
 #include <ktxvulkan.h>
@@ -787,13 +790,13 @@ namespace Pudu
 		uint32_t activeAttachments = 0;
 		for (; activeAttachments < framebuffer->numColorAttachments; activeAttachments++)
 		{
-			auto texture = m_resources.GetTexture(framebuffer->colorAttachmentHandles[activeAttachments]);
+			auto texture = m_resources.GetTexture<Texture2d>(framebuffer->colorAttachmentHandles[activeAttachments]);
 			framebufferAttachments[activeAttachments] = texture->vkImageViewHandle;
 		}
 
 		if (framebuffer->depthStencilAttachmentHandle.index != k_INVALID_HANDLE)
 		{
-			auto depthTexture = m_resources.GetTexture(framebuffer->depthStencilAttachmentHandle);
+			auto depthTexture = m_resources.GetTexture<Texture2d>(framebuffer->depthStencilAttachmentHandle);
 			framebufferAttachments[activeAttachments++] = depthTexture->vkImageViewHandle;
 		}
 
@@ -1175,8 +1178,8 @@ namespace Pudu
 
 			//SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], );
 
-			auto handle = m_resources.AllocateTexture();
-			auto texture = m_resources.GetTexture(handle->handle);
+			auto handle = m_resources.AllocateTexture2D();
+			auto texture = m_resources.GetTexture<Texture2d>(handle->handle);
 
 			texture->vkImageViewHandle = imageView;
 			texture->vkImageHandle = m_swapChainImages[i];
@@ -1954,7 +1957,20 @@ namespace Pudu
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		auto texture = m_resources.AllocateTexture();
+		SPtr<Texture> texture = nullptr;
+		switch (creationData.textureType)
+		{
+		case TextureType::Texture2D:
+			texture = m_resources.AllocateTexture2D();
+			break;
+		case TextureType::Texture_Cube:
+			texture = m_resources.AllocateTextureCube();
+			break;
+		default:
+			//PUDU_ERROR("Texture Type not supported {}", creationData.textureType);
+			break;
+		}
+
 		texture->name.append(creationData.name);
 		texture->width = creationData.width;
 		texture->height = creationData.height;
@@ -2296,7 +2312,7 @@ namespace Pudu
 			{
 				ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
 
-				auto texture = m_resources.GetTexture({ textureToUpdate.handle });
+				auto texture = m_resources.GetTexture<Texture2d>({ textureToUpdate.handle });
 				VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
 				descriptorWrite = {};
 				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -2340,8 +2356,14 @@ namespace Pudu
 
 	SPtr<Texture2d> PuduGraphics::LoadTexture2D(fs::path filePath, TextureCreationSettings& settings)
 	{
-		return std::dynamic_pointer_cast<Texture2d>(LoadTexture(filePath, settings));
+		return std::dynamic_pointer_cast<Texture2d>(LoadAndCreateTexture(filePath, settings));
 	}
+
+	SPtr<TextureCube> PuduGraphics::LoadTextureCube(fs::path filePath, TextureCreationSettings& settings)
+	{
+		return std::dynamic_pointer_cast<TextureCube>(LoadAndCreateTexture(filePath, settings));
+	}
+
 
 	void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions)
 	{
@@ -2352,7 +2374,7 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	SPtr<Texture> PuduGraphics::LoadTexture(fs::path path, TextureCreationSettings& settings)
+	SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureCreationSettings& settings)
 	{
 		LOG("Loading Texture {}", path.string());
 		bool isKTX = path.extension() == ".ktx";
@@ -2421,7 +2443,7 @@ namespace Pudu
 			stbi_image_free(pixelsData);
 		}
 
-		return m_resources.GetTexture(textureHandle);
+		return m_resources.GetTexture<Texture>(textureHandle);
 	}
 
 	void PuduGraphics::DestroyRenderPass(RenderPassHandle handle)
@@ -2449,37 +2471,27 @@ namespace Pudu
 	{
 		auto mesh = MeshManager::AllocateMesh(data);
 		Material material = Material();
+		const std::filesystem::path path = data.Material.BaseTexturePath;
 		if (data.Material.hasBaseTexture)
 		{
-			const std::filesystem::path path = data.Material.BaseTexturePath;
 
 			TextureCreationSettings settings{};
 			settings.bindless = true;
 			settings.name = "Albedo";
 
-			material.Texture = std::dynamic_pointer_cast<Texture2d>(LoadTexture(path, settings));
+			material.Texture = LoadTexture2D(path, settings);
 		}
 
 		if (data.Material.hasNormalMap)
 		{
 			int texWidth, texHeight, texChannels;
-			auto pixels = stbi_load(FileManager::GetAssetPath(data.Material.NormalMapPath).string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-			TextureCreationData normalCreation;
+			TextureCreationSettings normalCreation;
 			normalCreation.bindless = true;
-			normalCreation.depth = 1;
-			normalCreation.width = texWidth;
-			normalCreation.height = texHeight;
 			normalCreation.name = "Normal";
 			normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
-			normalCreation.mipmaps = 1;
-			normalCreation.pixels = pixels;
-			normalCreation.flags = TextureFlags::Sample;
 
-			stbi_image_free(pixels);
-
-			auto normalHandle = CreateTexture(normalCreation);
-			material.NormalMap = m_resources.GetTexture(normalHandle);
+			material.NormalMap = LoadTexture2D(path, normalCreation);
 		}
 
 		auto m = CreateModel(mesh, material);
@@ -2897,7 +2909,6 @@ namespace Pudu
 		{
 			DestroyDebugUtilsMessengerEXT(m_vkInstance, m_debugMessenger, nullptr);
 		}
-
 
 		m_resources.DestroyAllResources(this);
 

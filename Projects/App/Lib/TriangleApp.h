@@ -40,7 +40,7 @@ private:
 	SPtr<Mesh> m_planeMesh;
 	Model m_planeModel;
 	SPtr<Texture2d> m_planeTexture;
-	SPtr<Texture2d> m_cubemapTexture;
+	SPtr<TextureCube> m_cubemapTexture;
 	PuduRenderer m_puduRenderer;
 	SPtr<Shader> standardShader;
 	SPtr<Shader> cubemapShader;

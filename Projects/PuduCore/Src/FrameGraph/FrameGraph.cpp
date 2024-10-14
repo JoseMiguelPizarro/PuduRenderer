@@ -4,6 +4,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPass.h"
 #include <Resources/FrameBufferCreationData.h>
+#include "Texture2D.h"
 
 namespace Pudu
 {
@@ -845,7 +846,7 @@ namespace Pudu
 					attachment.clearValue = { 1.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
 					attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					renderPass->attachments.SetDepthStencilAttachment(attachment);
 				}
@@ -853,7 +854,7 @@ namespace Pudu
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
-					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					renderPass->attachments.AddColorAttachment(attachment);
 				}
@@ -870,7 +871,7 @@ namespace Pudu
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					renderPass->attachments.SetDepthStencilAttachment(attachment);
 				}
@@ -878,7 +879,7 @@ namespace Pudu
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-					attachment.texture = gfx->Resources()->GetTexture(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					renderPass->attachments.AddColorAttachment(attachment);
 				}
@@ -1500,13 +1501,13 @@ namespace Pudu
 				{
 					bool hasDepth = TextureFormat::HasDepth(resource->resourceInfo.texture.format);
 
-					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->resourceInfo.texture.handle);
 
 				//	commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{
-					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->resourceInfo.texture.handle);
 
 					width = texture->width;
 					height = texture->height;
@@ -1519,7 +1520,7 @@ namespace Pudu
 
 				if (resource->type == FrameGraphResourceType_Attachment)
 				{
-					auto texture = gfx->Resources()->GetTexture(resource->resourceInfo.texture.handle);
+					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->resourceInfo.texture.handle);
 
 					width = texture->width;
 					height = texture->height;
@@ -1542,7 +1543,7 @@ namespace Pudu
 
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
-			renderData.activeRenderTarget = gfx->Resources()->GetTexture(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
+			renderData.activeRenderTarget = gfx->Resources()->GetTexture<Texture2d>(builder->GetResource(node->outputs[0])->resourceInfo.texture.handle);
 
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);

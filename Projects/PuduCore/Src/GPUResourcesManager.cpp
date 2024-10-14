@@ -4,6 +4,7 @@
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/ShadowMapRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
+#include "Logger.h"
 
 namespace Pudu {
 
@@ -13,12 +14,7 @@ namespace Pudu {
 		m_renderPasses.ObtainResource();
 	}
 
-	SPtr<Texture2d> GPUResourcesManager::GetTexture(TextureHandle handle)
-	{
-		return m_textures.GetResource(handle.index);
-	}
-
-	SPtr<Texture2d> GPUResourcesManager::GetTextureByName(const char* name)
+	SPtr<Texture> GPUResourcesManager::GetTextureByName(const char* name)
 	{
 		if (name == nullptr)
 		{
@@ -39,11 +35,23 @@ namespace Pudu {
 		return nullptr;
 	}
 
-	SPtr<Texture2d> GPUResourcesManager::AllocateTexture()
+	SPtr<Texture2d> GPUResourcesManager::AllocateTexture2D()
 	{
 		TextureHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
 		SPtr<Texture2d> texture = std::make_shared<Texture2d>();
 		texture->handle = handle;
+
+		m_textures.AddResource(texture);
+
+		return texture;
+	}
+
+	SPtr<TextureCube> GPUResourcesManager::AllocateTextureCube()
+	{
+		TextureHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
+		SPtr<TextureCube> texture = std::make_shared<TextureCube>();
+		texture->handle = handle;
+
 		m_textures.AddResource(texture);
 
 		return texture;
@@ -61,7 +69,7 @@ namespace Pudu {
 		switch (creationData.type)
 		{
 		case RenderPassType::Color:
-			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>())};
+			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>()) };
 			break;
 		case RenderPassType::ShadowMap:
 			handle = { m_renderPasses.AddResource(std::make_shared<ShadowMapRenderPass>()) };

@@ -24,6 +24,7 @@
 #include "Mesh.h"
 #include "Texture.h"
 #include "Texture2D.h"
+#include "TextureCube.h"
 
 #include "Camera.h"
 #include "Scene.h"
@@ -177,7 +178,7 @@ namespace Pudu
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureCreationSettings& creationData);
-		SPtr<Texture> LoadTexture(fs::path filePath, TextureCreationSettings& creationData);
+		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureCreationSettings& creationSettings);
 		TextureHandle CreateTexture(TextureCreationData const& creationData);
 
 		void UploadTextureData(SPtr<Texture> texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
@@ -190,6 +191,7 @@ namespace Pudu
 		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
 		static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
 	private:
+		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
 		friend class GPUResourcesManager;
 
 		static PuduGraphics* s_instance;

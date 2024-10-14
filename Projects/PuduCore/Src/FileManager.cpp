@@ -84,7 +84,7 @@ namespace Pudu {
 
 		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, GetAssetPath(assetPath).string().c_str()))
 		{
-			PUDU_ERROR(warn + err);
+			PUDU_ERROR("{} {}", warn, err);
 		}
 		for (auto& shape : shapes)
 		{
@@ -163,7 +163,7 @@ namespace Pudu {
 
 			Transform& t = entity->GetTransform();
 			t.SetRotation(r);
-			t.SetLocalPosition( vec3(transform.translation[0], transform.translation[1], transform.translation[2]));
+			t.SetLocalPosition(vec3(transform.translation[0], transform.translation[1], transform.translation[2]));
 			t.SetLocalScale(vec3(transform.scale[0], transform.scale[1], transform.scale[2]));
 
 			if (shouldUpdateTransforms)

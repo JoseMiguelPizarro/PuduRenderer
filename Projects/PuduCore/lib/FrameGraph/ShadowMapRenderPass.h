@@ -19,7 +19,7 @@ namespace Pudu
 
 		void InitializeShadowMap(PuduGraphics* gfx);
 
-		SPtr<Texture2d> m_shadowmap;
+		SPtr<Texture> m_shadowmap;
 		uint16_t m_resolution = 2048;
 		float m_depthConstantBias = 2.25f;
 		float m_depthBiasSlope = 2.75;

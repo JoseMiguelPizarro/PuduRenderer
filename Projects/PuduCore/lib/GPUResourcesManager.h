@@ -1,8 +1,12 @@
 #pragma once
 #include <filesystem>
 #include <memory.h>
+#include <concepts>
+
 #include "PuduCore.h"
+#include "Texture.h"
 #include "Texture2D.h"
+#include "TextureCube.h"
 #include "Resources/Resources.h"
 #include "Resources/ResourcesPool.h"
 #include "FrameGraph/RenderPass.h"
@@ -10,6 +14,7 @@
 #include "Resources/FrameBufferCreationData.h"
 #include "ComputeShader.h"
 #include "Pipeline.h"
+#include "Logger.h"
 
 namespace Pudu {
 	class PuduGraphics;
@@ -19,9 +24,12 @@ namespace Pudu {
 	{
 	public:
 		void Init(PuduGraphics* graphics);
-		SPtr<Texture2d> GetTexture(TextureHandle handle);
-		SPtr<Texture2d> GetTextureByName(const char* name);
-		SPtr<Texture2d> AllocateTexture();
+
+
+
+		SPtr<Texture> GetTextureByName(const char* name);
+		SPtr<Texture2d> AllocateTexture2D();
+		SPtr<TextureCube> AllocateTextureCube();
 
 		SPtr<RenderPass> GetRenderPass(RenderPassHandle handle);
 		SPtr<RenderPass> AllocateRenderPass(RenderPassCreationData const& creationdata);
@@ -47,9 +55,19 @@ namespace Pudu {
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
+		template<class T>
+			requires (std::convertible_to<T, Texture>)
+		SPtr<T> GetTexture(TextureHandle handle)
+		{
+			return dynamic_pointer_cast<T>(m_textures.GetResource(handle.index));
+
+			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
+		}
+
+
 	private:
 		PuduGraphics* m_graphics = nullptr;
-		ResourcePool<SPtr<Texture2d>> m_textures;
+		ResourcePool<SPtr<Texture>> m_textures;
 		ResourcePool<SPtr<Shader>> m_shaders;
 		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
 		ResourcePool<SPtr<RenderPass>> m_renderPasses;
@@ -57,7 +75,7 @@ namespace Pudu {
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
-		std::unordered_map<std::string, SPtr<Texture2d>> m_texturesByName;
+		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};
 }
 

@@ -79,7 +79,7 @@ void TriangleApp::OnInit()
 	cubemapSettings.name = "Cubemap";
 	cubemapSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-	m_cubemapTexture = Graphics.LoadTexture2D(cubeMapPath, cubemapSettings);
+	m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
 
 	auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
 

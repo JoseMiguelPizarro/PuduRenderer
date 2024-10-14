@@ -7,9 +7,8 @@ static void Print(const char* text, ...) {
 	printf("\n");
 }
 
-
-#define PUDU_ERROR(message)\
- throw std::runtime_error(fmt::format("Error: {}", message))\
+#define PUDU_ERROR(message,...)\
+ throw std::runtime_error(fmt::format("Error: {}",fmt::format( message,__VA_ARGS__)))\
 
 #define LOG(message,...)\
 fmt::print(message,__VA_ARGS__);\

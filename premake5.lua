@@ -15,6 +15,7 @@ Library["VulkanUtils"] = "%{LibraryDir.VulkanSDK}/VkLayer_utils.lib"
 workspace "PuduRenderer"
 -- We indicate that all the projects are C++ only
 language "C++"
+cppdialect "C++latest"
 
 -- We will compile for x86_64. You can change this to x86 for 32 bit builds.
 architecture "x86_64"
@@ -48,7 +49,7 @@ targetdir("Build/Bin/%{prj.name}/%{cfg.longname}")
 objdir("Build/Obj/%{prj.name}/%{cfg.longname}")
 
 function CppVer()
-	cppdialect "C++latest"
+	-- cppdialect "C++23"
 end
 
 function includeAndLinkDxc()

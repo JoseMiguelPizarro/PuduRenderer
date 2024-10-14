@@ -45,6 +45,6 @@ namespace Pudu
 			}
 		}
 
-		PUDU_ERROR(fmt::format("Trying to get non valid stage {}", (uint32_t)stageFlag).c_str());
+		PUDU_ERROR("Trying to get non valid stage {}", (uint32_t)stageFlag);
 	}
 }
