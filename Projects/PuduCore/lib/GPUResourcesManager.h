@@ -59,7 +59,7 @@ namespace Pudu {
 			requires (std::convertible_to<T, Texture>)
 		SPtr<T> GetTexture(TextureHandle handle)
 		{
-			return dynamic_pointer_cast<T>(m_textures.GetResource(handle.index));
+			return static_pointer_cast<T>(m_textures.GetResource(handle.index));
 
 			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
 		}
