@@ -15,6 +15,7 @@
 #include "ComputeShader.h"
 #include "Pipeline.h"
 #include "Logger.h"
+#include <Semaphore.h>
 
 namespace Pudu {
 	class PuduGraphics;
@@ -58,6 +59,9 @@ namespace Pudu {
 		SPtr<GraphicsBuffer> AllocateGraphicsBuffer();
 		SPtr<GraphicsBuffer> GetGraphicsBuffer(GraphicsBufferHandle handle);
 
+		SPtr<Semaphore> AllocateSemaphore();
+		SPtr<Semaphore> GetSemaphore(SemaphoreHandle handle);
+
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
@@ -82,6 +86,7 @@ namespace Pudu {
 		ResourcePool<ShaderState> m_shaderStates;
 		ResourcePool<SPtr<GraphicsBuffer>> m_graphicsBuffers;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
+		ResourcePool<SPtr<Semaphore>> m_semaphores;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};
 }

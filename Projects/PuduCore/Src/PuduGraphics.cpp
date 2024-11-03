@@ -446,7 +446,7 @@ namespace Pudu
 			uint64_t computeTimelineValue = m_lastComputeTimelineValue;
 
 			uint64_t timelineValues[]{ graphicsTimelineValue,computeTimelineValue };
-			VkSemaphore semaphores[]{ m_graphicsTimelineSemaphore, m_computeTimelineSemaphore };
+			VkSemaphore semaphores[]{ m_graphicsTimelineSemaphore->vkHandle, m_computeTimelineSemaphore->vkHandle };
 
 			VkSemaphoreWaitInfo waitInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO };
 			waitInfo.semaphoreCount = 1; //for now just wait for the graphics
@@ -461,7 +461,7 @@ namespace Pudu
 		////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
 		//vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-		VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, frame.ImageAvailableSemaphore,
+		VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, *frame.ImageAvailableSemaphore,
 			VK_NULL_HANDLE, &frameData.frameIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -529,13 +529,13 @@ namespace Pudu
 
 		VkSemaphoreSubmitInfo waitSemaphores[]{
 			{
-			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,0 },
+			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,0 },
 		};
 
 		m_lastComputeTimelineValue++;
 
 		VkSemaphoreSubmitInfo signalSemaphores[]{
-			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,0 }
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,0 }
 		};
 
 		VkCommandBufferSubmitInfo commandSubmitInfo;
@@ -576,14 +576,14 @@ namespace Pudu
 
 		VkSemaphoreSubmitInfo waitSemaphores[]{
 			{
-			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, frame->ImageAvailableSemaphore,0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0 },
-			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT,0 },
-			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore, m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,0 },
+			VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, *frame->ImageAvailableSemaphore,0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0 },
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle, m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT,0 },
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore->vkHandle, m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,0 },
 		};
 
 		VkSemaphoreSubmitInfo signalSemaphores[]{
-			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,nullptr,frame->RenderFinishedSemaphore,0,VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0},
-			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,nullptr,m_graphicsTimelineSemaphore, m_absoluteFrame + 1,VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT }
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,nullptr,*frame->RenderFinishedSemaphore,0,VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,0},
+			{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,nullptr,m_graphicsTimelineSemaphore->vkHandle, m_absoluteFrame + 1,VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT }
 		};
 
 		VkCommandBufferSubmitInfo commandSubmitInfo;
@@ -598,7 +598,7 @@ namespace Pudu
 		}
 
 		VkSemaphore presentWaitSemaphores[]{
-			frame->RenderFinishedSemaphore
+			*frame->RenderFinishedSemaphore
 		};
 
 		submitInfo.waitSemaphoreInfoCount = 2;
@@ -1515,6 +1515,11 @@ namespace Pudu
 		LOG("Creating descriptor set end");
 	}
 
+	void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
+	{
+		vkDestroySemaphore(m_device, *semaphore, m_allocatorPtr);
+	}
+
 	/// <summary>
 	/// In Vulkan NOn-Bindless resources shouldn't use a Bindless descriptor so we need to check what kind of descriptor we should create
 	/// </summary>
@@ -2176,19 +2181,13 @@ namespace Pudu
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].ImageAvailableSemaphore) != VK_SUCCESS
-				||
-				vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_Frames[i].RenderFinishedSemaphore) != VK_SUCCESS
-				||
-				vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence) != VK_SUCCESS
-				)
-			{
-				throw std::runtime_error("Failed to create semaphores");
-			}
+			m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr();
+			m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr();
+			vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence);
 		}
 
-		CreateTimelineSemaphore(m_graphicsTimelineSemaphore);
-		CreateTimelineSemaphore(m_computeTimelineSemaphore);
+		m_graphicsTimelineSemaphore = CreateTimelineSemaphore();
+		m_computeTimelineSemaphore = CreateTimelineSemaphore();
 	}
 
 	void PuduGraphics::RecreateSwapChain()
@@ -2655,7 +2654,19 @@ namespace Pudu
 		return GPUCommands(commandBuffer, this);
 	}
 
-	void PuduGraphics::CreateTimelineSemaphore(VkSemaphore& semaphore)
+	SPtr<Semaphore> PuduGraphics::CreateSemaphoreSPtr()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo{};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		auto semaphore = m_resources.AllocateSemaphore();
+
+		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, *semaphore);
+
+		return semaphore;
+	}
+
+	SPtr<Semaphore> PuduGraphics::CreateTimelineSemaphore()
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 		VkSemaphoreTypeCreateInfo semaphoreTypeInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
@@ -2663,8 +2674,11 @@ namespace Pudu
 
 		semaphoreInfo.pNext = &semaphoreTypeInfo;
 
-		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore);
+		auto semaphore = m_resources.AllocateSemaphore();
 
+		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore->vkHandle);
+
+		return semaphore;
 	}
 
 	void PuduGraphics::EndSingleTimeCommands(GPUCommands commandBuffer)
@@ -2872,21 +2886,10 @@ namespace Pudu
 		ImGui::DestroyContext();
 
 
-		for (int i = 0; i < m_uniformBuffers.size(); i++)
-		{
-			DestroyBuffer(m_uniformBuffers[i]);
-		}
-
-		for (auto b : m_lightingBuffers) {
-			DestroyBuffer(b);
-		}
-
 		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			vkDestroySemaphore(m_device, m_Frames[i].RenderFinishedSemaphore, m_allocatorPtr);
-			vkDestroySemaphore(m_device, m_Frames[i].ImageAvailableSemaphore, m_allocatorPtr);
 			vkDestroyFence(m_device, m_Frames[i].InFlightFence, m_allocatorPtr);
 		}
 

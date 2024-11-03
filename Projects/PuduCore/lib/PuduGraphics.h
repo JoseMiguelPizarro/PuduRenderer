@@ -196,8 +196,8 @@ namespace Pudu
 		VkDevice m_device;
 
 		GPUResourcesManager m_resources;
-		VkSemaphore m_graphicsTimelineSemaphore;
-		VkSemaphore m_computeTimelineSemaphore;
+		SPtr<Semaphore> m_graphicsTimelineSemaphore;
+		SPtr<Semaphore> m_computeTimelineSemaphore;
 		uint64_t m_lastComputeTimelineValue = 0;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
@@ -233,7 +233,10 @@ namespace Pudu
 
 		void CreateTextureImageView(Texture2d& texture2d);
 		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
-		void CreateTimelineSemaphore(VkSemaphore& semaphore);
+		SPtr<Semaphore> CreateTimelineSemaphore();
+		SPtr<Semaphore> CreateSemaphoreSPtr();
+
+		void DestroySemaphore(SPtr<Semaphore> semaphore);
 
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();

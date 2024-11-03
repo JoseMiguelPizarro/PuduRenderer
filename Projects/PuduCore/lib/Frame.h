@@ -2,6 +2,7 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 #include "GPUCommands.h"
+#include "Semaphore.h"
 
 namespace Pudu
 {
@@ -9,8 +10,8 @@ namespace Pudu
 		//TODO: ALLOCATE COMMANDS IN RESOURCE MANAGER AND USE POINTERS INSTEAD
 		GPUCommands CommandBuffer;
 		GPUCommands ComputeCommandBuffer;
-		VkSemaphore ImageAvailableSemaphore;
-		VkSemaphore RenderFinishedSemaphore;
+		SPtr<Semaphore> ImageAvailableSemaphore;
+		SPtr<Semaphore> RenderFinishedSemaphore;
 		VkFence InFlightFence;
 	};
 }

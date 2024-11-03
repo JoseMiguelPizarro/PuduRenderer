@@ -231,6 +231,22 @@ namespace Pudu {
 	{
 		return m_graphicsBuffers.GetResource(handle.index);
 	}
+	SPtr<Semaphore> GPUResourcesManager::AllocateSemaphore()
+	{
+		SemaphoreHandle handle = { static_cast<uint32_t>(m_semaphores.Size()) };
+		SPtr<Semaphore> buffer = std::make_shared<Semaphore>();
+
+		buffer->handle = handle;
+
+		m_semaphores.AddResource(buffer);
+
+		return buffer;
+	}
+	SPtr<Semaphore> GPUResourcesManager::GetSemaphore(SemaphoreHandle handle)
+	{
+		return m_semaphores.GetResource(handle.index);
+	}
+
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
 	{
 		for (auto t : m_textures.m_resources)
@@ -260,6 +276,11 @@ namespace Pudu {
 		for (auto b : m_graphicsBuffers.m_resources)
 		{
 			gfx->DestroyBuffer(b);
+		}
+
+		for (auto s : m_semaphores.m_resources)
+		{
+			gfx->DestroySemaphore(s);
 		}
 	}
 }

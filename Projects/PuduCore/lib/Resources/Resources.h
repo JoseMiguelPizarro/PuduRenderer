@@ -20,6 +20,10 @@ namespace Pudu
 		FrameGraphHandle index;
 	};
 
+	struct SemaphoreHandle {
+		ResourceHandle index;
+	};
+
 	struct ShaderHandle
 	{
 		ResourceHandle index;
