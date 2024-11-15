@@ -1517,7 +1517,7 @@ namespace Pudu
 
 	void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
 	{
-		vkDestroySemaphore(m_device, *semaphore, m_allocatorPtr);
+		vkDestroySemaphore(m_device, semaphore->vkHandle, m_allocatorPtr);
 	}
 
 	/// <summary>

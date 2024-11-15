@@ -233,14 +233,14 @@ namespace Pudu {
 	}
 	SPtr<Semaphore> GPUResourcesManager::AllocateSemaphore()
 	{
-		SemaphoreHandle handle = { static_cast<uint32_t>(m_semaphores.Size()) };
-		SPtr<Semaphore> buffer = std::make_shared<Semaphore>();
+		SemaphoreHandle semaphore = { static_cast<uint32_t>(m_semaphores.Size()) };
+		SPtr<Semaphore> semaphoreptr = std::make_shared<Semaphore>();
 
-		buffer->handle = handle;
+		semaphoreptr->handle = semaphore;
 
-		m_semaphores.AddResource(buffer);
+		m_semaphores.AddResource(semaphoreptr);
 
-		return buffer;
+		return semaphoreptr;
 	}
 	SPtr<Semaphore> GPUResourcesManager::GetSemaphore(SemaphoreHandle handle)
 	{

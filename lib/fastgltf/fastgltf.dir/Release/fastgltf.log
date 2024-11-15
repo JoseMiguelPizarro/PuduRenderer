@@ -1,6 +1,6 @@
-﻿  Building Custom Rule D:/Documents/Repos/PuduRenderer/lib/fastgltf/CMakeLists.txt
-cl : command line  warning D9025: overriding '/Ob2' with '/Ob3'
+﻿  base64.cpp
   fastgltf.cpp
+D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(709,33): warning C4996: 'std::filesystem::u8path': warning STL4021: The std::filesystem::u8path() overloads are deprecated in C++20. The constructors of std::filesystem::path provide equivalent functionality via construction from u8string, u8string_view, or iterators with value_type char8_t. You can define _SILENCE_CXX20_U8PATH_DEPRECATION_WARNING or _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS to suppress this warning.
 D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4173,54): warning C4018: '<': signed/unsigned mismatch
 D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4244,52): warning C4018: '<': signed/unsigned mismatch
 D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4318,56): warning C4018: '<': signed/unsigned mismatch
@@ -31,19 +31,21 @@ D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4152,46): warning 
   D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4152,46):
   the template instantiation context (the oldest one first) is
   	D:\Documents\Repos\PuduRenderer\lib\fastgltf\src\fastgltf.cpp(4147,9):
-  	see reference to function template instantiation 'void std::visit<fastgltf::visitor<fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_e8eb3eaf088d2e91107f39e654921aba>,fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_d5bcc144d5db40029f1098acf08fc637>>,const std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double>>,std::vector<int64_t,std::pmr::polymorphic_allocator<int64_t>>>&,void>(_Callable &&,const std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double>>,std::vector<int64_t,std::pmr::polymorphic_allocator<int64_t>>> &)' being compiled
+  	see reference to function template instantiation 'void std::visit<fastgltf::visitor<fastgltf::Exporter::writeAccessors::<lambda_1>::()::<lambda_1>,fastgltf::Exporter::writeAccessors::<lambda_1>::()::<lambda_2>>,const std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double>>,std::vector<int64_t,std::pmr::polymorphic_allocator<int64_t>>>&,void>(_Callable &&,const std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double>>,std::vector<int64_t,std::pmr::polymorphic_allocator<int64_t>>> &)' being compiled
           with
           [
-              _Callable=fastgltf::visitor<fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_e8eb3eaf088d2e91107f39e654921aba>,fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_d5bcc144d5db40029f1098acf08fc637>>
+              _Callable=fastgltf::visitor<fastgltf::Exporter::writeAccessors::<lambda_1>::()::<lambda_1>,fastgltf::Exporter::writeAccessors::<lambda_1>::()::<lambda_2>>
           ]
   	C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include\variant(1603,19):
-  	see reference to variable template 'const bool _Variant_all_visit_results_same<void,fastgltf::visitor<<lambda_e8eb3eaf088d2e91107f39e654921aba>,<lambda_d5bcc144d5db40029f1098acf08fc637> >,std::_Meta_list<>,std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double> >,std::vector<__int64,std::pmr::polymorphic_allocator<__int64> > > const &>' being compiled
+  	see reference to variable template 'const bool _Variant_all_visit_results_same<void,fastgltf::visitor<``fastgltf::Exporter::writeAccessors'::`8'::<lambda_1>::operator()'::`2'::<lambda_1>,``fastgltf::Exporter::writeAccessors'::`8'::<lambda_1>::operator()'::`2'::<lambda_2> >,std::_Meta_list<>,std::variant<std::monostate,std::vector<double,std::pmr::polymorphic_allocator<double> >,std::vector<__int64,std::pmr::polymorphic_allocator<__int64> > > const &>' being compiled
   	C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include\variant(1582,10):
-  	see reference to variable template 'const bool _Variant_all_visit_results_same<void,fastgltf::visitor<<lambda_e8eb3eaf088d2e91107f39e654921aba>,<lambda_d5bcc144d5db40029f1098acf08fc637> >,std::_Meta_list<std::vector<double,std::pmr::polymorphic_allocator<double> > const &> >' being compiled
+  	see reference to variable template 'const bool _Variant_all_visit_results_same<void,fastgltf::visitor<``fastgltf::Exporter::writeAccessors'::`8'::<lambda_1>::operator()'::`2'::<lambda_1>,``fastgltf::Exporter::writeAccessors'::`8'::<lambda_1>::operator()'::`2'::<lambda_2> >,std::_Meta_list<std::vector<double,std::pmr::polymorphic_allocator<double> > const &> >' being compiled
   	C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include\type_traits(1637,1):
-  	see reference to function template instantiation 'auto fastgltf::Exporter::writeAccessors::<lambda_af7065ea1b9c95289cc407d6bea0eec7>::()::<lambda_d5bcc144d5db40029f1098acf08fc637>::operator ()<std::vector<double,std::pmr::polymorphic_allocator<double>>>(std::vector<double,std::pmr::polymorphic_allocator<double>>) const' being compiled
+  	see reference to function template instantiation 'auto fastgltf::Exporter::writeAccessors::<lambda_1>::()::<lambda_2>::operator ()<std::vector<double,std::pmr::polymorphic_allocator<double>>>(_T1) const' being compiled
+          with
+          [
+              _T1=std::vector<double,std::pmr::polymorphic_allocator<double>>
+          ]
   
-  base64.cpp
-  simdjson.cpp
   Generating Code...
   fastgltf.vcxproj -> D:\Documents\Repos\PuduRenderer\lib\fastgltf\Release\fastgltf.lib
