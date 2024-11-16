@@ -233,8 +233,8 @@ namespace Pudu
 
 		void CreateTextureImageView(Texture2d& texture2d);
 		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
-		SPtr<Semaphore> CreateTimelineSemaphore();
-		SPtr<Semaphore> CreateSemaphoreSPtr();
+		SPtr<Semaphore> CreateTimelineSemaphore(const char * name = nullptr);
+		SPtr<Semaphore> CreateSemaphoreSPtr(const char  * name = nullptr);
 
 		void DestroySemaphore(SPtr<Semaphore> semaphore);
 

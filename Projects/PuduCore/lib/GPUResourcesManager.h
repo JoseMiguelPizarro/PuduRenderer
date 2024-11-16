@@ -62,6 +62,9 @@ namespace Pudu {
 		SPtr<Semaphore> AllocateSemaphore();
 		SPtr<Semaphore> GetSemaphore(SemaphoreHandle handle);
 
+		SPtr<GPUCommands> AllocateCommandBuffer();
+		SPtr<GPUCommands> GetComandBuffer(CommandBufferHandle handle);
+
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
@@ -87,6 +90,7 @@ namespace Pudu {
 		ResourcePool<SPtr<GraphicsBuffer>> m_graphicsBuffers;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
+		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};
 }

@@ -24,6 +24,10 @@ namespace Pudu
 		ResourceHandle index;
 	};
 
+	struct CommandBufferHandle {
+		ResourceHandle index;
+	};
+
 	struct ShaderHandle
 	{
 		ResourceHandle index;

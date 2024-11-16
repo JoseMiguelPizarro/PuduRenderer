@@ -2181,13 +2181,13 @@ namespace Pudu
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr();
-			m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr();
+			m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(fmt::format("Image available {}",i).c_str());
+			m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(fmt::format("Render Finished {}",i).c_str());
 			vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence);
 		}
 
-		m_graphicsTimelineSemaphore = CreateTimelineSemaphore();
-		m_computeTimelineSemaphore = CreateTimelineSemaphore();
+		m_graphicsTimelineSemaphore = CreateTimelineSemaphore("GraphicsTimeline");
+		m_computeTimelineSemaphore = CreateTimelineSemaphore("ComputeTimeline");
 	}
 
 	void PuduGraphics::RecreateSwapChain()
@@ -2654,7 +2654,7 @@ namespace Pudu
 		return GPUCommands(commandBuffer, this);
 	}
 
-	SPtr<Semaphore> PuduGraphics::CreateSemaphoreSPtr()
+	SPtr<Semaphore> PuduGraphics::CreateSemaphoreSPtr(const char * name)
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -2663,10 +2663,15 @@ namespace Pudu
 
 		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, *semaphore);
 
+		if (name != nullptr)
+		{
+			SetResourceName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore->vkHandle, name);
+		}
+
 		return semaphore;
 	}
 
-	SPtr<Semaphore> PuduGraphics::CreateTimelineSemaphore()
+	SPtr<Semaphore> PuduGraphics::CreateTimelineSemaphore(const char * name)
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 		VkSemaphoreTypeCreateInfo semaphoreTypeInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
@@ -2677,6 +2682,11 @@ namespace Pudu
 		auto semaphore = m_resources.AllocateSemaphore();
 
 		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore->vkHandle);
+
+		if (name != nullptr)
+		{
+			SetResourceName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore->vkHandle, name);
+		}
 
 		return semaphore;
 	}
@@ -2881,10 +2891,6 @@ namespace Pudu
 
 		m_resources.DestroyAllResources(this);
 
-		ImGui_ImplVulkan_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
-
 
 		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
@@ -2899,7 +2905,10 @@ namespace Pudu
 		{
 			vkDestroyCommandPool(m_device, m_ImGuiCommandPool, m_allocatorPtr);
 			vkDestroyRenderPass(m_device, m_ImGuiRenderPass, m_allocatorPtr);
-			vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
+			//vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
+
+			ImGui_ImplGlfw_Shutdown();
+			ImGui::DestroyContext();
 		}
 
 		if (enableValidationLayers)
