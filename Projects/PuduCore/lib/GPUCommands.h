@@ -5,6 +5,7 @@
 #include "Resources/Resources.h"
 #include "PuduCore.h"
 #include "Texture2D.h"
+#include "Resources/GPUResource.h"
 
 using namespace glm;
 
@@ -14,8 +15,14 @@ namespace Pudu
 	class RenderPass;
 	class Pipeline;
 
-	class GPUCommands
+	class GPUCommands:public GPUResource
 	{
+		struct  CreationData
+		{
+			VkCommandPool pool;
+			uint32_t count;
+		};
+
 	public:
 		GPUCommands() = default;
 		GPUCommands(VkCommandBuffer handle, PuduGraphics* gfx);
@@ -45,6 +52,7 @@ namespace Pudu
 		bool HasRecordedCommand() { return m_hasRecordedCommand; }
 
 	private:
+		friend class PuduGraphics;
 		PuduGraphics* m_graphics = nullptr;
 		std::array<VkClearValue, 2> m_clearValues{};
 		bool m_hasRecordedCommand = false;

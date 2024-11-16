@@ -235,6 +235,7 @@ namespace Pudu
 		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
 		SPtr<Semaphore> CreateTimelineSemaphore(const char * name = nullptr);
 		SPtr<Semaphore> CreateSemaphoreSPtr(const char  * name = nullptr);
+		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData);
 
 		void DestroySemaphore(SPtr<Semaphore> semaphore);
 

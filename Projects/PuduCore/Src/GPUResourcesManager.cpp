@@ -247,6 +247,16 @@ namespace Pudu {
 		return m_semaphores.GetResource(handle.index);
 	}
 
+	SPtr<GPUCommands> GPUResourcesManager::AllocateCommandBuffer()
+	{
+		return AllocateGPUResource<GPUCommands>(m_commandBuffers);
+	}
+
+	SPtr<GPUCommands> GPUResourcesManager::GetComandBuffer(GPUResourceHandle handle)
+	{
+		return m_commandBuffers.GetResource(handle.index);
+	}
+
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
 	{
 		for (auto t : m_textures.m_resources)

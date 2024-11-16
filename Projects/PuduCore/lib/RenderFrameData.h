@@ -29,7 +29,7 @@ namespace Pudu
 		Frame* frame;
 		FrameGraph* frameGraph;
 		Scene* scene;
-		GPUCommands* currentCommand;
+		SPtr<GPUCommands> currentCommand;
 		PuduGraphics* graphics;
 		PuduRenderer* renderer;
 		SPtr<Texture2d> activeRenderTarget;
@@ -43,6 +43,6 @@ namespace Pudu
 		SPtr<GraphicsBuffer> lightingBuffer;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
-		std::vector<GPUCommands*> computeCommandsToSubmit;
+		std::vector<SPtr<GPUCommands>> computeCommandsToSubmit;
 	};
 }

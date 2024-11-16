@@ -7,6 +7,7 @@
 
 namespace Pudu
 {
+
 	GPUCommands::GPUCommands(VkCommandBuffer handle, PuduGraphics* gfx) : vkHandle(handle), m_graphics(gfx)
 	{
 	}

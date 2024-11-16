@@ -476,16 +476,16 @@ namespace Pudu
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
-		frame.CommandBuffer.Reset();
+		frame.CommandBuffer->Reset();
 
-		frame.CommandBuffer.BeginCommands();
+		frame.CommandBuffer->BeginCommands();
 
 		frameData.frame = &m_Frames[m_currentFrameIndex];
-		frameData.currentCommand = &frame.CommandBuffer;
+		frameData.currentCommand = frame.CommandBuffer;
 		frameData.graphics = this;
 		frameData.camera = frameData.scene->camera;
 
-		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
+		frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
 
 		frameGraph->RenderFrame(frameData);
 
@@ -496,9 +496,9 @@ namespace Pudu
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-		frame.CommandBuffer.EndCommands();
+		frame.CommandBuffer->EndCommands();
 
-		auto computeCommands = &frame.ComputeCommandBuffer;
+		auto computeCommands = frame.ComputeCommandBuffer;
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
 		computeCommands->Reset();
 
@@ -1499,6 +1499,34 @@ namespace Pudu
 		return handle;
 	}
 
+	std::vector<SPtr<GPUCommands>> PuduGraphics::CreateCommandBuffers(GPUCommands::CreationData creationData)
+	{
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_commandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
+
+		std::vector<VkCommandBuffer> buffers;
+		buffers.resize(MAX_FRAMES_IN_FLIGHT * 2); //Multiply by 2 for compute queue buffer
+
+		if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to allocate command buffer!");
+		}
+
+		std::vector<SPtr<GPUCommands>> commands;
+		for (auto buffer : buffers) {
+			auto gpubuffer = m_resources.AllocateCommandBuffer();
+			gpubuffer->vkHandle = buffer;
+			gpubuffer->m_graphics = this;
+
+			commands.push_back(gpubuffer);
+		}
+
+		return commands;
+	}
+
 	void PuduGraphics::CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
 	{
 		LOG("Creating descriptor set");
@@ -2145,26 +2173,22 @@ namespace Pudu
 
 	void PuduGraphics::CreateFramesCommandBuffer()
 	{
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = m_commandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
+		GPUCommands::CreationData commandsData;
+		commandsData.pool = m_commandPool;
+		commandsData.count = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
 
-		std::vector<VkCommandBuffer> buffers;
-		buffers.resize(MAX_FRAMES_IN_FLIGHT * 2); //Multiply by 2 for compute queue buffer
-
-		if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to allocate command buffer!");
-		}
+		auto buffers = CreateCommandBuffers(commandsData);
 
 		//We might need to fix the layout
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			Frame& frame = m_Frames[i];
-			frame.CommandBuffer = GPUCommands(buffers[i * 2], this);
-			frame.ComputeCommandBuffer = GPUCommands(buffers[i * 2 + 1], this);
+
+			frame.CommandBuffer = buffers[i*2];
+			frame.ComputeCommandBuffer = buffers[i*2+1];
+
+			SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.CommandBuffer->vkHandle, fmt::format("Frame {} graphics", i).c_str());
+			SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.ComputeCommandBuffer->vkHandle, fmt::format("Frame {} compute", i).c_str());
 		}
 
 		LOG("Created command buffer");
