@@ -1556,6 +1556,16 @@ namespace Pudu
 		vkDestroySemaphore(m_device, semaphore->vkHandle, m_allocatorPtr);
 	}
 
+	void PuduGraphics::DestroyShader(SPtr<Shader> shader)
+	{
+		vkDestroyShaderModule(m_device, shader->GetModule(), m_allocatorPtr);
+	}
+
+	void PuduGraphics::DestroyShaderModule(VkShaderModule& state)
+	{
+		vkDestroyShaderModule(m_device, state, m_allocatorPtr);
+	}
+
 	/// <summary>
 	/// In Vulkan NOn-Bindless resources shouldn't use a Bindless descriptor so we need to check what kind of descriptor we should create
 	/// </summary>
@@ -2913,6 +2923,11 @@ namespace Pudu
 		return indices;
 	}
 
+	void PuduGraphics::DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset) {
+		vkDestroyDescriptorSetLayout(m_device, descriptorset.vkHandle, m_allocatorPtr);
+	}
+
+
 	void PuduGraphics::Cleanup()
 	{
 		if (!m_initialized)
@@ -2923,7 +2938,6 @@ namespace Pudu
 
 		m_resources.DestroyAllResources(this);
 
-
 		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -2932,12 +2946,11 @@ namespace Pudu
 		}
 
 		vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
-
 		//ImGui
 		{
 			vkDestroyCommandPool(m_device, m_ImGuiCommandPool, m_allocatorPtr);
-			//vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
-
+			vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
+			ImGui_ImplVulkan_Shutdown();
 			ImGui_ImplGlfw_Shutdown();
 			ImGui::DestroyContext();
 		}
@@ -2964,6 +2977,10 @@ namespace Pudu
 	void PuduGraphics::CleanupSwapChain()
 	{
 		vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+
+		for (auto sc : m_swapChainImagesViews) {
+			vkDestroyImageView(m_device, sc, m_allocatorPtr);
+		}
 	}
 
 	void PuduGraphics::DestroyMesh(SPtr<Mesh> mesh)

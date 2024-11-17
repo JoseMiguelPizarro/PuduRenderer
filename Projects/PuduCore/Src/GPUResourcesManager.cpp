@@ -98,6 +98,8 @@ namespace Pudu {
 		FramebufferHandle handle =  { static_cast<uint32_t>(m_frameBuffers.Size()) };
 		SPtr<Framebuffer> framebuffer = std::make_shared<Framebuffer>();
 
+		m_frameBuffers.AddResource(framebuffer);
+
 		framebuffer->handle = handle;
 
 		return framebuffer;
@@ -259,5 +261,24 @@ namespace Pudu {
 		{
 			gfx->DestroySemaphore(s);
 		}
+
+		for (auto s : m_shaders.m_resources) {
+			gfx->DestroyShader(s);
+		}
+
+		for (auto ss : m_shaderStates.m_resources) {
+			for (size_t i = 0; i < ss.activeShaders; i++)
+			{
+				auto a = ss.shaderStageInfo[i];
+				
+				gfx->DestroyShaderModule(a.module);
+			}
+		}
+
+		for (auto& ds : m_descriptorSetLayouts.m_resources) {
+
+			gfx->DestroyDescriptorSetLayout(ds);
+		}
+
 	}
 }

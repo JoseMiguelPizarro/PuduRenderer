@@ -31,6 +31,7 @@ namespace Pudu {
 
 
 	private:
+		friend class PuduGraphics;
 		std::filesystem::path m_shaderPath;
 		VkShaderModule m_module;
 		bool m_hasFragmentData;

@@ -225,8 +225,6 @@ namespace Pudu
 		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<DescriptorSetLayoutHandle>& out);
 
 		void CreateBindlessDescriptorPool();
-		void CreateDescriptorPool();
-
 		void CreateSwapChainFrameBuffers(RenderPassHandle renderPass);
 		void CreateFrames();
 		void CreateCommandPool(VkCommandPool* cmdPool);
@@ -238,6 +236,9 @@ namespace Pudu
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char * name = nullptr);
 
 		void DestroySemaphore(SPtr<Semaphore> semaphore);
+		void DestroyShader(SPtr<Shader> shader);
+		void DestroyShaderModule(VkShaderModule& state);
+		void DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset);
 
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
