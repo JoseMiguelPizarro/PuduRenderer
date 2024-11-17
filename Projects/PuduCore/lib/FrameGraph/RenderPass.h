@@ -6,7 +6,6 @@
 #include "Pipeline.h"
 
 
-
 namespace Pudu
 {
 	class PuduGraphics;
@@ -27,21 +26,11 @@ namespace Pudu
 		VkAttachmentStoreOp storeOp;
 		VkClearValue clearValue;
 		VkImageLayout layout;
-
-	};
-
-	struct RenderPassCreationData
-	{
-		bool isCompute;
-		bool isEnabled;
-		ComputeShader* computeShader;
-		RenderPassType type;
-
 	};
 
 	struct RenderPassAttachments
 	{
-		VkFormat depthStencilFormat;
+		VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
 		VkImageLayout depthStencilFinalLayout;
 
@@ -62,6 +51,17 @@ namespace Pudu
 		VkRenderingAttachmentInfo colorAttachments[K_MAX_IMAGE_OUTPUTS];
 		VkRenderingAttachmentInfo depthAttachments[K_MAX_IMAGE_OUTPUTS];
 		VkRenderingAttachmentInfo stencilAttachments[K_MAX_IMAGE_OUTPUTS];
+	};
+
+	struct RenderPassCreationData
+	{
+		bool isCompute;
+		bool isEnabled;
+		ComputeShader* computeShader;
+		RenderPassType type;
+		std::string name;
+
+		RenderPassAttachments attachments;
 	};
 
 	class RenderPass

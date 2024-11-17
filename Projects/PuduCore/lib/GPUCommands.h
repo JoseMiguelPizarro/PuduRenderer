@@ -34,8 +34,15 @@ namespace Pudu
 		void AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel, u32 mipCount, bool isDepth);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetViewport(Viewport const& viewport);
+
+		/// <summary>
+		/// Beging dynamic rendering renderpass
+		/// </summary>
 		void BegingRenderingPass(const VkRenderingInfo& renderInfo);
 		void EndRenderingPass();
+
+		void BegingRenderPass(const VkRenderPassBeginInfo& renderInfo);
+		void EndRenderPass();
 		void BindPipeline(Pipeline* pipeline);
 		void BindDescriptorSet(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);
 		void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);

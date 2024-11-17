@@ -34,10 +34,10 @@ namespace Pudu {
 		SPtr<TextureCube> AllocateTextureCube();
 
 		SPtr<RenderPass> GetRenderPass(RenderPassHandle handle);
-		SPtr<RenderPass> AllocateRenderPass(RenderPassCreationData const& creationdata);
+		SPtr<RenderPass> AllocateRenderPass(RenderPassType const& renderPassType);
 
-		Framebuffer* GetFramebuffer(FramebufferHandle handle);
-		FramebufferHandle AllocateFrameBuffer(FramebufferCreationData const& creationData);
+		SPtr<Framebuffer> GetFramebuffer(FramebufferHandle handle);
+		SPtr<Framebuffer> AllocateFrameBuffer();
 
 		Pipeline* GetPipeline(PipelineHandle handle);
 		PipelineHandle AllocatePipeline();
@@ -99,7 +99,7 @@ namespace Pudu {
 		ResourcePool<SPtr<Mesh>> m_meshes;
 		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
 		ResourcePool<SPtr<RenderPass>> m_renderPasses;
-		ResourcePool<Framebuffer> m_frameBuffers;
+		ResourcePool<SPtr<Framebuffer>> m_frameBuffers;
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;
 		ResourcePool<SPtr<GraphicsBuffer>> m_graphicsBuffers;

@@ -485,6 +485,7 @@ namespace Pudu
 	struct Framebuffer
 	{
 		VkFramebuffer vkHandle;
+		FramebufferHandle handle;
 
 		RenderPassHandle renderPassHandle;
 

@@ -85,6 +85,14 @@ namespace Pudu
 	{
 		vkCmdBeginRendering(vkHandle, &renderInfo);
 	}
+	void GPUCommands::BegingRenderPass(const VkRenderPassBeginInfo& renderInfo)
+	{
+		vkCmdBeginRenderPass(vkHandle, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
+	void GPUCommands::EndRenderPass()
+	{
+		vkCmdEndRenderPass(vkHandle);
+	}
 	//void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
 	//{
 	//	RenderPass* renderPass = m_graphics->Resources()->GetRenderPass(renderPassHandle);

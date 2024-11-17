@@ -825,14 +825,12 @@ namespace Pudu
 	static void CreateRenderPass(FrameGraph* frameGraph, FrameGraphNode* node) {
 		LOG("FrameGraph: Create RenderPass");
 		auto gfx = frameGraph->builder->graphics;
+
 		RenderPassCreationData creationData;
 		creationData.isCompute = node->isCompute;
 		creationData.type = node->type;
 		creationData.isEnabled = node->enabled;
 
-		auto renderPass = gfx->Resources()->AllocateRenderPass(creationData);
-
-		renderPass->SetName(node->name.c_str());
 
 		for (auto outputResourceHandle : node->outputs) {
 			FrameGraphResource* outputResource = frameGraph->GetResource(outputResourceHandle);
@@ -848,7 +846,7 @@ namespace Pudu
 					attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-					renderPass->attachments.SetDepthStencilAttachment(attachment);
+					creationData.attachments.SetDepthStencilAttachment(attachment);
 				}
 				else {
 					RenderPassAttachment attachment{};
@@ -856,7 +854,7 @@ namespace Pudu
 					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
 					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					renderPass->attachments.AddColorAttachment(attachment);
+					creationData.attachments.AddColorAttachment(attachment);
 				}
 			}
 		}
@@ -873,7 +871,7 @@ namespace Pudu
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
 					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-					renderPass->attachments.SetDepthStencilAttachment(attachment);
+					creationData.attachments.SetDepthStencilAttachment(attachment);
 				}
 				else {
 					RenderPassAttachment attachment{};
@@ -881,11 +879,12 @@ namespace Pudu
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
 					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					renderPass->attachments.AddColorAttachment(attachment);
+					creationData.attachments.AddColorAttachment(attachment);
 				}
 			}
 		}
-
+		creationData.name = node->name;
+		auto renderPass = gfx->CreateRenderPass(creationData);
 		node->renderPass = renderPass->handle;
 
 		LOG("FrameGraph: Create RenderPass End");
@@ -950,10 +949,9 @@ namespace Pudu
 
 		framebufferCreationData.width = width;
 		framebufferCreationData.height = height;
-		auto frameBufferHandle = frameGraph->builder->graphics->Resources()->AllocateFrameBuffer(framebufferCreationData);
-		auto frameBuffer = frameGraph->builder->graphics->Resources()->GetFramebuffer(frameBufferHandle);
+		auto framebuffer= frameGraph->builder->graphics->CreateFramebuffer(framebufferCreationData);
 
-		node->framebuffer = frameBufferHandle;
+		node->framebuffer = framebuffer->handle;
 	}
 
 	void FrameGraphBuilder::Init(PuduGraphics* device)
