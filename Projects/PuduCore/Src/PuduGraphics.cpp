@@ -1170,8 +1170,9 @@ namespace Pudu
 	SPtr<RenderPass>PuduGraphics::CreateRenderPass(RenderPassCreationData& creationData)
 	{
 		auto renderPass = m_resources.AllocateRenderPass(creationData.type);
-
+		renderPass->attachments = creationData.attachments;
 		renderPass->isEnabled = creationData.isEnabled;
+		renderPass->numRenderTargets = creationData.attachments.AttachmentCount();
 
 		if (creationData.isCompute)
 		{

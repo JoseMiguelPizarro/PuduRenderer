@@ -43,6 +43,7 @@ namespace Pudu
 		RenderPassAttachments& SetDepthStencilOperations(RenderPassOperation depth, RenderPassOperation stencil);
 		VkFormat GetStencilFormat();
 
+		uint16_t AttachmentCount();
 		uint16_t colorAttachmentCount = 0;
 		uint16_t numColorFormats = 0;
 		uint16_t depthAttachmentCount = 0;

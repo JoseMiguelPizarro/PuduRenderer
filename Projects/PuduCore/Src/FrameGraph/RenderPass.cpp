@@ -70,6 +70,11 @@ namespace Pudu
 		}
 	}
 
+	uint16_t RenderPassAttachments::AttachmentCount()
+	{
+		return colorAttachmentCount + depthAttachmentCount;
+	}
+
 #pragma endregion 
 
 
