@@ -180,7 +180,6 @@ namespace Pudu
 		void UploadTextureData(SPtr<Texture> texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
-		SPtr<ComputeShader> testComputeShader;
 
 		static uint32_t const K_BINDLESS_SET_INDEX = 0;
 		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw

@@ -99,8 +99,6 @@ namespace Pudu
 
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
-
-		testComputeShader = CreateComputeShader("Shaders/shadows.comp", "ShadowsCS");
 	}
 
 	void PuduGraphics::InitVMA()
@@ -474,11 +472,6 @@ namespace Pudu
 		auto computeCommands = frame.ComputeCommandBuffer;
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
 		computeCommands->Reset();
-
-		if (!testComputeShader->ResourcesUpdated())
-		{
-			UpdateComputeResources(testComputeShader.get());
-		}
 
 		//auto computePipeline = m_resources.GetPipeline(testComputeShader->pipelineHandle);
 		//computeCommands->BeginCommands();
