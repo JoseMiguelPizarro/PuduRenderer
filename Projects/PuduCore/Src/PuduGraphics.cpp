@@ -56,6 +56,8 @@ namespace Pudu
 		return s_instance;
 	}
 
+	bool useImgui = false;
+
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{
 		PuduGraphics::s_instance = this;
@@ -67,7 +69,11 @@ namespace Pudu
 
 		InitWindow();
 		InitVulkan();
-		InitImgui();
+
+		if (useImgui)
+		{
+			InitImgui();
+		}
 
 		m_initialized = true;
 	}
@@ -453,7 +459,10 @@ namespace Pudu
 
 		frameGraph->RenderFrame(frameData);
 
-		//DrawImGui(frameData);
+		if (useImgui)
+		{
+		DrawImGui(frameData);
+		}
 
 		frameData.currentCommand->TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle, frameData.activeRenderTarget->format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -2550,7 +2559,7 @@ namespace Pudu
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
 		//ImGui::StyleColorsLight();
-		ImGui_ImplGlfw_InitForVulkan(WindowPtr, true);
+			(WindowPtr, true);
 
 		// Create Descriptor Pool
 		// The example only requires a single combined image sampler descriptor for the font image and only uses one descriptor set (for that)
@@ -2703,7 +2712,7 @@ namespace Pudu
 
 		auto semaphore = m_resources.AllocateSemaphore();
 
-		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, *semaphore);
+		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore->vkHandle);
 
 		if (name != nullptr)
 		{
@@ -2946,7 +2955,7 @@ namespace Pudu
 		}
 
 		vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
-		//ImGui
+		if (useImgui)
 		{
 			vkDestroyCommandPool(m_device, m_ImGuiCommandPool, m_allocatorPtr);
 			vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);

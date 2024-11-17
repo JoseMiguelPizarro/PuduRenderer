@@ -235,6 +235,7 @@ namespace Pudu {
 
 		for (auto t : m_pipelines.m_resources) {
 			vkDestroyPipeline(gfx->m_device, t.vkHandle, nullptr);
+			vkDestroyPipelineLayout(gfx->m_device, t.vkPipelineLayoutHandle, gfx->m_allocatorPtr);
 		}
 
 		for (auto f : m_frameBuffers.m_resources)
