@@ -239,8 +239,8 @@ namespace Pudu
 		return actualExtent;
 	}
 
-	void PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-		VkBuffer& buffer, VkDeviceMemory& bufferMemory, const char* name)
+	VmaAllocation PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags properties,
+		VkBuffer& buffer, const char* name)
 	{
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -248,30 +248,23 @@ namespace Pudu
 		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create buffer!");
-		}
+		VmaAllocationCreateInfo allocCreateInfo = {};
+		allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+		allocCreateInfo.flags = properties;
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
+		VmaAllocation alloc;
+		VmaAllocationInfo allocInfo;
 
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate buffer memory!");
-		}
-
-		vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
+		//Create buffer, allocate the memory and binds memory to buffer
+		VKCheck( vmaCreateBuffer(m_VmaAllocator, &bufferInfo, &allocCreateInfo, &buffer, &alloc, &allocInfo), "Failed creating buffer");
 
 		if (name != nullptr)
 		{
 			SetResourceName(VK_OBJECT_TYPE_BUFFER, (glm::u64)buffer, name);
+			SetResourceName(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)alloc->GetMemory(), name);
 		}
+
+		return alloc;
 	}
 
 	void PuduGraphics::UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount, const VkCopyDescriptorSet* copy)
@@ -288,7 +281,7 @@ namespace Pudu
 		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
 		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-		memcpy(buffer->MappedMemory, &lightBuffer, sizeof(LightBuffer));
+		memcpy(buffer->allocation->GetMappedData(), &lightBuffer, sizeof(LightBuffer));
 
 		frame.lightingBuffer = m_lightingBuffers[frame.frameIndex];
 	}
@@ -323,8 +316,7 @@ namespace Pudu
 	{
 		if (!buffer->IsDestroyed())
 		{
-			vkDestroyBuffer(m_device, buffer->vkHandler, m_allocatorPtr);
-			vkFreeMemory(m_device, buffer->DeviceMemoryHandler, m_allocatorPtr);
+			vmaDestroyBuffer(m_VmaAllocator, buffer->vkHandler, buffer->allocation);
 			buffer->Destroy();
 		}
 	}
@@ -804,37 +796,34 @@ namespace Pudu
 		VkDeviceSize bufferSize = size;
 		VkBuffer vkBuffer = {};
 		VkDeviceMemory vkdeviceMemory = {};
+		VmaAllocation bufferAlloc;
 
 		if (bufferData != nullptr)
 		{
 			VkBuffer stagingBuffer;
-			VkDeviceMemory stagingBufferMemory;
-			CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-				stagingBufferMemory);
+			auto stagingAllocation = CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+				VMA_ALLOCATION_CREATE_MAPPED_BIT, stagingBuffer);
+			
+			memcpy(stagingAllocation->GetMappedData(), bufferData, (size_t)bufferSize);
+			vmaFlushAllocation(m_VmaAllocator, stagingAllocation, 0, VK_WHOLE_SIZE);
 
-			void* data;
-			vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			memcpy(data, bufferData, (size_t)bufferSize);
-			vkUnmapMemory(m_device, stagingBufferMemory);
+			bufferAlloc = CreateBuffer(bufferSize, usage, flags, vkBuffer,
+				name);
 
-			CreateBuffer(bufferSize, usage, flags, vkBuffer,
-				vkdeviceMemory, name);
-
+			
 			CopyBuffer(stagingBuffer, vkBuffer, bufferSize);
 
-			vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-			vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+			vmaDestroyBuffer(m_VmaAllocator, stagingBuffer, stagingAllocation);
 		}
 		else
 		{
-			CreateBuffer(bufferSize, usage, flags, vkBuffer,
-				vkdeviceMemory, name);
+			bufferAlloc = CreateBuffer(bufferSize, usage, flags, vkBuffer,name);
 		}
 
 		auto graphicsBuffer = m_resources.AllocateGraphicsBuffer();
 		graphicsBuffer->vkHandler = vkBuffer;
-		graphicsBuffer->DeviceMemoryHandler = vkdeviceMemory;
+		graphicsBuffer->allocation = bufferAlloc;
 		return graphicsBuffer;
 	}
 
@@ -1359,10 +1348,7 @@ namespace Pudu
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			m_uniformBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "UniformBufer");
-
-			vkMapMemory(m_device, m_uniformBuffers[i]->DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i]->MappedMemory);
+VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT, "UniformBufer");
 		}
 	}
 
@@ -1374,10 +1360,8 @@ namespace Pudu
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			m_lightingBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "LightingBuffer");
-
-			vkMapMemory(m_device, m_lightingBuffers[i]->DeviceMemoryHandler, 0, bufferSize, 0, &m_lightingBuffers[i]->MappedMemory);
+				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT
+				, "LightingBuffer");
 		}
 	}
 
@@ -1389,10 +1373,10 @@ namespace Pudu
 
 		SPtr<GraphicsBuffer> vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT );
 		SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(indices[0]) * indices.size(), indices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
 
 		//TODO: Vertices and indices are being copied. Do we want that?
@@ -2115,16 +2099,13 @@ namespace Pudu
 		//TODO: COMPUTE TEXTURE SIZE
 		auto imageSize = texture->size;
 		SPtr<GraphicsBuffer> stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		void* data;
-		vkMapMemory(m_device, stagingBuffer->DeviceMemoryHandler, 0, imageSize, 0, &data);
-		memcpy(data, pixels, static_cast<size_t>(imageSize));
-		vkUnmapMemory(m_device, stagingBuffer->DeviceMemoryHandler);
+		memcpy(stagingBuffer->allocation->GetMappedData(), pixels, static_cast<size_t>(imageSize));
+		vmaFlushAllocation(m_VmaAllocator, stagingBuffer->allocation, 0, VK_WHOLE_SIZE);
 
 		auto cmd = BeginSingleTimeCommands();
 
@@ -2138,6 +2119,8 @@ namespace Pudu
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &range);
 
 		EndSingleTimeCommands(cmd);
+
+		DestroyBuffer(stagingBuffer);
 	}
 
 	void PuduGraphics::CreateTextureImageView(Texture2d& texture2d)
