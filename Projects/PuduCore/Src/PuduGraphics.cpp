@@ -824,6 +824,11 @@ namespace Pudu
 		auto graphicsBuffer = m_resources.AllocateGraphicsBuffer();
 		graphicsBuffer->vkHandler = vkBuffer;
 		graphicsBuffer->allocation = bufferAlloc;
+		if (name!=nullptr)
+		{
+			graphicsBuffer->name.append(name);
+		}
+
 		return graphicsBuffer;
 	}
 

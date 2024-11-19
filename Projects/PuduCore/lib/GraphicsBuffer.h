@@ -11,6 +11,7 @@ namespace Pudu
 		VkBuffer vkHandler;
 		GraphicsBufferHandle handle;
 		VmaAllocation allocation;
+		std::string name;
 
 		GraphicsBuffer() = default;
 
