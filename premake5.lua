@@ -129,6 +129,7 @@ end
 
 function includeVulkan()
     includedirs {"%{IncludeDir.VulkanSDK}", "%{IncludeDir.VulkanVMA}"}
+    libdirs "%{LibraryDir.VulkanSDK}"
 end
 
 function useCoreLib()
@@ -234,7 +235,6 @@ useCoreLib()
 includeStb_Image()
 includeTinyObjLoader()
 includeAndLinkFastGltf()
-libdirs {"C:/VulkanSDK/1.3.268.0/Lib"}
 links "vulkan-1"
 defines {"HLSLPP_FEATURE_TRANSFORM"}
 debugdir "$(ProjectDir)Build/Bin/$(ProjectName)/%{cfg.longname}"
