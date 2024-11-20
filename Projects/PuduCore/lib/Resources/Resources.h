@@ -24,6 +24,10 @@ namespace Pudu
 		ResourceHandle index;
 	};
 
+	struct CommandBufferHandle {
+		ResourceHandle index;
+	};
+
 	struct ShaderHandle
 	{
 		ResourceHandle index;
@@ -481,6 +485,7 @@ namespace Pudu
 	struct Framebuffer
 	{
 		VkFramebuffer vkHandle;
+		FramebufferHandle handle;
 
 		RenderPassHandle renderPassHandle;
 

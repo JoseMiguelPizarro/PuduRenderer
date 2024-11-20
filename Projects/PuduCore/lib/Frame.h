@@ -8,8 +8,8 @@ namespace Pudu
 {
 	struct Frame {
 		//TODO: ALLOCATE COMMANDS IN RESOURCE MANAGER AND USE POINTERS INSTEAD
-		GPUCommands CommandBuffer;
-		GPUCommands ComputeCommandBuffer;
+		SPtr<GPUCommands> CommandBuffer;
+		SPtr<GPUCommands> ComputeCommandBuffer;
 		SPtr<Semaphore> ImageAvailableSemaphore;
 		SPtr<Semaphore> RenderFinishedSemaphore;
 		VkFence InFlightFence;

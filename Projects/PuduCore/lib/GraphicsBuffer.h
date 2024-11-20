@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <vma/vk_mem_alloc.h>
 #include "Resources/Resources.h"
-
 
 namespace Pudu
 {
@@ -9,9 +9,9 @@ namespace Pudu
 	{
 	public:
 		VkBuffer vkHandler;
-		VkDeviceMemory DeviceMemoryHandler;
 		GraphicsBufferHandle handle;
-		void* MappedMemory = nullptr;
+		VmaAllocation allocation;
+		std::string name;
 
 		GraphicsBuffer() = default;
 

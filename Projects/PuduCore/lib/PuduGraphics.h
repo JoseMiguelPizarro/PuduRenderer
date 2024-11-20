@@ -114,15 +114,15 @@ namespace Pudu
 		void WaitIdle();
 
 		void DestroyRenderPass(SPtr<RenderPass> renderPass);
-		void DestroyFrameBuffer(Framebuffer& frameBuffer);
+		void DestroyFrameBuffer(SPtr<Framebuffer> frameBuffer);
 
 
 		/// <summary>
 		/// Creates a vkRenderPass and attach it to the passed RenderPass object
 		/// </summary>
 		/// <param name="renderPass"></param>
-		void CreateRenderPass(RenderPass* renderPass);
-		void CreateVkFramebuffer(Framebuffer* creationData);
+		SPtr<RenderPass> CreateRenderPass(RenderPassCreationData& creationData);
+		SPtr<Framebuffer> CreateFramebuffer(FramebufferCreationData const& creationData);
 
 		SPtr<GraphicsBuffer> CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
 			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const char* name = nullptr);
@@ -180,7 +180,6 @@ namespace Pudu
 		void UploadTextureData(SPtr<Texture> texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
-		SPtr<ComputeShader> testComputeShader;
 
 		static uint32_t const K_BINDLESS_SET_INDEX = 0;
 		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
@@ -225,18 +224,20 @@ namespace Pudu
 		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<DescriptorSetLayoutHandle>& out);
 
 		void CreateBindlessDescriptorPool();
-		void CreateDescriptorPool();
-
 		void CreateSwapChainFrameBuffers(RenderPassHandle renderPass);
 		void CreateFrames();
 		void CreateCommandPool(VkCommandPool* cmdPool);
 
 		void CreateTextureImageView(Texture2d& texture2d);
 		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
-		SPtr<Semaphore> CreateTimelineSemaphore();
-		SPtr<Semaphore> CreateSemaphoreSPtr();
+		SPtr<Semaphore> CreateTimelineSemaphore(const char * name = nullptr);
+		SPtr<Semaphore> CreateSemaphoreSPtr(const char  * name = nullptr);
+		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char * name = nullptr);
 
 		void DestroySemaphore(SPtr<Semaphore> semaphore);
+		void DestroyShader(SPtr<Shader> shader);
+		void DestroyShaderModule(VkShaderModule& state);
+		void DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset);
 
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
@@ -256,11 +257,11 @@ namespace Pudu
 #pragma region  ImGUI
 		void InitImgui();
 		VkCommandPool m_ImGuiCommandPool;
-		VkRenderPass m_ImGuiRenderPass;
+		SPtr<RenderPass> m_ImGuiRenderPass;
 		VkPipeline m_imguiPipeline;
 		VkDescriptorPool m_ImGuiDescriptorPool;
-		std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
-		std::vector<VkFramebuffer> m_ImGuiFrameBuffers;
+		std::vector<SPtr<GPUCommands>> m_ImGuiCommandBuffers;
+		std::vector<SPtr<Framebuffer>> m_ImGuiFrameBuffers;
 
 		void CreateImGuiRenderPass();
 		void CreateImGUICommandBuffers();
@@ -306,8 +307,8 @@ namespace Pudu
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-			VkBuffer& buffer, VkDeviceMemory& bufferMemory, const char* name = nullptr);
+		VmaAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags properties,
+			VkBuffer& buffer, const char* name = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		void DestroyBuffer(SPtr<GraphicsBuffer> buffer);

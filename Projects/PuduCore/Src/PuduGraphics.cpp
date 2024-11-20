@@ -56,6 +56,8 @@ namespace Pudu
 		return s_instance;
 	}
 
+	bool useImgui = false;
+
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{
 		PuduGraphics::s_instance = this;
@@ -67,7 +69,11 @@ namespace Pudu
 
 		InitWindow();
 		InitVulkan();
-		InitImgui();
+
+		if (useImgui)
+		{
+			InitImgui();
+		}
 
 		m_initialized = true;
 	}
@@ -93,8 +99,6 @@ namespace Pudu
 
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
-
-		testComputeShader = CreateComputeShader("Shaders/shadows.comp", "ShadowsCS");
 	}
 
 	void PuduGraphics::InitVMA()
@@ -235,8 +239,8 @@ namespace Pudu
 		return actualExtent;
 	}
 
-	void PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-		VkBuffer& buffer, VkDeviceMemory& bufferMemory, const char* name)
+	VmaAllocation PuduGraphics::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags properties,
+		VkBuffer& buffer, const char* name)
 	{
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -244,30 +248,23 @@ namespace Pudu
 		bufferInfo.usage = usage;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create buffer!");
-		}
+		VmaAllocationCreateInfo allocCreateInfo = {};
+		allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+		allocCreateInfo.flags = properties;
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
+		VmaAllocation alloc;
+		VmaAllocationInfo allocInfo;
 
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(m_device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate buffer memory!");
-		}
-
-		vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
+		//Create buffer, allocate the memory and binds memory to buffer
+		VKCheck( vmaCreateBuffer(m_VmaAllocator, &bufferInfo, &allocCreateInfo, &buffer, &alloc, &allocInfo), "Failed creating buffer");
 
 		if (name != nullptr)
 		{
 			SetResourceName(VK_OBJECT_TYPE_BUFFER, (glm::u64)buffer, name);
+			SetResourceName(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)alloc->GetMemory(), name);
 		}
+
+		return alloc;
 	}
 
 	void PuduGraphics::UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount, const VkCopyDescriptorSet* copy)
@@ -284,7 +281,7 @@ namespace Pudu
 		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
 		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-		memcpy(buffer->MappedMemory, &lightBuffer, sizeof(LightBuffer));
+		memcpy(buffer->allocation->GetMappedData(), &lightBuffer, sizeof(LightBuffer));
 
 		frame.lightingBuffer = m_lightingBuffers[frame.frameIndex];
 	}
@@ -319,8 +316,7 @@ namespace Pudu
 	{
 		if (!buffer->IsDestroyed())
 		{
-			vkDestroyBuffer(m_device, buffer->vkHandler, m_allocatorPtr);
-			vkFreeMemory(m_device, buffer->DeviceMemoryHandler, m_allocatorPtr);
+			vmaDestroyBuffer(m_VmaAllocator, buffer->vkHandler, buffer->allocation);
 			buffer->Destroy();
 		}
 	}
@@ -348,62 +344,31 @@ namespace Pudu
 
 	void PuduGraphics::CreateImGuiRenderPass()
 	{
-		VkAttachmentDescription attachment = {};
-		attachment.format = m_swapChainImageFormat;
-		attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		attachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		RenderPassCreationData rpCreation;
+		rpCreation.type = RenderPassType::Color;
 
-		VkAttachmentReference colorAttachment = {};
-		colorAttachment.attachment = 0;
-		colorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		//colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		//colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		RenderPassAttachment rpcolorAttachment;
+		rpcolorAttachment.texture = m_swapChainTextures[0] ;
+		rpcolorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		rpcolorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		rpcolorAttachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
 
-		VkSubpassDescription subpass = {};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachment;
-
-		VkSubpassDependency dependency = {};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.srcAccessMask = 0; // or VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-		VkRenderPassCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		info.attachmentCount = 1;
-		info.pAttachments = &attachment;
-		info.subpassCount = 1;
-		info.pSubpasses = &subpass;
-		info.dependencyCount = 1;
-		info.pDependencies = &dependency;
-
-		if (vkCreateRenderPass(m_device, &info, nullptr, &m_ImGuiRenderPass) != VK_SUCCESS)
-			throw std::runtime_error("failed to create render pass!");
+		rpCreation.attachments.AddColorAttachment(rpcolorAttachment);
+		rpCreation.name = "Imgui";
+		m_ImGuiRenderPass = CreateRenderPass(rpCreation);
+		
 	}
 
 	void PuduGraphics::CreateImGUICommandBuffers()
 	{
 		m_ImGuiCommandBuffers.resize(m_swapChainImagesViews.size());
 
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = m_ImGuiCommandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)m_ImGuiCommandBuffers.size();
+		GPUCommands::CreationData creationData;
+		creationData.count = m_swapChainImagesViews.size();
+		creationData.pool = m_ImGuiCommandPool;
 
-		if (vkAllocateCommandBuffers(m_device, &allocInfo, m_ImGuiCommandBuffers.data()) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate command buffers!");
-		}
+
+		m_ImGuiCommandBuffers = CreateCommandBuffers(creationData);
 	}
 
 	void PuduGraphics::CreateImGUIFrameBuffers()
@@ -417,20 +382,15 @@ namespace Pudu
 				m_swapChainImagesViews[i]
 			};
 
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = m_ImGuiRenderPass;
-			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-			framebufferInfo.pAttachments = attachments.data();
-			framebufferInfo.width = m_swapChainExtent.width;
-			framebufferInfo.height = m_swapChainExtent.height;
-			framebufferInfo.layers = 1;
+			FramebufferCreationData fbCreationData;
+			fbCreationData.AddRenderTexture(m_swapChainTextures[i]->handle);
+			fbCreationData.renderPassHandle = m_ImGuiRenderPass->handle;
+			fbCreationData.width = m_swapChainExtent.width;
+			fbCreationData.height = m_swapChainExtent.height;
 
-			if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_ImGuiFrameBuffers[i]) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to create framebuffer!");
-			}
+			m_ImGuiFrameBuffers[i] = CreateFramebuffer(fbCreationData);
 		}
+
 		Print("Created frame buffers");
 	}
 
@@ -476,36 +436,34 @@ namespace Pudu
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
-		frame.CommandBuffer.Reset();
+		frame.CommandBuffer->Reset();
 
-		frame.CommandBuffer.BeginCommands();
+		frame.CommandBuffer->BeginCommands();
 
 		frameData.frame = &m_Frames[m_currentFrameIndex];
-		frameData.currentCommand = &frame.CommandBuffer;
+		frameData.currentCommand = frame.CommandBuffer;
 		frameData.graphics = this;
 		frameData.camera = frameData.scene->camera;
 
-		frameData.commandsToSubmit.push_back(frame.CommandBuffer.vkHandle);
+		frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
 
 		frameGraph->RenderFrame(frameData);
 
+		if (useImgui)
+		{
 		DrawImGui(frameData);
+		}
 
 		frameData.currentCommand->TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle, frameData.activeRenderTarget->format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle, m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-		frame.CommandBuffer.EndCommands();
+		frame.CommandBuffer->EndCommands();
 
-		auto computeCommands = &frame.ComputeCommandBuffer;
+		auto computeCommands = frame.ComputeCommandBuffer;
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
 		computeCommands->Reset();
-
-		if (!testComputeShader->ResourcesUpdated())
-		{
-			UpdateComputeResources(testComputeShader.get());
-		}
 
 		//auto computePipeline = m_resources.GetPipeline(testComputeShader->pipelineHandle);
 		//computeCommands->BeginCommands();
@@ -663,9 +621,9 @@ namespace Pudu
 		if (true) {
 			VkRenderPassBeginInfo imGuiRenderPassInfo = {};
 			imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass;
+			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass->vkHandle;
 
-			imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[frameData.frameIndex];
+			imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[frameData.frameIndex]->vkHandle;
 			imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
 			imGuiRenderPassInfo.renderArea.extent = m_swapChainExtent;
 			VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
@@ -676,9 +634,11 @@ namespace Pudu
 			VkCommandBufferBeginInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 			info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-			vkBeginCommandBuffer(m_ImGuiCommandBuffers[m_currentFrameIndex], &info);
 
-			vkCmdBeginRenderPass(m_ImGuiCommandBuffers[m_currentFrameIndex], &imGuiRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			auto imguiCommands = m_ImGuiCommandBuffers[m_currentFrameIndex];
+			imguiCommands->BeginCommands();
+			imguiCommands->BegingRenderPass(imGuiRenderPassInfo);
 
 			ImGui_ImplVulkan_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
@@ -691,20 +651,18 @@ namespace Pudu
 
 			frameData.app->DrawImGUI();
 
-
-
 			ImGui::End();
 			ImGui::Render();
 
 			// Record dear imgui primitives into command buffer
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_ImGuiCommandBuffers[m_currentFrameIndex]);
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommands->vkHandle);
 
-			vkCmdEndRenderPass(m_ImGuiCommandBuffers[m_currentFrameIndex]);
-			vkEndCommandBuffer(m_ImGuiCommandBuffers[m_currentFrameIndex]);
+			imguiCommands->EndRenderPass();
+			imguiCommands->EndCommands();
 
 			ImGui::EndFrame();
 
-			frameData.commandsToSubmit.push_back(m_ImGuiCommandBuffers[m_currentFrameIndex]);
+			frameData.commandsToSubmit.push_back(m_ImGuiCommandBuffers[m_currentFrameIndex]->vkHandle);
 		}
 	}
 
@@ -778,8 +736,27 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateVkFramebuffer(Framebuffer* framebuffer)
+	SPtr<Framebuffer> PuduGraphics::CreateFramebuffer(FramebufferCreationData const& creationData)
 	{
+		SPtr<Framebuffer> framebuffer = m_resources.AllocateFrameBuffer();
+
+		framebuffer->numColorAttachments = creationData.numRenderTargets;
+
+		for (uint32_t i = 0; i < creationData.numRenderTargets; i++)
+		{
+			framebuffer->colorAttachmentHandles[i] = creationData.outputTexturesHandle[i];
+		}
+
+		framebuffer->depthStencilAttachmentHandle = creationData.depthStencilTextureHandle;
+		framebuffer->width = creationData.width;
+		framebuffer->height = creationData.height;
+		framebuffer->scaleX = creationData.scaleX;
+		framebuffer->scaleY = creationData.scaleY;
+		framebuffer->resize = creationData.resize;
+		framebuffer->name = creationData.name;
+		framebuffer->renderPassHandle = creationData.renderPassHandle;
+
+
 		auto renderPass = m_resources.GetRenderPass(framebuffer->renderPassHandle);
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -809,6 +786,8 @@ namespace Pudu
 		vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &framebuffer->vkHandle);
 
 		//TODO: SET RESOURCE NAME
+
+		return framebuffer;
 	}
 
 	SPtr<GraphicsBuffer> PuduGraphics::CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
@@ -817,37 +796,39 @@ namespace Pudu
 		VkDeviceSize bufferSize = size;
 		VkBuffer vkBuffer = {};
 		VkDeviceMemory vkdeviceMemory = {};
+		VmaAllocation bufferAlloc;
 
 		if (bufferData != nullptr)
 		{
 			VkBuffer stagingBuffer;
-			VkDeviceMemory stagingBufferMemory;
-			CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-				stagingBufferMemory);
+			auto stagingAllocation = CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+				VMA_ALLOCATION_CREATE_MAPPED_BIT, stagingBuffer);
+			
+			memcpy(stagingAllocation->GetMappedData(), bufferData, (size_t)bufferSize);
+			vmaFlushAllocation(m_VmaAllocator, stagingAllocation, 0, VK_WHOLE_SIZE);
 
-			void* data;
-			vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-			memcpy(data, bufferData, (size_t)bufferSize);
-			vkUnmapMemory(m_device, stagingBufferMemory);
+			bufferAlloc = CreateBuffer(bufferSize, usage, flags, vkBuffer,
+				name);
 
-			CreateBuffer(bufferSize, usage, flags, vkBuffer,
-				vkdeviceMemory, name);
-
+			
 			CopyBuffer(stagingBuffer, vkBuffer, bufferSize);
 
-			vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-			vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+			vmaDestroyBuffer(m_VmaAllocator, stagingBuffer, stagingAllocation);
 		}
 		else
 		{
-			CreateBuffer(bufferSize, usage, flags, vkBuffer,
-				vkdeviceMemory, name);
+			bufferAlloc = CreateBuffer(bufferSize, usage, flags, vkBuffer,name);
 		}
 
 		auto graphicsBuffer = m_resources.AllocateGraphicsBuffer();
 		graphicsBuffer->vkHandler = vkBuffer;
-		graphicsBuffer->DeviceMemoryHandler = vkdeviceMemory;
+		graphicsBuffer->allocation = bufferAlloc;
+		if (name!=nullptr)
+		{
+			graphicsBuffer->name.append(name);
+		}
+
 		return graphicsBuffer;
 	}
 
@@ -1182,8 +1163,19 @@ namespace Pudu
 		}
 	}
 
-	void PuduGraphics::CreateRenderPass(RenderPass* renderPass)
+	SPtr<RenderPass>PuduGraphics::CreateRenderPass(RenderPassCreationData& creationData)
 	{
+		auto renderPass = m_resources.AllocateRenderPass(creationData.type);
+		renderPass->attachments = creationData.attachments;
+		renderPass->isEnabled = creationData.isEnabled;
+		renderPass->numRenderTargets = creationData.attachments.AttachmentCount();
+
+		if (creationData.isCompute)
+		{
+			renderPass->isCompute = true;
+			renderPass->SetComputeShader(creationData.computeShader);
+		}
+
 		auto output = renderPass->attachments;
 
 		VkAttachmentDescription2 colorAttachments[8] = {};
@@ -1302,7 +1294,11 @@ namespace Pudu
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
 
-		vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle);
+		VKCheck( vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle), "Failed to create renderpass");
+
+		SetResourceName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)renderPass->vkHandle, creationData.name.c_str());
+
+		return renderPass;
 	}
 
 	ShaderStateHandle PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
@@ -1357,10 +1353,7 @@ namespace Pudu
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			m_uniformBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "UniformBufer");
-
-			vkMapMemory(m_device, m_uniformBuffers[i]->DeviceMemoryHandler, 0, bufferSize, 0, &m_uniformBuffers[i]->MappedMemory);
+VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT, "UniformBufer");
 		}
 	}
 
@@ -1372,10 +1365,8 @@ namespace Pudu
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			m_lightingBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-				VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, "LightingBuffer");
-
-			vkMapMemory(m_device, m_lightingBuffers[i]->DeviceMemoryHandler, 0, bufferSize, 0, &m_lightingBuffers[i]->MappedMemory);
+				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT
+				, "LightingBuffer");
 		}
 	}
 
@@ -1387,10 +1378,10 @@ namespace Pudu
 
 		SPtr<GraphicsBuffer> vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT );
 		SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(indices[0]) * indices.size(), indices.data(),
 			VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
 
 		//TODO: Vertices and indices are being copied. Do we want that?
@@ -1499,6 +1490,42 @@ namespace Pudu
 		return handle;
 	}
 
+	std::vector<SPtr<GPUCommands>> PuduGraphics::CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name)
+	{
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_commandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
+
+		std::vector<VkCommandBuffer> buffers;
+		buffers.resize(MAX_FRAMES_IN_FLIGHT * 2); //Multiply by 2 for compute queue buffer
+
+		if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to allocate command buffer!");
+		}
+
+		std::vector<SPtr<GPUCommands>> commands;
+		for (auto buffer : buffers) {
+			auto gpubuffer = m_resources.AllocateCommandBuffer();
+			gpubuffer->vkHandle = buffer;
+			gpubuffer->m_graphics = this;
+
+			commands.push_back(gpubuffer);
+		}
+
+		if (name!=nullptr)
+		{
+			for (size_t i = 0; i < commands.size(); i++)
+			{
+				SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commands[i]->vkHandle, fmt::format("{} {}", name, i).c_str());
+			}
+		}
+
+		return commands;
+	}
+
 	void PuduGraphics::CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
 	{
 		LOG("Creating descriptor set");
@@ -1518,6 +1545,16 @@ namespace Pudu
 	void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
 	{
 		vkDestroySemaphore(m_device, semaphore->vkHandle, m_allocatorPtr);
+	}
+
+	void PuduGraphics::DestroyShader(SPtr<Shader> shader)
+	{
+		vkDestroyShaderModule(m_device, shader->GetModule(), m_allocatorPtr);
+	}
+
+	void PuduGraphics::DestroyShaderModule(VkShaderModule& state)
+	{
+		vkDestroyShaderModule(m_device, state, m_allocatorPtr);
 	}
 
 	/// <summary>
@@ -2067,16 +2104,13 @@ namespace Pudu
 		//TODO: COMPUTE TEXTURE SIZE
 		auto imageSize = texture->size;
 		SPtr<GraphicsBuffer> stagingBuffer = CreateGraphicsBuffer(imageSize, nullptr, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		void* data;
-		vkMapMemory(m_device, stagingBuffer->DeviceMemoryHandler, 0, imageSize, 0, &data);
-		memcpy(data, pixels, static_cast<size_t>(imageSize));
-		vkUnmapMemory(m_device, stagingBuffer->DeviceMemoryHandler);
+		memcpy(stagingBuffer->allocation->GetMappedData(), pixels, static_cast<size_t>(imageSize));
+		vmaFlushAllocation(m_VmaAllocator, stagingBuffer->allocation, 0, VK_WHOLE_SIZE);
 
 		auto cmd = BeginSingleTimeCommands();
 
@@ -2090,6 +2124,8 @@ namespace Pudu
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &range);
 
 		EndSingleTimeCommands(cmd);
+
+		DestroyBuffer(stagingBuffer);
 	}
 
 	void PuduGraphics::CreateTextureImageView(Texture2d& texture2d)
@@ -2145,26 +2181,22 @@ namespace Pudu
 
 	void PuduGraphics::CreateFramesCommandBuffer()
 	{
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = m_commandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
+		GPUCommands::CreationData commandsData;
+		commandsData.pool = m_commandPool;
+		commandsData.count = (uint32_t)MAX_FRAMES_IN_FLIGHT * 2;
 
-		std::vector<VkCommandBuffer> buffers;
-		buffers.resize(MAX_FRAMES_IN_FLIGHT * 2); //Multiply by 2 for compute queue buffer
-
-		if (vkAllocateCommandBuffers(m_device, &allocInfo, buffers.data()) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to allocate command buffer!");
-		}
+		auto buffers = CreateCommandBuffers(commandsData);
 
 		//We might need to fix the layout
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			Frame& frame = m_Frames[i];
-			frame.CommandBuffer = GPUCommands(buffers[i * 2], this);
-			frame.ComputeCommandBuffer = GPUCommands(buffers[i * 2 + 1], this);
+
+			frame.CommandBuffer = buffers[i*2];
+			frame.ComputeCommandBuffer = buffers[i*2+1];
+
+			SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.CommandBuffer->vkHandle, fmt::format("Frame {} graphics", i).c_str());
+			SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.ComputeCommandBuffer->vkHandle, fmt::format("Frame {} compute", i).c_str());
 		}
 
 		LOG("Created command buffer");
@@ -2181,13 +2213,13 @@ namespace Pudu
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
-			m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr();
-			m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr();
+			m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(fmt::format("Image available {}",i).c_str());
+			m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(fmt::format("Render Finished {}",i).c_str());
 			vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence);
 		}
 
-		m_graphicsTimelineSemaphore = CreateTimelineSemaphore();
-		m_computeTimelineSemaphore = CreateTimelineSemaphore();
+		m_graphicsTimelineSemaphore = CreateTimelineSemaphore("GraphicsTimeline");
+		m_computeTimelineSemaphore = CreateTimelineSemaphore("ComputeTimeline");
 	}
 
 	void PuduGraphics::RecreateSwapChain()
@@ -2441,9 +2473,9 @@ namespace Pudu
 		vkDestroyRenderPass(m_device, handle->vkHandle, nullptr);
 	}
 
-	void PuduGraphics::DestroyFrameBuffer(Framebuffer& handle)
+	void PuduGraphics::DestroyFrameBuffer(SPtr<Framebuffer> handle)
 	{
-		vkDestroyFramebuffer(m_device, handle.vkHandle, nullptr);
+		vkDestroyFramebuffer(m_device, handle->vkHandle, nullptr);
 	}
 
 	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, Material& material)
@@ -2508,7 +2540,7 @@ namespace Pudu
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
 		//ImGui::StyleColorsLight();
-		ImGui_ImplGlfw_InitForVulkan(WindowPtr, true);
+			(WindowPtr, true);
 
 		// Create Descriptor Pool
 		// The example only requires a single combined image sampler descriptor for the font image and only uses one descriptor set (for that)
@@ -2564,7 +2596,7 @@ namespace Pudu
 
 		//initInfo.PipelineCache = m_pipelineCache;
 
-		ImGui_ImplVulkan_Init(&initInfo, m_ImGuiRenderPass);
+		ImGui_ImplVulkan_Init(&initInfo, m_ImGuiRenderPass->vkHandle);
 		vkDeviceWaitIdle(m_device);
 
 		//ImGui_ImplVulkan_DestroyFontsTexture();
@@ -2654,19 +2686,24 @@ namespace Pudu
 		return GPUCommands(commandBuffer, this);
 	}
 
-	SPtr<Semaphore> PuduGraphics::CreateSemaphoreSPtr()
+	SPtr<Semaphore> PuduGraphics::CreateSemaphoreSPtr(const char * name)
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
 		auto semaphore = m_resources.AllocateSemaphore();
 
-		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, *semaphore);
+		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore->vkHandle);
+
+		if (name != nullptr)
+		{
+			SetResourceName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore->vkHandle, name);
+		}
 
 		return semaphore;
 	}
 
-	SPtr<Semaphore> PuduGraphics::CreateTimelineSemaphore()
+	SPtr<Semaphore> PuduGraphics::CreateTimelineSemaphore(const char * name)
 	{
 		VkSemaphoreCreateInfo semaphoreInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 		VkSemaphoreTypeCreateInfo semaphoreTypeInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
@@ -2677,6 +2714,11 @@ namespace Pudu
 		auto semaphore = m_resources.AllocateSemaphore();
 
 		vkCreateSemaphore(m_device, &semaphoreInfo, m_allocatorPtr, &semaphore->vkHandle);
+
+		if (name != nullptr)
+		{
+			SetResourceName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore->vkHandle, name);
+		}
 
 		return semaphore;
 	}
@@ -2871,6 +2913,11 @@ namespace Pudu
 		return indices;
 	}
 
+	void PuduGraphics::DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset) {
+		vkDestroyDescriptorSetLayout(m_device, descriptorset.vkHandle, m_allocatorPtr);
+	}
+
+
 	void PuduGraphics::Cleanup()
 	{
 		if (!m_initialized)
@@ -2881,11 +2928,6 @@ namespace Pudu
 
 		m_resources.DestroyAllResources(this);
 
-		ImGui_ImplVulkan_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
-
-
 		vkDestroyDescriptorPool(m_device, m_bindlessDescriptorPool, m_allocatorPtr);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -2894,12 +2936,13 @@ namespace Pudu
 		}
 
 		vkDestroyCommandPool(m_device, m_commandPool, m_allocatorPtr);
-
-		//ImGui
+		if (useImgui)
 		{
 			vkDestroyCommandPool(m_device, m_ImGuiCommandPool, m_allocatorPtr);
-			vkDestroyRenderPass(m_device, m_ImGuiRenderPass, m_allocatorPtr);
 			vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
+			ImGui_ImplVulkan_Shutdown();
+			ImGui_ImplGlfw_Shutdown();
+			ImGui::DestroyContext();
 		}
 
 		if (enableValidationLayers)
@@ -2924,6 +2967,10 @@ namespace Pudu
 	void PuduGraphics::CleanupSwapChain()
 	{
 		vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+
+		for (auto sc : m_swapChainImagesViews) {
+			vkDestroyImageView(m_device, sc, m_allocatorPtr);
+		}
 	}
 
 	void PuduGraphics::DestroyMesh(SPtr<Mesh> mesh)

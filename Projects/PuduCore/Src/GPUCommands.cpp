@@ -7,6 +7,7 @@
 
 namespace Pudu
 {
+
 	GPUCommands::GPUCommands(VkCommandBuffer handle, PuduGraphics* gfx) : vkHandle(handle), m_graphics(gfx)
 	{
 	}
@@ -83,6 +84,14 @@ namespace Pudu
 	void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)
 	{
 		vkCmdBeginRendering(vkHandle, &renderInfo);
+	}
+	void GPUCommands::BegingRenderPass(const VkRenderPassBeginInfo& renderInfo)
+	{
+		vkCmdBeginRenderPass(vkHandle, &renderInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
+	void GPUCommands::EndRenderPass()
+	{
+		vkCmdEndRenderPass(vkHandle);
 	}
 	//void GPUCommands::BindRenderPass(RenderPassHandle renderPassHandle, FramebufferHandle framebufferHandle)
 	//{

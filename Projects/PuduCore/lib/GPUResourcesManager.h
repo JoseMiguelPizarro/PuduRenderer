@@ -16,6 +16,7 @@
 #include "Pipeline.h"
 #include "Logger.h"
 #include <Semaphore.h>
+#include <Resources/GPUResource.h>
 
 namespace Pudu {
 	class PuduGraphics;
@@ -33,10 +34,10 @@ namespace Pudu {
 		SPtr<TextureCube> AllocateTextureCube();
 
 		SPtr<RenderPass> GetRenderPass(RenderPassHandle handle);
-		SPtr<RenderPass> AllocateRenderPass(RenderPassCreationData const& creationdata);
+		SPtr<RenderPass> AllocateRenderPass(RenderPassType const& renderPassType);
 
-		Framebuffer* GetFramebuffer(FramebufferHandle handle);
-		FramebufferHandle AllocateFrameBuffer(FramebufferCreationData const& creationData);
+		SPtr<Framebuffer> GetFramebuffer(FramebufferHandle handle);
+		SPtr<Framebuffer> AllocateFrameBuffer();
 
 		Pipeline* GetPipeline(PipelineHandle handle);
 		PipelineHandle AllocatePipeline();
@@ -62,6 +63,9 @@ namespace Pudu {
 		SPtr<Semaphore> AllocateSemaphore();
 		SPtr<Semaphore> GetSemaphore(SemaphoreHandle handle);
 
+		SPtr<GPUCommands> AllocateCommandBuffer();
+		SPtr<GPUCommands> GetComandBuffer(GPUResourceHandle handle);
+
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
@@ -74,6 +78,20 @@ namespace Pudu {
 			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
 		}
 
+		template<typename T>
+		requires(std::convertible_to<T,GPUResource>)
+		SPtr<T> AllocateGPUResource(ResourcePool <SPtr<T>> pool) {
+
+			uint32_t resourceIndex = {static_cast<uint32_t>(pool.Size())};
+			SPtr<T> resourcePtr= std::make_shared<T>();
+
+			resourcePtr->m_handle.index = resourceIndex;
+
+			pool.AddResource(resourcePtr);
+
+			return resourcePtr;
+		}
+
 	private:
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture>> m_textures;
@@ -81,13 +99,16 @@ namespace Pudu {
 		ResourcePool<SPtr<Mesh>> m_meshes;
 		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
 		ResourcePool<SPtr<RenderPass>> m_renderPasses;
-		ResourcePool<Framebuffer> m_frameBuffers;
+		ResourcePool<SPtr<Framebuffer>> m_frameBuffers;
 		ResourcePool<Pipeline> m_pipelines;
 		ResourcePool<ShaderState> m_shaderStates;
 		ResourcePool<SPtr<GraphicsBuffer>> m_graphicsBuffers;
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
+		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
+
+		
 	};
 }
 

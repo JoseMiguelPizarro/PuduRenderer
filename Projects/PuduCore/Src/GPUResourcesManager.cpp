@@ -61,11 +61,11 @@ namespace Pudu {
 		return m_renderPasses.GetResource(handle.index);
 	}
 
-	SPtr<RenderPass> GPUResourcesManager::AllocateRenderPass(RenderPassCreationData const& creationData)
+	SPtr<RenderPass> GPUResourcesManager::AllocateRenderPass(RenderPassType const& renderPassType)
 	{
 		RenderPassHandle handle;
 
-		switch (creationData.type)
+		switch (renderPassType)
 		{
 		case RenderPassType::Color:
 			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>()) };
@@ -81,59 +81,28 @@ namespace Pudu {
 			break;
 		}
 
-		SPtr<RenderPass> renderPassPtr = GetRenderPass(handle);
-		renderPassPtr->isEnabled = creationData.isEnabled;
+		auto renderPass = m_renderPasses.GetResource(handle.index);
 
-		if (creationData.isCompute)
-		{
-			renderPassPtr->isCompute = true;
-			renderPassPtr->SetComputeShader(creationData.computeShader);
-		}
+		renderPass->handle = handle;
 
-		if (handle.index == k_INVALID_HANDLE)
-		{
-			return nullptr;
-		}
-
-
-		renderPassPtr->handle = handle;
-
-		return renderPassPtr;
+		return renderPass;
 	}
 
-	Framebuffer* GPUResourcesManager::GetFramebuffer(FramebufferHandle handle)
+	SPtr<Framebuffer> GPUResourcesManager::GetFramebuffer(FramebufferHandle handle)
 	{
-		return m_frameBuffers.GetResourcePtr(handle.index);
+		return m_frameBuffers.GetResource(handle.index);
 	}
 
-	FramebufferHandle GPUResourcesManager::AllocateFrameBuffer(FramebufferCreationData const& creationData)
+	SPtr<Framebuffer> GPUResourcesManager::AllocateFrameBuffer()
 	{
-		FramebufferHandle handle = { m_frameBuffers.ObtainResource() };
-		if (handle.index == k_INVALID_HANDLE)
-		{
-			return handle;
-		}
+		FramebufferHandle handle =  { static_cast<uint32_t>(m_frameBuffers.Size()) };
+		SPtr<Framebuffer> framebuffer = std::make_shared<Framebuffer>();
 
-		Framebuffer* frameBuffer = GetFramebuffer(handle);
-		frameBuffer->numColorAttachments = creationData.numRenderTargets;
+		m_frameBuffers.AddResource(framebuffer);
 
-		for (uint32_t i = 0; i < creationData.numRenderTargets; i++)
-		{
-			frameBuffer->colorAttachmentHandles[i] = creationData.outputTexturesHandle[i];
-		}
+		framebuffer->handle = handle;
 
-		frameBuffer->depthStencilAttachmentHandle = creationData.depthStencilTextureHandle;
-		frameBuffer->width = creationData.width;
-		frameBuffer->height = creationData.height;
-		frameBuffer->scaleX = creationData.scaleX;
-		frameBuffer->scaleY = creationData.scaleY;
-		frameBuffer->resize = creationData.resize;
-		frameBuffer->name = creationData.name;
-		frameBuffer->renderPassHandle = creationData.renderPassHandle;
-
-		m_graphics->CreateVkFramebuffer(frameBuffer);
-
-		return handle;
+		return framebuffer;
 	}
 
 	Pipeline* GPUResourcesManager::GetPipeline(PipelineHandle handle)
@@ -247,6 +216,16 @@ namespace Pudu {
 		return m_semaphores.GetResource(handle.index);
 	}
 
+	SPtr<GPUCommands> GPUResourcesManager::AllocateCommandBuffer()
+	{
+		return AllocateGPUResource<GPUCommands>(m_commandBuffers);
+	}
+
+	SPtr<GPUCommands> GPUResourcesManager::GetComandBuffer(GPUResourceHandle handle)
+	{
+		return m_commandBuffers.GetResource(handle.index);
+	}
+
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
 	{
 		for (auto t : m_textures.m_resources)
@@ -256,6 +235,7 @@ namespace Pudu {
 
 		for (auto t : m_pipelines.m_resources) {
 			vkDestroyPipeline(gfx->m_device, t.vkHandle, nullptr);
+			vkDestroyPipelineLayout(gfx->m_device, t.vkPipelineLayoutHandle, gfx->m_allocatorPtr);
 		}
 
 		for (auto f : m_frameBuffers.m_resources)
@@ -282,5 +262,24 @@ namespace Pudu {
 		{
 			gfx->DestroySemaphore(s);
 		}
+
+		for (auto s : m_shaders.m_resources) {
+			gfx->DestroyShader(s);
+		}
+
+		for (auto ss : m_shaderStates.m_resources) {
+			for (size_t i = 0; i < ss.activeShaders; i++)
+			{
+				auto a = ss.shaderStageInfo[i];
+				
+				gfx->DestroyShaderModule(a.module);
+			}
+		}
+
+		for (auto& ds : m_descriptorSetLayouts.m_resources) {
+
+			gfx->DestroyDescriptorSetLayout(ds);
+		}
+
 	}
 }
