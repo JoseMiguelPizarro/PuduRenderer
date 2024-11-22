@@ -60,7 +60,7 @@ end
 
 function includeAndLinkFastGltf()
     includedirs {"lib/fastgltf/include", "lib/simdjson"}
-    libdirs {"lib/fastgltf/%{cfg.buildcfg}", "lib/simdjson"}
+    libdirs {"lib/fastgltf/%{cfg.buildcfg}", "lib/simdjson/%{cfg.buildcfg}"}
     links {"fastgltf", "simdjson"}
 end
 
