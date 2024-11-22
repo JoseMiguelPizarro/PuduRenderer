@@ -4,6 +4,9 @@
 #include "Logger.h"
 #include "PuduApp.h"
 #include <iostream>
+#include <exception>
+
+
 
 namespace Pudu
 {
@@ -26,6 +29,7 @@ namespace Pudu
 
 	void PuduApp::Run()
 	{
+
 		auto targetFrameDuration = std::chrono::duration<float, std::milli>(1000.0f / (float)TargetFPS);
 		Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
 		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
@@ -36,7 +40,14 @@ namespace Pudu
 			Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
 			auto startFrame = std::chrono::high_resolution_clock::now();
 			glfwPollEvents();
-			OnRun();
+
+			try {
+
+				OnRun();
+			}
+			catch (std::exception& e) {
+				std::printf(e.what());
+			}
 
 			auto a = std::chrono::duration<float, std::milli>(1.f);
 			std::this_thread::sleep_for(std::chrono::microseconds(100));

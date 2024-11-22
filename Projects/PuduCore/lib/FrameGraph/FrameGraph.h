@@ -43,7 +43,7 @@ namespace Pudu {
 		/// Resources are laying somewhere in the app, don't need to be produces by a previous node
 		/// </summary>
 		bool external = false;
-		bool allocated;
+		bool allocated = false;
 
 
 		size_t size;
@@ -57,188 +57,206 @@ namespace Pudu {
 		RenderPassOperation loadOp;
 		TextureType::Enum textureType;
 
-		TextureHandle handle;
+		TextureHandle textureHandle = { k_INVALID_HANDLE };
 		SizeType sizeType = SizeType::SPECIFIC;
-};
+	};
 
-
-/// <summary>
-/// Defines an Input or Output of a Node. Determines the use of the resource for a given Node. 
-/// Are used to define Edges between nodes
-/// </summary>
-struct NodeEdge {
-	FrameGraphResourceHandle resource;
 
 	/// <summary>
-	/// Stores the parent resource
+	/// Defines an Input or Output of a Node. Determines the use of the resource for a given Node. 
+	/// Are used to define Edges between nodes
 	/// </summary>
-	FrameGraphNodeHandle from;
+	struct NodeEdge {
+		FrameGraphResourceHandle resource;
 
-	/// <summary>
-	/// Reference to the node that outputs the resource
-	/// This will be used to determine the edges of the graph
-	/// </summary>
-	FrameGraphNodeHandle to;
+		/// <summary>
+		/// Stores the parent resource
+		/// </summary>
+		FrameGraphNodeHandle from;
 
-	/// <summary>
-	/// Used to check whether or not the resource can be aliased, not implemented for now
-	/// </summary>
-	int32_t RefCount = 0;
-	bool allocated = false;
+		/// <summary>
+		/// Reference to the node that outputs the resource
+		/// This will be used to determine the edges of the graph
+		/// </summary>
+		FrameGraphNodeHandle to;
 
-	bool isDepth;
-};
+		/// <summary>
+		/// Used to check whether or not the resource can be aliased, not implemented for now
+		/// </summary>
+		int32_t RefCount = 0;
+		bool allocated = false;
 
-struct NodeEdgeHandle {
-	uint32_t index;
-};
+		bool isDepth;
+	};
 
-struct FrameGraphResourceCreateInfo
-{
-	FrameGraphResourceType                  type;
-	FrameGraphResource                  resourceInfo;
-	bool isDepth;
+	struct NodeEdgeHandle {
+		uint32_t index;
+	};
 
-	std::string name;
-};
+	struct FrameGraphResourceCreateInfo
+	{
+		FrameGraphResourceHandle resourceHandle;
+		FrameGraphResourceType type;
+		std::string name;
+		bool isDepth;
 
+		/// <summary>
+		/// Resources are laying somewhere in the app, don't need to be produces by a previous node
+		/// </summary>
+		bool external = false;
 
-struct FrameGraphNodeCreation
-{
-	std::vector<FrameGraphResourceCreateInfo>  inputs;
-	std::vector<FrameGraphResourceCreateInfo> outputs;
+		size_t size;
+		VkBufferUsageFlags  flags;
+		BufferHandle buffer;
+		uint32_t width;
+		uint32_t height;
+		uint32_t depth;
 
-	RenderPassHandle renderPass;
-	RenderPassType renderType;
+		VkFormat format;
+		RenderPassOperation loadOp;
+		TextureType::Enum textureType;
 
-	bool enabled;
-	bool isCompute = false;
-
-	char const* name;
-};
-
-struct FrameGraphNode {
-	int32_t RefCount = 0;
-
-	RenderPassHandle  renderPass;
-	FramebufferHandle framebuffer;
-	FrameGraphNodeHandle handle;
-
-	std::vector<FrameGraphResourceHandle> inputs;
-	std::vector<FrameGraphResourceHandle> outputs;
-
-	//Edges represent nodes this node is connected TO
-	std::vector<NodeEdge*> outputEdges;
-	std::vector<NodeEdge*> inputEdges;
-	RenderPassType type;
-	bool isCompute;
-
-	bool enabled = true;
-
-	std::string name;
-};
-
-struct FrameGraphRenderPassCache {
-	void Init();
-	void Shutdown();
-
-	std::unordered_map<uint64_t, RenderPass*> renderPassMap;
-};
-
-struct FrameGraphResourceCache {
-	void Init(PuduGraphics* device);
-	void Shutdown();
-
-	PuduGraphics* device;
-
-	/// <summary>
-	/// First: resource name hash
-	/// Second: resource handle
-	/// ONLY output resources are handled by this map during <CreateNodeOutput>
-	/// </summary>
-	std::unordered_map<std::string, uint32_t> resourcesMap;
-	ResourcePool<FrameGraphResource> resources;
-
-	bool AddResourceToCache(const char* name, FrameGraphResourceHandle resourceHandle);
-};
-
-struct FrameGraphNodeCache {
-	void Init(PuduGraphics* device);
-	void Shutdown();
-
-	PuduGraphics* device;
-
-	std::unordered_map<std::string, uint32_t> nodeMap;
-	ResourcePool<FrameGraphNode> nodes;
-	ResourcePool<NodeEdge> nodeEdges;
-};
-
-struct FrameGraphBuilder {
-	void Init(PuduGraphics* device);
-	void Shutdown();
-
-	FrameGraphResourceHandle CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation);
-	FrameGraphNodeHandle CreateNode(const FrameGraphNodeCreation& creation);
-
-	FrameGraphNode* GetNode(std::string name);
-	FrameGraphNode* GetNode(FrameGraphNodeHandle handle);
-	NodeEdge* GetNodeEdge(NodeEdgeHandle handle);
-	NodeEdge* CreateNodeEdge(FrameGraphNode* from, FrameGraphNode* to, FrameGraphResourceHandle resourceHandle);
-
-	FrameGraphResource* GetResource(FrameGraphResourceHandle handle);
-	FrameGraphResource* GetResource(std::string name);
-
-	FrameGraphResourceCache resourceCache;
-	FrameGraphNodeCache nodeCache;
-	FrameGraphRenderPassCache renderPassCache;
-
-	PuduGraphics* graphics;
-
-	static constexpr uint32_t            K_MAX_RENDER_PASS_COUNT = 256;
-	static constexpr uint32_t            K_MAX_RESOURCES_COUNT = 1024;
-	static constexpr uint32_t            K_MAX_NODES_COUNT = 1024;
-};
-
-class FrameGraph {
-public:
-	void Init(FrameGraphBuilder* builder);
-
-	void RenderFrame(RenderFrameData& renderData);
-	/// <summary>
-	/// Load file from filePath and create frame graph nodes
-	/// </summary>
-	/// <param name="file_path"></param>
-	void Parse(std::filesystem::path path);
-
-	/// <summary>
-	/// Sorts nodes topologically based on their dependencies. Input/Output. Allocate resources handles
-	/// </summary>
-	void Compile();
+		TextureHandle textureHandle = { k_INVALID_HANDLE };
+		FrameGraphResource::SizeType sizeType = FrameGraphResource::SizeType::SPECIFIC;
+	};
 
 
-	void Reset();
-	void AllocateRequiredResources();
-	void EnableRenderPass(char* renderPassName);
-	void DisableRenderPass(char* renderPassName);
-	void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
+	struct FrameGraphNodeCreation
+	{
+		std::vector<FrameGraphResourceCreateInfo>  inputs;
+		std::vector<FrameGraphResourceCreateInfo> outputs;
 
-	void AttachRenderPass(RenderPass renderPass, RenderPassType type);
+		RenderPassHandle renderPass;
+		RenderPassType renderType;
 
-	FrameGraphNode* GetNode(char* name);
-	FrameGraphNode* GetNode(FrameGraphNodeHandle handle);
+		bool enabled;
+		bool isCompute = false;
 
-	NodeEdge* GetNodeEdge(NodeEdgeHandle handle);
-	FrameGraphResource* GetResource(FrameGraphResourceHandle handle);
-	FrameGraphResource* AddResource(FrameGraphResourceCreateInfo createInfo);
+		char const* name;
+	};
 
-	///TODO: WE SHOULD BE ABLE TO CREATE THE NODES BY ADDING THE SPECIFYING THE INPUT/OUTPUT RESOURCES
-	FrameGraphNodeHandle CreateNode(FrameGraphNodeCreation& creationData);
-	void AddNode(FrameGraphNode* node);
+	struct FrameGraphNode {
+		int32_t RefCount = 0;
 
-	std::vector<FrameGraphNodeHandle> nodes;
+		RenderPassHandle  renderPass;
+		FramebufferHandle framebuffer;
+		FrameGraphNodeHandle textureHandle;
 
-	FrameGraphBuilder* builder;
+		std::vector<FrameGraphResourceHandle> inputs;
+		std::vector<FrameGraphResourceHandle> outputs;
 
-	const char* name = nullptr;
-};
+		//Edges represent nodes this node is connected TO
+		std::vector<NodeEdge*> outputEdges;
+		std::vector<NodeEdge*> inputEdges;
+		RenderPassType type;
+		bool isCompute;
+
+		bool enabled = true;
+
+		std::string name;
+	};
+
+	struct FrameGraphRenderPassCache {
+		void Init();
+		void Shutdown();
+
+		std::unordered_map<uint64_t, RenderPass*> renderPassMap;
+	};
+
+	struct FrameGraphResourceCache {
+		void Init(PuduGraphics* device);
+		void Shutdown();
+
+		PuduGraphics* device;
+
+		/// <summary>
+		/// First: resource name hash
+		/// Second: resource handle
+		/// ONLY output resources are handled by this map during <CreateNodeOutput>
+		/// </summary>
+		std::unordered_map<std::string, uint32_t> resourcesMap;
+		ResourcePool<FrameGraphResource> resources;
+
+		bool AddResourceToCache(const char* name, FrameGraphResourceHandle resourceHandle);
+	};
+
+	struct FrameGraphNodeCache {
+		void Init(PuduGraphics* device);
+		void Shutdown();
+
+		PuduGraphics* device;
+
+		std::unordered_map<std::string, uint32_t> nodeMap;
+		ResourcePool<FrameGraphNode> nodes;
+		ResourcePool<NodeEdge> nodeEdges;
+	};
+
+	struct FrameGraphBuilder {
+		void Init(PuduGraphics* device);
+		void Shutdown();
+
+		FrameGraphResourceHandle CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation);
+		FrameGraphNodeHandle CreateNode(const FrameGraphNodeCreation& creation);
+
+		FrameGraphNode* GetNode(std::string name);
+		FrameGraphNode* GetNode(FrameGraphNodeHandle textureHandle);
+		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
+		NodeEdge* CreateNodeEdge(FrameGraphNode* from, FrameGraphNode* to, FrameGraphResourceHandle resourceHandle);
+
+		FrameGraphResource* GetResource(FrameGraphResourceHandle textureHandle);
+		FrameGraphResource* GetResource(std::string name);
+
+		FrameGraphResourceCache resourceCache;
+		FrameGraphNodeCache nodeCache;
+		FrameGraphRenderPassCache renderPassCache;
+
+		PuduGraphics* graphics;
+
+		static constexpr uint32_t            K_MAX_RENDER_PASS_COUNT = 256;
+		static constexpr uint32_t            K_MAX_RESOURCES_COUNT = 1024;
+		static constexpr uint32_t            K_MAX_NODES_COUNT = 1024;
+	};
+
+	class FrameGraph {
+	public:
+		void Init(FrameGraphBuilder* builder);
+
+		void RenderFrame(RenderFrameData& renderData);
+		/// <summary>
+		/// Load file from filePath and create frame graph nodes
+		/// </summary>
+		/// <param name="file_path"></param>
+		void Parse(std::filesystem::path path);
+
+		/// <summary>
+		/// Sorts nodes topologically based on their dependencies. Input/Output. Allocate resources handles
+		/// </summary>
+		void Compile();
+
+
+		void Reset();
+		void AllocateRequiredResources();
+		void EnableRenderPass(char* renderPassName);
+		void DisableRenderPass(char* renderPassName);
+		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
+
+		void AttachRenderPass(RenderPass renderPass, RenderPassType type);
+
+		FrameGraphNode* GetNode(char* name);
+		FrameGraphNode* GetNode(FrameGraphNodeHandle textureHandle);
+
+		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
+		FrameGraphResource* GetResource(FrameGraphResourceHandle textureHandle);
+		FrameGraphResource* AddResource(FrameGraphResourceCreateInfo createInfo);
+
+		///TODO: WE SHOULD BE ABLE TO CREATE THE NODES BY ADDING THE SPECIFYING THE INPUT/OUTPUT RESOURCES
+		FrameGraphNodeHandle CreateNode(FrameGraphNodeCreation& creationData);
+		void AddNode(FrameGraphNode* node);
+
+		std::vector<FrameGraphNodeHandle> nodes;
+
+		FrameGraphBuilder* builder;
+
+		const char* name = nullptr;
+	};
 }
