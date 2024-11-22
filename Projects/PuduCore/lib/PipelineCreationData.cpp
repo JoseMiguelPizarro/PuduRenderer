@@ -35,7 +35,7 @@ namespace Pudu
 
 	ShaderStage& ShaderStateCreationData::GetStage(VkShaderStageFlagBits stageFlag)
 	{
-		for (uint32_t i; i < stageCount; i++)
+		for (uint32_t i = 0; i < stageCount; i++)
 		{
 			auto& stage = stages[i];
 

@@ -60,7 +60,7 @@ end
 
 function includeAndLinkFastGltf()
     includedirs {"lib/fastgltf/include", "lib/simdjson"}
-    libdirs {"lib/fastgltf", "lib/simdjson"}
+    libdirs {"lib/fastgltf/%{cfg.buildcfg}", "lib/simdjson"}
     links {"fastgltf", "simdjson"}
 end
 
@@ -168,14 +168,14 @@ end
 
 
 --Dependencies projects
-project "simdjson"
-kind "StaticLib"
-language "C++"
-CppVer()
-targetdir "lib/simdjson/%{cfg.buildcfg}"
-objdir("lib/simdjson.dir/%{cfg.buildcfg}")
-files "lib/simdjson/**"
-includedirs "lib/simdjson"
+-- project "simdjson"
+-- kind "StaticLib"
+-- language "C++"
+-- CppVer()
+-- targetdir "lib/simdjson/%{cfg.buildcfg}"
+-- objdir("lib/simdjson.dir/%{cfg.buildcfg}")
+-- files "lib/simdjson/**"
+-- includedirs "lib/simdjson"
 
 
 project "SPIRV-Reflect"

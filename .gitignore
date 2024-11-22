@@ -10,8 +10,9 @@ Bin
 Imgui.ini
 *.vcxproj
 *.filters
-/lib/simdjson.dir/Debug/**
+/lib/simdjson.dir/**
 /lib/simdjson/Release/**
+/lib/fastgltf/fastgltf.dir/**
 *.idb
 *.pdb
 *.obj
@@ -19,5 +20,3 @@ Imgui.ini
 *.tlog
 *.lastbuildstate
 *.vcxproj
-/lib/fastgltf/fastgltf.dir/**
-/lib/fastgltf/Debug/**

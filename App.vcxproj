@@ -58,7 +58,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>HLSLPP_FEATURE_TRANSFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.268.0\Include;C:\VulkanSDK\1.3.268.0\Include\vma;Projects\PuduCore\lib;lib\fmt\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.296.0\Include;C:\VulkanSDK\1.3.296.0\Include\vma;Projects\PuduCore\lib;lib\fmt\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -67,8 +67,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;dxcompiler.lib;fmtd.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>lib\GLFW\Lib;lib\dxc\Lib;lib\fmt\Debug;lib\fastgltf;lib\simdjson;C:\VulkanSDK\1.3.268.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;dxcompiler.lib;fmtd.lib;fastgltf.lib;simdjson.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.296.0\Lib;lib\GLFW\Lib;lib\dxc\Lib;lib\fmt\Debug;lib\fastgltf\Debug;lib\simdjson;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -76,7 +76,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>HLSLPP_FEATURE_TRANSFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.268.0\Include;C:\VulkanSDK\1.3.268.0\Include\vma;Projects\PuduCore\lib;lib\fmt\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Projects\App\lib;lib\GLFW\include;C:\VulkanSDK\1.3.296.0\Include;C:\VulkanSDK\1.3.296.0\Include\vma;Projects\PuduCore\lib;lib\fmt\include;lib\stb;lib\tiny_obj_loader;lib\fastgltf\include;lib\simdjson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -89,8 +89,8 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>glfw3.lib;dxcompiler.lib;fmtd.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>lib\GLFW\Lib;lib\dxc\Lib;lib\fmt\Release;lib\fastgltf;lib\simdjson;C:\VulkanSDK\1.3.268.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;dxcompiler.lib;fmtd.lib;fastgltf.lib;simdjson.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.296.0\Lib;lib\GLFW\Lib;lib\dxc\Lib;lib\fmt\Release;lib\fastgltf\Release;lib\simdjson;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -103,12 +103,6 @@
   <ItemGroup>
     <ProjectReference Include="PuduCore.vcxproj">
       <Project>{0C4B5370-F817-AE7B-2131-9C230D5DE309}</Project>
-    </ProjectReference>
-    <ProjectReference Include="fastgltf.vcxproj">
-      <Project>{60D16DDD-4C9E-C8E8-75B7-B69061E3FD76}</Project>
-    </ProjectReference>
-    <ProjectReference Include="simdjson.vcxproj">
-      <Project>{4CCD7835-389A-D340-61B3-C1E84DDF08CF}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
