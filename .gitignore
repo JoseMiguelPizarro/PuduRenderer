@@ -12,3 +12,9 @@ Imgui.ini
 *.filters
 /lib/simdjson.dir/Debug/**
 /lib/simdjson/Release/**
+*.idb
+*.pdb
+*.obj
+*.log
+*.tlog
+*.lastbuildstate
