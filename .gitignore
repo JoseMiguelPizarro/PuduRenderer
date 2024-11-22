@@ -21,3 +21,4 @@ Imgui.ini
 /lib/fastgltf/Debug
 *.vcxproj
 /lib/fastgltf/fastgltf.dir
+/lib/fastgltf/Debug
