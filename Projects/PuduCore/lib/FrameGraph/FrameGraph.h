@@ -37,7 +37,6 @@ namespace Pudu {
 		FrameGraphResourceHandle resourceHandle;
 		FrameGraphResourceType type;
 		std::string name;
-		bool isDepth;
 
 		/// <summary>
 		/// Resources are laying somewhere in the app, don't need to be produces by a previous node
@@ -236,6 +235,7 @@ namespace Pudu {
 
 		void Reset();
 		void AllocateRequiredResources();
+		void AllocateResource(FrameGraphResourceHandle handle);
 		void EnableRenderPass(char* renderPassName);
 		void DisableRenderPass(char* renderPassName);
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);

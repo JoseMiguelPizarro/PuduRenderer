@@ -257,7 +257,8 @@ namespace Pudu
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = attachments.colorAttachmentCount;
 		renderInfo.pColorAttachments = attachments.colorAttachments;
-		renderInfo.pDepthAttachment = attachments.depthAttachments;
+		renderInfo.pDepthAttachment = attachments.depthAttachmentCount > 0 ? attachments.depthAttachments : nullptr;
+
 		renderInfo.pStencilAttachment = nullptr;
 
 		renderInfo.renderArea = { 0,0,data.width,data.height };

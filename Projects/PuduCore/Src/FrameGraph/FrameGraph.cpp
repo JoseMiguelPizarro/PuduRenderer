@@ -913,7 +913,7 @@ namespace Pudu
 		}
 		creationData.name = node->name;
 		auto renderPass = gfx->CreateRenderPass(creationData);
-		node->renderPass = renderPass->textureHandle;
+		node->renderPass = renderPass->handle;
 
 		LOG("FrameGraph: Create RenderPass End");
 	}
@@ -951,7 +951,6 @@ namespace Pudu
 		{
 			//Copy from resourceInfo
 			resource->name = creation.name;
-			resource->isDepth = creation.isDepth;
 			resource->type = creation.type;
 			resource->textureHandle = creation.textureHandle;
 			resource->buffer = creation.buffer;
@@ -964,6 +963,7 @@ namespace Pudu
 			resource->textureType = creation.textureType;
 			resource->format = creation.format;
 			resource->sizeType = creation.sizeType;
+			resource->depth = creation.depth;
 			resource->allocated = false;
 
 
@@ -1247,6 +1247,73 @@ namespace Pudu
 	{
 		//Todo:: implement
 	}
+
+	void FrameGraph::AllocateResource(FrameGraphResourceHandle handle) 
+	{
+		auto r = builder->GetResource(handle);
+
+		LOG("Allocating {}", r->name);
+
+		if (r->allocated)
+		{
+			return;
+		}
+
+		switch (r->type)
+		{
+		default:
+			break;
+		case FrameGraphResourceType_Invalid:
+			break;
+		case FrameGraphResourceType_Buffer:
+			if (r->textureHandle.index == k_INVALID_HANDLE)
+			{
+
+			}
+			break;
+		case FrameGraphResourceType_Texture:
+		case FrameGraphResourceType_Attachment:
+			if (r->textureHandle.index == k_INVALID_HANDLE)
+			{
+
+				auto allocatedTexture = builder->graphics->Resources()->GetTextureByName(r->name.c_str());
+				if (allocatedTexture != nullptr)
+				{
+					r->textureHandle = allocatedTexture->handle;
+				}
+				else {
+
+					TextureCreationData textureData;
+					textureData.depth = r->depth;
+					textureData.width = r->width;
+					textureData.height = r->height;
+					textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
+					textureData.format = r->format;
+					textureData.name = r->name.c_str();
+					textureData.mipmaps = 1;
+					textureData.bindless = true;
+					textureData.dataSize = r->width * r->height * 4; //TODO: THIS IS BAD, CHANGE IT LATER
+
+					SamplerCreationData samplerData;
+					samplerData.wrap = false;
+
+					textureData.samplerData = samplerData;
+
+					auto textureHandle = builder->graphics->CreateTexture(textureData);
+
+					r->textureHandle = textureHandle;
+				}
+
+			}
+			break;
+
+		case FrameGraphResourceType_Reference:
+			break;
+		}
+
+		r->allocated = true;
+	}
+
 	void FrameGraph::AllocateRequiredResources()
 	{
 		LOG("FrameGraph: Allocating Resources");
@@ -1256,68 +1323,12 @@ namespace Pudu
 
 			for (auto resourceHandle : node->outputs)
 			{
-				auto r = builder->GetResource(resourceHandle);
+				AllocateResource(resourceHandle);
+			}
 
-				LOG("Allocating {}", r->name);
-
-				if (r->allocated)
-				{
-					continue;
-				}
-
-				switch (r->type)
-				{
-				default:
-					break;
-				case FrameGraphResourceType_Invalid:
-					break;
-				case FrameGraphResourceType_Buffer:
-					if (r->textureHandle.index == k_INVALID_HANDLE)
-					{
-
-					}
-					break;
-				case FrameGraphResourceType_Texture:
-				case FrameGraphResourceType_Attachment:
-					if (r->textureHandle.index == k_INVALID_HANDLE)
-					{
-
-						auto allocatedTexture = builder->graphics->Resources()->GetTextureByName(r->name.c_str());
-						if (allocatedTexture != nullptr)
-						{
-							r->textureHandle = allocatedTexture->textureHandle;
-						}
-						else {
-
-							TextureCreationData textureData;
-							textureData.depth = r->depth;
-							textureData.width = r->width;
-							textureData.height = r->height;
-							textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
-							textureData.format = r->format;
-							textureData.name = r->name.c_str();
-							textureData.mipmaps = 1;
-							textureData.bindless = true;
-							textureData.dataSize = r->width * r->height * 4; //TODO: THIS IS BAD, CHANGE IT LATER
-
-							SamplerCreationData samplerData;
-							samplerData.wrap = false;
-
-							textureData.samplerData = samplerData;
-
-							auto textureHandle = builder->graphics->CreateTexture(textureData);
-
-							r->textureHandle = textureHandle;
-						}
-
-					}
-					break;
-
-				case FrameGraphResourceType_Reference:
-					break;
-				}
-
-				r->allocated = true;
+			for(auto inputResource: node->inputs)
+			{
+				AllocateResource(inputResource);
 			}
 		}
 		LOG("FrameGraph: Allocating Resources End");
