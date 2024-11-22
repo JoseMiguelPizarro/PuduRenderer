@@ -799,27 +799,11 @@ namespace Pudu
 
 #pragma endregion
 
-	static void ComputeEdges(FrameGraph* frameGraph, FrameGraphNode* node, FrameGraphNodeHandle nodeHandle)
+	static void ComputeEdges(FrameGraph* frameGraph, FrameGraphNode* toNode, FrameGraphNode* fromNode, FrameGraphResourceHandle resource)
 	{
-		LOG("Compute Edges");
-		for (FrameGraphResourceHandle nodeInput : node->inputs)
-		{
-			FrameGraphResource* inputResource = frameGraph->GetResource(nodeInput);
+		NodeEdge* edge = frameGraph->builder->CreateNodeEdge(fromNode, toNode, resource);
 
-			FrameGraphResource* outputResource = frameGraph->GetOutputResource(inputResource->name.c_str());
-			if (outputResource == nullptr && !inputResource->resourceInfo.external) {
-				continue;
-			}
-
-			inputResource->producer = outputResource->producer;
-			inputResource->resourceInfo = outputResource->resourceInfo;
-			inputResource->outputHandle = outputResource->outputHandle;
-
-			FrameGraphNode* parentNode = frameGraph->GetNode(inputResource->producer);
-
-			parentNode->edges.push_back(nodeHandle);
-		}
-		LOG("Compute Edges End");
+		fromNode->edges.push_back(edge);
 	}
 
 	static void CreateRenderPass(FrameGraph* frameGraph, FrameGraphNode* node) {
@@ -835,24 +819,23 @@ namespace Pudu
 		for (auto outputResourceHandle : node->outputs) {
 			FrameGraphResource* outputResource = frameGraph->GetResource(outputResourceHandle);
 
-			FrameGraphResourceInfo& info = outputResource->resourceInfo;
 
 			if (outputResource->type == FrameGraphResourceType_Attachment) {
-				if (TextureFormat::HasDepth(info.texture.format)) {
+				if (TextureFormat::HasDepth(outputResource->texture.format)) {
 
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 1.f, 0.f, 0.f, 0.f };
-					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
+					attachment.loadOperation = GetVkAttachmentLoadOp(outputResource->texture.loadOp);
 					attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(outputResource->texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					creationData.attachments.SetDepthStencilAttachment(attachment);
 				}
 				else {
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
-					attachment.loadOperation = GetVkAttachmentLoadOp(info.texture.loadOp);
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
+					attachment.loadOperation = GetVkAttachmentLoadOp(outputResource->texture.loadOp);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(outputResource->texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					creationData.attachments.AddColorAttachment(attachment);
 				}
@@ -862,14 +845,13 @@ namespace Pudu
 		for (auto inputResourceHandle : node->inputs) {
 			FrameGraphResource* inputResource = frameGraph->GetResource(inputResourceHandle);
 
-			FrameGraphResourceInfo& info = inputResource->resourceInfo;
-
+			
 			if (inputResource->type == FrameGraphResourceType_Attachment) {
-				if (inputResource->isDepth) {
+				if (TextureFormat::IsDepthStencil(inputResource->texture.format)) {
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(inputResource->texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 					creationData.attachments.SetDepthStencilAttachment(attachment);
 				}
@@ -877,7 +859,7 @@ namespace Pudu
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(info.texture.handle);
+					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(inputResource->texture.handle);
 					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					creationData.attachments.AddColorAttachment(attachment);
 				}
@@ -888,70 +870,6 @@ namespace Pudu
 		node->renderPass = renderPass->handle;
 
 		LOG("FrameGraph: Create RenderPass End");
-	}
-
-	static void CreateFrameBuffer(FrameGraph* frameGraph, FrameGraphNode* node) {
-		FramebufferCreationData framebufferCreationData{ };
-		framebufferCreationData.renderPassHandle = node->renderPass;
-		framebufferCreationData.SetName(node->name.c_str());
-
-		uint32_t width = 0;
-		uint32_t height = 0;
-
-		for (auto outputResourceHandle : node->outputs) {
-			FrameGraphResource* resource = frameGraph->GetResource(outputResourceHandle);
-
-			FrameGraphResourceInfo& info = resource->resourceInfo;
-
-			if (resource->type == FrameGraphResourceType_Buffer || resource->type == FrameGraphResourceType_Reference) {
-				continue;
-			}
-
-			width = info.texture.width;
-			height = info.texture.height;
-
-			if (TextureFormat::HasDepth(info.texture.format)) {
-				framebufferCreationData.SetDepthStencilTexture(info.texture.handle);
-			}
-			else
-			{
-				framebufferCreationData.AddRenderTexture(info.texture.handle);
-			}
-		}
-
-		for (auto inputResourceHandle : node->inputs) {
-			FrameGraphResource* inputResource = frameGraph->GetResource(inputResourceHandle);
-
-			if (inputResource->type == FrameGraphResourceType_Buffer || inputResource->type == FrameGraphResourceType_Reference) {
-				continue;
-			}
-
-			FrameGraphResource* resource = frameGraph->GetOutputResource(inputResource->name.c_str());
-
-			FrameGraphResourceInfo& info = resource->resourceInfo;
-
-			inputResource->resourceInfo.texture.handle = info.texture.handle;
-
-			width = info.texture.width;
-			height = info.texture.height;
-
-			if (inputResource->type == FrameGraphResourceType_Texture) {
-				continue;
-			}
-
-			if (info.texture.format == VK_FORMAT_D32_SFLOAT) {
-				framebufferCreationData.SetDepthStencilTexture(info.texture.handle);
-			}
-			else {
-				framebufferCreationData.AddRenderTexture(info.texture.handle);
-			}
-		}
-
-		framebufferCreationData.width = width;
-		framebufferCreationData.height = height;
-		auto framebuffer= frameGraph->builder->graphics->CreateFramebuffer(framebufferCreationData);
-
-		node->framebuffer = framebuffer->handle;
 	}
 
 	void FrameGraphBuilder::Init(PuduGraphics* device)
@@ -965,47 +883,26 @@ namespace Pudu
 	{
 	}
 
-	FrameGraphResourceHandle FrameGraphBuilder::CreateNodeOutputResource(const FrameGraphResourceOutputCreation& creation, FrameGraphNodeHandle producer)
+
+	FrameGraphResourceHandle FrameGraphBuilder::CreateFrameGraphResource(const FrameGraphResourceCreateInfo& creation)
 	{
 		FrameGraphResourceHandle resourceHandle{ k_INVALID_HANDLE };
 
 		resourceHandle.index = resourceCache.resources.ObtainResource();
 
 		FrameGraphResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
-		resource->name.append(creation.name);
-		resource->type = creation.type;
+		/*	resource->name.append(creation.name);
+			resource->type = creation.type;
+			resource->isDepth = creation.isDepth;*/
 
-		//If node is not a ref, then we'll need to create it
+			//If node is not a ref, then we'll need to create it
 		if (creation.type != FrameGraphResourceType_Reference)
 		{
-			resource->resourceInfo = creation.resourceInfo;
-			resource->outputHandle = resourceHandle;
-			resource->producer = producer;
-			resource->RefCount = 0;
+			*resource = creation.resourceInfo;
 
 			//Add to resource cache
-			resourceCache.resourcesMap[resource->name.c_str()] = resourceHandle.index;
+			resourceCache.AddResourceToCache(creation.name.c_str(), resourceHandle);
 		}
-
-		return resourceHandle;
-	}
-
-	FrameGraphResourceHandle FrameGraphBuilder::CreateNodeInput(const FrameGraphResourceInputCreation& creation)
-	{
-		FrameGraphResourceHandle resourceHandle = { k_INVALID_HANDLE };
-
-		resourceHandle.index = resourceCache.resources.ObtainResource();
-
-		FrameGraphResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
-
-		resource->type = creation.type;
-		resource->name = creation.name;
-
-		resource->resourceInfo = {};
-		resource->producer.index = k_INVALID_HANDLE;
-		resource->outputHandle.index = k_INVALID_HANDLE;
-		resource->RefCount = 0;
-		resource->isDepth = creation.isDepth;
 
 		return resourceHandle;
 	}
@@ -1024,23 +921,23 @@ namespace Pudu
 		node->edges.reserve(creation.outputs.size());
 		node->framebuffer = { k_INVALID_HANDLE };
 		node->renderPass = { k_INVALID_HANDLE };
-		node->type = creation.renderType;
+		//node->type = creation.renderType;
 		node->isCompute = creation.isCompute;
 
 		nodeCache.nodeMap[node->name] = nodeHandle.index;
 
 		for (size_t i = 0; i < creation.outputs.size(); ++i) {
-			const FrameGraphResourceOutputCreation& outputCreation = creation.outputs[i];
+			const FrameGraphResourceCreateInfo& outputCreation = creation.outputs[i];
 
-			FrameGraphResourceHandle output = CreateNodeOutputResource(outputCreation, nodeHandle);
+			FrameGraphResourceHandle output = CreateNodeResource(outputCreation, nodeHandle);
 
 			node->outputs.push_back(output);
 		}
 
 		for (size_t i = 0; i < creation.inputs.size(); ++i) {
-			const FrameGraphResourceInputCreation& input_creation = creation.inputs[i];
+			const FrameGraphResourceCreateInfo& input_creation = creation.inputs[i];
 
-			FrameGraphResourceHandle input_handle = CreateNodeInput(input_creation);
+			FrameGraphResourceHandle input_handle = CreateFrameGraphResource(input_creation);
 
 			node->inputs.push_back(input_handle);
 		}
@@ -1067,7 +964,7 @@ namespace Pudu
 		return nodeCache.nodes.GetResourcePtr(handle.index);
 	}
 
-	FrameGraphResource* FrameGraphBuilder::GetOutputResource(std::string name)
+	FrameGraphResource* FrameGraphBuilder::GetResource(std::string name)
 	{
 		auto it = resourceCache.resourcesMap.find(name);
 
@@ -1084,6 +981,25 @@ namespace Pudu
 		return resourceCache.resources.GetResourcePtr(handle.index);
 	}
 
+	NodeEdge* FrameGraphBuilder::GetNodeEdge(NodeEdgeHandle handle)
+	{
+		return nodeCache.nodeEdges.GetResourcePtr(handle.index);
+	}
+
+	NodeEdge* FrameGraphBuilder::CreateNodeEdge(FrameGraphNode* from, FrameGraphNode* to, FrameGraphResourceHandle resourceHandle)
+	{
+		NodeEdgeHandle nodeHandle{ k_INVALID_HANDLE };
+		nodeHandle.index = nodeCache.nodeEdges.ObtainResource();
+
+		NodeEdge* edge = nodeCache.nodeEdges.GetResourcePtr(nodeHandle.index);
+
+		edge->outputHandle = to;
+		edge->producer = from;
+		edge->resource = resourceHandle;
+
+		return edge;
+	}
+
 	void FrameGraphResourceCache::Init(PuduGraphics* device)
 	{
 		this->device = device;
@@ -1091,6 +1007,17 @@ namespace Pudu
 
 	void FrameGraphResourceCache::Shutdown()
 	{
+	}
+
+	bool FrameGraphResourceCache::AddResourceToCache(const char* name, FrameGraphResourceHandle resourceHandle)
+	{
+		if (resourcesMap.find(name) != resourcesMap.end())
+		{
+			resourcesMap[name] = resourceHandle.index;
+
+			return true;
+		}
+		return false;
 	}
 
 	void FrameGraphNodeCache::Init(PuduGraphics* device)
@@ -1108,7 +1035,7 @@ namespace Pudu
 		nodes.reserve(FrameGraphBuilder::K_MAX_NODES_COUNT);
 	}
 
-	
+
 	void FrameGraph::Parse(std::filesystem::path filePath)
 	{
 		LOG("FrameGraph Parse");
@@ -1155,7 +1082,7 @@ namespace Pudu
 
 			for (auto input : passInputs)
 			{
-				FrameGraphResourceInputCreation inputCreation{};
+				FrameGraphResourceCreateInfo inputCreation{};
 
 				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
 				auto inputName = input["name"].get_string();
@@ -1171,7 +1098,7 @@ namespace Pudu
 				inputNameStr.append(inputName.value());
 				inputCreation.name = inputNameStr;
 
-				inputCreation.resource_info.external = false;
+				inputCreation.resourceInfo.external = false;
 
 				nodeCreation.inputs.push_back(inputCreation);
 			}
@@ -1180,7 +1107,7 @@ namespace Pudu
 
 			for (auto output : passOutputs)
 			{
-				FrameGraphResourceOutputCreation outputCreation{};
+				FrameGraphResourceCreateInfo outputCreation{};
 				outputCreation.type = GetResourceType(std::string(output["type"].get_string().value()).c_str());
 				auto outputName = output["name"].get_string();
 				std::string outputNameStr;
@@ -1285,25 +1212,35 @@ namespace Pudu
 					if (resource->resourceInfo.texture.handle.index == k_INVALID_HANDLE)
 					{
 						auto& info = resource->resourceInfo.texture;
-						TextureCreationData textureData;
-						textureData.depth = info.depth;
-						textureData.width = info.width;
-						textureData.height = info.height;
-						textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
-						textureData.format = info.format;
-						textureData.name = resource->name.c_str();
-						textureData.mipmaps = 1;
-						textureData.bindless = true;
-						textureData.dataSize = info.width * info.height * 4; //TODO: THIS IS BAD, CHANGE IT LATER
 
-						SamplerCreationData samplerData;
-						samplerData.wrap = false;
+						auto allocatedTexture = builder->graphics->Resources()->GetTextureByName(resource->name.c_str());
+						if (allocatedTexture != nullptr)
+						{
+							info.handle = allocatedTexture->handle;
+						}
+						else {
 
-						textureData.samplerData = samplerData;
+							TextureCreationData textureData;
+							textureData.depth = info.depth;
+							textureData.width = info.width;
+							textureData.height = info.height;
+							textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
+							textureData.format = info.format;
+							textureData.name = resource->name.c_str();
+							textureData.mipmaps = 1;
+							textureData.bindless = true;
+							textureData.dataSize = info.width * info.height * 4; //TODO: THIS IS BAD, CHANGE IT LATER
 
-						auto handle = builder->graphics->CreateTexture(textureData);
+							SamplerCreationData samplerData;
+							samplerData.wrap = false;
 
-						info.handle = handle;
+							textureData.samplerData = samplerData;
+
+							auto handle = builder->graphics->CreateTexture(textureData);
+
+							info.handle = handle;
+						}
+
 					}
 					break;
 
@@ -1427,7 +1364,7 @@ namespace Pudu
 			for (auto outputNodeHandle : node->outputs)
 			{
 				uint32_t resourceIndex = outputNodeHandle.index;
-				FrameGraphResource* resource = builder->GetResource(outputNodeHandle);
+				NodeEdge* resource = builder->GetResource(outputNodeHandle);
 
 				if (!resource->resourceInfo.external && allocations[resourceIndex].index == k_INVALID_HANDLE)
 				{
@@ -1435,7 +1372,7 @@ namespace Pudu
 
 					if (resource->type == FrameGraphResourceType_Attachment)
 					{
-						FrameGraphResourceInfo& info = resource->resourceInfo;
+						FrameGraphResource& info = resource->resourceInfo;
 					}
 				}
 			}
@@ -1484,7 +1421,7 @@ namespace Pudu
 
 			for (auto nodeInputHandle : node->inputs)
 			{
-				FrameGraphResource* resource = builder->GetResource(nodeInputHandle);
+				NodeEdge* resource = builder->GetResource(nodeInputHandle);
 
 				if (resource->type == FrameGraphResourceType_Texture)
 				{
@@ -1492,7 +1429,7 @@ namespace Pudu
 
 					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->resourceInfo.texture.handle);
 
-				//	commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
+					//	commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
 				}
 				else if (resource->type == FrameGraphResourceType_Attachment)
 				{
@@ -1505,7 +1442,7 @@ namespace Pudu
 
 			for (auto nodeOutputHandle : node->outputs)
 			{
-				FrameGraphResource* resource = builder->GetResource(nodeOutputHandle);
+				NodeEdge* resource = builder->GetResource(nodeOutputHandle);
 
 				if (resource->type == FrameGraphResourceType_Attachment)
 				{
@@ -1558,17 +1495,23 @@ namespace Pudu
 	{
 		return builder->GetNode(handle);
 	}
-	FrameGraphResource* FrameGraph::GetOutputResource(char const* name)
+	NodeEdge* FrameGraph::GetNodeEdge(NodeEdgeHandle handle)
 	{
-		return builder->GetOutputResource(name);
+		return builder->GetNode(name);
 	}
 	FrameGraphResource* FrameGraph::GetResource(FrameGraphResourceHandle handle)
 	{
 		return builder->GetResource(handle);
 	}
-	void FrameGraph::AddNode(FrameGraphNodeCreation& node)
+	void FrameGraph::AddNode(FrameGraphNode* node)
 	{
 	}
+
+	FrameGraphNodeHandle FrameGraph::CreateNode(FrameGraphNodeCreation& creationData)
+	{
+		return builder->CreateNode(creationData);
+	}
+
 	void FrameGraphRenderPassCache::Init()
 	{
 	}

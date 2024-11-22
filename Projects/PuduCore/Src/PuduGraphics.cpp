@@ -465,14 +465,6 @@ namespace Pudu
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
 		computeCommands->Reset();
 
-		//auto computePipeline = m_resources.GetPipeline(testComputeShader->pipelineHandle);
-		//computeCommands->BeginCommands();
-		////IMPORTANT: Descriptor sets should be binded BEFORE binding the pipeline
-		///*computeCommands->BindDescriptorSetCompute(computePipeline->vkPipelineLayoutHandle, &computePipeline->vkDescriptorSet, 1);
-		//computeCommands->BindPipeline(m_resources.GetPipeline(testComputeShader->pipelineHandle));
-		//computeCommands->Dispatch(std::ceil(1024 / 16.0f), std::ceil(1024 / 16.0f), 1);*/
-		//computeCommands->EndCommands();
-
 		SubmitComputeWork(frameData);
 		SubmitFrame(frameData);
 
