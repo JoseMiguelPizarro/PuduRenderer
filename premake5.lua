@@ -177,17 +177,6 @@ objdir("lib/simdjson.dir/%{cfg.buildcfg}")
 files "lib/simdjson/**"
 includedirs "lib/simdjson"
 
-project "fastgltf"
-kind "StaticLib"
-language "C++"
-CppVer()
-targetdir "lib/fastgltf/%{cfg.buildcfg}"
-objdir("lib/fastgltf/fastgltf.dir/%{cfg.buildcfg}")
-files "lib/fastgltf/src/**"
-includedirs {"lib/fastgltf/include","lib/simdjson"}
-
-links "simdjson"
-
 
 project "SPIRV-Reflect"
 kind "StaticLib"

@@ -1,4 +1,0 @@
-D:/Documents/Repos/PuduRenderer/lib/fastgltf/CMakeFiles/fastgltf.dir
-D:/Documents/Repos/PuduRenderer/lib/fastgltf/CMakeFiles/INSTALL.dir
-D:/Documents/Repos/PuduRenderer/lib/fastgltf/CMakeFiles/ALL_BUILD.dir
-D:/Documents/Repos/PuduRenderer/lib/fastgltf/CMakeFiles/ZERO_CHECK.dir
