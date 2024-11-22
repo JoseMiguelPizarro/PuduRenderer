@@ -20,6 +20,13 @@ namespace Pudu
 	}
 
 	template<typename T>
+	std::vector<T> ResourcePool<T>::GetAllResources()
+	{
+		return m_resources;
+	}
+
+
+	template<typename T>
 	uint32_t ResourcePool<T>::AddResource(T resource)
 	{
 		uint32_t id = (uint32_t)m_resources.size();

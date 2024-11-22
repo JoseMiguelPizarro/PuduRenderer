@@ -826,6 +826,9 @@ namespace Pudu
 		for (size_t i = 0; i < frameGraph->nodes.size(); i++)
 		{
 			auto node = frameGraph->GetNode((FrameGraphNodeHandle)i);
+			if (i == 0)
+				continue;
+
 
 			for (size_t j = i - 1; j > 0; j--)
 			{
@@ -996,21 +999,21 @@ namespace Pudu
 
 		nodeCache.nodeMap[node->name] = nodeHandle.index;
 
-		for (size_t i = 0; i < creation.outputs.size(); ++i) {
-			const FrameGraphResourceCreateInfo& outputCreation = creation.outputs[i];
+		/*	for (size_t i = 0; i < creation.outputs.size(); ++i) {
+				const FrameGraphResourceCreateInfo& outputCreation = creation.outputs[i];
 
-			FrameGraphResourceHandle output = CreateOrGetFrameGraphResource(outputCreation);
+				FrameGraphResourceHandle output = CreateOrGetFrameGraphResource(outputCreation);
 
-			node->outputs.push_back(output);
-		}
+				node->outputs.push_back(output);
+			}
 
-		for (size_t i = 0; i < creation.inputs.size(); ++i) {
-			const FrameGraphResourceCreateInfo& input_creation = creation.inputs[i];
+			for (size_t i = 0; i < creation.inputs.size(); ++i) {
+				const FrameGraphResourceCreateInfo& input_creation = creation.inputs[i];
 
-			FrameGraphResourceHandle input_handle = CreateOrGetFrameGraphResource(input_creation);
+				FrameGraphResourceHandle input_handle = CreateOrGetFrameGraphResource(input_creation);
 
-			node->inputs.push_back(input_handle);
-		}
+				node->inputs.push_back(input_handle);
+			}*/
 
 		return nodeHandle;
 	}
@@ -1171,7 +1174,7 @@ namespace Pudu
 
 				inputCreation.external = false;
 
-				nodeCreation.inputs.push_back(inputCreation);
+				//	nodeCreation.inputs.push_back(inputCreation);
 			}
 
 			auto passOutputs = pass["outputs"];
@@ -1233,7 +1236,7 @@ namespace Pudu
 					break;
 				}
 
-				nodeCreation.outputs.push_back(outputCreation);
+				//nodeCreation.outputs.push_back(outputCreation);
 			}
 
 			FrameGraphNodeHandle nodeHandle = builder->CreateNode(nodeCreation);
@@ -1248,7 +1251,7 @@ namespace Pudu
 		//Todo:: implement
 	}
 
-	void FrameGraph::AllocateResource(FrameGraphResourceHandle handle) 
+	void FrameGraph::AllocateResource(FrameGraphResourceHandle handle)
 	{
 		auto r = builder->GetResource(handle);
 
@@ -1326,7 +1329,7 @@ namespace Pudu
 				AllocateResource(resourceHandle);
 			}
 
-			for(auto inputResource: node->inputs)
+			for (auto inputResource : node->inputs)
 			{
 				AllocateResource(inputResource);
 			}
@@ -1345,22 +1348,25 @@ namespace Pudu
 	void FrameGraph::Compile()
 	{
 		LOG("FrameGraph Compile");
-		for (auto nodeHande : nodes) {
+
+		ComputeEdges(this);
+
+	/*	for (auto nodeHande : nodes) {
 			FrameGraphNode* node = builder->GetNode(nodeHande);
 
 			node->outputEdges.clear();
-		}
+		}*/
 
-		for (auto nodeHandle : nodes) {
-			FrameGraphNode* node = builder->GetNode(nodeHandle);
+		//for (auto nodeHandle : nodes) {
+		//	FrameGraphNode* node = builder->GetNode(nodeHandle);
 
-			if (!node->enabled)
-			{
-				continue;
-			}
+		//	if (!node->enabled)
+		//	{
+		//		continue;
+		//	}
 
-			//	ComputeEdges(this, node, nodeHandle);
-		}
+		//	//	ComputeEdges(this, node, nodeHandle);
+		//}
 
 		//Sorted nodes in reverse order
 		std::vector<FrameGraphNodeHandle> sortedNodes;
@@ -1583,13 +1589,19 @@ namespace Pudu
 	{
 		return builder->GetResource(textureHandle);
 	}
-	void FrameGraph::AddNode(FrameGraphNode* node)
+	FrameGraphResource* FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
 	{
+		return builder->GetResource(builder->CreateOrGetFrameGraphResource(createInfo));
+
 	}
+
 
 	FrameGraphNodeHandle FrameGraph::CreateNode(FrameGraphNodeCreation& creationData)
 	{
-		return builder->CreateNode(creationData);
+		auto handle = builder->CreateNode(creationData);
+		nodes.push_back(handle);
+
+		return handle;
 	}
 
 	void FrameGraphRenderPassCache::Init()

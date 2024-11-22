@@ -7,7 +7,7 @@
 
 namespace Pudu
 {
-	void DepthStencilRenderPass::Initialize(PuduGraphics* graphics)
+	void DepthPrepassRenderPass::Initialize(PuduGraphics* graphics)
 	{
 		auto shaderFile = FileManager::LoadShader(K_DepthShaderPath);
 		m_depthShader = graphics->CreateShader(fs::path(), K_DepthShaderPath, "Depth");
@@ -17,16 +17,16 @@ namespace Pudu
 		m_depthMaterial = std::make_shared<Material>(m);
 	}
 
-	void DepthStencilRenderPass::PreRender(RenderFrameData& renderData)
+	void DepthPrepassRenderPass::PreRender(RenderFrameData& renderData)
 	{
 	}
 
-	void DepthStencilRenderPass::BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)
+	void DepthPrepassRenderPass::BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		drawcall.SetReplacementMaterial(m_depthMaterial);
 	}
 
-	void DepthStencilRenderPass::AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)
+	void DepthPrepassRenderPass::AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		drawcall.SetReplacementMaterial(nullptr);
 	}

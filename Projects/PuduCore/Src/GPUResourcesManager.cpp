@@ -74,7 +74,7 @@ namespace Pudu {
 			handle = { m_renderPasses.AddResource(std::make_shared<ShadowMapRenderPass>()) };
 			break;
 		case RenderPassType::DepthPrePass:
-			handle = { m_renderPasses.AddResource(std::make_shared <DepthStencilRenderPass>()) };
+			handle = { m_renderPasses.AddResource(std::make_shared <DepthPrepassRenderPass>()) };
 			break;
 		default:
 			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>()) };

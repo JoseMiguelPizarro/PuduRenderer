@@ -29,7 +29,7 @@ namespace Pudu
 		void AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype);
 
 	private:
-		DepthStencilRenderPass m_depthRenderPass;
+		DepthPrepassRenderPass m_depthRenderPass;
 		ForwardRenderPass m_forwardRenderPass;
 		ShadowMapRenderPass m_shadowMapRenderPass;
 

@@ -28,6 +28,8 @@ namespace Pudu
 
 		size_t Size();
 
+		std::vector<T> GetAllResources();
+
 	private:
 
 		friend class GPUResourcesManager;

@@ -3,10 +3,9 @@
 
 namespace Pudu
 {
-	class DepthStencilRenderPass : public RenderPass
+	class DepthPrepassRenderPass : public RenderPass
 	{
 	public:
-
 		const std::filesystem::path K_DepthShaderPath = "Shaders/depth.vert";
 		void Initialize(PuduGraphics* gpu) override;
 		void PreRender(RenderFrameData& renderData) override;
