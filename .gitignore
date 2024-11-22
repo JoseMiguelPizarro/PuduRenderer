@@ -19,3 +19,4 @@ Imgui.ini
 *.tlog
 *.lastbuildstate
 /lib/fastgltf/Debug
+*.vcxproj
