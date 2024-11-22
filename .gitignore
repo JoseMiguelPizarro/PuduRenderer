@@ -18,3 +18,4 @@ Imgui.ini
 *.log
 *.tlog
 *.lastbuildstate
+/lib/fastgltf/Debug
