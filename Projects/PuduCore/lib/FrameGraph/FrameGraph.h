@@ -122,8 +122,8 @@ namespace Pudu {
 
 	struct FrameGraphNodeCreation
 	{
-		std::vector<FrameGraphResource*>  inputs;
-		std::vector<FrameGraphResource*> outputs;
+		std::vector<FrameGraphResourceHandle>  inputs;
+		std::vector<FrameGraphResourceHandle> outputs;
 
 		RenderPassHandle renderPass;
 		RenderPassType renderType;
@@ -247,7 +247,7 @@ namespace Pudu {
 
 		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
 		FrameGraphResource* GetResource(FrameGraphResourceHandle textureHandle);
-		FrameGraphResource* AddResource(FrameGraphResourceCreateInfo createInfo);
+		FrameGraphResourceHandle AddResource(FrameGraphResourceCreateInfo createInfo);
 
 		///TODO: WE SHOULD BE ABLE TO CREATE THE NODES BY ADDING THE SPECIFYING THE INPUT/OUTPUT RESOURCES
 		FrameGraphNodeHandle CreateNode(FrameGraphNodeCreation& creationData);

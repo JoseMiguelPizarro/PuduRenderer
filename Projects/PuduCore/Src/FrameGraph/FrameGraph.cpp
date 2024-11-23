@@ -988,8 +988,8 @@ namespace Pudu
 
 		node->name.append(creation.name);
 		node->enabled = creation.enabled;
-		node->inputs.reserve(creation.inputs.size());
-		node->outputs.reserve(creation.outputs.size());
+		node->inputs = creation.inputs;
+		node->outputs = creation.outputs;
 		node->outputEdges.reserve(creation.outputs.size());
 		node->framebuffer = { k_INVALID_HANDLE };
 		node->renderPass = { k_INVALID_HANDLE };
@@ -1255,12 +1255,12 @@ namespace Pudu
 	{
 		auto r = builder->GetResource(handle);
 
-		LOG("Allocating {}", r->name);
-
 		if (r->allocated)
 		{
 			return;
 		}
+
+		LOG("Allocating {}", r->name);
 
 		switch (r->type)
 		{
@@ -1589,9 +1589,9 @@ namespace Pudu
 	{
 		return builder->GetResource(textureHandle);
 	}
-	FrameGraphResource* FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
+	FrameGraphResourceHandle FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
 	{
-		return builder->GetResource(builder->CreateOrGetFrameGraphResource(createInfo));
+		return builder->CreateOrGetFrameGraphResource(createInfo);
 
 	}
 

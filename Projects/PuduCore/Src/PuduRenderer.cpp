@@ -31,6 +31,7 @@ namespace Pudu
 		depthRT.format = VK_FORMAT_D32_SFLOAT;
 		depthRT.loadOp = RenderPassOperation::Clear;
 		depthRT.name = "DepthPrepassTexture";
+		depthRT.type = FrameGraphResourceType_Texture;
 
 
 		FrameGraphResourceCreateInfo colorRT;
@@ -40,7 +41,7 @@ namespace Pudu
 		colorRT.format = VK_FORMAT_R8G8B8A8_UNORM;
 		colorRT.loadOp = RenderPassOperation::Clear;
 		colorRT.name = "ForwardColor";
-
+		colorRT.type = FrameGraphResourceType_Texture;
 
 		FrameGraphResourceCreateInfo shadowRT;
 		shadowRT.depth = 1;
@@ -49,7 +50,7 @@ namespace Pudu
 		shadowRT.format = VK_FORMAT_D16_UNORM;
 		shadowRT.loadOp = RenderPassOperation::Clear;
 		shadowRT.name = "ShadowMap";
-
+		shadowRT.type = FrameGraphResourceType_Texture;
 
 		auto depthFGR = frameGraph.AddResource(depthRT);
 		auto colorRTR = frameGraph.AddResource(colorRT);
