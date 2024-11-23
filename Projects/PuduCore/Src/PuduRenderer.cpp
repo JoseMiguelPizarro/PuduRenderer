@@ -31,7 +31,7 @@ namespace Pudu
 		depthRT.format = VK_FORMAT_D32_SFLOAT;
 		depthRT.loadOp = RenderPassOperation::Clear;
 		depthRT.name = "DepthPrepassTexture";
-		depthRT.type = FrameGraphResourceType_Texture;
+		depthRT.type = FrameGraphResourceType_Attachment;
 
 
 		FrameGraphResourceCreateInfo colorRT;
@@ -41,7 +41,7 @@ namespace Pudu
 		colorRT.format = VK_FORMAT_R8G8B8A8_UNORM;
 		colorRT.loadOp = RenderPassOperation::Clear;
 		colorRT.name = "ForwardColor";
-		colorRT.type = FrameGraphResourceType_Texture;
+		colorRT.type = FrameGraphResourceType_Attachment;
 
 		FrameGraphResourceCreateInfo shadowRT;
 		shadowRT.depth = 1;
@@ -50,7 +50,7 @@ namespace Pudu
 		shadowRT.format = VK_FORMAT_D16_UNORM;
 		shadowRT.loadOp = RenderPassOperation::Clear;
 		shadowRT.name = "ShadowMap";
-		shadowRT.type = FrameGraphResourceType_Texture;
+		shadowRT.type = FrameGraphResourceType_Attachment;
 
 		auto depthFGR = frameGraph.AddResource(depthRT);
 		auto colorRTR = frameGraph.AddResource(colorRT);
@@ -62,7 +62,6 @@ namespace Pudu
 		depthNode.outputs.push_back(depthFGR);
 		depthNode.renderType = RenderPassType::DepthPrePass;
 		depthNode.enabled = true;
-
 
 		FrameGraphNodeCreation shadowNode;
 		shadowNode.name = "Shadowmap";
@@ -78,12 +77,14 @@ namespace Pudu
 		colorNode.outputs.push_back(colorRTR);
 		colorNode.renderType = RenderPassType::Color;
 
-		frameGraph.CreateNode(depthNode);
 		frameGraph.CreateNode(shadowNode);
+		frameGraph.CreateNode(depthNode);
 		frameGraph.CreateNode(colorNode);
 
 		frameGraph.AllocateRequiredResources();
 		frameGraph.Compile();
+
+		std::printf(frameGraph.ToString().c_str());
 	}
 	void PuduRenderer::Render()
 	{

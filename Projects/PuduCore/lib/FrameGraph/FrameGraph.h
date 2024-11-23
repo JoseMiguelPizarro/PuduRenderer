@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <unordered_map>
@@ -61,6 +62,10 @@ namespace Pudu {
 	};
 
 
+	struct NodeEdgeHandle {
+		uint32_t index;
+	};
+
 	/// <summary>
 	/// Defines an Input or Output of a Node. Determines the use of the resource for a given Node. 
 	/// Are used to define Edges between nodes
@@ -79,6 +84,8 @@ namespace Pudu {
 		/// </summary>
 		FrameGraphNodeHandle to;
 
+		NodeEdgeHandle handle;
+
 		/// <summary>
 		/// Used to check whether or not the resource can be aliased, not implemented for now
 		/// </summary>
@@ -88,9 +95,6 @@ namespace Pudu {
 		bool isDepth;
 	};
 
-	struct NodeEdgeHandle {
-		uint32_t index;
-	};
 
 	struct FrameGraphResourceCreateInfo
 	{
@@ -139,14 +143,14 @@ namespace Pudu {
 
 		RenderPassHandle  renderPass;
 		FramebufferHandle framebuffer;
-		FrameGraphNodeHandle textureHandle;
+		FrameGraphNodeHandle nodeHandle;
 
 		std::vector<FrameGraphResourceHandle> inputs;
 		std::vector<FrameGraphResourceHandle> outputs;
 
 		//Edges represent nodes this node is connected TO
-		std::vector<NodeEdge*> outputEdges;
-		std::vector<NodeEdge*> inputEdges;
+		std::vector<NodeEdgeHandle> outputEdges;
+		std::vector<NodeEdgeHandle> inputEdges;
 		RenderPassType type;
 		bool isCompute;
 
@@ -198,9 +202,9 @@ namespace Pudu {
 		FrameGraphNodeHandle CreateNode(const FrameGraphNodeCreation& creation);
 
 		FrameGraphNode* GetNode(std::string name);
-		FrameGraphNode* GetNode(FrameGraphNodeHandle textureHandle);
+		FrameGraphNode* GetNode(FrameGraphNodeHandle nodeHandle);
 		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
-		NodeEdge* CreateNodeEdge(FrameGraphNode* from, FrameGraphNode* to, FrameGraphResourceHandle resourceHandle);
+		NodeEdgeHandle CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, FrameGraphResourceHandle resourceHandle);
 
 		FrameGraphResource* GetResource(FrameGraphResourceHandle textureHandle);
 		FrameGraphResource* GetResource(std::string name);
@@ -239,11 +243,12 @@ namespace Pudu {
 		void EnableRenderPass(char* renderPassName);
 		void DisableRenderPass(char* renderPassName);
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
+		std::string ToString();
 
 		void AttachRenderPass(RenderPass renderPass, RenderPassType type);
 
 		FrameGraphNode* GetNode(char* name);
-		FrameGraphNode* GetNode(FrameGraphNodeHandle textureHandle);
+		FrameGraphNode* GetNode(FrameGraphNodeHandle nodeHandle);
 
 		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
 		FrameGraphResource* GetResource(FrameGraphResourceHandle textureHandle);

@@ -1161,6 +1161,7 @@ namespace Pudu
 		renderPass->attachments = creationData.attachments;
 		renderPass->isEnabled = creationData.isEnabled;
 		renderPass->numRenderTargets = creationData.attachments.AttachmentCount();
+		renderPass->name = creationData.name;
 
 		if (creationData.isCompute)
 		{

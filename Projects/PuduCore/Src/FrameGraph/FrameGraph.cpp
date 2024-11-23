@@ -5,6 +5,7 @@
 #include "FrameGraph/RenderPass.h"
 #include <Resources/FrameBufferCreationData.h>
 #include "Texture2D.h"
+#include <algorithm>
 
 namespace Pudu
 {
@@ -810,12 +811,13 @@ namespace Pudu
 
 		for (auto inputEdge : n->inputEdges) {
 
-			if (inputEdge->from.index == targetNode.index)
+			auto edge = graph->GetNodeEdge(inputEdge);
+			if (edge->from.index == targetNode.index)
 			{
 				return true;
 			}
 
-			return IsNodeDependant(graph, inputEdge->from, targetNode);
+			return IsNodeDependant(graph, edge->from, targetNode);
 		}
 
 		return false;
@@ -825,25 +827,31 @@ namespace Pudu
 	{
 		for (size_t i = 0; i < frameGraph->nodes.size(); i++)
 		{
-			auto node = frameGraph->GetNode((FrameGraphNodeHandle)i);
+			auto nodeHandle = (FrameGraphNodeHandle)i;
+			auto node = frameGraph->GetNode(nodeHandle);
 			if (i == 0)
 				continue;
 
 
-			for (size_t j = i - 1; j > 0; j--)
+			for (int j = i - 1; j >= 0; j--)
 			{
-				auto parentNode = frameGraph->GetNode((FrameGraphNodeHandle)j);
+				auto parentNodeHandle = (FrameGraphNodeHandle)j;
+				auto parentNode = frameGraph->GetNode(parentNodeHandle);
 
 				for (auto parentOutput : parentNode->outputs) {
 					for (auto input : node->inputs) {
 						if (input.index == parentOutput.index)
 						{
 							//Only create edge if these nodes are not already related in the dependency chain
-							if (!IsNodeDependant(frameGraph, node->textureHandle, parentNode->textureHandle))
+							if (!IsNodeDependant(frameGraph, node->nodeHandle, parentNode->nodeHandle))
 							{
-								auto edge = frameGraph->builder->CreateNodeEdge(parentNode, node, input);
-								parentNode->outputEdges.push_back(edge);
-								node->inputEdges.push_back(edge);
+								auto edgeHandle = frameGraph->builder->CreateNodeEdge(parentNodeHandle, nodeHandle, input);
+								parentNode->outputEdges.push_back(edgeHandle);
+								node->inputEdges.push_back(edgeHandle);
+
+								auto edge = frameGraph->GetNodeEdge(edgeHandle);
+
+								std::printf("Edge: {%s} {%i}->{%s} {%i} \n", parentNode->name.c_str(), edge->from, node->name.c_str(), edge->to);
 							}
 						}
 					}
@@ -861,16 +869,24 @@ namespace Pudu
 		creationData.type = node->type;
 		creationData.isEnabled = node->enabled;
 
+		std::vector<FrameGraphResource*> addedAttachments;
+
 
 		for (auto outputResourceHandle : node->outputs) {
 			FrameGraphResource* outputResource = frameGraph->GetResource(outputResourceHandle);
 
+			if (std::ranges::contains(addedAttachments, outputResource))
+			{
+				continue;
+			}
+
+			addedAttachments.push_back(outputResource);
 
 			if (outputResource->type == FrameGraphResourceType_Attachment) {
 
 				assert((fmt::format("Resource {} has invalid handle", outputResource->name), outputResource->textureHandle.index != k_INVALID_HANDLE));
 
-				if (TextureFormat::HasDepth(outputResource->format)) {
+				if (TextureFormat::HasDepthOrStencil(outputResource->format)) {
 
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 1.f, 0.f, 0.f, 0.f };
@@ -896,7 +912,7 @@ namespace Pudu
 
 
 			if (inputResource->type == FrameGraphResourceType_Attachment) {
-				if (TextureFormat::IsDepthStencil(inputResource->format)) {
+				if (TextureFormat::HasDepthOrStencil(inputResource->format)) {
 					RenderPassAttachment attachment{};
 					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
 					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -990,12 +1006,12 @@ namespace Pudu
 		node->enabled = creation.enabled;
 		node->inputs = creation.inputs;
 		node->outputs = creation.outputs;
-		node->outputEdges.reserve(creation.outputs.size());
+		//node->outputEdges.reserve(creation.outputs.size());
 		node->framebuffer = { k_INVALID_HANDLE };
 		node->renderPass = { k_INVALID_HANDLE };
 		//node->type = creation.renderType;
 		node->isCompute = creation.isCompute;
-		node->textureHandle = nodeHandle;
+		node->nodeHandle = nodeHandle;
 
 		nodeCache.nodeMap[node->name] = nodeHandle.index;
 
@@ -1032,9 +1048,9 @@ namespace Pudu
 		return node;
 	}
 
-	FrameGraphNode* FrameGraphBuilder::GetNode(FrameGraphNodeHandle textureHandle)
+	FrameGraphNode* FrameGraphBuilder::GetNode(FrameGraphNodeHandle nodeHandle)
 	{
-		return nodeCache.nodes.GetResourcePtr(textureHandle.index);
+		return nodeCache.nodes.GetResourcePtr(nodeHandle.index);
 	}
 
 	FrameGraphResource* FrameGraphBuilder::GetResource(std::string name)
@@ -1059,19 +1075,20 @@ namespace Pudu
 		return nodeCache.nodeEdges.GetResourcePtr(textureHandle.index);
 	}
 
-	NodeEdge* FrameGraphBuilder::CreateNodeEdge(FrameGraphNode* from, FrameGraphNode* to, FrameGraphResourceHandle resourceHandle)
+	NodeEdgeHandle FrameGraphBuilder::CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, FrameGraphResourceHandle resourceHandle)
 	{
-		NodeEdgeHandle nodeHandle{ k_INVALID_HANDLE };
-		nodeHandle.index = nodeCache.nodeEdges.ObtainResource();
+		NodeEdgeHandle edgeHandle{ k_INVALID_HANDLE };
+		edgeHandle.index = nodeCache.nodeEdges.ObtainResource();
 
-		NodeEdge* edge = nodeCache.nodeEdges.GetResourcePtr(nodeHandle.index);
+		NodeEdge* edge = nodeCache.nodeEdges.GetResourcePtr(edgeHandle.index);
 
-		edge->to = to->textureHandle;
-		edge->from = from->textureHandle;
+		edge->to = to;
+		edge->from = from;
 		edge->resource = resourceHandle;
+		edge->handle = edgeHandle;
 
 
-		return edge;
+		return edgeHandle;
 	}
 
 	void FrameGraphResourceCache::Init(PuduGraphics* device)
@@ -1351,24 +1368,24 @@ namespace Pudu
 
 		ComputeEdges(this);
 
-	/*	for (auto nodeHande : nodes) {
-			FrameGraphNode* node = builder->GetNode(nodeHande);
+		/*	for (auto nodeHande : nodes) {
+				FrameGraphNode* node = builder->GetNode(nodeHande);
 
-			node->outputEdges.clear();
-		}*/
+				node->outputEdges.clear();
+			}*/
 
-		//for (auto nodeHandle : nodes) {
-		//	FrameGraphNode* node = builder->GetNode(nodeHandle);
+			//for (auto nodeHandle : nodes) {
+			//	FrameGraphNode* node = builder->GetNode(nodeHandle);
 
-		//	if (!node->enabled)
-		//	{
-		//		continue;
-		//	}
+			//	if (!node->enabled)
+			//	{
+			//		continue;
+			//	}
 
-		//	//	ComputeEdges(this, node, nodeHandle);
-		//}
+			//	//	ComputeEdges(this, node, nodeHandle);
+			//}
 
-		//Sorted nodes in reverse order
+			//Sorted nodes in reverse order
 		std::vector<FrameGraphNodeHandle> sortedNodes;
 		sortedNodes.reserve(nodes.size());
 
@@ -1417,8 +1434,10 @@ namespace Pudu
 				}
 
 				//Add child handles
-				for (auto edge : node->outputEdges)
+				for (auto edgeHandle : node->outputEdges)
 				{
+					auto edge = GetNodeEdge(edgeHandle);
+
 					if (!visited[edge->to.index])
 					{
 						nodesToBeVisitedStack.push_back(edge->to);
@@ -1432,36 +1451,6 @@ namespace Pudu
 		for (int32_t i = sortedNodes.size() - 1; i >= 0; i--)
 		{
 			nodes.push_back(sortedNodes[i]);
-		}
-
-		//Allocate resource handles
-		std::vector<FrameGraphNodeHandle> allocations;
-		allocations.resize(builder->resourceCache.resources.Size(), { k_INVALID_HANDLE });
-
-		for (auto nodeHandle : nodes)
-		{
-			FrameGraphNode* node = builder->GetNode(nodeHandle);
-
-			if (!node->enabled)
-			{
-				continue;
-			}
-
-			for (auto outputNodeHandle : node->outputs)
-			{
-				uint32_t resourceIndex = outputNodeHandle.index;
-				auto resource = builder->GetResource(outputNodeHandle);
-
-				if (!resource->external && allocations[resourceIndex].index == k_INVALID_HANDLE)
-				{
-					allocations[resourceIndex] = nodeHandle;
-
-					if (resource->type == FrameGraphResourceType_Attachment)
-					{
-						//FrameGraphResource& info = resource->resourceInfo;
-					}
-				}
-			}
 		}
 
 		for (auto nodeHandle : nodes)
@@ -1548,6 +1537,7 @@ namespace Pudu
 				}
 			}
 
+			commands->SetDepthBias(0, 0);
 			commands->SetScissor(0, 0, width, height);
 			commands->SetViewport({ {0,0,width,height},0,1 });
 			renderData.width = width;
@@ -1556,7 +1546,6 @@ namespace Pudu
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
 			renderData.activeRenderTarget = gfx->Resources()->GetTexture<Texture2d>(builder->GetResource(node->outputs[0])->textureHandle);
-
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
 			renderPass->Render(renderData);
@@ -1568,6 +1557,21 @@ namespace Pudu
 	void FrameGraph::OnResize(PuduGraphics& gpu, uint32_t new_width, uint32_t new_height)
 	{
 	}
+	std::string FrameGraph::ToString()
+	{
+		std::stringstream ss;
+
+		for (auto n : nodes)
+		{
+			auto node = GetNode(n);
+
+			for (auto edge : node->outputEdges) {
+				ss << node->name << "-->" << GetNode(GetNodeEdge(edge)->to)->name << "\n";
+			}
+		}
+
+		return ss.str();
+	}
 	void FrameGraph::AttachRenderPass(RenderPass renderPass, RenderPassType type)
 	{
 
@@ -1577,17 +1581,17 @@ namespace Pudu
 	{
 		return builder->GetNode(name);
 	}
-	FrameGraphNode* FrameGraph::GetNode(FrameGraphNodeHandle textureHandle)
+	FrameGraphNode* FrameGraph::GetNode(FrameGraphNodeHandle nodeHandle)
 	{
-		return builder->GetNode(textureHandle);
+		return builder->GetNode(nodeHandle);
 	}
-	NodeEdge* FrameGraph::GetNodeEdge(NodeEdgeHandle textureHandle)
+	NodeEdge* FrameGraph::GetNodeEdge(NodeEdgeHandle edgeHandle)
 	{
-		return builder->GetNodeEdge(textureHandle);
+		return builder->GetNodeEdge(edgeHandle);
 	}
-	FrameGraphResource* FrameGraph::GetResource(FrameGraphResourceHandle textureHandle)
+	FrameGraphResource* FrameGraph::GetResource(FrameGraphResourceHandle resourceHandle)
 	{
-		return builder->GetResource(textureHandle);
+		return builder->GetResource(resourceHandle);
 	}
 	FrameGraphResourceHandle FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
 	{
