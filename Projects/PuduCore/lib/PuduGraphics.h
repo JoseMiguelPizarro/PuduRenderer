@@ -173,9 +173,10 @@ namespace Pudu
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
+		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureCreationSettings& creationData);
 		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureCreationSettings& creationSettings);
-		TextureHandle CreateTexture(TextureCreationData const& creationData);
+		GPUResourceHandle CreateTexture(TextureCreationData const& creationData);
 
 		void UploadTextureData(SPtr<Texture> texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
@@ -301,7 +302,7 @@ namespace Pudu
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 		void InitWindow();
 		bool CheckValidationLayerSupport();
-		void UpdateBindlessTexture(TextureHandle texture);
+		void UpdateBindlessTexture(GPUResourceHandle handle);
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		void SetupDebugMessenger();
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

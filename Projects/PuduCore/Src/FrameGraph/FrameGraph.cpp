@@ -869,11 +869,11 @@ namespace Pudu
 		creationData.type = node->type;
 		creationData.isEnabled = node->enabled;
 
-		std::vector<FrameGraphResource*> addedAttachments;
+		std::vector<GPUResource*> addedAttachments;
 
 
 		for (auto outputResourceHandle : node->outputs) {
-			FrameGraphResource* outputResource = frameGraph->GetResource(outputResourceHandle);
+			GPUResource* outputResource = frameGraph->GetResource(outputResourceHandle);
 
 			if (std::ranges::contains(addedAttachments, outputResource))
 			{
@@ -908,7 +908,7 @@ namespace Pudu
 		}
 
 		for (auto inputResourceHandle : node->inputs) {
-			FrameGraphResource* inputResource = frameGraph->GetResource(inputResourceHandle);
+			GPUResource* inputResource = frameGraph->GetResource(inputResourceHandle);
 
 
 			if (inputResource->type == FrameGraphResourceType_Attachment) {
@@ -948,8 +948,12 @@ namespace Pudu
 	{
 	}
 
-
-	FrameGraphResourceHandle FrameGraphBuilder::CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation)
+	/// <summary>
+	/// Deprecated, all resources should be allocated externally
+	/// </summary>
+	/// <param name="creation"></param>
+	/// <returns></returns>
+	GPUResourceHandle FrameGraphBuilder::CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation)
 	{
 		auto r = GetResource(creation.name);
 		if (r != nullptr)
@@ -957,10 +961,10 @@ namespace Pudu
 			return r->resourceHandle;
 		}
 
-		FrameGraphResourceHandle resourceHandle{ k_INVALID_HANDLE };
+		GPUResourceHandle resourceHandle{ k_INVALID_HANDLE };
 		resourceHandle.index = resourceCache.resources.ObtainResource();
 
-		FrameGraphResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
+		GPUResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
 		/*	resource->name.append(creation.name);
 			resource->type = creation.type;
 			resource->isDepth = creation.isDepth;*/
@@ -1053,7 +1057,7 @@ namespace Pudu
 		return nodeCache.nodes.GetResourcePtr(nodeHandle.index);
 	}
 
-	FrameGraphResource* FrameGraphBuilder::GetResource(std::string name)
+	GPUResource* FrameGraphBuilder::GetResource(std::string name)
 	{
 		auto it = resourceCache.resourcesMap.find(name);
 
@@ -1065,7 +1069,7 @@ namespace Pudu
 		return resourceCache.resources.GetResourcePtr(it->second);
 	}
 
-	FrameGraphResource* FrameGraphBuilder::GetResource(FrameGraphResourceHandle textureHandle)
+	GPUResource* FrameGraphBuilder::GetResource(GPUResourceHandle textureHandle)
 	{
 		return resourceCache.resources.GetResourcePtr(textureHandle.index);
 	}
@@ -1075,7 +1079,7 @@ namespace Pudu
 		return nodeCache.nodeEdges.GetResourcePtr(textureHandle.index);
 	}
 
-	NodeEdgeHandle FrameGraphBuilder::CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, FrameGraphResourceHandle resourceHandle)
+	NodeEdgeHandle FrameGraphBuilder::CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, GPUResourceHandle resourceHandle)
 	{
 		NodeEdgeHandle edgeHandle{ k_INVALID_HANDLE };
 		edgeHandle.index = nodeCache.nodeEdges.ObtainResource();
@@ -1100,7 +1104,7 @@ namespace Pudu
 	{
 	}
 
-	bool FrameGraphResourceCache::AddResourceToCache(const char* name, FrameGraphResourceHandle resourceHandle)
+	bool FrameGraphResourceCache::AddResourceToCache(const char* name, GPUResourceHandle resourceHandle)
 	{
 		if (resourcesMap.find(name) != resourcesMap.end())
 		{
@@ -1268,7 +1272,7 @@ namespace Pudu
 		//Todo:: implement
 	}
 
-	void FrameGraph::AllocateResource(FrameGraphResourceHandle handle)
+	void FrameGraph::AllocateResource(GPUResourceHandle handle)
 	{
 		auto r = builder->GetResource(handle);
 
@@ -1589,11 +1593,11 @@ namespace Pudu
 	{
 		return builder->GetNodeEdge(edgeHandle);
 	}
-	FrameGraphResource* FrameGraph::GetResource(FrameGraphResourceHandle resourceHandle)
+	GPUResource* FrameGraph::GetResource(GPUResourceHandle resourceHandle)
 	{
 		return builder->GetResource(resourceHandle);
 	}
-	FrameGraphResourceHandle FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
+	GPUResourceHandle FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
 	{
 		return builder->CreateOrGetFrameGraphResource(createInfo);
 

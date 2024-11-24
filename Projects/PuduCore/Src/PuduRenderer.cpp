@@ -14,7 +14,6 @@ namespace Pudu
 		this->graphics = graphics;
 		this->app = app;
 
-
 		AddRenderPass(&m_depthRenderPass, RenderPassType::DepthPrePass);
 		AddRenderPass(&m_forwardRenderPass, RenderPassType::Color);
 		AddRenderPass(&m_shadowMapRenderPass, RenderPassType::ShadowMap);
@@ -24,37 +23,34 @@ namespace Pudu
 		frameGraphBuilder.Init(graphics);
 		frameGraph.Init(&frameGraphBuilder);
 
-		FrameGraphResourceCreateInfo depthRT;
-		depthRT.depth = 1;
-		depthRT.width = graphics->WindowWidth;
-		depthRT.height = graphics->WindowHeight;
-		depthRT.format = VK_FORMAT_D32_SFLOAT;
-		depthRT.loadOp = RenderPassOperation::Clear;
-		depthRT.name = "DepthPrepassTexture";
-		depthRT.type = FrameGraphResourceType_Attachment;
 
+		auto depthRT = graphics->GetRenderTexture();
+		depthRT->depth = 1;
+		depthRT->width = graphics->WindowWidth;
+		depthRT->height = graphics->WindowHeight;
+		depthRT->format = VK_FORMAT_D32_SFLOAT;
+		depthRT->name = "DepthPrepassTexture";
 
-		FrameGraphResourceCreateInfo colorRT;
-		colorRT.depth = 1;
-		colorRT.width = graphics->WindowWidth;
-		colorRT.height = graphics->WindowHeight;
-		colorRT.format = VK_FORMAT_R8G8B8A8_UNORM;
-		colorRT.loadOp = RenderPassOperation::Clear;
-		colorRT.name = "ForwardColor";
-		colorRT.type = FrameGraphResourceType_Attachment;
+		auto colorRT = graphics->GetRenderTexture();
+		colorRT->depth = 1;
+		colorRT->width = graphics->WindowWidth;
+		colorRT->height = graphics->WindowHeight;
+		colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+		colorRT->name = "ForwardColor";
 
-		FrameGraphResourceCreateInfo shadowRT;
-		shadowRT.depth = 1;
-		shadowRT.width = graphics->WindowWidth;
-		shadowRT.height = graphics->WindowHeight;
-		shadowRT.format = VK_FORMAT_D16_UNORM;
-		shadowRT.loadOp = RenderPassOperation::Clear;
-		shadowRT.name = "ShadowMap";
-		shadowRT.type = FrameGraphResourceType_Attachment;
+		auto shadowRT = graphics->GetRenderTexture();
+		shadowRT->depth = 1;
+		shadowRT->width = graphics->WindowWidth;
+		shadowRT->height = graphics->WindowHeight;
+		shadowRT->format = VK_FORMAT_D16_UNORM;
+		shadowRT->name = "ShadowMap";
 
 		auto depthFGR = frameGraph.AddResource(depthRT);
 		auto colorRTR = frameGraph.AddResource(colorRT);
 		auto shadowRTR = frameGraph.AddResource(shadowRT);
+
+
+
 
 		FrameGraphNodeCreation depthNode;
 		depthNode.name = "DepthPrepass";
@@ -76,6 +72,7 @@ namespace Pudu
 		colorNode.inputs.push_back(colorRTR);
 		colorNode.outputs.push_back(colorRTR);
 		colorNode.renderType = RenderPassType::Color;
+
 
 		frameGraph.CreateNode(shadowNode);
 		frameGraph.CreateNode(depthNode);

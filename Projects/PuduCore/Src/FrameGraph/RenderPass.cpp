@@ -7,6 +7,7 @@
 #include <GPUCommands.h>
 #include "Lighting/Light.h"
 #include "Material.h"
+#include <stdexcept>
 
 #include <Lighting/LightBuffer.h>
 
@@ -25,32 +26,17 @@ namespace Pudu
 
 	RenderPassAttachments& RenderPassAttachments::AddColorAttachment(RenderPassAttachment attachment)
 	{
-		VkRenderingAttachmentInfo attachmentInfo{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-		attachmentInfo.clearValue = attachment.clearValue;
-		attachmentInfo.loadOp = attachment.loadOperation;
-		attachmentInfo.storeOp = attachment.storeOp;
-		attachmentInfo.imageView = attachment.texture->vkImageViewHandle;
-		attachmentInfo.imageLayout = attachment.layout;
-
 		colorAttachmentsFormat[numColorFormats++] = attachment.texture->format;
-		colorAttachments[colorAttachmentCount++] = attachmentInfo;
+		colorAttachments[colorAttachmentCount++] = attachment;
 
 		return *this;
 	}
 
 	RenderPassAttachments& RenderPassAttachments::SetDepthStencilAttachment(RenderPassAttachment attachment)
 	{
-		VkRenderingAttachmentInfo attachmentInfo{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-		attachmentInfo.clearValue = attachment.clearValue;
-		attachmentInfo.loadOp = attachment.loadOperation;
-		attachmentInfo.storeOp = attachment.storeOp;
-		attachmentInfo.imageView = attachment.texture->vkImageViewHandle;
-		attachmentInfo.imageLayout = attachment.layout;
-
-
 		depthStencilFormat = attachment.texture->format;
 
-		depthAttachments[depthAttachmentCount++] = attachmentInfo;
+		depthAttachments[depthAttachmentCount++] = attachment;
 
 		return *this;
 	}
@@ -73,6 +59,49 @@ namespace Pudu
 	uint16_t RenderPassAttachments::AttachmentCount()
 	{
 		return colorAttachmentCount + depthAttachmentCount;
+	}
+
+
+	static VkRenderingAttachmentInfo RenderPassAttachmentToVKAttachment(RenderPassAttachment& attachment)
+	{
+		assert(attachment.texture->IsAllocated() && fmt::format("Texture {} is not allocated", attachment.texture->name).c_str());
+
+		VkRenderingAttachmentInfo renderingAttachment = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+		renderingAttachment.imageLayout = attachment.layout;
+		renderingAttachment.clearValue = attachment.clearValue;
+		renderingAttachment.imageView = attachment.texture->vkImageViewHandle;
+		renderingAttachment.loadOp = attachment.loadOperation;
+		renderingAttachment.storeOp = attachment.storeOp;
+
+		return renderingAttachment;
+	}
+
+	VkRenderingAttachmentInfo* RenderPassAttachments::GetColorAttachments()
+	{
+		if (m_colorAttachmentsCreated)
+		{
+			return m_vkcolorAttachments;
+		}
+
+		for (size_t i = 0; i < colorAttachmentCount; i++)
+		{
+			auto attachment = colorAttachments[i];
+
+			m_vkcolorAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
+		}
+
+
+		return nullptr;
+	}
+
+	VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthAttachments()
+	{
+		return nullptr;
+	}
+
+	VkRenderingAttachmentInfo* RenderPassAttachments::GetStencilAttachments()
+	{
+		return nullptr;
 	}
 
 #pragma endregion 
@@ -256,8 +285,8 @@ namespace Pudu
 		renderInfo.renderArea = renderArea;
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = attachments.colorAttachmentCount;
-		renderInfo.pColorAttachments = attachments.colorAttachments;
-		renderInfo.pDepthAttachment = attachments.depthAttachmentCount > 0 ? attachments.depthAttachments : nullptr;
+		renderInfo.pColorAttachments = attachments.GetColorAttachments();
+		renderInfo.pDepthAttachment = attachments.depthAttachmentCount > 0 ? attachments.GetDepthAttachments() : nullptr;
 
 		renderInfo.pStencilAttachment = nullptr;
 

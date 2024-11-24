@@ -21,7 +21,7 @@ namespace Pudu
 
 	struct RenderPassAttachment
 	{
-		SPtr<Texture2d> texture;
+		SPtr<RenderTexture> texture;
 		VkAttachmentLoadOp loadOperation;
 		VkAttachmentStoreOp storeOp;
 		VkClearValue clearValue;
@@ -49,9 +49,26 @@ namespace Pudu
 		uint16_t depthAttachmentCount = 0;
 
 		VkFormat colorAttachmentsFormat[K_MAX_IMAGE_OUTPUTS];
-		VkRenderingAttachmentInfo colorAttachments[K_MAX_IMAGE_OUTPUTS];
-		VkRenderingAttachmentInfo depthAttachments[K_MAX_IMAGE_OUTPUTS];
-		VkRenderingAttachmentInfo stencilAttachments[K_MAX_IMAGE_OUTPUTS];
+
+
+
+		VkRenderingAttachmentInfo* GetColorAttachments();
+		VkRenderingAttachmentInfo* GetDepthAttachments();
+		VkRenderingAttachmentInfo* GetStencilAttachments();
+
+
+	private:
+		private bool m_colorAttachmentsCreated;
+		private bool m_depthAttachmentsCreated;
+		private bool m_stencilAttachmentsCreated;
+
+		RenderPassAttachment colorAttachments[K_MAX_IMAGE_OUTPUTS];
+		RenderPassAttachment depthAttachments[K_MAX_IMAGE_OUTPUTS];
+		RenderPassAttachment stencilAttachments[K_MAX_IMAGE_OUTPUTS];
+
+		VkRenderingAttachmentInfo m_vkcolorAttachments[K_MAX_IMAGE_OUTPUTS];
+		VkRenderingAttachmentInfo m_vkDepthAttachments[K_MAX_IMAGE_OUTPUTS];
+		VkRenderingAttachmentInfo m_vkStencilAttachments[K_MAX_IMAGE_OUTPUTS];
 	};
 
 	struct RenderPassCreationData

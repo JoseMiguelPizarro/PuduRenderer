@@ -7,7 +7,7 @@
 
 namespace Pudu
 {
-	class Texture
+	class Texture : public GPUResource
 	{
 	public:
 		std::string name;
@@ -17,7 +17,6 @@ namespace Pudu
 		VmaAllocation vmaAllocation;
 		VkImageLayout vkImageLayout;
 		TextureSampler Sampler;
-		TextureHandle handle;
 		bool isSwapChain = false;
 		uint32_t width;
 		uint32_t height;
@@ -37,5 +36,10 @@ namespace Pudu
 		friend PuduGraphics;
 		void Destroy();
 		bool m_disposed;
+	};
+
+
+	class RenderTexture :public Texture {
+
 	};
 }

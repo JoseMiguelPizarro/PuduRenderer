@@ -66,12 +66,15 @@ namespace Pudu {
 		SPtr<GPUCommands> AllocateCommandBuffer();
 		SPtr<GPUCommands> GetComandBuffer(GPUResourceHandle handle);
 
+		SPtr<RenderTexture> AllocateRenderTexture();
+		SPtr<RenderTexture> GetRenderTexture(GPUResourceHandle handle);
+
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
 		template<class T>
 			requires (std::convertible_to<T, Texture>)
-		SPtr<T> GetTexture(TextureHandle handle)
+		SPtr<T> GetTexture(GPUResourceHandle handle)
 		{
 			return static_pointer_cast<T>(m_textures.GetResource(handle.index));
 
@@ -106,9 +109,8 @@ namespace Pudu {
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
 		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
+		ResourcePool<SPtr<RenderTexture>> m_renderTextures;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
-
-		
 	};
 }
 

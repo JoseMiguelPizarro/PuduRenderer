@@ -12,11 +12,17 @@ namespace Pudu
 	{
 	public:
 		GPUResourceHandle Handle() { return m_handle; }
+		bool IsAllocated() { return m_allocated; }
+
 
 	private:
 		friend class GPUResourcesManager;
 		GPUResourceHandle m_handle;
-
-
+		bool m_allocated;
 	};
+
+
+	struct TextureHandle :public GPUResourceHandle
+	{
+	}; // struct TextureHandle
 }

@@ -36,9 +36,9 @@ namespace Pudu {
 
 	SPtr<Texture2d> GPUResourcesManager::AllocateTexture2D()
 	{
-		TextureHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
+		GPUResourceHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
 		SPtr<Texture2d> texture = std::make_shared<Texture2d>();
-		texture->handle = handle;
+		texture->m_handle = handle;
 
 		m_textures.AddResource(texture);
 
@@ -47,9 +47,9 @@ namespace Pudu {
 
 	SPtr<TextureCube> GPUResourcesManager::AllocateTextureCube()
 	{
-		TextureHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
+		GPUResourceHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
 		SPtr<TextureCube> texture = std::make_shared<TextureCube>();
-		texture->handle = handle;
+		texture->m_handle = handle;
 
 		m_textures.AddResource(texture);
 
@@ -224,6 +224,16 @@ namespace Pudu {
 	SPtr<GPUCommands> GPUResourcesManager::GetComandBuffer(GPUResourceHandle handle)
 	{
 		return m_commandBuffers.GetResource(handle.index);
+	}
+
+	SPtr<RenderTexture> GPUResourcesManager::AllocateRenderTexture()
+	{
+		return AllocateGPUResource<RenderTexture>(m_renderTextures);
+	}
+
+	SPtr<RenderTexture> GPUResourcesManager::GetRenderTexture(GPUResourceHandle handle)
+	{
+		return m_renderTextures.GetResource(handle.index);
 	}
 
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)

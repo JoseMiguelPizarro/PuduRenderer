@@ -15,9 +15,9 @@ namespace Pudu
 
 	static const uint32_t k_INVALID_HANDLE = 0xffffffff;
 
-	struct FrameGraphResourceHandle
+	struct GPUResourceHandle
 	{
-		FrameGraphHandle index;
+		ResourceHandle index;
 	};
 
 	struct SemaphoreHandle {
@@ -52,10 +52,7 @@ namespace Pudu
 		ResourceHandle index;
 	}; // struct BufferHandle
 
-	struct TextureHandle
-	{
-		ResourceHandle index;
-	}; // struct TextureHandle
+
 
 	struct ShaderStateHandle
 	{
@@ -116,6 +113,7 @@ namespace Pudu
 		RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE = 0x4000,
 		RESOURCE_STATE_SHADING_RATE_SOURCE = 0x8000,
 	};
+
 
 	namespace QueueType {
 		enum Enum {
@@ -495,8 +493,8 @@ namespace Pudu
 		float scaleX = 1.f;
 		float scaleY = 1.f;
 
-		TextureHandle colorAttachmentHandles[K_MAX_IMAGE_OUTPUTS];
-		TextureHandle depthStencilAttachmentHandle;
+		GPUResourceHandle colorAttachmentHandles[K_MAX_IMAGE_OUTPUTS];
+		GPUResourceHandle depthStencilAttachmentHandle;
 		uint32_t numColorAttachments;
 
 		uint8_t resize = 0;
