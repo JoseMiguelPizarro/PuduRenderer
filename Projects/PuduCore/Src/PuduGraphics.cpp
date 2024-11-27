@@ -342,8 +342,7 @@ namespace Pudu
 
 	void PuduGraphics::CreateImGuiRenderPass()
 	{
-		RenderPassCreationData rpCreation;
-		rpCreation.type = RenderPassType::Color;
+		auto imguiRenderPass = GetRenderPass<RenderPass>();
 
 		RenderPassAttachment rpcolorAttachment;
 		rpcolorAttachment.texture = m_swapChainTextures[0];
@@ -351,9 +350,10 @@ namespace Pudu
 		rpcolorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		rpcolorAttachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
 
-		rpCreation.attachments.AddColorAttachment(rpcolorAttachment);
-		rpCreation.name = "Imgui";
-		m_ImGuiRenderPass = CreateRenderPass(rpCreation);
+		imguiRenderPass->attachments.AddColorAttachment(rpcolorAttachment);
+		imguiRenderPass->name = "Imgui";
+
+		imguiRenderPass->Create(this);
 	}
 
 	void PuduGraphics::CreateImGUICommandBuffers()
@@ -1112,8 +1112,8 @@ namespace Pudu
 
 			//SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], );
 
-			auto handle = m_resources.AllocateTexture2D();
-			auto texture = m_resources.GetTexture<Texture2d>(handle->Handle());
+			auto handle = m_resources.AllocateRenderTexture();
+			auto texture = m_resources.GetTexture<RenderTexture>(handle->Handle());
 
 			texture->vkImageViewHandle = imageView;
 			texture->vkImageHandle = m_swapChainImages[i];
@@ -1152,20 +1152,8 @@ namespace Pudu
 		}
 	}
 
-	SPtr<RenderPass>PuduGraphics::CreateRenderPass(RenderPassCreationData& creationData)
+	void PuduGraphics::CreateRenderPass(RenderPass* renderPass)
 	{
-		auto renderPass = m_resources.AllocateRenderPass(creationData.type);
-		renderPass->attachments = creationData.attachments;
-		renderPass->isEnabled = creationData.isEnabled;
-		renderPass->numRenderTargets = creationData.attachments.AttachmentCount();
-		renderPass->name = creationData.name;
-
-		if (creationData.isCompute)
-		{
-			renderPass->isCompute = true;
-			renderPass->SetComputeShader(creationData.computeShader);
-		}
-
 		auto output = renderPass->attachments;
 
 		VkAttachmentDescription2 colorAttachments[8] = {};
@@ -1286,9 +1274,7 @@ namespace Pudu
 
 		VKCheck(vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle), "Failed to create renderpass");
 
-		SetResourceName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)renderPass->vkHandle, creationData.name.c_str());
-
-		return renderPass;
+		SetResourceName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)renderPass->vkHandle, renderPass->name.c_str());
 	}
 
 	ShaderStateHandle PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)

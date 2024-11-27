@@ -130,7 +130,6 @@ namespace Pudu {
 		void Init(PuduGraphics* device);
 		void Shutdown();
 
-		GPUResourceHandle CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation);
 		FrameGraphNodeHandle CreateNode(const FrameGraphNodeCreation& creation);
 
 		FrameGraphNode* GetNode(std::string name);
@@ -183,8 +182,6 @@ namespace Pudu {
 		FrameGraphNode* GetNode(FrameGraphNodeHandle nodeHandle);
 
 		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
-		GPUResource* GetResource(GPUResourceHandle textureHandle);
-		GPUResourceHandle AddResource(FrameGraphResourceCreateInfo createInfo);
 
 		///TODO: WE SHOULD BE ABLE TO CREATE THE NODES BY ADDING THE SPECIFYING THE INPUT/OUTPUT RESOURCES
 		FrameGraphNodeHandle CreateNode(FrameGraphNodeCreation& creationData);

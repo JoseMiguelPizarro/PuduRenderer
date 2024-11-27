@@ -775,12 +775,12 @@ namespace Pudu
 		return RenderPassOperation::DontCare;
 	}
 
-	static  std::unordered_map<std::string, FrameGraphResourceType> const FrameGraphResourceTypeTable = {
+	/*static  std::unordered_map<std::string, FrameGraphResourceType> const FrameGraphResourceTypeTable = {
 		{"buffer", FrameGraphResourceType_Buffer},
 		{"texture", FrameGraphResourceType_Texture},
 		{"attachment", FrameGraphResourceType_Attachment},
 		{"reference",FrameGraphResourceType_Reference}
-	};
+	};*/
 
 	static std::unordered_map < std::string, RenderPassType> const RenderPassTypeTable =
 	{
@@ -793,10 +793,10 @@ namespace Pudu
 		return RenderPassTypeTable.find(id)->second;
 	}
 
-	static FrameGraphResourceType GetResourceType(std::string id) {
-		//Handle lower/upper case
-		return FrameGraphResourceTypeTable.find(id)->second;
-	}
+	//static FrameGraphResourceType GetResourceType(std::string id) {
+	//	//Handle lower/upper case
+	//	return FrameGraphResourceTypeTable.find(id)->second;
+	//}
 
 #pragma endregion
 
@@ -860,82 +860,6 @@ namespace Pudu
 		}
 	}
 
-	static void CreateRenderPass(FrameGraph* frameGraph, FrameGraphNode* node) {
-		LOG("FrameGraph: Create RenderPass");
-		auto gfx = frameGraph->builder->graphics;
-
-		RenderPassCreationData creationData;
-		creationData.isCompute = node->isCompute;
-		creationData.type = node->type;
-		creationData.isEnabled = node->enabled;
-
-		std::vector<GPUResource*> addedAttachments;
-
-
-		for (auto outputResourceHandle : node->outputs) {
-			GPUResource* outputResource = frameGraph->GetResource(outputResourceHandle);
-
-			if (std::ranges::contains(addedAttachments, outputResource))
-			{
-				continue;
-			}
-
-			addedAttachments.push_back(outputResource);
-
-			if (outputResource->type == FrameGraphResourceType_Attachment) {
-
-				assert((fmt::format("Resource {} has invalid handle", outputResource->name), outputResource->textureHandle.index != k_INVALID_HANDLE));
-
-				if (TextureFormat::HasDepthOrStencil(outputResource->format)) {
-
-					RenderPassAttachment attachment{};
-					attachment.clearValue = { 1.f, 0.f, 0.f, 0.f };
-					attachment.loadOperation = GetVkAttachmentLoadOp(outputResource->loadOp);
-					attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(outputResource->textureHandle);
-					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-					creationData.attachments.SetDepthStencilAttachment(attachment);
-				}
-				else {
-					RenderPassAttachment attachment{};
-					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
-					attachment.loadOperation = GetVkAttachmentLoadOp(outputResource->loadOp);
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(outputResource->textureHandle);
-					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					creationData.attachments.AddColorAttachment(attachment);
-				}
-			}
-		}
-
-		for (auto inputResourceHandle : node->inputs) {
-			GPUResource* inputResource = frameGraph->GetResource(inputResourceHandle);
-
-
-			if (inputResource->type == FrameGraphResourceType_Attachment) {
-				if (TextureFormat::HasDepthOrStencil(inputResource->format)) {
-					RenderPassAttachment attachment{};
-					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
-					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(inputResource->textureHandle);
-					attachment.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-					creationData.attachments.SetDepthStencilAttachment(attachment);
-				}
-				else {
-					RenderPassAttachment attachment{};
-					attachment.clearValue = { 0.f, 0.f, 0.f, 0.f };
-					attachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-					attachment.texture = gfx->Resources()->GetTexture<Texture2d>(inputResource->textureHandle);
-					attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-					creationData.attachments.AddColorAttachment(attachment);
-				}
-			}
-		}
-		creationData.name = node->name;
-		auto renderPass = gfx->CreateRenderPass(creationData);
-		node->renderPass = renderPass->handle;
-
-		LOG("FrameGraph: Create RenderPass End");
-	}
 
 	void FrameGraphBuilder::Init(PuduGraphics* device)
 	{
@@ -953,51 +877,51 @@ namespace Pudu
 	/// </summary>
 	/// <param name="creation"></param>
 	/// <returns></returns>
-	GPUResourceHandle FrameGraphBuilder::CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation)
-	{
-		auto r = GetResource(creation.name);
-		if (r != nullptr)
-		{
-			return r->resourceHandle;
-		}
+	//GPUResourceHandle FrameGraphBuilder::CreateOrGetFrameGraphResource(const FrameGraphResourceCreateInfo& creation)
+	//{
+	//	auto r = GetResource(creation.name);
+	//	if (r != nullptr)
+	//	{
+	//		return r->resourceHandle;
+	//	}
 
-		GPUResourceHandle resourceHandle{ k_INVALID_HANDLE };
-		resourceHandle.index = resourceCache.resources.ObtainResource();
+	//	GPUResourceHandle resourceHandle{ k_INVALID_HANDLE };
+	//	resourceHandle.index = resourceCache.resources.ObtainResource();
 
-		GPUResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
-		/*	resource->name.append(creation.name);
-			resource->type = creation.type;
-			resource->isDepth = creation.isDepth;*/
+	//	GPUResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
+	//	/*	resource->name.append(creation.name);
+	//		resource->type = creation.type;
+	//		resource->isDepth = creation.isDepth;*/
 
-			//If node is not a ref, then we'll need to create it
-		if (creation.type != FrameGraphResourceType_Reference)
-		{
-			//Copy from resourceInfo
-			resource->name = creation.name;
-			resource->type = creation.type;
-			resource->textureHandle = creation.textureHandle;
-			resource->buffer = creation.buffer;
-			resource->external = creation.external;
-			resource->size = creation.size;
-			resource->flags = creation.flags;
-			resource->width = creation.width;
-			resource->height = creation.height;
-			resource->loadOp = creation.loadOp;
-			resource->textureType = creation.textureType;
-			resource->format = creation.format;
-			resource->sizeType = creation.sizeType;
-			resource->depth = creation.depth;
-			resource->allocated = false;
+	//		//If node is not a ref, then we'll need to create it
+	//	if (creation.type != FrameGraphResourceType_Reference)
+	//	{
+	//		//Copy from resourceInfo
+	//		resource->name = creation.name;
+	//		resource->type = creation.type;
+	//		resource->textureHandle = creation.textureHandle;
+	//		resource->buffer = creation.buffer;
+	//		resource->external = creation.external;
+	//		resource->size = creation.size;
+	//		resource->flags = creation.flags;
+	//		resource->width = creation.width;
+	//		resource->height = creation.height;
+	//		resource->loadOp = creation.loadOp;
+	//		resource->textureType = creation.textureType;
+	//		resource->format = creation.format;
+	//		resource->sizeType = creation.sizeType;
+	//		resource->depth = creation.depth;
+	//		resource->allocated = false;
 
 
-			resource->resourceHandle = resourceHandle;
+	//		resource->resourceHandle = resourceHandle;
 
-			//Add to resource cache
-			resourceCache.AddResourceToCache(creation.name.c_str(), resourceHandle);
-		}
+	//		//Add to resource cache
+	//		resourceCache.AddResourceToCache(creation.name.c_str(), resourceHandle);
+	//	}
 
-		return resourceHandle;
-	}
+	//	return resourceHandle;
+	//}
 
 	FrameGraphNodeHandle FrameGraphBuilder::CreateNode(const FrameGraphNodeCreation& creation)
 	{
@@ -1131,142 +1055,142 @@ namespace Pudu
 	}
 
 
-	void FrameGraph::Parse(std::filesystem::path filePath)
-	{
-		LOG("FrameGraph Parse");
-		//TODO: ADD NODE TYPE (COLOR,DEPTH)
-		if (!std::filesystem::exists(filePath))
-		{
-			LOG("File not found {}", filePath.string());
-		}
+	//void FrameGraph::Parse(std::filesystem::path filePath)
+	//{
+	//	LOG("FrameGraph Parse");
+	//	//TODO: ADD NODE TYPE (COLOR,DEPTH)
+	//	if (!std::filesystem::exists(filePath))
+	//	{
+	//		LOG("File not found {}", filePath.string());
+	//	}
 
-		using namespace simdjson;
+	//	using namespace simdjson;
 
-		ondemand::parser parser;
+	//	ondemand::parser parser;
 
-		auto json = padded_string::load(filePath.string());
-		auto doc = parser.iterate(json);
-		ondemand::object object = doc.get_object();
-		for (auto field : object)
-		{
-			std::string_view keyv = field.unescaped_key();
-		}
+	//	auto json = padded_string::load(filePath.string());
+	//	auto doc = parser.iterate(json);
+	//	ondemand::object object = doc.get_object();
+	//	for (auto field : object)
+	//	{
+	//		std::string_view keyv = field.unescaped_key();
+	//	}
 
-		auto passes = object["passes"];
-		for (auto pass : passes)
-		{
-			FrameGraphNodeCreation nodeCreation;
-			auto name = pass["name"].get_string();
-			std::string nameString(name.value());
-			nodeCreation.name = nameString.c_str();
+	//	auto passes = object["passes"];
+	//	for (auto pass : passes)
+	//	{
+	//		FrameGraphNodeCreation nodeCreation;
+	//		auto name = pass["name"].get_string();
+	//		std::string nameString(name.value());
+	//		nodeCreation.name = nameString.c_str();
 
-			auto family = pass["family"].get_string();
+	//		auto family = pass["family"].get_string();
 
-			if (family.error() == simdjson::error_code::SUCCESS)
-			{
-				if (family.value().compare("compute") == 0)
-				{
-					nodeCreation.isCompute = true;
-				}
-			}
+	//		if (family.error() == simdjson::error_code::SUCCESS)
+	//		{
+	//			if (family.value().compare("compute") == 0)
+	//			{
+	//				nodeCreation.isCompute = true;
+	//			}
+	//		}
 
-			nodeCreation.enabled = pass["enabled"].get_bool();
-			nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value())); //We need to store the string_view into a string
+	//		nodeCreation.enabled = pass["enabled"].get_bool();
+	//		nodeCreation.renderType = GetRenderPassType(std::string(pass["type"].get_string().value())); //We need to store the string_view into a string
 
-			auto passInputs = pass["inputs"];
+	//		auto passInputs = pass["inputs"];
 
-			for (auto input : passInputs)
-			{
-				FrameGraphResourceCreateInfo inputCreation{};
+	//		for (auto input : passInputs)
+	//		{
+	//			FrameGraphResourceCreateInfo inputCreation{};
 
-				inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
-				auto inputName = input["name"].get_string();
-				auto isDepthNode = input["isDepth"];
-				inputCreation.isDepth = false;
+	//			inputCreation.type = GetResourceType(std::string(input["type"].get_string().value()));
+	//			auto inputName = input["name"].get_string();
+	//			auto isDepthNode = input["isDepth"];
+	//			inputCreation.isDepth = false;
 
-				if (isDepthNode.error() == simdjson::error_code::SUCCESS)
-				{
-					inputCreation.isDepth = isDepthNode.get_bool();
-				}
+	//			if (isDepthNode.error() == simdjson::error_code::SUCCESS)
+	//			{
+	//				inputCreation.isDepth = isDepthNode.get_bool();
+	//			}
 
-				std::string inputNameStr;
-				inputNameStr.append(inputName.value());
-				inputCreation.name = inputNameStr;
+	//			std::string inputNameStr;
+	//			inputNameStr.append(inputName.value());
+	//			inputCreation.name = inputNameStr;
 
-				inputCreation.external = false;
+	//			inputCreation.external = false;
 
-				//	nodeCreation.inputs.push_back(inputCreation);
-			}
+	//			//	nodeCreation.inputs.push_back(inputCreation);
+	//		}
 
-			auto passOutputs = pass["outputs"];
+	//		auto passOutputs = pass["outputs"];
 
-			for (auto output : passOutputs)
-			{
-				FrameGraphResourceCreateInfo outputCreation{};
-				outputCreation.type = GetResourceType(std::string(output["type"].get_string().value()).c_str());
-				auto outputName = output["name"].get_string();
-				std::string outputNameStr;
-				outputNameStr.append(outputName.value());
-				outputCreation.name = outputNameStr;
+	//		for (auto output : passOutputs)
+	//		{
+	//			FrameGraphResourceCreateInfo outputCreation{};
+	//			outputCreation.type = GetResourceType(std::string(output["type"].get_string().value()).c_str());
+	//			auto outputName = output["name"].get_string();
+	//			std::string outputNameStr;
+	//			outputNameStr.append(outputName.value());
+	//			outputCreation.name = outputNameStr;
 
-				switch (outputCreation.type)
-				{
-				case FrameGraphResourceType_Attachment:
-				case FrameGraphResourceType_Texture:
-				{
-					std::string format = std::string(output["format"].get_string().value());
+	//			switch (outputCreation.type)
+	//			{
+	//			case FrameGraphResourceType_Attachment:
+	//			case FrameGraphResourceType_Texture:
+	//			{
+	//				std::string format = std::string(output["format"].get_string().value());
 
-					outputCreation.format = VkFormatFromString(format.c_str());
+	//				outputCreation.format = VkFormatFromString(format.c_str());
 
-					std::string loadOp = std::string(output["op"].get_string().value());
+	//				std::string loadOp = std::string(output["op"].get_string().value());
 
-					outputCreation.loadOp = RenderPassOperationFromString(loadOp.c_str());
-
-
-					auto textureType = output["textureType"].get_string();
-
-					if (textureType.error() == simdjson::error_code::SUCCESS)
-					{
-						outputCreation.textureType = TextureTypeFromString(textureType.value().data());
-					}
-					else {
-						outputCreation.textureType = TextureType::Texture2D;
-					}
-
-					auto resolution = output["resolution"].get_array();
-					std::vector<uint32_t> values;
-					for (auto r : resolution)
-					{
-						values.push_back((uint32_t)r.get_int64());
-					}
-
-					outputCreation.textureHandle = { k_INVALID_HANDLE };
-					outputCreation.width = values[0];
-					outputCreation.height = values[1];
-					outputCreation.depth = 1;
-
-				}break;
-				case FrameGraphResourceType_Buffer:
-				{
-					//TODO
-				}
-				break;
+	//				outputCreation.loadOp = RenderPassOperationFromString(loadOp.c_str());
 
 
-				default:
-					break;
-				}
+	//				auto textureType = output["textureType"].get_string();
 
-				//nodeCreation.outputs.push_back(outputCreation);
-			}
+	//				if (textureType.error() == simdjson::error_code::SUCCESS)
+	//				{
+	//					outputCreation.textureType = TextureTypeFromString(textureType.value().data());
+	//				}
+	//				else {
+	//					outputCreation.textureType = TextureType::Texture2D;
+	//				}
 
-			FrameGraphNodeHandle nodeHandle = builder->CreateNode(nodeCreation);
+	//				auto resolution = output["resolution"].get_array();
+	//				std::vector<uint32_t> values;
+	//				for (auto r : resolution)
+	//				{
+	//					values.push_back((uint32_t)r.get_int64());
+	//				}
 
-			nodes.push_back(nodeHandle);
-		}
+	//				outputCreation.textureHandle = { k_INVALID_HANDLE };
+	//				outputCreation.width = values[0];
+	//				outputCreation.height = values[1];
+	//				outputCreation.depth = 1;
 
-		LOG("FrameGraph Parse End");
-	}
+	//			}break;
+	//			case FrameGraphResourceType_Buffer:
+	//			{
+	//				//TODO
+	//			}
+	//			break;
+
+
+	//			default:
+	//				break;
+	//			}
+
+	//			//nodeCreation.outputs.push_back(outputCreation);
+	//		}
+
+	//		FrameGraphNodeHandle nodeHandle = builder->CreateNode(nodeCreation);
+
+	//		nodes.push_back(nodeHandle);
+	//	}
+
+	//	LOG("FrameGraph Parse End");
+	//}
 	void FrameGraph::Reset()
 	{
 		//Todo:: implement
@@ -1276,66 +1200,15 @@ namespace Pudu
 	{
 		auto r = builder->GetResource(handle);
 
-		if (r->allocated)
+		if (r->IsAllocated())
 		{
 			return;
 		}
 
 		LOG("Allocating {}", r->name);
 
-		switch (r->type)
-		{
-		default:
-			break;
-		case FrameGraphResourceType_Invalid:
-			break;
-		case FrameGraphResourceType_Buffer:
-			if (r->textureHandle.index == k_INVALID_HANDLE)
-			{
 
-			}
-			break;
-		case FrameGraphResourceType_Texture:
-		case FrameGraphResourceType_Attachment:
-			if (r->textureHandle.index == k_INVALID_HANDLE)
-			{
-
-				auto allocatedTexture = builder->graphics->Resources()->GetTextureByName(r->name.c_str());
-				if (allocatedTexture != nullptr)
-				{
-					r->textureHandle = allocatedTexture->handle;
-				}
-				else {
-
-					TextureCreationData textureData;
-					textureData.depth = r->depth;
-					textureData.width = r->width;
-					textureData.height = r->height;
-					textureData.flags = (TextureFlags::Enum)(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute); //Add sample to set it as bindless. Added support for compute (we should set this in a more smart way maybe?)
-					textureData.format = r->format;
-					textureData.name = r->name.c_str();
-					textureData.mipmaps = 1;
-					textureData.bindless = true;
-					textureData.dataSize = r->width * r->height * 4; //TODO: THIS IS BAD, CHANGE IT LATER
-
-					SamplerCreationData samplerData;
-					samplerData.wrap = false;
-
-					textureData.samplerData = samplerData;
-
-					auto textureHandle = builder->graphics->CreateTexture(textureData);
-
-					r->textureHandle = textureHandle;
-				}
-
-			}
-			break;
-
-		case FrameGraphResourceType_Reference:
-			break;
-		}
-
-		r->allocated = true;
+		r->Create(builder->graphics);
 	}
 
 	void FrameGraph::AllocateRequiredResources()
@@ -1465,11 +1338,6 @@ namespace Pudu
 			{
 				continue;
 			}
-
-			if (node->renderPass.index == k_INVALID_HANDLE)
-			{
-				CreateRenderPass(this, node);
-			}
 		}
 
 		LOG("FrameGraph Compile End");
@@ -1502,17 +1370,9 @@ namespace Pudu
 			{
 				auto resource = builder->GetResource(nodeInputHandle);
 
-				if (resource->type == FrameGraphResourceType_Texture)
+				if (resource->Type() == GPUResourceType::Texture)
 				{
-					bool hasDepth = TextureFormat::HasDepth(resource->format);
-
-					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->textureHandle);
-
-					//	commands->AddImageBarrier(texture->vkImageHandle, hasDepth ? RESOURCE_STATE_DEPTH_WRITE : RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1, hasDepth);
-				}
-				else if (resource->type == FrameGraphResourceType_Attachment)
-				{
-					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->textureHandle);
+					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->Handle());
 
 					width = texture->width;
 					height = texture->height;
@@ -1523,9 +1383,9 @@ namespace Pudu
 			{
 				auto resource = builder->GetResource(nodeOutputHandle);
 
-				if (resource->type == FrameGraphResourceType_Attachment)
+				if (resource->Type() == GPUResourceType::Texture)
 				{
-					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->textureHandle);
+					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->Handle());
 
 					width = texture->width;
 					height = texture->height;

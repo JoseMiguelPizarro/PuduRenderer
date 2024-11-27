@@ -32,6 +32,8 @@ namespace Pudu
 		//Virtual to make this a polymorphic class
 		virtual ~Texture() = default;
 
+		GPUResourceType Type() override { return GPUResourceType::Texture; }
+
 	private:
 		friend PuduGraphics;
 		void Destroy();

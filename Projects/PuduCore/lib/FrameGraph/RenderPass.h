@@ -56,15 +56,15 @@ namespace Pudu
 		VkRenderingAttachmentInfo* GetDepthAttachments();
 		VkRenderingAttachmentInfo* GetStencilAttachments();
 
-
-	private:
-		private bool m_colorAttachmentsCreated;
-		private bool m_depthAttachmentsCreated;
-		private bool m_stencilAttachmentsCreated;
-
 		RenderPassAttachment colorAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment depthAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment stencilAttachments[K_MAX_IMAGE_OUTPUTS];
+
+
+	private:
+		bool m_colorAttachmentsCreated;
+		bool m_depthAttachmentsCreated;
+		bool m_stencilAttachmentsCreated;
 
 		VkRenderingAttachmentInfo m_vkcolorAttachments[K_MAX_IMAGE_OUTPUTS];
 		VkRenderingAttachmentInfo m_vkDepthAttachments[K_MAX_IMAGE_OUTPUTS];
@@ -82,7 +82,7 @@ namespace Pudu
 		RenderPassAttachments attachments;
 	};
 
-	class RenderPass
+	class RenderPass :public GPUResource
 	{
 	public:
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
@@ -122,7 +122,10 @@ namespace Pudu
 		virtual RenderPassType GetRenderPassType() { return RenderPassType::Color;};
 		ComputeShader* GetComputeShader();
 
+		void Create(PuduGraphics* gpu) override;
+
 	private:
+		friend class PuduGraphics;
 		ComputeShader* m_computeShader;
 	};
 

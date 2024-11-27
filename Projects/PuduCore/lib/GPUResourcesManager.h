@@ -34,7 +34,9 @@ namespace Pudu {
 		SPtr<TextureCube> AllocateTextureCube();
 
 		SPtr<RenderPass> GetRenderPass(RenderPassHandle handle);
-		SPtr<RenderPass> AllocateRenderPass(RenderPassType const& renderPassType);
+
+
+		
 
 		SPtr<Framebuffer> GetFramebuffer(FramebufferHandle handle);
 		SPtr<Framebuffer> AllocateFrameBuffer();
@@ -81,6 +83,8 @@ namespace Pudu {
 			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
 		}
 
+
+
 		template<typename T>
 		requires(std::convertible_to<T,GPUResource>)
 		SPtr<T> AllocateGPUResource(ResourcePool <SPtr<T>> pool) {
@@ -93,6 +97,12 @@ namespace Pudu {
 			pool.AddResource(resourcePtr);
 
 			return resourcePtr;
+		}
+
+		template<class T>
+			requires (std::convertible_to<T, RenderPass>)
+		SPtr<T> AllocateRenderPass() {
+			return AllocateGPUResource<T>(m_renderPasses);
 		}
 
 	private:

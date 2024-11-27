@@ -61,33 +61,6 @@ namespace Pudu {
 		return m_renderPasses.GetResource(handle.index);
 	}
 
-	SPtr<RenderPass> GPUResourcesManager::AllocateRenderPass(RenderPassType const& renderPassType)
-	{
-		RenderPassHandle handle;
-
-		switch (renderPassType)
-		{
-		case RenderPassType::Color:
-			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>()) };
-			break;
-		case RenderPassType::ShadowMap:
-			handle = { m_renderPasses.AddResource(std::make_shared<ShadowMapRenderPass>()) };
-			break;
-		case RenderPassType::DepthPrePass:
-			handle = { m_renderPasses.AddResource(std::make_shared <DepthPrepassRenderPass>()) };
-			break;
-		default:
-			handle = { m_renderPasses.AddResource(std::make_shared<RenderPass>()) };
-			break;
-		}
-
-		auto renderPass = m_renderPasses.GetResource(handle.index);
-
-		renderPass->handle = handle;
-
-		return renderPass;
-	}
-
 	SPtr<Framebuffer> GPUResourcesManager::GetFramebuffer(FramebufferHandle handle)
 	{
 		return m_frameBuffers.GetResource(handle.index);

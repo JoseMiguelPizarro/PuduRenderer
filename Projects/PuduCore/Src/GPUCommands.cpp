@@ -163,7 +163,7 @@ namespace Pudu
 	}
 
 
-	void GPUCommands::Blit(SPtr<Texture2d> source, SPtr<Texture2d> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
+	void GPUCommands::Blit(SPtr<Texture> source, SPtr<Texture> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
 	{
 		VkBlitImageInfo2 blitInfo{ VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2 };
 		VkImageBlit2 blitRegion{ VK_STRUCTURE_TYPE_IMAGE_BLIT_2 };

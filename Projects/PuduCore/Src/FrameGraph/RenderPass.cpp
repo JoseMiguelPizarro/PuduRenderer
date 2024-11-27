@@ -90,13 +90,28 @@ namespace Pudu
 			m_vkcolorAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
 		}
 
+		m_colorAttachmentsCreated = true;
 
-		return nullptr;
+		return m_vkcolorAttachments;
+
+
 	}
 
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthAttachments()
 	{
-		return nullptr;
+		if (m_depthAttachmentsCreated)
+		{
+			return m_vkDepthAttachments;
+		}
+
+		for (size_t i = 0; i < depthAttachmentCount; i++)
+		{
+			auto attachment = depthAttachments[i];
+
+			m_vkDepthAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
+		}
+
+		return m_vkDepthAttachments;
 	}
 
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetStencilAttachments()
@@ -277,6 +292,11 @@ namespace Pudu
 	ComputeShader* RenderPass::GetComputeShader()
 	{
 		return m_computeShader;
+	}
+
+	void RenderPass::Create(PuduGraphics* gpu)
+	{
+		gpu->CreateRenderPass(this);
 	}
 
 	VkRenderingInfo RenderPass::GetRenderingInfo(RenderFrameData& data)

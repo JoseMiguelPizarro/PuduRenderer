@@ -121,7 +121,14 @@ namespace Pudu
 		/// Creates a vkRenderPass and attach it to the passed RenderPass object
 		/// </summary>
 		/// <param name="renderPass"></param>
-		SPtr<RenderPass> CreateRenderPass(RenderPassCreationData& creationData);
+		void CreateRenderPass(RenderPass* creationData);
+
+		template<class T>
+			requires (std::convertible_to<T, RenderPass>)
+		SPtr<T> GetRenderPass() {
+			return m_resources.AllocateRenderPass<T>();
+		}
+
 		SPtr<Framebuffer> CreateFramebuffer(FramebufferCreationData const& creationData);
 
 		SPtr<GraphicsBuffer> CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
@@ -326,7 +333,7 @@ namespace Pudu
 		VkQueue m_computeQueue;
 		VkExtent2D m_swapChainExtent;
 		std::vector<VkImage> m_swapChainImages;
-		std::vector<SPtr<Texture2d>> m_swapChainTextures;
+		std::vector<SPtr<RenderTexture>> m_swapChainTextures;
 
 		VkCommandPool m_commandPool;
 

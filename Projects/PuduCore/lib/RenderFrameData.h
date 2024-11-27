@@ -32,7 +32,7 @@ namespace Pudu
 		SPtr<GPUCommands> currentCommand;
 		PuduGraphics* graphics;
 		PuduRenderer* renderer;
-		SPtr<Texture2d> activeRenderTarget;
+		SPtr<RenderTexture> activeRenderTarget;
 		SPtr<RenderPass> currentRenderPass;
 		DrawCall* currentDrawCall;
 		Pipeline* currentPipeline;
