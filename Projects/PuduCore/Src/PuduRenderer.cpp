@@ -14,15 +14,16 @@ namespace Pudu
 		this->graphics = graphics;
 		this->app = app;
 
-		AddRenderPass(&m_depthRenderPass, RenderPassType::DepthPrePass);
-		AddRenderPass(&m_forwardRenderPass, RenderPassType::Color);
-		AddRenderPass(&m_shadowMapRenderPass, RenderPassType::ShadowMap);
+		//AddRenderPass(&m_depthRenderPass, RenderPassType::DepthPrePass);
+		//AddRenderPass(&m_forwardRenderPass, RenderPassType::Color);
+		//AddRenderPass(&m_shadowMapRenderPass, RenderPassType::ShadowMap);
 
 		frameGraph = FrameGraph();
 		frameGraphBuilder = FrameGraphBuilder();
 		frameGraphBuilder.Init(graphics);
 		frameGraph.Init(&frameGraphBuilder);
 
+		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
 
 		auto depthRT = graphics->GetRenderTexture();
 		depthRT->depth = 1;
@@ -45,18 +46,12 @@ namespace Pudu
 		shadowRT->format = VK_FORMAT_D16_UNORM;
 		shadowRT->name = "ShadowMap";
 
-		auto depthFGR = frameGraph.AddResource(depthRT);
-		auto colorRTR = frameGraph.AddResource(colorRT);
-		auto shadowRTR = frameGraph.AddResource(shadowRT);
-
-
-
 
 		FrameGraphNodeCreation depthNode;
 		depthNode.name = "DepthPrepass";
 		depthNode.inputs.push_back(depthFGR);
 		depthNode.outputs.push_back(depthFGR);
-		depthNode.renderType = RenderPassType::DepthPrePass;
+		depthNode.renderPass = m_depthRenderPass->Handle();
 		depthNode.enabled = true;
 
 		FrameGraphNodeCreation shadowNode;

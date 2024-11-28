@@ -130,7 +130,7 @@ void TriangleApp::LoadGameboyModel()
 {
 	auto gltfScene = FileManager::LoadGltfScene(GameboyModelPath);
 
-	for (auto e : gltfScene)
+	for (auto& e : gltfScene)
 	{
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
 

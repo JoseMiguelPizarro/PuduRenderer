@@ -61,7 +61,7 @@ namespace Pudu {
 		std::vector<GPUResourceHandle>  inputs;
 		std::vector<GPUResourceHandle> outputs;
 
-		RenderPassHandle renderPass;
+		GPUResourceHandle renderPass;
 		RenderPassType renderType;
 
 		bool enabled;
