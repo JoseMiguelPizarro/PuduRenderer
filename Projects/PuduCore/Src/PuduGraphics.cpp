@@ -2032,6 +2032,7 @@ namespace Pudu
         texture->mipLevels = creationData.mipmaps;
         texture->pixels = creationData.pixels;
         texture->sourceData = creationData.sourceData;
+        texture->m_flags =creationData.flags;
         uint32_t dataSize = creationData.dataSize;
 
         if (creationData.dataSize == -1)
@@ -2535,11 +2536,11 @@ namespace Pudu
         creationData.name = settings.name;
         creationData.format = settings.format;
         creationData.mipmaps = levels;
-        creationData.pixels = pixelsData;
         creationData.flags = TextureFlags::Sample;
         creationData.textureType = textureType;
         creationData.dataSize = dataSize;
         creationData.layers = layers;
+        creationData.pixels = pixelsData;
         creationData.sourceData = sourceData;
 
         auto textureHandle = CreateTexture(creationData);

@@ -19,7 +19,6 @@ namespace Pudu
 		frameGraphBuilder.Init(graphics);
 		frameGraph.Init(&frameGraphBuilder);
 
-
 		auto depthRT = graphics->GetRenderTexture();
 		depthRT->depth = 1;
 		depthRT->width = graphics->WindowWidth;
@@ -27,6 +26,13 @@ namespace Pudu
 		depthRT->format = VK_FORMAT_D32_SFLOAT;
 		depthRT->name = "DepthPrepassTexture";
 
+		auto shadowRT = graphics->GetRenderTexture();
+		shadowRT->depth = 1;
+		shadowRT->width = graphics->WindowWidth;
+		shadowRT->height = graphics->WindowHeight;
+		shadowRT->format = VK_FORMAT_D16_UNORM;
+		shadowRT->name = "ShadowMap";
+		
 		auto colorRT = graphics->GetRenderTexture();
 		colorRT->depth = 1;
 		colorRT->width = graphics->WindowWidth;
@@ -34,12 +40,6 @@ namespace Pudu
 		colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
 		colorRT->name = "ForwardColor";
 
-		auto shadowRT = graphics->GetRenderTexture();
-		shadowRT->depth = 1;
-		shadowRT->width = graphics->WindowWidth;
-		shadowRT->height = graphics->WindowHeight;
-		shadowRT->format = VK_FORMAT_D16_UNORM;
-		shadowRT->name = "ShadowMap";
 
 
 		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();

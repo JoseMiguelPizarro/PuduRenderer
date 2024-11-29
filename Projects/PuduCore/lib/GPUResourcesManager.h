@@ -75,13 +75,8 @@ namespace Pudu {
 			requires (std::convertible_to<T, Texture>)
 		SPtr<T> GetTexture(GPUResourceHandle handle)
 		{
-			LOG("Getting resource {}", handle.index);
 			return static_pointer_cast<T>(m_textures.GetResource(handle.index));
-
-			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
 		}
-
-
 
 		template<typename T, typename poolType>
 			requires(std::convertible_to<T, GPUResource>)
