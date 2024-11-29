@@ -91,32 +91,14 @@ namespace Pudu
 	class RenderPass :public GPUResource, std::enable_shared_from_this<RenderPass>
 	{
 	public:
+
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
-		VkRect2D renderArea;
-
-		RenderPassHandle handle;
-		VkRenderPass vkHandle;
-
-		bool isCompute;
-		bool isEnabled;
-
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);
-
-		RenderPassAttachments attachments;
-
 		void AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, vec4 clearColor = vec4(0));
 		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, float depthClear = 0.0f, uint32_t stencilClear = 0);
 		void AddColorAttachment(RenderPassAttachment& attachment);
 		void AddDepthStencilAttachment(RenderPassAttachment& attachment);
-
-		uint16_t dispatchX = 0;
-		uint16_t dispatchY = 0;
-		uint16_t dispatchZ = 0;
-
-		uint8_t numRenderTargets = 0;
-
-		std::string name;
 
 		void SetName(const char* name);
 
@@ -131,8 +113,28 @@ namespace Pudu
 		virtual void Initialize(PuduGraphics* gpu) {};
 		void SetComputeShader(ComputeShader* shader);
 		ComputeShader* GetComputeShader();
-
 		void Create(PuduGraphics* gpu) override;
+
+	public:
+
+		VkRect2D renderArea;
+
+		RenderPassHandle handle;
+		VkRenderPass vkHandle;
+
+		bool isCompute;
+		bool isEnabled = true;
+		RenderPassAttachments attachments;
+
+
+		uint16_t dispatchX = 0;
+		uint16_t dispatchY = 0;
+		uint16_t dispatchZ = 0;
+
+		uint8_t numRenderTargets = 0;
+
+		std::string name;
+
 
 	private:
 		friend class PuduGraphics;

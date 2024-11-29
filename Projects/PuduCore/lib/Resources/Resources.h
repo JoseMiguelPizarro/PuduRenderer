@@ -370,11 +370,11 @@ namespace Pudu
 	{
 		enum Enum
 		{
-			Default,
-			RenderTarget,
-			Compute,
-			Count,
-			Sample,
+			Default = 1,
+			RenderTarget = 2,
+			Compute = 4,
+			Count = 8,
+			Sample = 16,
 		};
 
 		enum Mask
@@ -466,6 +466,7 @@ namespace Pudu
 		void* pixels = nullptr;
 		void* sourceData = nullptr; //ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly
 		const char* name = nullptr;
+		bool allocate = true;
 	};
 
 	struct Framebuffer

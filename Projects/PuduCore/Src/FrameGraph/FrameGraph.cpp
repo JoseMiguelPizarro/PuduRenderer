@@ -926,7 +926,7 @@ namespace Pudu
 		node->outputs = creation.outputs;
 		//node->outputEdges.reserve(creation.outputs.size());
 		node->framebuffer = { k_INVALID_HANDLE };
-		node->renderPass = { k_INVALID_HANDLE };
+		node->renderPass = creation.renderPass;
 		//node->type = creation.renderType;
 		node->isCompute = creation.isCompute;
 		node->nodeHandle = nodeHandle;
@@ -985,7 +985,8 @@ namespace Pudu
 
 	GPUResource* FrameGraphBuilder::GetResource(GPUResourceHandle textureHandle)
 	{
-		return resourceCache.resources.GetResourcePtr(textureHandle.index);
+		//This could also be a buffer, we will need more information about what type of handle it is
+		return graphics->Resources()->GetTexture<RenderTexture>(textureHandle).get();
 	}
 
 	NodeEdge* FrameGraphBuilder::GetNodeEdge(NodeEdgeHandle textureHandle)

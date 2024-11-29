@@ -38,6 +38,27 @@ namespace Pudu
 
 		depthAttachments[depthAttachmentCount++] = attachment;
 
+		RenderPassOperation depthOperation;
+		RenderPassOperation stencilOperation;
+
+		switch (attachment.loadOperation)
+		{
+		case VK_ATTACHMENT_LOAD_OP_LOAD:
+			depthOperation = RenderPassOperation::Load;
+			stencilOperation = RenderPassOperation::Load;
+			break;
+		case VK_ATTACHMENT_LOAD_OP_CLEAR:
+			depthOperation = RenderPassOperation::Clear;
+			stencilOperation = RenderPassOperation::Clear;
+			break;
+		default:
+			depthOperation = RenderPassOperation::DontCare;
+			stencilOperation = RenderPassOperation::DontCare;
+			break;
+		}
+
+		SetDepthStencilOperations(depthOperation, stencilOperation);
+
 		return *this;
 	}
 
@@ -336,6 +357,8 @@ namespace Pudu
 		clear.color = { {clearColor.x,clearColor.y,clearColor.z,clearColor.w} };
 
 		attachment.clearValue = clear;
+
+		AddColorAttachment(attachment);
 	}
 
 	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, float depthClear, uint32_t stencilClear)
@@ -349,6 +372,8 @@ namespace Pudu
 		clear.depthStencil = { depthClear,stencilClear };
 
 		attachment.clearValue = clear;
+
+		AddDepthStencilAttachment(attachment);
 	}
 
 	void RenderPass::AddColorAttachment(RenderPassAttachment& attachment)

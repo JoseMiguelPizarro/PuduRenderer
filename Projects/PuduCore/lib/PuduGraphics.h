@@ -184,8 +184,10 @@ namespace Pudu
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureCreationSettings& creationData);
 		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureCreationSettings& creationSettings);
 		GPUResourceHandle CreateTexture(TextureCreationData const& creationData);
+		void CreateVKTexture(Texture* texture);
+		void CreateVKTextureSampler(SamplerCreationData data, VkSampler& sampler);
 
-		void UploadTextureData(SPtr<Texture> texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
+		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
 
@@ -237,7 +239,6 @@ namespace Pudu
 		void CreateCommandPool(VkCommandPool* cmdPool);
 
 		void CreateTextureImageView(Texture2d& texture2d);
-		void CreateTextureSampler(SamplerCreationData data, VkSampler& sampler);
 		SPtr<Semaphore> CreateTimelineSemaphore(const char * name = nullptr);
 		SPtr<Semaphore> CreateSemaphoreSPtr(const char  * name = nullptr);
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char * name = nullptr);
