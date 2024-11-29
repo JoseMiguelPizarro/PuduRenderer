@@ -42,32 +42,26 @@ namespace Pudu
 		shadowRT->name = "ShadowMap";
 
 
-		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>()->AddColorAttachment(depthRT);
-		m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
-		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
-		
+		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>()->AddDepthStencilAttachment(depthRT);
+		m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>()->AddDepthStencilAttachment(shadowRT);
+		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>()
+			->AddColorAttachment(depthRT)
+			->AddColorAttachment(shadowRT)
+			->AddColorAttachment(colorRT);
+
 
 		FrameGraphNodeCreation depthNode;
 		depthNode.name = "DepthPrepass";
-		depthNode.inputs.push_back(depthFGR);
-		depthNode.outputs.push_back(depthFGR);
 		depthNode.renderPass = m_depthRenderPass->Handle();
 		depthNode.enabled = true;
 
 		FrameGraphNodeCreation shadowNode;
 		shadowNode.name = "Shadowmap";
-		shadowNode.inputs.push_back(shadowRTR);
-		shadowNode.outputs.push_back(shadowRTR);
-		shadowNode.renderType = RenderPassType::ShadowMap;
+		shadowNode.renderPass = m_shadowMapRenderPass->Handle();
 
 		FrameGraphNodeCreation colorNode;
 		colorNode.name = "ForwardPass";
-		colorNode.inputs.push_back(depthFGR);
-		colorNode.inputs.push_back(shadowRTR);
-		colorNode.inputs.push_back(colorRTR);
-		colorNode.outputs.push_back(colorRTR);
-		colorNode.renderType = RenderPassType::Color;
-
+		colorNode.renderPass = m_forwardRenderPass->Handle();
 
 		frameGraph.CreateNode(shadowNode);
 		frameGraph.CreateNode(depthNode);

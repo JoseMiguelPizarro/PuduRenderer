@@ -56,7 +56,7 @@ namespace Pudu {
 		return texture;
 	}
 
-	SPtr<RenderPass> GPUResourcesManager::GetRenderPass(RenderPassHandle handle)
+	SPtr<RenderPass> GPUResourcesManager::GetRenderPass(GPUResourceHandle handle)
 	{
 		return m_renderPasses.GetResource(handle.index);
 	}

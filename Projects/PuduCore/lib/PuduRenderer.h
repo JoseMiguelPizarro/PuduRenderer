@@ -29,9 +29,9 @@ namespace Pudu
 		void AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype);
 
 	private:
-		SPtr<DepthPrepassRenderPass> m_depthRenderPass;
-		SPtr<ForwardRenderPass> m_forwardRenderPass;
-		SPtr<ShadowMapRenderPass> m_shadowMapRenderPass;
+		SPtr<RenderPass> m_depthRenderPass;
+		SPtr<RenderPass> m_forwardRenderPass;
+		SPtr<RenderPass> m_shadowMapRenderPass;
 
 		std::unordered_map<RenderPass*, std::unordered_map<Shader*, PipelineHandle>> m_pipelinesByRenderPass;
 

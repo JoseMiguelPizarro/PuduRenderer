@@ -62,7 +62,6 @@ namespace Pudu {
 		std::vector<GPUResourceHandle> outputs;
 
 		GPUResourceHandle renderPass;
-		RenderPassType renderType;
 
 		bool enabled;
 		bool isCompute = false;
@@ -73,7 +72,7 @@ namespace Pudu {
 	struct FrameGraphNode {
 		int32_t RefCount = 0;
 
-		RenderPassHandle  renderPass;
+		GPUResourceHandle  renderPass;
 		FramebufferHandle framebuffer;
 		FrameGraphNodeHandle nodeHandle;
 

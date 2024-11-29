@@ -15,6 +15,10 @@ namespace Pudu
 	};
 
 
+	struct ResourceHandle {
+		uint32_t index;
+	};
+
 	struct GPUResourceHandle
 	{
 		uint32_t index;
@@ -26,7 +30,6 @@ namespace Pudu
 		GPUResourceHandle Handle() { return m_handle; }
 		bool IsAllocated() { return m_allocated; }
 		std::string name;
-
 
 
 		virtual void Create(PuduGraphics* gpu) {
@@ -43,13 +46,13 @@ namespace Pudu
 
 	private:
 		friend class GPUResourcesManager;
-		GPUResourceHandle m_handle;
+		ResourceHandle m_handle;
 		bool m_allocated;
 		virtual void OnCreate(PuduGraphics* gpu);
 	};
 
-
-	struct TextureHandle :public GPUResourceHandle
+	struct TextureHandle
 	{
+
 	}; // struct TextureHandle
 }

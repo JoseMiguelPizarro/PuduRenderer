@@ -33,10 +33,7 @@ namespace Pudu {
 		SPtr<Texture2d> AllocateTexture2D();
 		SPtr<TextureCube> AllocateTextureCube();
 
-		SPtr<RenderPass> GetRenderPass(RenderPassHandle handle);
-
-
-		
+		SPtr<RenderPass> GetRenderPass(GPUResourceHandle handle);
 
 		SPtr<Framebuffer> GetFramebuffer(FramebufferHandle handle);
 		SPtr<Framebuffer> AllocateFrameBuffer();
@@ -86,11 +83,11 @@ namespace Pudu {
 
 
 		template<typename T>
-		requires(std::convertible_to<T,GPUResource>)
+			requires(std::convertible_to<T, GPUResource>)
 		SPtr<T> AllocateGPUResource(ResourcePool <SPtr<T>> pool) {
 
-			uint32_t resourceIndex = {static_cast<uint32_t>(pool.Size())};
-			SPtr<T> resourcePtr= std::make_shared<T>();
+			uint32_t resourceIndex = { static_cast<uint32_t>(pool.Size()) };
+			SPtr<T> resourcePtr = std::make_shared<T>();
 
 			resourcePtr->m_handle.index = resourceIndex;
 

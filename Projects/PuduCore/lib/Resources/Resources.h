@@ -6,6 +6,7 @@
 #include <vector>
 #include "PuduCore.h"
 #include "DescriptorSetLayoutData.h"
+#include "GPUResource.h"
 
 namespace Pudu
 {
@@ -15,10 +16,6 @@ namespace Pudu
 
 	static const uint32_t k_INVALID_HANDLE = 0xffffffff;
 
-	struct GPUResourceHandle
-	{
-		ResourceHandle index;
-	};
 
 	struct SemaphoreHandle {
 		ResourceHandle index;
@@ -77,7 +74,6 @@ namespace Pudu
 
 	struct RenderPassHandle
 	{
-		ResourceHandle index;
 	}; // struct RenderPassHandle
 
 	struct FramebufferHandle
@@ -135,13 +131,6 @@ namespace Pudu
 
 
 #pragma region RenderPass
-
-	enum  RenderPassType
-	{
-		DepthPrePass,
-		Color,
-		ShadowMap
-	};
 
 	namespace ColorWriteEnabled
 	{

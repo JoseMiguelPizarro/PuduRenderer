@@ -782,16 +782,6 @@ namespace Pudu
 		{"reference",FrameGraphResourceType_Reference}
 	};*/
 
-	static std::unordered_map < std::string, RenderPassType> const RenderPassTypeTable =
-	{
-		{"color", RenderPassType::Color},
-		{"depth", RenderPassType::DepthPrePass},
-		{"shadowmap",RenderPassType::ShadowMap}
-	};
-
-	static RenderPassType GetRenderPassType(std::string id) {
-		return RenderPassTypeTable.find(id)->second;
-	}
 
 	//static FrameGraphResourceType GetResourceType(std::string id) {
 	//	//Handle lower/upper case
@@ -1372,7 +1362,7 @@ namespace Pudu
 
 				if (resource->Type() == GPUResourceType::Texture)
 				{
-					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->Handle());
+					auto texture = gfx->Resources()->GetTexture<RenderTexture>(resource->Handle());
 
 					width = texture->width;
 					height = texture->height;
@@ -1409,7 +1399,7 @@ namespace Pudu
 
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
-			renderData.activeRenderTarget = gfx->Resources()->GetTexture<Texture2d>(builder->GetResource(node->outputs[0])->textureHandle);
+			renderData.activeRenderTarget = gfx->Resources()->GetTexture<RenderTexture>(node->outputs[0]);
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
 			renderPass->Render(renderData);
@@ -1453,19 +1443,11 @@ namespace Pudu
 	{
 		return builder->GetNodeEdge(edgeHandle);
 	}
-	GPUResource* FrameGraph::GetResource(GPUResourceHandle resourceHandle)
-	{
-		return builder->GetResource(resourceHandle);
-	}
-	GPUResourceHandle FrameGraph::AddResource(FrameGraphResourceCreateInfo createInfo)
-	{
-		return builder->CreateOrGetFrameGraphResource(createInfo);
-
-	}
-
 
 	FrameGraphNodeHandle FrameGraph::CreateNode(FrameGraphNodeCreation& creationData)
 	{
+		auto renderPass = builder->graphics->Resources()->GetRenderPass(creationData.renderPass);
+
 		auto handle = builder->CreateNode(creationData);
 		nodes.push_back(handle);
 
