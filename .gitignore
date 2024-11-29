@@ -8,7 +8,7 @@ Bin
 **.vcxproj.user
 
 Imgui.ini
-*.vcxproj
+**.vcxproj
 *.filters
 /lib/simdjson.dir/**
 /lib/simdjson/Release/**
