@@ -30,8 +30,8 @@ namespace Pudu
 
 	private:
 		SPtr<DepthPrepassRenderPass> m_depthRenderPass;
-		ForwardRenderPass m_forwardRenderPass;
-		ShadowMapRenderPass m_shadowMapRenderPass;
+		SPtr<ForwardRenderPass> m_forwardRenderPass;
+		SPtr<ShadowMapRenderPass> m_shadowMapRenderPass;
 
 		std::unordered_map<RenderPass*, std::unordered_map<Shader*, PipelineHandle>> m_pipelinesByRenderPass;
 

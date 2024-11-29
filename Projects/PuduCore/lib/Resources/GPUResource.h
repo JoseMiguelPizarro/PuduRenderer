@@ -5,13 +5,13 @@ namespace Pudu
 {
 	class GPUResourceType {
 
-		enum 
-		{
-			Texture,
-			Buffer,
-			RenderPass,
-			UNINITIALIZED
-		};
+	public:	enum Type
+	{
+		Texture,
+		Buffer,
+		RenderPass,
+		UNINITIALIZED
+	};
 	};
 
 
@@ -29,7 +29,7 @@ namespace Pudu
 
 
 
-		void Create(PuduGraphics* gpu) {
+		virtual void Create(PuduGraphics* gpu) {
 			if (m_allocated)
 			{
 				return;
@@ -39,7 +39,7 @@ namespace Pudu
 			m_allocated = true;
 		};
 
-		virtual GPUResourceType Type() { return GPUResourceType::UNINITIALIZED; };
+		virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
 
 	private:
 		friend class GPUResourcesManager;
