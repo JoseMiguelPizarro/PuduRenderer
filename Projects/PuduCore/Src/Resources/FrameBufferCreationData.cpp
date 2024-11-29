@@ -14,15 +14,15 @@ namespace Pudu
 
 		return *this;
 	}
-	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(GPUResourceHandle texture)
+	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(GPUResourceHandle resource)
 	{
-		outputTexturesHandle[numRenderTargets++] = texture;
+		outputTexturesHandle[numRenderTargets++] = resource;
 
 		return *this;
 	}
-	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(GPUResourceHandle texture)
+	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(GPUResourceHandle resource)
 	{
-		depthStencilTextureHandle = texture;
+		depthStencilTextureHandle = resource;
 		return *this;
 	}
 	FramebufferCreationData& FramebufferCreationData::SetScaling(float scale_x, float scale_y, uint8_t resize)

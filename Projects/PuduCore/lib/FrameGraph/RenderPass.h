@@ -21,16 +21,17 @@ namespace Pudu
 
 	struct RenderPassAttachment
 	{
-		SPtr<RenderTexture> texture;
+		SPtr<RenderTexture> resource;
 		VkAttachmentLoadOp loadOperation;
 		VkAttachmentStoreOp storeOp;
 		VkClearValue clearValue;
 		VkImageLayout layout;
+		GPUResourceType::Type type = GPUResourceType::Texture;
 
 		RenderPassAttachment() = default;
 
 		RenderPassAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, VkClearValue clearValue = {}) :
-			texture(rt), loadOperation(loadOp), storeOp(storeOp), clearValue(clearValue) {};
+			resource(rt), loadOperation(loadOp), storeOp(storeOp), clearValue(clearValue) {};
 	};
 
 	struct RenderPassAttachments
@@ -104,10 +105,10 @@ namespace Pudu
 
 		RenderPassAttachments attachments;
 
-		SPtr<RenderPass> AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, vec4 clearColor = vec4(0));
-		SPtr<RenderPass> AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, float depthClear, uint32_t stencilClear);
-		SPtr<RenderPass> AddColorAttachment(RenderPassAttachment& attachment);
-		SPtr<RenderPass> AddDepthStencilAttachment(RenderPassAttachment& attachment);
+		void AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, vec4 clearColor = vec4(0));
+		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, float depthClear = 0.0f, uint32_t stencilClear = 0);
+		void AddColorAttachment(RenderPassAttachment& attachment);
+		void AddDepthStencilAttachment(RenderPassAttachment& attachment);
 
 		uint16_t dispatchX = 0;
 		uint16_t dispatchY = 0;
@@ -129,7 +130,6 @@ namespace Pudu
 		virtual PipelineCreationData GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall);
 		virtual void Initialize(PuduGraphics* gpu) {};
 		void SetComputeShader(ComputeShader* shader);
-		virtual RenderPassType GetRenderPassType() { return RenderPassType::Color; };
 		ComputeShader* GetComputeShader();
 
 		void Create(PuduGraphics* gpu) override;

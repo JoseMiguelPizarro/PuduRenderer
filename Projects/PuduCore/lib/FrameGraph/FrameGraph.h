@@ -19,7 +19,7 @@ namespace Pudu {
 
 	VkAttachmentLoadOp GetVkAttachmentLoadOp(RenderPassOperation op);
 
-	
+
 
 
 	struct NodeEdgeHandle {
@@ -58,8 +58,8 @@ namespace Pudu {
 
 	struct FrameGraphNodeCreation
 	{
-		std::vector<GPUResourceHandle>  inputs;
-		std::vector<GPUResourceHandle> outputs;
+		std::vector<RenderPassAttachment>  inputs;
+		std::vector<RenderPassAttachment> outputs;
 
 		GPUResourceHandle renderPass;
 
@@ -76,8 +76,8 @@ namespace Pudu {
 		FramebufferHandle framebuffer;
 		FrameGraphNodeHandle nodeHandle;
 
-		std::vector<GPUResourceHandle> inputs;
-		std::vector<GPUResourceHandle> outputs;
+		std::vector<RenderPassAttachment> inputs;
+		std::vector<RenderPassAttachment> outputs;
 
 		//Edges represent nodes this node is connected TO
 		std::vector<NodeEdgeHandle> outputEdges;

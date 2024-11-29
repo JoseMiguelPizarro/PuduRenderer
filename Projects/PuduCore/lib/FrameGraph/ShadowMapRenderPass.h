@@ -13,7 +13,6 @@ namespace Pudu
 		virtual void AfterRender(RenderFrameData& renderData) override;
 		virtual void Render(RenderFrameData& frameData) override;
 
-		virtual RenderPassType GetRenderPassType() override;
 
 	private:
 

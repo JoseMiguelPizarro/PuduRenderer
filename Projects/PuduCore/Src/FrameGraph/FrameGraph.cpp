@@ -830,12 +830,12 @@ namespace Pudu
 
 				for (auto parentOutput : parentNode->outputs) {
 					for (auto input : node->inputs) {
-						if (input.index == parentOutput.index)
+						if (input.resource->Handle().IsEqual(parentOutput.resource->Handle()))
 						{
 							//Only create edge if these nodes are not already related in the dependency chain
 							if (!IsNodeDependant(frameGraph, node->nodeHandle, parentNode->nodeHandle))
 							{
-								auto edgeHandle = frameGraph->builder->CreateNodeEdge(parentNodeHandle, nodeHandle, input);
+								auto edgeHandle = frameGraph->builder->CreateNodeEdge(parentNodeHandle, nodeHandle, input.resource->Handle());
 								parentNode->outputEdges.push_back(edgeHandle);
 								node->inputEdges.push_back(edgeHandle);
 
@@ -1208,14 +1208,14 @@ namespace Pudu
 		{
 			auto node = builder->GetNode(nodeHandle);
 
-			for (auto resourceHandle : node->outputs)
+			for (auto outputResource : node->outputs)
 			{
-				AllocateResource(resourceHandle);
+				AllocateResource(outputResource.resource->Handle());
 			}
 
 			for (auto inputResource : node->inputs)
 			{
-				AllocateResource(inputResource);
+				AllocateResource(inputResource.resource->Handle());
 			}
 		}
 		LOG("FrameGraph: Allocating Resources End");
@@ -1356,26 +1356,22 @@ namespace Pudu
 			renderData.currentRenderPass = renderPass;
 
 
-			for (auto nodeInputHandle : node->inputs)
+			for (auto& inputResource : node->inputs)
 			{
-				auto resource = builder->GetResource(nodeInputHandle);
-
-				if (resource->Type() == GPUResourceType::Texture)
+				if (inputResource.type == GPUResourceType::Texture)
 				{
-					auto texture = gfx->Resources()->GetTexture<RenderTexture>(resource->Handle());
+					auto texture = gfx->Resources()->GetTexture<RenderTexture>(inputResource.resource->Handle());
 
 					width = texture->width;
 					height = texture->height;
 				}
 			}
 
-			for (auto nodeOutputHandle : node->outputs)
+			for (auto& outputResource : node->outputs)
 			{
-				auto resource = builder->GetResource(nodeOutputHandle);
-
-				if (resource->Type() == GPUResourceType::Texture)
+				if (outputResource.type == GPUResourceType::Texture)
 				{
-					auto texture = gfx->Resources()->GetTexture<Texture2d>(resource->Handle());
+					auto texture = gfx->Resources()->GetTexture<Texture2d>(outputResource.resource->Handle());
 
 					width = texture->width;
 					height = texture->height;
@@ -1399,7 +1395,7 @@ namespace Pudu
 
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
-			renderData.activeRenderTarget = gfx->Resources()->GetTexture<RenderTexture>(node->outputs[0]);
+			renderData.activeRenderTarget = gfx->Resources()->GetTexture<RenderTexture>(node->outputs[0].resource->Handle());
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
 			renderPass->Render(renderData);
@@ -1447,6 +1443,28 @@ namespace Pudu
 	FrameGraphNodeHandle FrameGraph::CreateNode(FrameGraphNodeCreation& creationData)
 	{
 		auto renderPass = builder->graphics->Resources()->GetRenderPass(creationData.renderPass);
+
+		for (size_t i = 0; i < renderPass->attachments.colorAttachmentCount; i++) {
+
+			auto attachment = renderPass->attachments.colorAttachments[i];
+			if (attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE)
+			{
+				creationData.outputs.push_back(attachment);
+			}
+
+			creationData.inputs.push_back(attachment);
+		}
+
+		if (renderPass->attachments.depthAttachmentCount > 0)
+		{
+			auto attachment = renderPass->attachments.depthAttachments[0];
+			creationData.inputs.push_back(attachment);
+
+			if (attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE)
+			{
+				creationData.outputs.push_back(attachment);
+			}
+		}
 
 		auto handle = builder->CreateNode(creationData);
 		nodes.push_back(handle);

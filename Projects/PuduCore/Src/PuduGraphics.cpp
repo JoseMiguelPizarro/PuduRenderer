@@ -47,7 +47,7 @@ namespace Pudu
 {
 	const char* SHADER_ENTRY_POINT = "main";
 
-	struct FrameGraph;
+	class FrameGraph;
 
 	PuduGraphics* PuduGraphics::s_instance = nullptr;
 
@@ -345,7 +345,7 @@ namespace Pudu
 		auto imguiRenderPass = GetRenderPass<RenderPass>();
 
 		RenderPassAttachment rpcolorAttachment;
-		rpcolorAttachment.texture = m_swapChainTextures[0];
+		rpcolorAttachment.resource = m_swapChainTextures[0];
 		rpcolorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		rpcolorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		rpcolorAttachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -1110,7 +1110,7 @@ namespace Pudu
 
 			m_swapChainImagesViews[i] = imageView;
 
-			//SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], );
+			SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i], fmt::format("Swapchain Image View {}", i).c_str());
 
 			auto handle = m_resources.AllocateRenderTexture();
 			auto texture = m_resources.GetTexture<RenderTexture>(handle->Handle());

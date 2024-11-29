@@ -68,7 +68,7 @@ namespace Pudu {
 
 	SPtr<Framebuffer> GPUResourcesManager::AllocateFrameBuffer()
 	{
-		FramebufferHandle handle =  { static_cast<uint32_t>(m_frameBuffers.Size()) };
+		FramebufferHandle handle = { static_cast<uint32_t>(m_frameBuffers.Size()) };
 		SPtr<Framebuffer> framebuffer = std::make_shared<Framebuffer>();
 
 		m_frameBuffers.AddResource(framebuffer);
@@ -201,12 +201,12 @@ namespace Pudu {
 
 	SPtr<RenderTexture> GPUResourcesManager::AllocateRenderTexture()
 	{
-		return AllocateGPUResource<RenderTexture>(m_renderTextures);
+		return AllocateGPUResource<RenderTexture>(m_textures);
 	}
 
 	SPtr<RenderTexture> GPUResourcesManager::GetRenderTexture(GPUResourceHandle handle)
 	{
-		return m_renderTextures.GetResource(handle.index);
+		return std::static_pointer_cast<RenderTexture>(m_textures.GetResource(handle.index));
 	}
 
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
@@ -254,7 +254,7 @@ namespace Pudu {
 			for (size_t i = 0; i < ss.activeShaders; i++)
 			{
 				auto a = ss.shaderStageInfo[i];
-				
+
 				gfx->DestroyShaderModule(a.module);
 			}
 		}

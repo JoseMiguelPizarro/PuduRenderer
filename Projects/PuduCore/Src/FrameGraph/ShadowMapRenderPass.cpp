@@ -29,10 +29,7 @@ namespace Pudu {
 		frameData.currentCommand->SetDepthBias(m_depthBiasSlope, m_depthConstantBias);
 		RenderPass::Render(frameData);
 	}
-	RenderPassType ShadowMapRenderPass::GetRenderPassType()
-	{
-		return RenderPassType::ShadowMap;
-	}
+	
 	void ShadowMapRenderPass::InitializeShadowMap(PuduGraphics* gfx)
 	{
 		if (m_shadowmap == nullptr)

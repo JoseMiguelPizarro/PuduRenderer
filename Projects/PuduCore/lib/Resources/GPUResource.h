@@ -3,6 +3,8 @@
 
 namespace Pudu
 {
+	class PuduGraphics;
+
 	class GPUResourceType {
 
 	public:	enum Type
@@ -15,13 +17,15 @@ namespace Pudu
 	};
 
 
-	struct ResourceHandle {
-		uint32_t index;
-	};
-
 	struct GPUResourceHandle
 	{
+	public:
 		uint32_t index;
+
+
+		bool IsEqual(const GPUResourceHandle& other) {
+			return this->index == other.index;
+		}
 	};
 
 	class GPUResource
@@ -44,14 +48,14 @@ namespace Pudu
 
 		virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
 
-	private:
+	protected:
 		friend class GPUResourcesManager;
-		ResourceHandle m_handle;
+		GPUResourceHandle m_handle;
 		bool m_allocated;
-		virtual void OnCreate(PuduGraphics* gpu);
+		virtual void OnCreate(PuduGraphics* gpu) {};
 	};
 
-	struct TextureHandle
+	struct TextureHandle : public GPUResourceHandle
 	{
 
 	}; // struct TextureHandle

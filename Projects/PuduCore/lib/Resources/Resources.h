@@ -72,7 +72,7 @@ namespace Pudu
 		ResourceHandle index;
 	}; // struct PipelineHandle
 
-	struct RenderPassHandle
+	struct RenderPassHandle :GPUResourceHandle
 	{
 	}; // struct RenderPassHandle
 
@@ -355,11 +355,11 @@ namespace Pudu
 	static VkImageViewType ToVkImageViewType(TextureType::Enum type)
 	{
 		static VkImageViewType s_vk_data[] = {
-			VK_IMAGE_VIEW_TYPE_1D, 
-			VK_IMAGE_VIEW_TYPE_2D, 
-			VK_IMAGE_VIEW_TYPE_3D, 
+			VK_IMAGE_VIEW_TYPE_1D,
+			VK_IMAGE_VIEW_TYPE_2D,
+			VK_IMAGE_VIEW_TYPE_3D,
 			VK_IMAGE_VIEW_TYPE_1D_ARRAY,
-			VK_IMAGE_VIEW_TYPE_2D_ARRAY, 
+			VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 			VK_IMAGE_VIEW_TYPE_CUBE,
 			VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
 		};
@@ -439,7 +439,7 @@ namespace Pudu
 	/// <summary>
 	/// Struct passed to create texture functions. 
 	/// </summary>
-	struct TextureCreationSettings 
+	struct TextureCreationSettings
 	{
 		const char* name = nullptr;
 		bool bindless;
@@ -462,7 +462,6 @@ namespace Pudu
 		SamplerCreationData samplerData;
 		VkFormat format;
 		TextureType::Enum textureType = TextureType::Texture2D;
-		TextureHandle handle{ k_INVALID_HANDLE };
 		bool bindless;
 		void* pixels = nullptr;
 		void* sourceData = nullptr; //ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly

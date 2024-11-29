@@ -21,8 +21,8 @@ namespace Pudu
 		const char* name = nullptr;
 
 		FramebufferCreationData& Reset( );
-		FramebufferCreationData& AddRenderTexture(GPUResourceHandle texture);
-		FramebufferCreationData& SetDepthStencilTexture(GPUResourceHandle texture);
+		FramebufferCreationData& AddRenderTexture(GPUResourceHandle resource);
+		FramebufferCreationData& SetDepthStencilTexture(GPUResourceHandle resource);
 		FramebufferCreationData& SetScaling(float scale_x, float scale_y, uint8_t resize);
 		FramebufferCreationData& SetName(const char* name);
 	};

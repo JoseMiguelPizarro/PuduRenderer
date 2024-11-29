@@ -23,7 +23,6 @@ namespace Pudu
 
 		void Init(PuduGraphics* graphics, PuduApp* app);
 		void Render();
-		void LoadFrameGraph(fs::path path);
 		void SetSkyBox();
 		Pipeline* GetOrCreatePipeline(PipelineQueryData query);
 		void AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype);

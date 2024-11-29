@@ -75,6 +75,7 @@ namespace Pudu {
 			requires (std::convertible_to<T, Texture>)
 		SPtr<T> GetTexture(GPUResourceHandle handle)
 		{
+			LOG("Getting resource {}", handle.index);
 			return static_pointer_cast<T>(m_textures.GetResource(handle.index));
 
 			PUDU_ERROR("Trying to get a texture from a type not yet supported {}", typeid(T).name());
@@ -82,9 +83,9 @@ namespace Pudu {
 
 
 
-		template<typename T>
+		template<typename T, typename poolType>
 			requires(std::convertible_to<T, GPUResource>)
-		SPtr<T> AllocateGPUResource(ResourcePool <SPtr<T>> pool) {
+		SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool) {
 
 			uint32_t resourceIndex = { static_cast<uint32_t>(pool.Size()) };
 			SPtr<T> resourcePtr = std::make_shared<T>();
@@ -116,7 +117,6 @@ namespace Pudu {
 		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
 		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
-		ResourcePool<SPtr<RenderTexture>> m_renderTextures;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};
 }

@@ -49,7 +49,6 @@ void TriangleApp::OnInit()
 	TargetFPS = 60;
 
 	m_puduRenderer.Init(&Graphics, this);
-	//m_puduRenderer.LoadFrameGraph(FileManager::GetAssetPath(frameGraphPath));
 
 	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag");
 	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");

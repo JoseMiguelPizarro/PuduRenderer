@@ -42,13 +42,17 @@ namespace Pudu
 		shadowRT->name = "ShadowMap";
 
 
-		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>()->AddDepthStencilAttachment(depthRT);
-		m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>()->AddDepthStencilAttachment(shadowRT);
-		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>()
-			->AddColorAttachment(depthRT)
-			->AddColorAttachment(shadowRT)
-			->AddColorAttachment(colorRT);
+		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
+		m_depthRenderPass->AddDepthStencilAttachment(depthRT);
 
+		m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
+		m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT);
+
+		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
+
+		m_forwardRenderPass->AddColorAttachment(shadowRT);
+		m_forwardRenderPass->AddColorAttachment(colorRT);
+		m_forwardRenderPass->AddDepthStencilAttachment(depthRT);
 
 		FrameGraphNodeCreation depthNode;
 		depthNode.name = "DepthPrepass";
@@ -90,20 +94,6 @@ namespace Pudu
 		renderPass->Initialize(graphics);
 	}
 
-	void PuduRenderer::LoadFrameGraph(std::filesystem::path path)
-	{
-		LOG("Loading FrameGraph");
-		frameGraph = FrameGraph();
-		frameGraphBuilder = FrameGraphBuilder();
-		frameGraphBuilder.Init(graphics);
-		frameGraph.Init(&frameGraphBuilder);
-
-		frameGraph.Parse(path);
-		frameGraph.AllocateRequiredResources();
-		frameGraph.Compile();
-
-		LOG("Loading FrameGraph End");
-	}
 
 	Pipeline* PuduRenderer::CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader)
 	{

@@ -26,7 +26,7 @@ namespace Pudu
 
 	RenderPassAttachments& RenderPassAttachments::AddColorAttachment(RenderPassAttachment attachment)
 	{
-		colorAttachmentsFormat[numColorFormats++] = attachment.texture->format;
+		colorAttachmentsFormat[numColorFormats++] = attachment.resource->format;
 		colorAttachments[colorAttachmentCount++] = attachment;
 
 		return *this;
@@ -34,7 +34,7 @@ namespace Pudu
 
 	RenderPassAttachments& RenderPassAttachments::SetDepthStencilAttachment(RenderPassAttachment attachment)
 	{
-		depthStencilFormat = attachment.texture->format;
+		depthStencilFormat = attachment.resource->format;
 
 		depthAttachments[depthAttachmentCount++] = attachment;
 
@@ -64,12 +64,12 @@ namespace Pudu
 
 	static VkRenderingAttachmentInfo RenderPassAttachmentToVKAttachment(RenderPassAttachment& attachment)
 	{
-		assert(attachment.texture->IsAllocated() && fmt::format("Texture {} is not allocated", attachment.texture->name).c_str());
+		assert(attachment.resource->IsAllocated() && fmt::format("Texture {} is not allocated", attachment.resource->name).c_str());
 
 		VkRenderingAttachmentInfo renderingAttachment = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
 		renderingAttachment.imageLayout = attachment.layout;
 		renderingAttachment.clearValue = attachment.clearValue;
-		renderingAttachment.imageView = attachment.texture->vkImageViewHandle;
+		renderingAttachment.imageView = attachment.resource->vkImageViewHandle;
 		renderingAttachment.loadOp = attachment.loadOperation;
 		renderingAttachment.storeOp = attachment.storeOp;
 
@@ -325,10 +325,10 @@ namespace Pudu
 		data.currentCommand->EndRenderingPass();
 	}
 
-	SPtr<RenderPass> RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, vec4 clearColor)
+	void RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, vec4 clearColor)
 	{
 		RenderPassAttachment attachment = {};
-		attachment.texture = rt;
+		attachment.resource = rt;
 		attachment.loadOperation = loadOp;
 		attachment.storeOp = storeOp;
 
@@ -336,14 +336,12 @@ namespace Pudu
 		clear.color = { {clearColor.x,clearColor.y,clearColor.z,clearColor.w} };
 
 		attachment.clearValue = clear;
-
-		return AddColorAttachment(attachment);
 	}
 
-	SPtr<RenderPass> RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, float depthClear, uint32_t stencilClear)
+	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, float depthClear, uint32_t stencilClear)
 	{
 		RenderPassAttachment attachment = {};
-		attachment.texture = rt;
+		attachment.resource = rt;
 		attachment.loadOperation = loadOp;
 		attachment.storeOp = storeOp;
 
@@ -351,24 +349,18 @@ namespace Pudu
 		clear.depthStencil = { depthClear,stencilClear };
 
 		attachment.clearValue = clear;
-
-		return AddDepthStencilAttachment(attachment);
 	}
 
-	SPtr<RenderPass> RenderPass::AddColorAttachment(RenderPassAttachment& attachment)
+	void RenderPass::AddColorAttachment(RenderPassAttachment& attachment)
 	{
 		attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		attachments.AddColorAttachment(attachment);
-
-		return shared_from_this();
 	}
 
-	SPtr<RenderPass> RenderPass::AddDepthStencilAttachment(RenderPassAttachment& attachment)
+	void RenderPass::AddDepthStencilAttachment(RenderPassAttachment& attachment)
 	{
 		attachment.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
 		attachments.SetDepthStencilAttachment(attachment);
-
-		return shared_from_this();
 	}
 
 	void RenderPass::SetName(const char* name)
