@@ -3,20 +3,20 @@
 namespace Pudu
 {
 	template<typename T>
-	T* ResourcePool<T>::GetResourcePtr(uint32_t handle)
+	T* ResourcePool<T>::GetResourcePtr(GPUResourceHandleBase handle)
 	{
 		if (handle < m_resources.size())
 		{
-			return &m_resources[handle];
+			return &m_resources[handle.Index()];
 		}
 
 		return nullptr;
 	}
 
 	template<typename T>
-	T ResourcePool<T>::GetResource(uint32_t handle)
+	T ResourcePool<T>::GetResource(GPUResourceHandleBase handle)
 	{
-		return m_resources[handle];
+		return m_resources[handle.Index()];
 	}
 
 	template<typename T>

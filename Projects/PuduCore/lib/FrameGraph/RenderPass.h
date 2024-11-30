@@ -56,8 +56,6 @@ namespace Pudu
 
 		VkFormat colorAttachmentsFormat[K_MAX_IMAGE_OUTPUTS];
 
-
-
 		VkRenderingAttachmentInfo* GetColorAttachments();
 		VkRenderingAttachmentInfo* GetDepthAttachments();
 		VkRenderingAttachmentInfo* GetStencilAttachments();
@@ -88,7 +86,7 @@ namespace Pudu
 		RenderPassAttachments attachments;
 	};
 
-	class RenderPass :public GPUResource, std::enable_shared_from_this<RenderPass>
+	class RenderPass :public GPUResource<RenderPass>, std::enable_shared_from_this<RenderPass>
 	{
 	public:
 

@@ -13,9 +13,9 @@ namespace Pudu
 	template <typename T>
 	struct ResourcePool
 	{
-		T* GetResourcePtr(uint32_t handle);
+		T* GetResourcePtr(GPUResourceHandleBase handle);
 
-		T GetResource(uint32_t handle);
+		T GetResource(GPUResourceHandleBase handle);
 
 		uint32_t AddResource(T resource);
 

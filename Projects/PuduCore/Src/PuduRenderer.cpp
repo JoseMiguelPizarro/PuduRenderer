@@ -9,211 +9,214 @@
 
 namespace Pudu
 {
-	void PuduRenderer::Init(PuduGraphics* graphics, PuduApp* app)
-	{
-		this->graphics = graphics;
-		this->app = app;
+    void PuduRenderer::Init(PuduGraphics* graphics, PuduApp* app)
+    {
+        this->graphics = graphics;
+        this->app = app;
 
-		frameGraph = FrameGraph();
-		frameGraphBuilder = FrameGraphBuilder();
-		frameGraphBuilder.Init(graphics);
-		frameGraph.Init(&frameGraphBuilder);
+        frameGraph = FrameGraph();
+        frameGraphBuilder = FrameGraphBuilder();
+        frameGraphBuilder.Init(graphics);
+        frameGraph.Init(&frameGraphBuilder);
 
-		auto depthRT = graphics->GetRenderTexture();
-		depthRT->depth = 1;
-		depthRT->width = graphics->WindowWidth;
-		depthRT->height = graphics->WindowHeight;
-		depthRT->format = VK_FORMAT_D32_SFLOAT;
-		depthRT->name = "DepthPrepassTexture";
+        auto depthRT = graphics->GetRenderTexture();
+        depthRT->depth = 1;
+        depthRT->width = graphics->WindowWidth;
+        depthRT->height = graphics->WindowHeight;
+        depthRT->format = VK_FORMAT_D32_SFLOAT;
+        depthRT->name = "DepthPrepassTexture";
 
-		auto shadowRT = graphics->GetRenderTexture();
-		shadowRT->depth = 1;
-		shadowRT->width = graphics->WindowWidth;
-		shadowRT->height = graphics->WindowHeight;
-		shadowRT->format = VK_FORMAT_D16_UNORM;
-		shadowRT->name = "ShadowMap";
-		
-		auto colorRT = graphics->GetRenderTexture();
-		colorRT->depth = 1;
-		colorRT->width = graphics->WindowWidth;
-		colorRT->height = graphics->WindowHeight;
-		colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
-		colorRT->name = "ForwardColor";
+        auto shadowRT = graphics->GetRenderTexture();
+        shadowRT->depth = 1;
+        shadowRT->width = graphics->WindowWidth;
+        shadowRT->height = graphics->WindowHeight;
+        shadowRT->format = VK_FORMAT_D16_UNORM;
+        shadowRT->name = "ShadowMap";
+
+        auto colorRT = graphics->GetRenderTexture();
+        colorRT->depth = 1;
+        colorRT->width = graphics->WindowWidth;
+        colorRT->height = graphics->WindowHeight;
+        colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+        colorRT->name = "ForwardColor";
+
+        m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
+        m_depthRenderPass->name = "DepthPrepassRenderPass";
+        m_depthRenderPass->AddDepthStencilAttachment(depthRT);
+
+        m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
+        m_shadowMapRenderPass->name = "ShadowMapRenderPass";
+        m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT);
+
+        m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
+        m_forwardRenderPass->name = "ForwardRenderPass";
+        m_forwardRenderPass->AddColorAttachment(shadowRT);
+        m_forwardRenderPass->AddColorAttachment(colorRT);
+        m_forwardRenderPass->AddDepthStencilAttachment(depthRT);
+
+        FrameGraphNodeCreation depthNode;
+        depthNode.name = "DepthPrepass";
+        depthNode.renderPass = m_depthRenderPass->Handle();
+        depthNode.enabled = true;
+
+        FrameGraphNodeCreation shadowNode;
+        shadowNode.name = "Shadowmap";
+        shadowNode.renderPass = m_shadowMapRenderPass->Handle();
+
+        FrameGraphNodeCreation colorNode;
+        colorNode.name = "ForwardPass";
+        colorNode.renderPass = m_forwardRenderPass->Handle();
+
+        frameGraph.CreateNode(shadowNode);
+        frameGraph.CreateNode(depthNode);
+        frameGraph.CreateNode(colorNode);
+
+        frameGraph.AllocateRequiredResources();
+        frameGraph.Compile();
+
+        std::printf(frameGraph.ToString().c_str());
+    }
+
+    void PuduRenderer::Render()
+    {
+        RenderFrameData renderData{};
+
+        renderData.renderer = this;
+        renderData.scene = sceneToRender;
+        renderData.frameGraph = &frameGraph;
+        renderData.graphics = graphics;
+        renderData.app = app;
+
+        graphics->DrawFrame(renderData);
+    }
+
+    void PuduRenderer::AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype)
+    {
+        renderPass->Initialize(graphics);
+    }
 
 
+    Pipeline* PuduRenderer::CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader)
+    {
+        PipelineCreationData creationData; //"Question now, how do we populate this?"
+        creationData.vertexShaderData = shader->vertexData;
+        creationData.fragmentShaderData = shader->fragmentData;
+        creationData.name = renderPass->name.c_str();
 
-		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
-		m_depthRenderPass->AddDepthStencilAttachment(depthRT);
+        BlendStateCreation blendStateCreation;
 
-		m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
-		m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT);
+        if (shader->HasFragmentData())
+        {
+            blendStateCreation.AddBlendState()
+                              .SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+                              .SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+                              .SetColorWriteMask(ColorWriteEnabled::All_mask);
+        }
 
-		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
+        RasterizationCreation rasterizationCreation;
+        rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizationCreation.fill = FillMode::Solid;
+        rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
-		m_forwardRenderPass->AddColorAttachment(shadowRT);
-		m_forwardRenderPass->AddColorAttachment(colorRT);
-		m_forwardRenderPass->AddDepthStencilAttachment(depthRT);
+        DepthStencilCreation depthStencilCreation;
+        depthStencilCreation.SetDepth(true, VK_COMPARE_OP_LESS_OR_EQUAL);
 
-		FrameGraphNodeCreation depthNode;
-		depthNode.name = "DepthPrepass";
-		depthNode.renderPass = m_depthRenderPass->Handle();
-		depthNode.enabled = true;
+        VertexInputCreation vertexInputCreation;
+        auto attribDescriptions = Vertex::GetAttributeDescriptions();
+        auto bindingDescriptions = Vertex::GetBindingDescription();
 
-		FrameGraphNodeCreation shadowNode;
-		shadowNode.name = "Shadowmap";
-		shadowNode.renderPass = m_shadowMapRenderPass->Handle();
+        for (auto attrib : attribDescriptions)
+        {
+            VertexAttribute a;
+            a.binding = attrib.binding;
+            a.format = attrib.format;
+            a.location = attrib.location;
+            a.offset = attrib.offset;
 
-		FrameGraphNodeCreation colorNode;
-		colorNode.name = "ForwardPass";
-		colorNode.renderPass = m_forwardRenderPass->Handle();
+            vertexInputCreation.AddVertexAttribute(a);
+        }
 
-		frameGraph.CreateNode(shadowNode);
-		frameGraph.CreateNode(depthNode);
-		frameGraph.CreateNode(colorNode);
+        VertexStream vertexStream;
+        vertexStream.binding = bindingDescriptions.binding;
+        vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
+        vertexStream.stride = bindingDescriptions.stride;
 
-		frameGraph.AllocateRequiredResources();
-		frameGraph.Compile();
+        vertexInputCreation.AddVertexStream(vertexStream);
 
-		std::printf(frameGraph.ToString().c_str());
-	}
-	void PuduRenderer::Render()
-	{
-		RenderFrameData renderData{};
+        ShaderStateCreationData shaderData;
+        shaderData.SetName(shader->name.c_str());
 
-		renderData.renderer = this;
-		renderData.scene = sceneToRender;
-		renderData.frameGraph = &frameGraph;
-		renderData.graphics = graphics;
-		renderData.app = app;
+        if (shader->HasFragmentData())
+        {
+            shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char),
+                                VK_SHADER_STAGE_FRAGMENT_BIT);
+        }
 
-		graphics->DrawFrame(renderData);
-	}
+        if (shader->HasVertexData())
+        {
+            shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char),
+                                VK_SHADER_STAGE_VERTEX_BIT);
+        }
 
-	void PuduRenderer::AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype)
-	{
-		renderPass->Initialize(graphics);
-	}
+        creationData.descriptorCreationData = shader->descriptors;
+        creationData.blendState = blendStateCreation;
+        creationData.rasterization = rasterizationCreation;
+        creationData.depthStencil = depthStencilCreation;
+        creationData.vertexInput = vertexInputCreation;
+        creationData.shadersStateCreationData = shaderData;
 
+        creationData.renderPassHandle = renderPass->handle;
 
-	Pipeline* PuduRenderer::CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader)
-	{
-		PipelineCreationData creationData; //"Question now, how do we populate this?"
-		creationData.vertexShaderData = shader->vertexData;
-		creationData.fragmentShaderData = shader->fragmentData;
-		creationData.name = renderPass->name.c_str();
+        auto handle = graphics->CreateGraphicsPipeline(creationData);
+        Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
 
-		BlendStateCreation blendStateCreation;
+        //Renderpass already cached
+        if (m_pipelinesByRenderPass.contains(renderPass))
+        {
+            auto pipelineByShader = &m_pipelinesByRenderPass.find(renderPass)->second;
+            pipelineByShader->insert(std::make_pair(shader, handle));
+        }
+        //Create new cache
+        else
+        {
+            std::unordered_map<Shader*, PipelineHandle> pipelineByShaderMap;
+            pipelineByShaderMap.insert(std::make_pair(shader, handle));
 
-		if (shader->HasFragmentData())
-		{
-			blendStateCreation.AddBlendState()
-				.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorWriteMask(ColorWriteEnabled::All_mask);
-		}
+            m_pipelinesByRenderPass.insert(std::make_pair(renderPass, pipelineByShaderMap));
+        }
 
-		RasterizationCreation rasterizationCreation;
-		rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizationCreation.fill = FillMode::Solid;
-		rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        return pipeline;
+    }
 
-		DepthStencilCreation depthStencilCreation;
-		depthStencilCreation.SetDepth(true, VK_COMPARE_OP_LESS_OR_EQUAL);
+    Pipeline* PuduRenderer::GetOrCreatePipeline(PipelineQueryData query)
+    {
+        auto shader = query.shader;
+        auto renderPass = query.renderPass;
 
-		VertexInputCreation vertexInputCreation;
-		auto attribDescriptions = Vertex::GetAttributeDescriptions();
-		auto bindingDescriptions = Vertex::GetBindingDescription();
+        if (m_pipelinesByRenderPass.contains(renderPass->Handle()))
+        {
+            auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass->Handle());
+            if (renderPassPipelines != m_pipelinesByRenderPass.end())
+            {
+                auto pipelinesByShader = renderPassPipelines->second;
 
-		for (auto attrib : attribDescriptions)
-		{
-			VertexAttribute a;
-			a.binding = attrib.binding;
-			a.format = attrib.format;
-			a.location = attrib.location;
-			a.offset = attrib.offset;
+                auto pipeline = pipelinesByShader.find(shader->h);
+                if (pipeline != pipelinesByShader.end())
+                {
+                    return graphics->Resources()->GetPipeline(pipeline->second);
+                }
+                else
+                {
+                    return CreatePipelineByRenderPassAndShader(renderPass, shader);
+                }
+            }
+        }
+        //Create new graphic pipeline
+        else
+        {
+            return CreatePipelineByRenderPassAndShader(renderPass, shader);
+        }
 
-			vertexInputCreation.AddVertexAttribute(a);
-		}
-
-		VertexStream vertexStream;
-		vertexStream.binding = bindingDescriptions.binding;
-		vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
-		vertexStream.stride = bindingDescriptions.stride;
-
-		vertexInputCreation.AddVertexStream(vertexStream);
-
-		ShaderStateCreationData shaderData;
-		shaderData.SetName(shader->name.c_str());
-
-		if (shader->HasFragmentData())
-		{
-			shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char), VK_SHADER_STAGE_FRAGMENT_BIT);
-		}
-
-		if (shader->HasVertexData())
-		{
-			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char), VK_SHADER_STAGE_VERTEX_BIT);
-		}
-
-		creationData.descriptorCreationData = shader->descriptors;
-		creationData.blendState = blendStateCreation;
-		creationData.rasterization = rasterizationCreation;
-		creationData.depthStencil = depthStencilCreation;
-		creationData.vertexInput = vertexInputCreation;
-		creationData.shadersStateCreationData = shaderData;
-
-		creationData.renderPassHandle = renderPass->handle;
-
-		auto handle = graphics->CreateGraphicsPipeline(creationData);
-		Pipeline* pipeline = graphics->Resources()->GetPipeline(handle);
-
-		//Renderpass already cached
-		if (m_pipelinesByRenderPass.contains(renderPass))
-		{
-			auto pipelineByShader = &m_pipelinesByRenderPass.find(renderPass)->second;
-			pipelineByShader->insert(std::make_pair(shader, handle));
-		}
-		//Create new cache
-		else
-		{
-			std::unordered_map<Shader*, PipelineHandle> pipelineByShaderMap;
-			pipelineByShaderMap.insert(std::make_pair(shader, handle));
-
-			m_pipelinesByRenderPass.insert(std::make_pair(renderPass, pipelineByShaderMap));
-		}
-
-		return pipeline;
-	}
-
-	Pipeline* PuduRenderer::GetOrCreatePipeline(PipelineQueryData query)
-	{
-		auto shader = query.shader;
-		auto renderPass = query.renderPass;
-
-		if (m_pipelinesByRenderPass.contains(renderPass)) {
-			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass);
-			if (renderPassPipelines != m_pipelinesByRenderPass.end())
-			{
-				auto pipelinesByShader = renderPassPipelines->second;
-
-				auto pipeline = pipelinesByShader.find(shader);
-				if (pipeline != pipelinesByShader.end())
-				{
-					return graphics->Resources()->GetPipeline(pipeline->second);
-				}
-				else
-				{
-					return CreatePipelineByRenderPassAndShader(renderPass, shader);
-				}
-			}
-		}
-		//Create new graphic pipeline
-		else
-		{
-			return CreatePipelineByRenderPassAndShader(renderPass, shader);
-		}
-
-		return nullptr;
-	}
+        return nullptr;
+    }
 }
-

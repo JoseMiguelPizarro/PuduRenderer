@@ -1,10 +1,6 @@
 #include "GPUResourcesManager.h"
 #include "PuduGraphics.h"
 #include "Resources/ResourcesPool.h"
-#include "FrameGraph/ForwardRenderPass.h"
-#include "FrameGraph/ShadowMapRenderPass.h"
-#include "FrameGraph/DepthStencilRenderPass.h"
-#include "Logger.h"
 
 namespace Pudu {
 
@@ -108,16 +104,9 @@ namespace Pudu {
 		return m_descriptorSetLayouts.GetResourcePtr(handle.index);
 	}
 
-	ShaderHandle GPUResourcesManager::AllocateShader()
+	SPtr<Shader> GPUResourcesManager::AllocateShader()
 	{
-		ShaderHandle handle = { static_cast<uint32_t>(m_shaders.Size()) };
-		SPtr<Shader> shader = std::make_shared<Shader>();
-
-		shader->handle = handle;
-		m_shaders.AddResource(shader);
-
-
-		return { handle };
+		return AllocateGPUResource<Shader>(m_shaders);
 	}
 
 	SPtr<Shader> GPUResourcesManager::GetShader(ShaderHandle handle)
@@ -171,7 +160,7 @@ namespace Pudu {
 	}
 	SPtr<GraphicsBuffer> GPUResourcesManager::GetGraphicsBuffer(GraphicsBufferHandle handle)
 	{
-		return m_graphicsBuffers.GetResource(handle.index);
+		return m_graphicsBuffers.GetResource(handle);
 	}
 	SPtr<Semaphore> GPUResourcesManager::AllocateSemaphore()
 	{
@@ -186,7 +175,7 @@ namespace Pudu {
 	}
 	SPtr<Semaphore> GPUResourcesManager::GetSemaphore(SemaphoreHandle handle)
 	{
-		return m_semaphores.GetResource(handle.index);
+		return m_semaphores.GetResource(handle);
 	}
 
 	SPtr<GPUCommands> GPUResourcesManager::AllocateCommandBuffer()
@@ -194,9 +183,9 @@ namespace Pudu {
 		return AllocateGPUResource<GPUCommands>(m_commandBuffers);
 	}
 
-	SPtr<GPUCommands> GPUResourcesManager::GetComandBuffer(GPUResourceHandle handle)
+	SPtr<GPUCommands> GPUResourcesManager::GetComandBuffer(GPUResourceHandle<GPUCommands> handle)
 	{
-		return m_commandBuffers.GetResource(handle.index);
+		return m_commandBuffers.GetResource(handle);
 	}
 
 	SPtr<RenderTexture> GPUResourcesManager::AllocateRenderTexture()
@@ -204,9 +193,9 @@ namespace Pudu {
 		return AllocateGPUResource<RenderTexture>(m_textures);
 	}
 
-	SPtr<RenderTexture> GPUResourcesManager::GetRenderTexture(GPUResourceHandle handle)
+	SPtr<RenderTexture> GPUResourcesManager::GetRenderTexture(GPUResourceHandle<RenderTexture> handle)
 	{
-		return std::static_pointer_cast<RenderTexture>(m_textures.GetResource(handle.index));
+		return std::static_pointer_cast<RenderTexture>(m_textures.GetResource(handle));
 	}
 
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)

@@ -1593,7 +1593,8 @@ namespace Pudu
     {
         auto rt = m_resources.AllocateRenderTexture();
         TextureFlags::Enum v;
-        rt->m_flags = static_cast<TextureFlags::Enum>(TextureFlags::RenderTargetMask | TextureFlags::Sample | TextureFlags::Compute);
+        rt->m_flags = static_cast<TextureFlags::Enum>(TextureFlags::RenderTargetMask | TextureFlags::Sample |
+            TextureFlags::Compute);
 
         return rt;
     }
@@ -1637,7 +1638,6 @@ namespace Pudu
         ShaderStateHandle shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
 
         Pipeline* pipeline = m_resources.GetPipeline(pipelineHandle);
-        pipeline->name.append(creationData.name);
 
         ShaderState* shaderState = m_resources.GetShaderState(shaderStateHandle);
 
@@ -1645,7 +1645,9 @@ namespace Pudu
         auto& renderPassOutput = renderPass->attachments;
         auto outputCount = renderPassOutput.colorAttachmentCount;
 
+        pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
         pipeline->shaderState = shaderStateHandle;
+        pipeline->depthStencilFormat = renderPassOutput.depthStencilFormat;
 
         CreateDescriptorsLayouts(creationData.descriptorCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
 
@@ -2032,7 +2034,7 @@ namespace Pudu
         texture->mipLevels = creationData.mipmaps;
         texture->pixels = creationData.pixels;
         texture->sourceData = creationData.sourceData;
-        texture->m_flags =creationData.flags;
+        texture->m_flags = creationData.flags;
         uint32_t dataSize = creationData.dataSize;
 
         if (creationData.dataSize == -1)

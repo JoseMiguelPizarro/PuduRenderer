@@ -26,6 +26,8 @@ namespace Pudu
 		
 		uint32_t numDescriptorSets = 0;
 
+		VkFormat depthStencilFormat;
+
 		ShaderStateHandle shaderState;
 
 		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];

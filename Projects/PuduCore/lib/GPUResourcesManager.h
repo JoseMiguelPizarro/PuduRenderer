@@ -33,7 +33,7 @@ namespace Pudu {
 		SPtr<Texture2d> AllocateTexture2D();
 		SPtr<TextureCube> AllocateTextureCube();
 
-		SPtr<RenderPass> GetRenderPass(GPUResourceHandle handle);
+		SPtr<RenderPass> GetRenderPass(GPUResourceHandle<RenderPass> handle);
 
 		SPtr<Framebuffer> GetFramebuffer(FramebufferHandle handle);
 		SPtr<Framebuffer> AllocateFrameBuffer();
@@ -47,7 +47,7 @@ namespace Pudu {
 		DescriptorSetLayoutHandle AllocateDescriptorSetLayout();
 		DescriptorSetLayout* GetDescriptorSetLayout(DescriptorSetLayoutHandle handle);
 
-		ShaderHandle AllocateShader();
+		SPtr<Shader> AllocateShader();
 		SPtr<Shader> GetShader(ShaderHandle handle);
 
 		SPtr<Mesh> AllocateMesh();
@@ -63,23 +63,23 @@ namespace Pudu {
 		SPtr<Semaphore> GetSemaphore(SemaphoreHandle handle);
 
 		SPtr<GPUCommands> AllocateCommandBuffer();
-		SPtr<GPUCommands> GetComandBuffer(GPUResourceHandle handle);
+		SPtr<GPUCommands> GetComandBuffer(GPUResourceHandle<GPUCommands> handle);
 
 		SPtr<RenderTexture> AllocateRenderTexture();
-		SPtr<RenderTexture> GetRenderTexture(GPUResourceHandle handle);
+		SPtr<RenderTexture> GetRenderTexture(GPUResourceHandle<RenderTexture> handle);
 
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
 		template<class T>
 			requires (std::convertible_to<T, Texture>)
-		SPtr<T> GetTexture(GPUResourceHandle handle)
+		SPtr<T> GetTexture(GPUResourceHandle<T> handle)
 		{
 			return static_pointer_cast<T>(m_textures.GetResource(handle.index));
 		}
 
 		template<typename T, typename poolType>
-			requires(std::convertible_to<T, GPUResource>)
+			requires(std::convertible_to<T, GPUResourceBase>)
 		SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool) {
 
 			uint32_t resourceIndex = { static_cast<uint32_t>(pool.Size()) };

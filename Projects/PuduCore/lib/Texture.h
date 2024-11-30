@@ -7,7 +7,7 @@
 
 namespace Pudu
 {
-    class Texture : public GPUResource
+    class Texture : public GPUResource<Texture>
     {
     public:
         std::string name;

@@ -3,61 +3,76 @@
 
 namespace Pudu
 {
-	class PuduGraphics;
+    class PuduGraphics;
 
-	class GPUResourceType {
+    class GPUResourceType
+    {
+    public:
+        enum Type
+        {
+            Texture,
+            Buffer,
+            RenderPass,
+            UNINITIALIZED
+        };
+    };
 
-	public:	enum Type
-	{
-		Texture,
-		Buffer,
-		RenderPass,
-		UNINITIALIZED
-	};
-	};
+    struct GPUResourceHandleBase
+    {
+        uint32_t Index() const { return m_Index; }
 
-
-	struct GPUResourceHandle
-	{
-	public:
-		uint32_t index;
-
-
-		bool IsEqual(const GPUResourceHandle& other) {
-			return this->index == other.index;
-		}
-	};
-
-	class GPUResource
-	{
-	public:
-		GPUResourceHandle Handle() { return m_handle; }
-		bool IsAllocated() { return m_allocated; }
-		std::string name;
+        friend class GPUResourcesManager;
+        void SetIndex(uint32_t index) { m_Index = index; }
+        uint32_t m_Index;
+    };
+    
+    class GPUResourceBase
+    {
+    };
 
 
-		virtual void Create(PuduGraphics* gpu) {
-			if (m_allocated)
-			{
-				return;
-			}
+    template <typename T>
+        requires(std::convertible_to<T, GPUResourceBase>)
+    struct GPUResourceHandle : public GPUResourceHandleBase
+    {
+    public:
+        bool IsEqual(const GPUResourceHandle& other)
+        {
+            return this->m_Index == other.m_Index;
+        }
+    };
 
-			OnCreate(gpu);
-			m_allocated = true;
-		};
 
-		virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
-		virtual  ~GPUResource() = default;
+    template <typename T>
+    class GPUResource : public GPUResourceBase
+    {
+    public:
+        GPUResourceHandle<T> Handle() { return m_handle; }
+        bool IsAllocated() { return m_allocated; }
+        std::string name;
 
-	protected:
-		friend class GPUResourcesManager;
-		GPUResourceHandle m_handle;
-		bool m_allocated;
-		virtual void OnCreate(PuduGraphics* gpu) {};
-	};
 
-	struct TextureHandle : public GPUResourceHandle
-	{
+        virtual void Create(PuduGraphics* gpu)
+        {
+            if (m_allocated)
+            {
+                return;
+            }
 
-	}; // struct TextureHandle
+            OnCreate(gpu);
+            m_allocated = true;
+        }
+
+        virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
+        virtual ~GPUResource() = default;
+
+    protected:
+        friend class GPUResourcesManager;
+        GPUResourceHandle<T> m_handle;
+        bool m_allocated;
+
+        virtual void OnCreate(PuduGraphics* gpu)
+        {
+        };
+    };
 }
