@@ -2,8 +2,8 @@
 
 namespace Pudu
 {
-    Pudu::TextureType::Enum Pudu::TextureCube::GetTextureType()
-    {
-        return TextureType::Texture_Cube;
-    }
+	TextureType::Enum TextureCube::GetTextureType()
+	{
+		return TextureType::Texture_Cube;
+	}
 }

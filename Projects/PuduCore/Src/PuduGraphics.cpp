@@ -2054,7 +2054,7 @@ namespace Pudu
     {
         VkImageCreateInfo imageCreateInfo{};
         imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageCreateInfo.flags = 0;
+        imageCreateInfo.flags = ToVkImageFlags(texture->GetTextureType());
         imageCreateInfo.imageType = ToVkImageType(texture->GetTextureType());
         imageCreateInfo.extent.width = texture->width;
         imageCreateInfo.extent.height = texture->height;
@@ -2463,11 +2463,15 @@ namespace Pudu
 
     SPtr<Texture2d> PuduGraphics::LoadTexture2D(fs::path filePath, TextureCreationSettings& settings)
     {
+        settings.textureType = TextureType::Texture2D;
+
         return std::dynamic_pointer_cast<Texture2d>(LoadAndCreateTexture(filePath, settings));
     }
 
     SPtr<TextureCube> PuduGraphics::LoadTextureCube(fs::path filePath, TextureCreationSettings& settings)
     {
+        settings.textureType = TextureType::Texture_Cube;
+
         return std::dynamic_pointer_cast<TextureCube>(LoadAndCreateTexture(filePath, settings));
     }
 

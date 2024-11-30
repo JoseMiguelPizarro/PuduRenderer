@@ -342,6 +342,35 @@ namespace Pudu
 		}
 	} // namespace TextureType
 
+
+	static VkImageCreateFlags ToVkImageFlags(TextureType::Enum type)
+	{
+		VkImageCreateFlags flags = {};
+		switch (type)
+		{
+		case Pudu::TextureType::Texture1D:
+			break;
+		case Pudu::TextureType::Texture2D:
+			break;
+		case Pudu::TextureType::Texture3D:
+			break;
+		case Pudu::TextureType::Texture_1D_Array:
+			break;
+		case Pudu::TextureType::Texture_2D_Array:
+			break;
+		case Pudu::TextureType::Texture_Cube:
+			flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+			break;
+		case Pudu::TextureType::Texture_Cube_Array:
+			break;
+		case Pudu::TextureType::Count:
+			break;
+		default:
+			break;
+		}
+		return flags;
+	}
+
 	static VkImageType ToVkImageType(TextureType::Enum type)
 	{
 		static VkImageType s_vk_target[TextureType::Count] = {

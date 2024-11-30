@@ -47,6 +47,7 @@ namespace Pudu
 		};
 
 		virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
+		virtual  ~GPUResource() = default;
 
 	protected:
 		friend class GPUResourcesManager;
