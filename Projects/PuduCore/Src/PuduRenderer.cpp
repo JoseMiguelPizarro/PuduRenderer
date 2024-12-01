@@ -193,9 +193,9 @@ namespace Pudu
 		auto shader = query.shader;
 		auto renderPass = query.renderPass;
 
-		if (m_pipelinesByRenderPass.contains(renderPass->Handle()))
+		if (m_pipelinesByRenderPass.contains(renderPass))
 		{
-			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass->Handle());
+			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass);
 			if (renderPassPipelines != m_pipelinesByRenderPass.end())
 			{
 				auto pipelinesByShader = renderPassPipelines->second;

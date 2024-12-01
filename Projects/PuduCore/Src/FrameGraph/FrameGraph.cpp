@@ -976,7 +976,7 @@ namespace Pudu
 	{
 		//This could also be a buffer, we will need more information about what type of handle it is
 
-		return graphics->Resources()->GetTexture<RenderTexture>(static_cast<GPUResourceHandle<RenderTexture>>(textureHandle)).get();
+		return graphics->Resources()->GetTexture<RenderTexture>(static_cast<GPUResourceHandle<Texture>>(textureHandle)).get();
 	}
 
 	NodeEdge* FrameGraphBuilder::GetNodeEdge(NodeEdgeHandle textureHandle)

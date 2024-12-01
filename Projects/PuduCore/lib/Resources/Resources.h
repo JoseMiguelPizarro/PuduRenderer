@@ -12,6 +12,7 @@ namespace Pudu
 {
 	class RenderPass;
 	class RenderTexture;
+	class Texture;
 
 #pragma region Handles
 	typedef uint32_t FrameGraphHandle;
@@ -446,8 +447,8 @@ namespace Pudu
 		float scaleX = 1.f;
 		float scaleY = 1.f;
 
-		GPUResourceHandle<RenderTexture> colorAttachmentHandles[K_MAX_IMAGE_OUTPUTS];
-		GPUResourceHandle<RenderTexture> depthStencilAttachmentHandle;
+		GPUResourceHandle<Texture> colorAttachmentHandles[K_MAX_IMAGE_OUTPUTS];
+		GPUResourceHandle<Texture> depthStencilAttachmentHandle;
 		uint32_t numColorAttachments;
 
 		uint8_t resize = 0;

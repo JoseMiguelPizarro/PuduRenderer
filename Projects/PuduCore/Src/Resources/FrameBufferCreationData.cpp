@@ -3,13 +3,13 @@
 namespace Pudu
 {
 	
-	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(GPUResourceHandle<RenderTexture> resource)
+	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(GPUResourceHandle<Texture> resource)
 	{
 		outputTexturesHandle[numRenderTargets++] = resource;
 
 		return *this;
 	}
-	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(GPUResourceHandle<RenderTexture> resource)
+	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(GPUResourceHandle<Texture> resource)
 	{
 		depthStencilTextureHandle = resource;
 		return *this;
