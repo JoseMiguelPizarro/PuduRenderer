@@ -5,6 +5,8 @@
 
 namespace Pudu
 {
+	class Pipeline;
+
 	class ComputeShader :public GPUResource<ComputeShader>
 	{
 	public:

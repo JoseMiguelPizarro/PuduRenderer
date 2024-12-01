@@ -10,6 +10,9 @@
 
 namespace Pudu
 {
+	class RenderPass;
+	class RenderTexture;
+
 #pragma region Handles
 	typedef uint32_t FrameGraphHandle;
 	typedef uint32_t FrameGraphNodeHandle;

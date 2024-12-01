@@ -2,25 +2,14 @@
 
 namespace Pudu
 {
-	FramebufferCreationData& FramebufferCreationData::Reset()
-	{
-		numRenderTargets = 0;
-		name = nullptr;
-		depthStencilTextureHandle.index = k_INVALID_HANDLE;
-
-		resize = 0;
-		scaleX = 1.0f;
-		scaleY = 1.0f;
-
-		return *this;
-	}
-	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(GPUResourceHandle resource)
+	
+	FramebufferCreationData& FramebufferCreationData::AddRenderTexture(GPUResourceHandle<RenderTexture> resource)
 	{
 		outputTexturesHandle[numRenderTargets++] = resource;
 
 		return *this;
 	}
-	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(GPUResourceHandle resource)
+	FramebufferCreationData& FramebufferCreationData::SetDepthStencilTexture(GPUResourceHandle<RenderTexture> resource)
 	{
 		depthStencilTextureHandle = resource;
 		return *this;

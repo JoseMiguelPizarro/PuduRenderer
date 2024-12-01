@@ -28,7 +28,6 @@ namespace Pudu {
 		void Init(PuduGraphics* graphics);
 
 
-
 		SPtr<Texture> GetTextureByName(const char* name);
 		SPtr<Texture2d> AllocateTexture2D();
 		SPtr<TextureCube> AllocateTextureCube();
@@ -75,17 +74,17 @@ namespace Pudu {
 			requires (std::convertible_to<T, Texture>)
 		SPtr<T> GetTexture(GPUResourceHandle<T> handle)
 		{
-			return static_pointer_cast<T>(m_textures.GetResource(handle.index));
+			return static_pointer_cast<T>(m_textures.GetResource(handle.Index()));
 		}
 
 		template<typename T, typename poolType>
-			requires(std::convertible_to<T, GPUResourceBase>)
+			requires(std::convertible_to < T, GPUResource<T>>)
 		SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool) {
 
 			uint32_t resourceIndex = { static_cast<uint32_t>(pool.Size()) };
 			SPtr<T> resourcePtr = std::make_shared<T>();
 
-			resourcePtr->m_handle.index = resourceIndex;
+			resourcePtr->m_handle.m_Index = resourceIndex;
 
 			pool.AddResource(resourcePtr);
 

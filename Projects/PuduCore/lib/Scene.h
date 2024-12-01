@@ -24,7 +24,6 @@ namespace Pudu {
 		std::vector<RenderEntitySPtr> GetRenderEntities();
 		EntitySPtr sceneRoot;
 		PuduTime* time;
-		PipelineHandle pipelineHandle;
 		Light* directionalLight;
 
 		std::vector<DrawCall> GetDrawCalls() {

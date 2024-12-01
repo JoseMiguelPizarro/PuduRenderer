@@ -1,5 +1,6 @@
 #pragma once
 #include <concepts>
+#include <string>
 
 namespace Pudu
 {
@@ -15,6 +16,17 @@ namespace Pudu
 			RenderPass,
 			UNINITIALIZED
 		};
+	};
+
+	struct GPUResourceHandleBase
+	{
+		uint32_t Index() const { return m_Index; }
+
+		friend class GPUResourcesManager;
+		void SetIndex(uint32_t index) { m_Index = index; }
+		uint32_t m_Index;
+
+		operator uint32_t& () { return m_Index; }
 	};
 
 
@@ -44,17 +56,10 @@ namespace Pudu
 		};
 	};
 
-	struct GPUResourceHandleBase
-	{
-		uint32_t Index() const { return m_Index; }
 
-		friend class GPUResourcesManager;
-		void SetIndex(uint32_t index) { m_Index = index; }
-		uint32_t m_Index;
-	};
 
 	template <typename T>
-		requires(std::convertible_to<T, GPUResourceBase>)
+	//requires(std::convertible_to<T, GPUResourceBase>)
 	struct GPUResourceHandle : public GPUResourceHandleBase
 	{
 	public:

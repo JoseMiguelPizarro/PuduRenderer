@@ -1341,7 +1341,7 @@ namespace Pudu
 			{
 				if (inputResource.type == GPUResourceType::Texture)
 				{
-					auto texture = gfx->Resources()->GetTexture<RenderTexture>(inputResource.resource->Handle());
+					auto texture = inputResource.resource;
 
 					width = texture->width;
 					height = texture->height;
@@ -1352,7 +1352,7 @@ namespace Pudu
 			{
 				if (outputResource.type == GPUResourceType::Texture)
 				{
-					auto texture = gfx->Resources()->GetTexture<Texture2d>(outputResource.resource->Handle());
+					auto texture = outputResource.resource;
 
 					width = texture->width;
 					height = texture->height;
@@ -1376,7 +1376,7 @@ namespace Pudu
 
 			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
 
-			renderData.activeRenderTarget = gfx->Resources()->GetTexture<RenderTexture>(node->outputs[0].resource->Handle());
+			renderData.activeRenderTarget = node->outputs[0].resource;
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
 			renderPass->Render(renderData);

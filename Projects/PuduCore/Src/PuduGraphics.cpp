@@ -2345,7 +2345,7 @@ namespace Pudu
 		{
 			if (drawCall.MaterialPtr.Texture != nullptr) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
 			{
-				ubo.materialId = drawCall.MaterialPtr.Texture->Handle().index;
+				ubo.materialId = drawCall.MaterialPtr.Texture->Handle().Index();
 			}
 		}
 

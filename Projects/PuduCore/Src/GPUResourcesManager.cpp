@@ -32,6 +32,7 @@ namespace Pudu {
 
 	SPtr<Texture2d> GPUResourcesManager::AllocateTexture2D()
 	{
+		ResourcePool<SPtr<Texture2d>> t;
 		return AllocateGPUResource<Texture2d>(m_textures);
 	}
 
