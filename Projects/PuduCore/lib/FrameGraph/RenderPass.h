@@ -18,6 +18,11 @@ namespace Pudu
 		Count
 	}; // enum Enum
 
+	enum AttachmentUsage {
+		Read = 1,
+		Write = 2,
+		ReadAndWrite = 3
+	};
 
 	struct RenderPassAttachment
 	{
@@ -27,11 +32,18 @@ namespace Pudu
 		VkClearValue clearValue;
 		VkImageLayout layout;
 		GPUResourceType::Type type = GPUResourceType::Texture;
+		AttachmentUsage usage = AttachmentUsage::Write;
 
 		RenderPassAttachment() = default;
 
-		RenderPassAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, VkClearValue clearValue = {}) :
-			resource(rt), loadOperation(loadOp), storeOp(storeOp), clearValue(clearValue) {};
+		RenderPassAttachment(
+			SPtr<RenderTexture> rt,
+			VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+			VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			VkClearValue clearValue = {},
+			VkImageLayout layout = {},
+			AttachmentUsage usage = AttachmentUsage::Write) :
+			resource(rt), loadOperation(loadOp), storeOp(storeOp), clearValue(clearValue), usage(usage), layout(layout) {};
 	};
 
 	struct RenderPassAttachments
@@ -39,6 +51,8 @@ namespace Pudu
 		VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
 		VkImageLayout depthStencilFinalLayout;
+
+		bool writeDepth;
 
 		RenderPassOperation depthOperation = RenderPassOperation::DontCare;
 		RenderPassOperation stencilOperation = RenderPassOperation::DontCare;
@@ -51,6 +65,8 @@ namespace Pudu
 
 		uint16_t AttachmentCount();
 		uint16_t colorAttachmentCount = 0;
+		uint16_t colorAttachmentVkCount = 0;
+
 		uint16_t numColorFormats = 0;
 		uint16_t depthAttachmentCount = 0;
 
@@ -93,8 +109,8 @@ namespace Pudu
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);
-		void AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, vec4 clearColor = vec4(0));
-		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, float depthClear = 0.0f, uint32_t stencilClear = 0);
+		void AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, vec4 clearColor = vec4(0));
+		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, float depthClear = 0.0f, uint32_t stencilClear = 0);
 		void AddColorAttachment(RenderPassAttachment& attachment);
 		void AddDepthStencilAttachment(RenderPassAttachment& attachment);
 
@@ -121,6 +137,7 @@ namespace Pudu
 
 		bool isCompute;
 		bool isEnabled = true;
+		bool writeDepth;
 		RenderPassAttachments attachments;
 
 

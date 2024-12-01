@@ -51,8 +51,8 @@ namespace Pudu
 		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
 		m_forwardRenderPass->name = "ForwardRenderPass";
 		m_forwardRenderPass->AddColorAttachment(colorRT);
-		m_forwardRenderPass->AddColorAttachment(shadowRT);
-		m_forwardRenderPass->AddColorAttachment(depthRT);
+		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read);
+		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read);
 
 		FrameGraphNodeCreation depthNode;
 		depthNode.name = "DepthPrepass";
@@ -119,7 +119,7 @@ namespace Pudu
 		rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
 		DepthStencilCreation depthStencilCreation;
-		depthStencilCreation.SetDepth(true, VK_COMPARE_OP_LESS_OR_EQUAL);
+		depthStencilCreation.SetDepth(renderPass->writeDepth, VK_COMPARE_OP_LESS_OR_EQUAL);
 
 		VertexInputCreation vertexInputCreation;
 		auto attribDescriptions = Vertex::GetAttributeDescriptions();

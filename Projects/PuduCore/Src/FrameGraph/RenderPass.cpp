@@ -60,6 +60,7 @@ namespace Pudu
 		}
 
 		SetDepthStencilOperations(depthOperation, stencilOperation);
+		depthStencilFinalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 		return *this;
 	}
@@ -113,8 +114,11 @@ namespace Pudu
 		for (size_t i = 0; i < colorAttachmentCount; i++)
 		{
 			auto attachment = colorAttachments[i];
-
-			m_vkcolorAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
+			if (attachment.usage & AttachmentUsage::Write)
+			{
+				m_vkcolorAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
+				colorAttachmentVkCount++;
+			}
 		}
 
 		m_colorAttachmentsCreated = true;
@@ -339,7 +343,7 @@ namespace Pudu
 		VkRenderingInfo renderInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
 		renderInfo.renderArea = renderArea;
 		renderInfo.layerCount = 1;
-		renderInfo.colorAttachmentCount = attachments.colorAttachmentCount;
+		renderInfo.colorAttachmentCount = attachments.colorAttachmentVkCount;
 		renderInfo.pColorAttachments = attachments.GetColorAttachments();
 		renderInfo.pDepthAttachment = attachments.depthAttachmentCount > 0
 			? attachments.GetDepthAttachments()
@@ -362,7 +366,7 @@ namespace Pudu
 		data.currentCommand->EndRenderingPass();
 	}
 
-	void RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp,
+	void RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp,
 		vec4 clearColor)
 	{
 		RenderPassAttachment attachment = {};
@@ -374,11 +378,12 @@ namespace Pudu
 		clear.color = { {clearColor.x, clearColor.y, clearColor.z, clearColor.w} };
 
 		attachment.clearValue = clear;
+		attachment.usage = usage;
 
 		AddColorAttachment(attachment);
 	}
 
-	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, VkAttachmentLoadOp loadOp,
+	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, VkAttachmentLoadOp loadOp,
 		VkAttachmentStoreOp storeOp, float depthClear, uint32_t stencilClear)
 	{
 		RenderPassAttachment attachment = {};
@@ -390,6 +395,9 @@ namespace Pudu
 		clear.depthStencil = { depthClear, stencilClear };
 
 		attachment.clearValue = clear;
+		attachment.usage = usage;
+
+		writeDepth = usage & AttachmentUsage::Write;
 
 		AddDepthStencilAttachment(attachment);
 	}
@@ -404,7 +412,6 @@ namespace Pudu
 	{
 		attachment.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
 		attachments.depthStencilFormat = attachment.resource->format;
-		attachments.depthStencilFinalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		attachments.SetDepthStencilAttachment(attachment);
 
 		LOG("Depth Attachment format {}", string_VkFormat(attachments.depthStencilFormat));

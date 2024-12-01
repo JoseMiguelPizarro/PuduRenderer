@@ -2066,12 +2066,21 @@ namespace Pudu
 		if (TextureFormat::HasDepthOrStencil(texture->format))
 		{
 			imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+			if (isRenderTarget)
+			{
+				imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+			}
 		}
 		else
 		{
 			imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; //Read&write but it might but just for read
 			imageCreateInfo.usage |= isRenderTarget ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : 0;
 		}
+
+		/*if (isRenderTarget)
+		{
+			imageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		}*/
 
 		if (texture->GetFlags() & TextureFlags::Sample)
 		{
