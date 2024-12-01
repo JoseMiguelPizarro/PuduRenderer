@@ -246,27 +246,16 @@ namespace Pudu
 	{
 		enum Enum
 		{
-			Texture1D,
-			Texture2D,
-			Texture3D,
-			Texture_1D_Array,
-			Texture_2D_Array,
-			Texture_Cube,
-			Texture_Cube_Array,
-			Count
+			Texture1D = 1,
+			Texture2D = 2,
+			Texture3D = 4,
+			Texture_1D_Array = 8,
+			Texture_2D_Array = 16,
+			Texture_Cube = 32,
+			Texture_Cube_Array = 64,
+			Count = 128
 		};
 
-		enum Mask
-		{
-			Texture1D_mask = 1 << 0,
-			Texture2D_mask = 1 << 1,
-			Texture3D_mask = 1 << 2,
-			Texture_1D_Array_mask = 1 << 3,
-			Texture_2D_Array_mask = 1 << 4,
-			Texture_Cube_mask = 1 << 5,
-			Texture_Cube_Array_mask = 1 << 6,
-			Count_mask = 1 << 7
-		};
 
 		static const char* s_value_names[] = {
 			"Texture1D", "Texture2D", "Texture3D", "Texture_1D_Array", "Texture_2D_Array","Texture_Cube", "Texture_Cube_Array",

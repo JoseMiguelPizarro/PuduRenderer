@@ -2056,9 +2056,9 @@ namespace Pudu
 
 		imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		const bool isRenderTarget = (texture->GetTextureType() & TextureFlags::RenderTargetMask) ==
+		const bool isRenderTarget = (texture->GetFlags() & TextureFlags::RenderTargetMask) ==
 			TextureFlags::RenderTargetMask;
-		const bool isComputeUsed = texture->GetTextureType() & TextureFlags::Compute;
+		const bool isComputeUsed = texture->GetFlags() & TextureFlags::Compute;
 
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 		imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
@@ -2078,7 +2078,7 @@ namespace Pudu
 			imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
 
-		if (texture->GetFlags() == TextureType::Texture_Cube)
+		if (texture->GetTextureType() & TextureType::Texture_Cube)
 		{
 			imageCreateInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 		}

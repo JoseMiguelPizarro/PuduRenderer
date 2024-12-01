@@ -10,7 +10,6 @@ namespace Pudu
 	class Texture : public GPUResource<Texture>
 	{
 	public:
-		std::string name;
 		VkImage vkImageHandle;
 		VkImageView vkImageViewHandle;
 		VkDeviceMemory vkMemoryHandle;
@@ -32,11 +31,16 @@ namespace Pudu
 		bool IsDestroyed();
 
 		TextureFlags::Enum GetFlags() { return m_flags; }
-		//Virtual to make this a polymorphic class
-		virtual ~Texture() = default;
 
 		GPUResourceType::Type Type() { return GPUResourceType::Texture; }
 		virtual TextureType::Enum GetTextureType() { return TextureType::Texture2D; }
+
+		Texture() {
+			m_flags = PopulateFlags();
+		}
+
+	protected:
+		virtual TextureFlags::Enum PopulateFlags() { return TextureFlags::Default; };
 
 	private:
 		friend PuduGraphics;
@@ -50,5 +54,6 @@ namespace Pudu
 
 	class RenderTexture : public Texture
 	{
+		TextureFlags::Enum PopulateFlags() override { return TextureFlags::RenderTarget; };
 	};
 }
