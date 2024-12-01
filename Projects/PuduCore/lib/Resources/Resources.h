@@ -246,26 +246,15 @@ namespace Pudu
 	{
 		enum Enum
 		{
-			Texture1D = 1,
-			Texture2D = 2,
-			Texture3D = 4,
-			Texture_1D_Array = 8,
-			Texture_2D_Array = 16,
-			Texture_Cube = 32,
-			Texture_Cube_Array = 64,
-			Count = 128
+			Texture1D,
+			Texture2D,
+			Texture3D,
+			Texture_1D_Array,
+			Texture_2D_Array,
+			Texture_Cube,
+			Texture_Cube_Array,
 		};
 
-
-		static const char* s_value_names[] = {
-			"Texture1D", "Texture2D", "Texture3D", "Texture_1D_Array", "Texture_2D_Array","Texture_Cube", "Texture_Cube_Array",
-			"Count"
-		};
-
-		static const char* ToString(Enum e)
-		{
-			return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
-		}
 	} // namespace TextureType
 
 
@@ -274,22 +263,20 @@ namespace Pudu
 		VkImageCreateFlags flags = {};
 		switch (type)
 		{
-		case Pudu::TextureType::Texture1D:
+		case TextureType::Enum::Texture1D:
 			break;
-		case Pudu::TextureType::Texture2D:
+		case TextureType::Enum::Texture2D:
 			break;
-		case Pudu::TextureType::Texture3D:
+		case TextureType::Enum::Texture3D:
 			break;
-		case Pudu::TextureType::Texture_1D_Array:
+		case TextureType::Enum::Texture_1D_Array:
 			break;
-		case Pudu::TextureType::Texture_2D_Array:
+		case TextureType::Enum::Texture_2D_Array:
 			break;
-		case Pudu::TextureType::Texture_Cube:
+		case TextureType::Enum::Texture_Cube:
 			flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 			break;
-		case Pudu::TextureType::Texture_Cube_Array:
-			break;
-		case Pudu::TextureType::Count:
+		case TextureType::Enum::Texture_Cube_Array:
 			break;
 		default:
 			break;
@@ -299,12 +286,34 @@ namespace Pudu
 
 	static VkImageType ToVkImageType(TextureType::Enum type)
 	{
-		static VkImageType s_vk_target[TextureType::Count] = {
-			VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D, VK_IMAGE_TYPE_3D, VK_IMAGE_TYPE_1D, VK_IMAGE_TYPE_2D,
-			VK_IMAGE_TYPE_2D,
-			VK_IMAGE_TYPE_3D
-		};
-		return s_vk_target[type];
+		VkImageType vktype;
+
+		switch (type)
+		{
+		case Pudu::TextureType::Texture1D:
+			return VK_IMAGE_TYPE_1D;
+		case Pudu::TextureType::Texture2D:
+			return VK_IMAGE_TYPE_2D;
+			break;
+		case Pudu::TextureType::Texture3D:
+			return VK_IMAGE_TYPE_3D;
+			break;
+		case Pudu::TextureType::Texture_1D_Array:
+			return VK_IMAGE_TYPE_1D;
+			break;
+		case Pudu::TextureType::Texture_2D_Array:
+			return VK_IMAGE_TYPE_2D;
+			break;
+		case Pudu::TextureType::Texture_Cube:
+			return VK_IMAGE_TYPE_2D;
+			break;
+		case Pudu::TextureType::Texture_Cube_Array:
+			return VK_IMAGE_TYPE_3D;
+			break;
+		default:
+			return VK_IMAGE_TYPE_2D;
+			break;
+		}
 	}
 
 	static VkImageViewType ToVkImageViewType(TextureType::Enum type)

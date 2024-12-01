@@ -16,6 +16,8 @@ namespace Pudu
 		VmaAllocation vmaAllocation;
 		VkImageLayout vkImageLayout;
 		TextureSampler Sampler;
+		VkImageLayout layout;
+
 		bool isSwapChain = false;
 		uint32_t width;
 		uint32_t height;
@@ -54,6 +56,7 @@ namespace Pudu
 
 	class RenderTexture : public Texture
 	{
+	protected:
 		TextureFlags::Enum PopulateFlags() override { return TextureFlags::RenderTarget; };
 	};
 }

@@ -796,7 +796,7 @@ namespace Pudu
 			framebufferAttachments[activeAttachments] = texture->vkImageViewHandle;
 		}
 
-		if (framebuffer->depthStencilAttachmentHandle.Index()!= k_INVALID_HANDLE)
+		if (framebuffer->depthStencilAttachmentHandle.Index() != k_INVALID_HANDLE)
 		{
 			auto depthTexture = m_resources.GetTexture<RenderTexture>(framebuffer->depthStencilAttachmentHandle);
 			framebufferAttachments[activeAttachments++] = depthTexture->vkImageViewHandle;
@@ -2078,7 +2078,7 @@ namespace Pudu
 			imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
 		}
 
-		if (texture->GetTextureType() & TextureType::Texture_Cube)
+		if (texture->GetTextureType() == TextureType::Texture_Cube)
 		{
 			imageCreateInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 		}
@@ -2268,9 +2268,9 @@ namespace Pudu
 			frame.ComputeCommandBuffer = buffers[i * 2 + 1];
 
 			SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.CommandBuffer->vkHandle,
-				fmt::format("Frame {} graphics", i).c_str());
+				fmt::format("Frame {} cmd: graphics queue", i).c_str());
 			SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.ComputeCommandBuffer->vkHandle,
-				fmt::format("Frame {} compute", i).c_str());
+				fmt::format("Frame {} cmd: compute queue", i).c_str());
 		}
 
 		LOG("Created command buffer");

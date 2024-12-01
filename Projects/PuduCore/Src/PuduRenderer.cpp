@@ -50,9 +50,9 @@ namespace Pudu
 
 		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
 		m_forwardRenderPass->name = "ForwardRenderPass";
-		m_forwardRenderPass->AddColorAttachment(shadowRT);
 		m_forwardRenderPass->AddColorAttachment(colorRT);
-		m_forwardRenderPass->AddDepthStencilAttachment(depthRT);
+		m_forwardRenderPass->AddColorAttachment(shadowRT);
+		m_forwardRenderPass->AddColorAttachment(depthRT);
 
 		FrameGraphNodeCreation depthNode;
 		depthNode.name = "DepthPrepass";
