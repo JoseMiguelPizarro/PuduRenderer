@@ -1432,7 +1432,7 @@ namespace Pudu
 			{
 				creationData.outputs.push_back(attachment);
 			}
-
+			attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 			creationData.inputs.push_back(attachment);
 		}
 
@@ -1440,6 +1440,8 @@ namespace Pudu
 		{
 			auto attachment = renderPass->attachments.depthAttachments[0];
 			creationData.inputs.push_back(attachment);
+
+			attachment.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 
 			if (attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE)
 			{
