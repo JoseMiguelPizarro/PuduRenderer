@@ -792,7 +792,7 @@ namespace Pudu
 
 	static bool IsNodeDependant(FrameGraph* graph, FrameGraphNodeHandle childNode, FrameGraphNodeHandle targetNode) {
 
-		if (childNode.index == targetNode.index)
+		if (childNode == targetNode)
 		{
 			return false;
 		}
@@ -802,7 +802,7 @@ namespace Pudu
 		for (auto inputEdge : n->inputEdges) {
 
 			auto edge = graph->GetNodeEdge(inputEdge);
-			if (edge->from.index == targetNode.index)
+			if (edge->from == targetNode)
 			{
 				return true;
 			}
@@ -916,9 +916,9 @@ namespace Pudu
 	FrameGraphNodeHandle FrameGraphBuilder::CreateNode(const FrameGraphNodeCreation& creation)
 	{
 		FrameGraphNodeHandle nodeHandle{ k_INVALID_HANDLE };
-		nodeHandle.index = nodeCache.nodes.ObtainResource();
+		nodeHandle = nodeCache.nodes.ObtainResource();
 
-		FrameGraphNode* node = nodeCache.nodes.GetResourcePtr(nodeHandle.index);
+		FrameGraphNode* node = nodeCache.nodes.GetResourcePtr(nodeHandle);
 
 		node->name.append(creation.name);
 		node->enabled = creation.enabled;
@@ -931,7 +931,7 @@ namespace Pudu
 		node->isCompute = creation.isCompute;
 		node->nodeHandle = nodeHandle;
 
-		nodeCache.nodeMap[node->name] = nodeHandle.index;
+		nodeCache.nodeMap[node->name] = nodeHandle;
 
 		/*	for (size_t i = 0; i < creation.outputs.size(); ++i) {
 				const FrameGraphResourceCreateInfo& outputCreation = creation.outputs[i];
@@ -968,25 +968,15 @@ namespace Pudu
 
 	FrameGraphNode* FrameGraphBuilder::GetNode(FrameGraphNodeHandle nodeHandle)
 	{
-		return nodeCache.nodes.GetResourcePtr(nodeHandle.index);
+		return nodeCache.nodes.GetResourcePtr(nodeHandle);
 	}
 
-	GPUResource* FrameGraphBuilder::GetResource(std::string name)
-	{
-		auto it = resourceCache.resourcesMap.find(name);
 
-		if (it == resourceCache.resourcesMap.end())
-		{
-			return nullptr;
-		}
-
-		return resourceCache.resources.GetResourcePtr(it->second);
-	}
-
-	GPUResource* FrameGraphBuilder::GetResource(GPUResourceHandle textureHandle)
+	GPUResourceBase* FrameGraphBuilder::GetResource(GPUResourceHandleBase textureHandle)
 	{
 		//This could also be a buffer, we will need more information about what type of handle it is
-		return graphics->Resources()->GetTexture<RenderTexture>(textureHandle).get();
+
+		return graphics->Resources()->GetTexture<RenderTexture>(static_cast<GPUResourceHandle<RenderTexture>>(textureHandle)).get();
 	}
 
 	NodeEdge* FrameGraphBuilder::GetNodeEdge(NodeEdgeHandle textureHandle)
@@ -994,7 +984,7 @@ namespace Pudu
 		return nodeCache.nodeEdges.GetResourcePtr(textureHandle.index);
 	}
 
-	NodeEdgeHandle FrameGraphBuilder::CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, GPUResourceHandle resourceHandle)
+	NodeEdgeHandle FrameGraphBuilder::CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, GPUResourceHandleBase resourceHandle)
 	{
 		NodeEdgeHandle edgeHandle{ k_INVALID_HANDLE };
 		edgeHandle.index = nodeCache.nodeEdges.ObtainResource();
@@ -1019,16 +1009,6 @@ namespace Pudu
 	{
 	}
 
-	bool FrameGraphResourceCache::AddResourceToCache(const char* name, GPUResourceHandle resourceHandle)
-	{
-		if (resourcesMap.find(name) != resourcesMap.end())
-		{
-			resourcesMap[name] = resourceHandle.index;
-
-			return true;
-		}
-		return false;
-	}
 
 	void FrameGraphNodeCache::Init(PuduGraphics* device)
 	{
@@ -1187,7 +1167,7 @@ namespace Pudu
 		//Todo:: implement
 	}
 
-	void FrameGraph::AllocateResource(GPUResourceHandle handle)
+	void FrameGraph::AllocateResource(GPUResourceHandleBase handle)
 	{
 		auto r = builder->GetResource(handle);
 
@@ -1278,15 +1258,15 @@ namespace Pudu
 			{
 				FrameGraphNodeHandle nodeToVisitHandle = nodesToBeVisitedStack.back();
 
-				if (visited[nodeToVisitHandle.index] == 2)
+				if (visited[nodeToVisitHandle] == 2)
 				{
 					nodesToBeVisitedStack.pop_back();
 					continue;
 				}
 
-				if (visited[nodeToVisitHandle.index] == 1)
+				if (visited[nodeToVisitHandle] == 1)
 				{
-					visited[nodeToVisitHandle.index] = 2;
+					visited[nodeToVisitHandle] = 2;
 
 					sortedNodes.push_back(nodeToVisitHandle);
 
@@ -1295,7 +1275,7 @@ namespace Pudu
 					continue;
 				}
 
-				visited[nodeToVisitHandle.index] = 1; //Mark as visited
+				visited[nodeToVisitHandle] = 1; //Mark as visited
 
 				if (node->outputEdges.size() == 0) {
 					continue; //Leaf node, nothing to do here
@@ -1306,7 +1286,7 @@ namespace Pudu
 				{
 					auto edge = GetNodeEdge(edgeHandle);
 
-					if (!visited[edge->to.index])
+					if (!visited[edge->to])
 					{
 						nodesToBeVisitedStack.push_back(edge->to);
 					}

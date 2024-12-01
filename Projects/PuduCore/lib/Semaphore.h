@@ -1,11 +1,11 @@
 #pragma once
+#include "Resources/GPUResource.h"
 #include "Resources/Resources.h"
 #include <vulkan/vulkan_core.h>
 namespace Pudu
 {
-	struct Semaphore
+	struct Semaphore :GPUResource<Semaphore>
 	{
-		SemaphoreHandle handle;
 		VkSemaphore vkHandle;
 
 		operator VkSemaphore& () { return vkHandle; }

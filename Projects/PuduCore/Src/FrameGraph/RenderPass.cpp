@@ -314,7 +314,7 @@ namespace Pudu
         creationData.vertexInput = vertexInputCreation;
         creationData.shadersStateCreationData = shaderData;
 
-        creationData.renderPassHandle = frameData.currentRenderPass->handle;
+        creationData.renderPassHandle = frameData.currentRenderPass->Handle();
 
         return creationData;
     }

@@ -7,7 +7,7 @@
 
 namespace Pudu
 {
-    class Shader : public GPUResource
+    class Shader : public GPUResource<Shader>
     {
     public:
         VkShaderModule GetModule();

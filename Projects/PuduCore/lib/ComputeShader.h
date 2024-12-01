@@ -5,12 +5,12 @@
 
 namespace Pudu
 {
-	class ComputeShader
+	class ComputeShader :public GPUResource<ComputeShader>
 	{
 	public:
 		VkShaderModule vkShaderModule;
-		PipelineHandle pipelineHandle;
-		ComputeShaderHandle handle;
+		GPUResourceHandle<Pipeline> pipelineHandle;
+		GPUResourceHandle<ComputeShader> handle;
 		bool ResourcesUpdated() { return m_resourcesUpdated; }
 		void MarkAsResourcesUpdated() { m_resourcesUpdated = true; }
 		void MarkResourcesDirty() { m_resourcesUpdated = false; }

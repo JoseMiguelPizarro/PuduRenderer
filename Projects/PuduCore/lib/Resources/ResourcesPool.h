@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include <vulkan/vulkan_core.h>
+#include "Resources/GPUResource.h"
 
 namespace Pudu
 {
@@ -13,9 +14,9 @@ namespace Pudu
 	template <typename T>
 	struct ResourcePool
 	{
-		T* GetResourcePtr(GPUResourceHandleBase handle);
+		T* GetResourcePtr(uint32_t handle);
 
-		T GetResource(GPUResourceHandleBase handle);
+		T GetResource(uint32_t handle);
 
 		uint32_t AddResource(T resource);
 

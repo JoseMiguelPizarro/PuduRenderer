@@ -10,6 +10,8 @@
 #include <PuduGraphics.h>
 #include <GPUCommands.h>
 #include "FrameGraph/RenderPass.h"
+#include "Resources/GPUResource.h"
+#include "Resources/Resources.h"
 
 namespace Pudu {
 
@@ -31,7 +33,7 @@ namespace Pudu {
 	/// Are used to define Edges between nodes
 	/// </summary>
 	struct NodeEdge {
-		GPUResourceHandle resource;
+		GPUResourceHandleBase resource;
 
 		/// <summary>
 		/// Stores the parent resource
@@ -61,7 +63,7 @@ namespace Pudu {
 		std::vector<RenderPassAttachment>  inputs;
 		std::vector<RenderPassAttachment> outputs;
 
-		GPUResourceHandle renderPass;
+		GPUResourceHandle<RenderPass> renderPass;
 
 		bool enabled;
 		bool isCompute = false;
@@ -72,8 +74,8 @@ namespace Pudu {
 	struct FrameGraphNode {
 		int32_t RefCount = 0;
 
-		GPUResourceHandle  renderPass;
-		FramebufferHandle framebuffer;
+		GPUResourceHandle<RenderPass>  renderPass;
+		GPUResourceHandle<Framebuffer> framebuffer;
 		FrameGraphNodeHandle nodeHandle;
 
 		std::vector<RenderPassAttachment> inputs;
@@ -109,9 +111,8 @@ namespace Pudu {
 		/// ONLY output resources are handled by this map during <CreateNodeOutput>
 		/// </summary>
 		std::unordered_map<std::string, uint32_t> resourcesMap;
-		ResourcePool<GPUResource> resources;
+		ResourcePool<GPUResourceBase> resources;
 
-		bool AddResourceToCache(const char* name, GPUResourceHandle resourceHandle);
 	};
 
 	struct FrameGraphNodeCache {
@@ -134,10 +135,9 @@ namespace Pudu {
 		FrameGraphNode* GetNode(std::string name);
 		FrameGraphNode* GetNode(FrameGraphNodeHandle nodeHandle);
 		NodeEdge* GetNodeEdge(NodeEdgeHandle textureHandle);
-		NodeEdgeHandle CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, GPUResourceHandle resourceHandle);
+		NodeEdgeHandle CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to, GPUResourceHandleBase resourceHandle);
 
-		GPUResource* GetResource(GPUResourceHandle textureHandle);
-		GPUResource* GetResource(std::string name);
+		GPUResourceBase* GetResource(GPUResourceHandleBase textureHandle);
 
 		FrameGraphResourceCache resourceCache;
 		FrameGraphNodeCache nodeCache;
@@ -169,7 +169,7 @@ namespace Pudu {
 
 		void Reset();
 		void AllocateRequiredResources();
-		void AllocateResource(GPUResourceHandle handle);
+		void AllocateResource(GPUResourceHandleBase handle);
 		void EnableRenderPass(char* renderPassName);
 		void DisableRenderPass(char* renderPassName);
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);

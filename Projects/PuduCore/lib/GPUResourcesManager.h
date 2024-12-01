@@ -35,32 +35,32 @@ namespace Pudu {
 
 		SPtr<RenderPass> GetRenderPass(GPUResourceHandle<RenderPass> handle);
 
-		SPtr<Framebuffer> GetFramebuffer(FramebufferHandle handle);
+		SPtr<Framebuffer> GetFramebuffer(GPUResourceHandle<Framebuffer> handle);
 		SPtr<Framebuffer> AllocateFrameBuffer();
 
-		Pipeline* GetPipeline(PipelineHandle handle);
-		PipelineHandle AllocatePipeline();
+		SPtr<Pipeline> AllocatePipeline();
+		SPtr<Pipeline> GetPipeline(GPUResourceHandle<Pipeline> handle);
 
-		ShaderStateHandle AllocateShaderState();
-		ShaderState* GetShaderState(ShaderStateHandle handle);
+		SPtr<ShaderState> AllocateShaderState();
+		SPtr<ShaderState> GetShaderState(GPUResourceHandle<ShaderState> handle);
 
-		DescriptorSetLayoutHandle AllocateDescriptorSetLayout();
-		DescriptorSetLayout* GetDescriptorSetLayout(DescriptorSetLayoutHandle handle);
+		SPtr<DescriptorSetLayout> AllocateDescriptorSetLayout();
+		SPtr<DescriptorSetLayout> GetDescriptorSetLayout(GPUResourceHandle<DescriptorSetLayout> handle);
 
 		SPtr<Shader> AllocateShader();
-		SPtr<Shader> GetShader(ShaderHandle handle);
+		SPtr<Shader> GetShader(GPUResourceHandle<Shader> handle);
 
 		SPtr<Mesh> AllocateMesh();
-		SPtr<Mesh> GetMesh(MeshHandle handle);
+		SPtr<Mesh> GetMesh(GPUResourceHandle<Mesh> handle);
 
-		ComputeShaderHandle AllocateComputeShader();
-		SPtr<ComputeShader> GetComputeShader(ComputeShaderHandle handle);
+		SPtr<ComputeShader> AllocateComputeShader();
+		SPtr<ComputeShader> GetComputeShader(GPUResourceHandle<ComputeShader> handle);
 
 		SPtr<GraphicsBuffer> AllocateGraphicsBuffer();
-		SPtr<GraphicsBuffer> GetGraphicsBuffer(GraphicsBufferHandle handle);
+		SPtr<GraphicsBuffer> GetGraphicsBuffer(GPUResourceHandle<GraphicsBuffer> handle);
 
 		SPtr<Semaphore> AllocateSemaphore();
-		SPtr<Semaphore> GetSemaphore(SemaphoreHandle handle);
+		SPtr<Semaphore> GetSemaphore(GPUResourceHandle<Semaphore> handle);
 
 		SPtr<GPUCommands> AllocateCommandBuffer();
 		SPtr<GPUCommands> GetComandBuffer(GPUResourceHandle<GPUCommands> handle);
@@ -102,14 +102,14 @@ namespace Pudu {
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture>> m_textures;
 		ResourcePool<SPtr<Shader>> m_shaders;
+		ResourcePool<SPtr<ShaderState>> m_shaderStates;
 		ResourcePool<SPtr<Mesh>> m_meshes;
 		ResourcePool<SPtr<ComputeShader>> m_computeShaders;
 		ResourcePool<SPtr<RenderPass>> m_renderPasses;
 		ResourcePool<SPtr<Framebuffer>> m_frameBuffers;
-		ResourcePool<Pipeline> m_pipelines;
-		ResourcePool<ShaderState> m_shaderStates;
+		ResourcePool<SPtr<Pipeline>> m_pipelines;
 		ResourcePool<SPtr<GraphicsBuffer>> m_graphicsBuffers;
-		ResourcePool<DescriptorSetLayout> m_descriptorSetLayouts;
+		ResourcePool<SPtr<DescriptorSetLayout>> m_descriptorSetLayouts;
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
 		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;

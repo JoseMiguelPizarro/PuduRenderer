@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Resources/GPUResource.h"
 #include "Resources/Resources.h"
 
 namespace Pudu
@@ -14,7 +15,7 @@ namespace Pudu
 		PuduRenderer* renderer;
 	};
 
-	class Pipeline
+	class Pipeline :public GPUResource<Pipeline>
 	{
 	public:
 		std::string name;
@@ -23,15 +24,15 @@ namespace Pudu
 
 		VkPipelineBindPoint vkPipelineBindPoint;
 		VkDescriptorSet vkDescriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS];//Just 1 for now, bindless
-		
+
 		uint32_t numDescriptorSets = 0;
 
 		VkFormat depthStencilFormat;
 
-		ShaderStateHandle shaderState;
+		GPUResourceHandle<ShaderState> shaderState;
 
-		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
-		std::vector<DescriptorSetLayoutHandle> descriptorSetLayoutHandles;
+		SPtr<DescriptorSetLayout> descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
+		std::vector<GPUResourceHandle<DescriptorSetLayout>> descriptorSetLayoutHandles;
 		uint32_t numActiveLayouts = 0;
 
 		DepthStencilCreation depthStencil;
@@ -40,7 +41,6 @@ namespace Pudu
 
 		bool bindlessUpdated;
 
-		PipelineHandle handle;
 		bool graphicsPipeline = true;
 	}; // struct Pipeline
 }

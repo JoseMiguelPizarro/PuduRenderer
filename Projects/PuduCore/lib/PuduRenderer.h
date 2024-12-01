@@ -32,7 +32,7 @@ namespace Pudu
 		SPtr<RenderPass> m_forwardRenderPass;
 		SPtr<RenderPass> m_shadowMapRenderPass;
 
-		std::unordered_map<GPUResourceHandle, std::unordered_map<GPUResourceHandle, PipelineHandle>> m_pipelinesByRenderPass;
+		std::unordered_map < RenderPass*, std::unordered_map<Shader*, Pipeline*>> m_pipelinesByRenderPass;
 
 		Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader);
 	};

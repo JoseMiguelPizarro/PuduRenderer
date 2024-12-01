@@ -32,76 +32,57 @@ namespace Pudu {
 
 	SPtr<Texture2d> GPUResourcesManager::AllocateTexture2D()
 	{
-		GPUResourceHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
-		SPtr<Texture2d> texture = std::make_shared<Texture2d>();
-		texture->m_handle = handle;
-
-		m_textures.AddResource(texture);
-
-		return texture;
+		return AllocateGPUResource<Texture2d>(m_textures);
 	}
 
 	SPtr<TextureCube> GPUResourcesManager::AllocateTextureCube()
 	{
-		GPUResourceHandle handle = { static_cast<uint32_t>(m_textures.Size()) };
-		SPtr<TextureCube> texture = std::make_shared<TextureCube>();
-		texture->m_handle = handle;
-
-		m_textures.AddResource(texture);
-
-		return texture;
+		return AllocateGPUResource<TextureCube>(m_textures);
 	}
 
-	SPtr<RenderPass> GPUResourcesManager::GetRenderPass(GPUResourceHandle handle)
+	SPtr<RenderPass> GPUResourcesManager::GetRenderPass(GPUResourceHandle<RenderPass> handle)
 	{
-		return m_renderPasses.GetResource(handle.index);
+		return m_renderPasses.GetResource(handle);
 	}
 
-	SPtr<Framebuffer> GPUResourcesManager::GetFramebuffer(FramebufferHandle handle)
+	SPtr<Framebuffer> GPUResourcesManager::GetFramebuffer(GPUResourceHandle<Framebuffer> handle)
 	{
-		return m_frameBuffers.GetResource(handle.index);
+		return m_frameBuffers.GetResource(handle);
 	}
 
 	SPtr<Framebuffer> GPUResourcesManager::AllocateFrameBuffer()
 	{
-		FramebufferHandle handle = { static_cast<uint32_t>(m_frameBuffers.Size()) };
-		SPtr<Framebuffer> framebuffer = std::make_shared<Framebuffer>();
-
-		m_frameBuffers.AddResource(framebuffer);
-
-		framebuffer->handle = handle;
-
-		return framebuffer;
+		return AllocateGPUResource<Framebuffer>(m_frameBuffers);
 	}
 
-	Pipeline* GPUResourcesManager::GetPipeline(PipelineHandle handle)
+	SPtr<Pipeline> GPUResourcesManager::GetPipeline(GPUResourceHandle<Pipeline> handle)
 	{
-		return m_pipelines.GetResourcePtr(handle.index);
+		return m_pipelines.GetResource(handle);
 	}
 
-	PipelineHandle GPUResourcesManager::AllocatePipeline()
+	SPtr<Pipeline>  GPUResourcesManager::AllocatePipeline()
 	{
-		return { m_pipelines.ObtainResource() };
+		return AllocateGPUResource<Pipeline>(m_pipelines);
 	}
 
-	ShaderStateHandle GPUResourcesManager::AllocateShaderState()
+	SPtr<ShaderState> GPUResourcesManager::AllocateShaderState()
 	{
-		return { m_shaderStates.ObtainResource() };
+		return AllocateGPUResource<ShaderState>(m_shaderStates);
 	}
 
-	ShaderState* GPUResourcesManager::GetShaderState(ShaderStateHandle handle)
+	SPtr<ShaderState> GPUResourcesManager::GetShaderState(GPUResourceHandle<ShaderState> handle)
 	{
-		return m_shaderStates.GetResourcePtr(handle.index);
+		return m_shaderStates.GetResource(handle);
 	}
 
-	DescriptorSetLayoutHandle GPUResourcesManager::AllocateDescriptorSetLayout()
+	SPtr<DescriptorSetLayout> GPUResourcesManager::AllocateDescriptorSetLayout()
 	{
-		return { m_descriptorSetLayouts.ObtainResource() };
+		return AllocateGPUResource<DescriptorSetLayout>(m_descriptorSetLayouts);
 	}
 
-	DescriptorSetLayout* GPUResourcesManager::GetDescriptorSetLayout(DescriptorSetLayoutHandle handle)
+	SPtr<DescriptorSetLayout>GPUResourcesManager::GetDescriptorSetLayout(GPUResourceHandle<DescriptorSetLayout> handle)
 	{
-		return m_descriptorSetLayouts.GetResourcePtr(handle.index);
+		return m_descriptorSetLayouts.GetResource(handle);
 	}
 
 	SPtr<Shader> GPUResourcesManager::AllocateShader()
@@ -109,71 +90,43 @@ namespace Pudu {
 		return AllocateGPUResource<Shader>(m_shaders);
 	}
 
-	SPtr<Shader> GPUResourcesManager::GetShader(ShaderHandle handle)
+	SPtr<Shader> GPUResourcesManager::GetShader(GPUResourceHandle<Shader> handle)
 	{
-		return m_shaders.GetResource(handle.index);
+		return m_shaders.GetResource(handle);
 	}
 
 	SPtr<Mesh> GPUResourcesManager::AllocateMesh()
 	{
-		MeshHandle handle = { static_cast<uint32_t>(m_meshes.Size()) };
-		SPtr<Mesh> mesh = std::make_shared<Mesh>();
-
-		mesh->handle = handle;
-
-		m_meshes.AddResource(mesh);
-
-		return mesh;
+		return AllocateGPUResource<Mesh>(m_meshes);
 	}
 
-	SPtr<Mesh> GPUResourcesManager::GetMesh(MeshHandle handle)
+	SPtr<Mesh> GPUResourcesManager::GetMesh(GPUResourceHandle<Mesh> handle)
 	{
-		return m_meshes.GetResource(handle.index);
+		return m_meshes.GetResource(handle);
 	}
 
-	ComputeShaderHandle GPUResourcesManager::AllocateComputeShader()
+	SPtr<ComputeShader> GPUResourcesManager::AllocateComputeShader()
 	{
-		ComputeShaderHandle handle = { static_cast<uint32_t>(m_computeShaders.Size()) };
-		SPtr<ComputeShader> shader = std::make_shared<ComputeShader>();
-
-		shader->handle = handle;
-
-		m_computeShaders.AddResource(shader);
-
-		return { handle };
+		return AllocateGPUResource<ComputeShader>(m_computeShaders);
 	}
 
-	SPtr<ComputeShader> GPUResourcesManager::GetComputeShader(ComputeShaderHandle handle)
+	SPtr<ComputeShader> GPUResourcesManager::GetComputeShader(GPUResourceHandle<ComputeShader> handle)
 	{
-		return m_computeShaders.GetResource(handle.index);
+		return m_computeShaders.GetResource(handle);
 	}
 	SPtr<GraphicsBuffer> GPUResourcesManager::AllocateGraphicsBuffer()
 	{
-		GraphicsBufferHandle handle = { static_cast<uint32_t>(m_graphicsBuffers.Size()) };
-		SPtr<GraphicsBuffer> buffer = std::make_shared<GraphicsBuffer>();
-
-		buffer->handle = handle;
-
-		m_graphicsBuffers.AddResource(buffer);
-
-		return buffer;
+		return AllocateGPUResource<GraphicsBuffer>(m_graphicsBuffers);
 	}
-	SPtr<GraphicsBuffer> GPUResourcesManager::GetGraphicsBuffer(GraphicsBufferHandle handle)
+	SPtr<GraphicsBuffer> GPUResourcesManager::GetGraphicsBuffer(GPUResourceHandle<GraphicsBuffer> handle)
 	{
 		return m_graphicsBuffers.GetResource(handle);
 	}
 	SPtr<Semaphore> GPUResourcesManager::AllocateSemaphore()
 	{
-		SemaphoreHandle semaphore = { static_cast<uint32_t>(m_semaphores.Size()) };
-		SPtr<Semaphore> semaphoreptr = std::make_shared<Semaphore>();
-
-		semaphoreptr->handle = semaphore;
-
-		m_semaphores.AddResource(semaphoreptr);
-
-		return semaphoreptr;
+		return AllocateGPUResource<Semaphore>(m_semaphores);
 	}
-	SPtr<Semaphore> GPUResourcesManager::GetSemaphore(SemaphoreHandle handle)
+	SPtr<Semaphore> GPUResourcesManager::GetSemaphore(GPUResourceHandle<Semaphore> handle)
 	{
 		return m_semaphores.GetResource(handle);
 	}
@@ -200,49 +153,49 @@ namespace Pudu {
 
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
 	{
-		for (auto t : m_textures.m_resources)
+		for (auto& t : m_textures.m_resources)
 		{
 			gfx->DestroyTexture(t);
 		}
 
-		for (auto t : m_pipelines.m_resources) {
-			vkDestroyPipeline(gfx->m_device, t.vkHandle, nullptr);
-			vkDestroyPipelineLayout(gfx->m_device, t.vkPipelineLayoutHandle, gfx->m_allocatorPtr);
+		for (auto& t : m_pipelines.m_resources) {
+			vkDestroyPipeline(gfx->m_device, t->vkHandle, nullptr);
+			vkDestroyPipelineLayout(gfx->m_device, t->vkPipelineLayoutHandle, gfx->m_allocatorPtr);
 		}
 
-		for (auto f : m_frameBuffers.m_resources)
+		for (auto& f : m_frameBuffers.m_resources)
 		{
 			gfx->DestroyFrameBuffer(f);
 		}
 
-		for (auto rp : m_renderPasses.m_resources)
+		for (auto& rp : m_renderPasses.m_resources)
 		{
 			gfx->DestroyRenderPass(rp);
 		}
 
-		for (auto m : m_meshes.m_resources)
+		for (auto& m : m_meshes.m_resources)
 		{
 			gfx->DestroyMesh(m);
 		}
 
-		for (auto b : m_graphicsBuffers.m_resources)
+		for (auto& b : m_graphicsBuffers.m_resources)
 		{
 			gfx->DestroyBuffer(b);
 		}
 
-		for (auto s : m_semaphores.m_resources)
+		for (auto& s : m_semaphores.m_resources)
 		{
 			gfx->DestroySemaphore(s);
 		}
 
-		for (auto s : m_shaders.m_resources) {
+		for (auto& s : m_shaders.m_resources) {
 			gfx->DestroyShader(s);
 		}
 
-		for (auto ss : m_shaderStates.m_resources) {
-			for (size_t i = 0; i < ss.activeShaders; i++)
+		for (auto& ss : m_shaderStates.m_resources) {
+			for (size_t i = 0; i < ss->activeShaders; i++)
 			{
-				auto a = ss.shaderStageInfo[i];
+				auto a = ss->shaderStageInfo[i];
 
 				gfx->DestroyShaderModule(a.module);
 			}
@@ -250,7 +203,7 @@ namespace Pudu {
 
 		for (auto& ds : m_descriptorSetLayouts.m_resources) {
 
-			gfx->DestroyDescriptorSetLayout(ds);
+			gfx->DestroyDescriptorSetLayout(*ds);
 		}
 
 	}

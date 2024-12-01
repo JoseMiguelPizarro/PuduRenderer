@@ -2,13 +2,9 @@
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 #include <vector>
+#include "Resources/GPUResource.h"
 
 namespace Pudu {
-
-	struct DescriptorSetLayoutHandle
-	{
-		uint32_t index;
-	}; // struct DescriptorSetLayoutHandle
 
 	struct DescriptorBinding
 	{
@@ -20,7 +16,7 @@ namespace Pudu {
 		std::string name;
 	}; // struct DescriptorBinding
 
-	struct DescriptorSetLayout
+	struct DescriptorSetLayout :GPUResource<DescriptorSetLayout>
 	{
 		VkDescriptorSetLayout vkHandle;
 
@@ -30,8 +26,6 @@ namespace Pudu {
 		uint16_t bindingsCount = 0;
 		uint16_t setIndex = 0;
 		uint8_t bindless = 0;
-
-		DescriptorSetLayoutHandle handle;
 	}; // struct DesciptorSetLayoutVulkan
 
 	struct DescriptorSetLayoutData {

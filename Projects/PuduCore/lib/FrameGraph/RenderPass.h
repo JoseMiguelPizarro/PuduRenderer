@@ -117,7 +117,6 @@ namespace Pudu
 
 		VkRect2D renderArea;
 
-		RenderPassHandle handle;
 		VkRenderPass vkHandle;
 
 		bool isCompute;

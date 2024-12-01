@@ -169,8 +169,8 @@ namespace Pudu
 			return &m_resources;
 		}
 
-		PipelineHandle CreateGraphicsPipeline(PipelineCreationData& creationData);
-		PipelineHandle CreateComputePipeline(ComputePipelineCreationData& creationData);
+		GPUResourceHandle<Pipeline> CreateGraphicsPipeline(PipelineCreationData& creationData);
+		GPUResourceHandle<Pipeline> CreateComputePipeline(ComputePipelineCreationData& creationData);
 
 
 		void DrawImGui(RenderFrameData& frameData);
@@ -183,7 +183,7 @@ namespace Pudu
 		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureCreationSettings& creationData);
 		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureCreationSettings& creationSettings);
-		GPUResourceHandle CreateTexture(TextureCreationData const& creationData);
+		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
 		void CreateVKTexture(Texture* texture);
 		void CreateVKTextureSampler(SamplerCreationData data, VkSampler& sampler);
 
@@ -228,20 +228,19 @@ namespace Pudu
 
 		void InitDebugUtilsObjectName();
 
-		ShaderStateHandle CreateShaderState(ShaderStateCreationData const& creation);
-		DescriptorSetLayoutHandle CreateBindlessDescriptorSetLayout(DescriptorSetLayoutData& creationData);
-		DescriptorSetLayoutHandle CreateDescriptorSetLayout(DescriptorSetLayoutData& creationData);
-		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<DescriptorSetLayoutHandle>& out);
+		GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
+		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutData& creationData);
+		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutData& creationData);
+		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
 
 		void CreateBindlessDescriptorPool();
-		void CreateSwapChainFrameBuffers(RenderPassHandle renderPass);
 		void CreateFrames();
 		void CreateCommandPool(VkCommandPool* cmdPool);
 
 		void CreateTextureImageView(Texture2d& texture2d);
-		SPtr<Semaphore> CreateTimelineSemaphore(const char * name = nullptr);
-		SPtr<Semaphore> CreateSemaphoreSPtr(const char  * name = nullptr);
-		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char * name = nullptr);
+		SPtr<Semaphore> CreateTimelineSemaphore(const char* name = nullptr);
+		SPtr<Semaphore> CreateSemaphoreSPtr(const char* name = nullptr);
+		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 
 		void DestroySemaphore(SPtr<Semaphore> semaphore);
 		void DestroyShader(SPtr<Shader> shader);
@@ -310,7 +309,7 @@ namespace Pudu
 		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 		void InitWindow();
 		bool CheckValidationLayerSupport();
-		void UpdateBindlessTexture(GPUResourceHandle handle);
+		void UpdateBindlessTexture(GPUResourceHandle<Texture> handle);
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		void SetupDebugMessenger();
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

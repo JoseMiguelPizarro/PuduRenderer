@@ -7,42 +7,40 @@
 
 namespace Pudu
 {
-    class Mesh
-    {
-    public:
-        SPtr<GraphicsBuffer> GetVertexBuffer();
-        SPtr<GraphicsBuffer> GetIndexBuffer();
+	class Mesh :public GPUResource<Mesh>
+	{
+	public:
+		SPtr<GraphicsBuffer> GetVertexBuffer();
+		SPtr<GraphicsBuffer> GetIndexBuffer();
 
-        std::vector<Vertex>* GetVertices();
-        std::vector<uint32_t>* GetIndices();
+		std::vector<Vertex>* GetVertices();
+		std::vector<uint32_t>* GetIndices();
 
-        Mesh() = default;
+		Mesh() = default;
 
-        void SetIndexBuffer(SPtr<GraphicsBuffer> buffer)
-        {
-            m_indexBuffer = buffer;
-        }
+		void SetIndexBuffer(SPtr<GraphicsBuffer> buffer)
+		{
+			m_indexBuffer = buffer;
+		}
 
-        void SetVertexBuffer(SPtr<GraphicsBuffer> buffer)
-        {
-            m_vertexBuffer = buffer;
-        }
+		void SetVertexBuffer(SPtr<GraphicsBuffer> buffer)
+		{
+			m_vertexBuffer = buffer;
+		}
 
-        bool IsDisposed();
+		bool IsDisposed();
 
-        std::string* GetName();
+		std::string* GetName();
 
-        MeshHandle handle;
+	private:
+		friend PuduGraphics;
 
-    private:
-        friend PuduGraphics;
-
-        void Destroy();
-        SPtr<GraphicsBuffer> m_vertexBuffer;
-        SPtr<GraphicsBuffer> m_indexBuffer;
-        std::vector<Vertex> m_vertices;
-        std::vector<uint32_t> m_indices;
-        bool m_disposed;
-        std::string m_name;
-    };
+		void Destroy();
+		SPtr<GraphicsBuffer> m_vertexBuffer;
+		SPtr<GraphicsBuffer> m_indexBuffer;
+		std::vector<Vertex> m_vertices;
+		std::vector<uint32_t> m_indices;
+		bool m_disposed;
+		std::string m_name;
+	};
 }

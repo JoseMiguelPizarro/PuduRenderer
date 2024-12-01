@@ -12,79 +12,12 @@ namespace Pudu
 {
 #pragma region Handles
 	typedef uint32_t FrameGraphHandle;
+	typedef uint32_t FrameGraphNodeHandle;
 	typedef uint32_t ResourceHandle;
 
 	static const uint32_t k_INVALID_HANDLE = 0xffffffff;
 
 
-	struct SemaphoreHandle {
-		ResourceHandle index;
-	};
-
-	struct CommandBufferHandle {
-		ResourceHandle index;
-	};
-
-	struct ShaderHandle
-	{
-		ResourceHandle index;
-	};
-
-	struct GraphicsBufferHandle
-	{
-		ResourceHandle index;
-	};
-
-	struct MeshHandle
-	{
-		ResourceHandle index;
-	};
-
-	struct ComputeShaderHandle {
-		ResourceHandle index;
-	};
-
-	struct BufferHandle
-	{
-		ResourceHandle index;
-	}; // struct BufferHandle
-
-
-
-	struct ShaderStateHandle
-	{
-		ResourceHandle index;
-	}; // struct ShaderStateHandle
-
-	struct SamplerHandle
-	{
-		ResourceHandle index;
-	}; // struct SamplerHandle
-
-
-	struct DescriptorSetHandle
-	{
-		ResourceHandle index;
-	}; // struct DescriptorSetHandle
-
-	struct PipelineHandle
-	{
-		ResourceHandle index;
-	}; // struct PipelineHandle
-
-	struct RenderPassHandle :GPUResourceHandle
-	{
-	}; // struct RenderPassHandle
-
-	struct FramebufferHandle
-	{
-		ResourceHandle index;
-	};
-
-	struct FrameGraphNodeHandle
-	{
-		FrameGraphHandle index;
-	};
 #pragma endregion
 
 	enum ResourceState
@@ -301,7 +234,7 @@ namespace Pudu
 		VkPipelineBindPoint vkPipelineBindPoint;
 		VkDescriptorSet vkDescriptorSet = VK_FALSE;//Just 1 for now, bindless
 		const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
-		std::vector<DescriptorSetLayoutHandle> descriptorSetLayoutHandles;
+		std::vector<GPUResourceHandle<DescriptorSetLayout>> descriptorSetLayoutHandles;
 		bool bindlessUpdated;
 	};
 
@@ -498,12 +431,11 @@ namespace Pudu
 		bool allocate = true;
 	};
 
-	struct Framebuffer
+	struct Framebuffer :GPUResource<Framebuffer>
 	{
 		VkFramebuffer vkHandle;
-		FramebufferHandle handle;
 
-		RenderPassHandle renderPassHandle;
+		GPUResourceHandle<RenderPass> renderPassHandle;
 
 		uint16_t width = 0;
 		uint16_t height = 0;
@@ -511,8 +443,8 @@ namespace Pudu
 		float scaleX = 1.f;
 		float scaleY = 1.f;
 
-		GPUResourceHandle colorAttachmentHandles[K_MAX_IMAGE_OUTPUTS];
-		GPUResourceHandle depthStencilAttachmentHandle;
+		GPUResourceHandle<RenderTexture> colorAttachmentHandles[K_MAX_IMAGE_OUTPUTS];
+		GPUResourceHandle<RenderTexture> depthStencilAttachmentHandle;
 		uint32_t numColorAttachments;
 
 		uint8_t resize = 0;
@@ -523,7 +455,7 @@ namespace Pudu
 	/// <summary>
 	/// Represents the data for the all shaders creation in a given pipeline
 	/// </summary>
-	struct ShaderState
+	struct ShaderState :GPUResource<ShaderState>
 	{
 		VkPipelineShaderStageCreateInfo shaderStageInfo[K_MAX_SHADER_STAGES];
 
@@ -677,7 +609,7 @@ namespace Pudu
 		VertexInputCreation vertexInput;
 		ShaderStateCreationData shadersStateCreationData;
 
-		RenderPassHandle renderPassHandle;
+		GPUResourceHandle<RenderPass> renderPassHandle;
 
 		uint32_t activeLayouts = 0;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -690,7 +622,7 @@ namespace Pudu
 		const char* name;
 		std::vector<char> data;
 		DescriptorsCreationData descriptorsCreationData;
-		ComputeShaderHandle computeShaderHandle;
+		GPUResourceHandle<ComputeShader> computeShaderHandle;
 	};
 }
 
