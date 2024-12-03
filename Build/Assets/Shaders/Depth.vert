@@ -1,4 +1,3 @@
-[[vk::binding(32, 0)]]Sampler2D global_textures[];
 #include "Lib/Lighting.hlsl"
 #include "Lib/DefaultVertexInput.hlsl"
 
@@ -20,7 +19,5 @@ VSOut main(VertexInput input) {
     output.TexCoord= float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal,0.);
     output.PosOS = float4(input.Position,0.);
-    output.ShadowCoords = biasMat * lightingBuffer.shadowMatrix * lightingBuffer.lightMatrix * ubo.model * float4(input.Position, 1.0);
-        
     return output;
 }

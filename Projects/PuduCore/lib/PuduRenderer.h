@@ -25,7 +25,7 @@ namespace Pudu
 		void Render();
 		void SetSkyBox();
 		Pipeline* GetOrCreatePipeline(PipelineQueryData query);
-		void AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype);
+		void AddRenderPass(RenderPass* renderPass);
 
 	private:
 		SPtr<RenderPass> m_depthRenderPass;

@@ -1203,6 +1203,7 @@ namespace Pudu
 		VkAttachmentReference2 colorAttachmentsRef[8] = {};
 
 		VkAttachmentLoadOp depthLoadOp, stencilLoadOp;
+		VkAttachmentStoreOp depthStoreOp = renderPass->writeDepth ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_NONE;
 		VkImageLayout depthInitialLayout;
 
 		switch (output.depthOperation)
@@ -1220,6 +1221,8 @@ namespace Pudu
 			depthInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			break;
 		}
+
+
 
 		switch (output.stencilOperation)
 		{
@@ -1274,7 +1277,7 @@ namespace Pudu
 			depthAttachment.format = output.depthStencilFormat;
 			depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			depthAttachment.loadOp = depthLoadOp;
-			depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			depthAttachment.storeOp = depthStoreOp;
 			depthAttachment.stencilLoadOp = stencilLoadOp;
 			depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			depthAttachment.initialLayout = depthInitialLayout;
@@ -1634,7 +1637,7 @@ namespace Pudu
 
 		auto renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
 		auto& renderPassOutput = renderPass->attachments;
-		auto outputCount = renderPassOutput.colorAttachmentCount;
+		auto outputCount = renderPassOutput.colorAttachmentVkCount;
 
 		pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
 		pipeline->shaderState = shaderStateHandle;
@@ -1856,7 +1859,7 @@ namespace Pudu
 			//RenderPass
 			VkPipelineRenderingCreateInfoKHR pipelineRenderingInfo{};
 			pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-			pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentCount;
+			pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentVkCount;
 			pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.colorAttachmentsFormat;
 			pipelineRenderingInfo.depthAttachmentFormat = renderPass->attachments.depthStencilFormat;
 			pipelineRenderingInfo.stencilAttachmentFormat = renderPass->attachments.GetStencilFormat();
@@ -2022,6 +2025,7 @@ namespace Pudu
 		texture->pixels = creationData.pixels;
 		texture->sourceData = creationData.sourceData;
 		texture->m_flags = creationData.flags;
+		texture->bindless = creationData.bindless;
 		uint32_t dataSize = creationData.dataSize;
 
 		if (creationData.dataSize == -1)
@@ -2036,6 +2040,9 @@ namespace Pudu
 		SamplerCreationData data = creationData.samplerData;
 		data.maxLOD = texture->mipLevels;
 		CreateVKTextureSampler(data, texture->Sampler.vkHandle);
+
+		LOG("Created Texture {} id: {}", texture->name, texture->Handle().Index());
+
 		return texture->Handle();
 	}
 
@@ -2484,7 +2491,6 @@ namespace Pudu
 
 	SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureCreationSettings& settings)
 	{
-		LOG("Loading Texture {}", path.string());
 		bool isKTX = path.extension() == ".ktx";
 		void* pixelsData = nullptr;
 		void* sourceData = nullptr;

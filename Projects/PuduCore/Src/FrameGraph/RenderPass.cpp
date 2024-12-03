@@ -17,12 +17,29 @@
 namespace Pudu
 {
 #pragma region attachments
+	static VkRenderingAttachmentInfo RenderPassAttachmentToVKAttachment(RenderPassAttachment& attachment)
+	{
+		assert(
+			attachment.resource->IsAllocated() && fmt::format("Texture {} is not allocated", attachment.resource->name).
+			c_str());
+
+		VkRenderingAttachmentInfo renderingAttachment = {};
+		renderingAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+		renderingAttachment.imageLayout = attachment.layout;
+		renderingAttachment.clearValue = attachment.clearValue;
+		renderingAttachment.imageView = attachment.resource->vkImageViewHandle;
+		renderingAttachment.loadOp = attachment.loadOperation;
+		renderingAttachment.storeOp = attachment.storeOp;
+
+		return renderingAttachment;
+	}
+
 
 	RenderPassAttachments& RenderPassAttachments::Reset()
 	{
 		colorAttachmentCount = 0;
 		depthStencilFormat = VK_FORMAT_UNDEFINED;
-		depthOperation = stencilOperation = RenderPassOperation::DontCare;
+		depthOperation = stencilOperation = LoadOperation::DontCare;
 		return *this;
 	}
 
@@ -30,6 +47,11 @@ namespace Pudu
 	{
 		colorAttachmentsFormat[numColorFormats++] = attachment.resource->format;
 		colorAttachments[colorAttachmentCount++] = attachment;
+
+		if (attachment.usage & AttachmentUsage::Write)
+		{
+			colorAttachmentVkCount++;
+		}
 
 		return *this;
 	}
@@ -40,33 +62,38 @@ namespace Pudu
 
 		depthAttachments[depthAttachmentCount++] = attachment;
 
-		RenderPassOperation depthOperation;
-		RenderPassOperation stencilOperation;
+		LoadOperation depthOperation;
+		LoadOperation stencilOperation;
 
 		switch (attachment.loadOperation)
 		{
 		case VK_ATTACHMENT_LOAD_OP_LOAD:
-			depthOperation = RenderPassOperation::Load;
-			stencilOperation = RenderPassOperation::Load;
+			depthOperation = LoadOperation::Load;
+			stencilOperation = LoadOperation::Load;
 			break;
 		case VK_ATTACHMENT_LOAD_OP_CLEAR:
-			depthOperation = RenderPassOperation::Clear;
-			stencilOperation = RenderPassOperation::Clear;
+			depthOperation = LoadOperation::Clear;
+			stencilOperation = LoadOperation::Clear;
 			break;
 		default:
-			depthOperation = RenderPassOperation::DontCare;
-			stencilOperation = RenderPassOperation::DontCare;
+			depthOperation = LoadOperation::DontCare;
+			stencilOperation = LoadOperation::DontCare;
 			break;
 		}
 
 		SetDepthStencilOperations(depthOperation, stencilOperation);
 		depthStencilFinalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
+		if (attachment.usage != AttachmentUsage::Sample)
+		{
+			depthAttachmentVkCount++;
+		}
+
 		return *this;
 	}
 
 	RenderPassAttachments& RenderPassAttachments::SetDepthStencilOperations(
-		RenderPassOperation depth, RenderPassOperation stencil)
+		LoadOperation depth, LoadOperation stencil)
 	{
 		depthOperation = depth;
 		stencilOperation = stencil;
@@ -77,7 +104,7 @@ namespace Pudu
 	VkFormat RenderPassAttachments::GetStencilFormat()
 	{
 		return VK_FORMAT_UNDEFINED;
-		if (stencilOperation == RenderPassOperation::DontCare)
+		if (stencilOperation == LoadOperation::DontCare)
 		{
 		}
 	}
@@ -87,23 +114,6 @@ namespace Pudu
 		return colorAttachmentCount + depthAttachmentCount;
 	}
 
-
-	static VkRenderingAttachmentInfo RenderPassAttachmentToVKAttachment(RenderPassAttachment& attachment)
-	{
-		assert(
-			attachment.resource->IsAllocated() && fmt::format("Texture {} is not allocated", attachment.resource->name).
-			c_str());
-
-		VkRenderingAttachmentInfo renderingAttachment = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-		renderingAttachment.imageLayout = attachment.layout;
-		renderingAttachment.clearValue = attachment.clearValue;
-		renderingAttachment.imageView = attachment.resource->vkImageViewHandle;
-		renderingAttachment.loadOp = attachment.loadOperation;
-		renderingAttachment.storeOp = attachment.storeOp;
-
-		return renderingAttachment;
-	}
-
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetColorAttachments()
 	{
 		if (m_colorAttachmentsCreated)
@@ -111,12 +121,15 @@ namespace Pudu
 			return m_vkcolorAttachments;
 		}
 
+		colorAttachmentVkCount = 0;
+
 		for (size_t i = 0; i < colorAttachmentCount; i++)
 		{
 			auto attachment = colorAttachments[i];
+
 			if (attachment.usage & AttachmentUsage::Write)
 			{
-				m_vkcolorAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
+				m_vkcolorAttachments[colorAttachmentVkCount] = RenderPassAttachmentToVKAttachment(attachment);
 				colorAttachmentVkCount++;
 			}
 		}
@@ -133,12 +146,20 @@ namespace Pudu
 			return m_vkDepthAttachments;
 		}
 
+		depthAttachmentVkCount = 0;
+
 		for (size_t i = 0; i < depthAttachmentCount; i++)
 		{
 			auto attachment = depthAttachments[i];
 
-			m_vkDepthAttachments[i] = RenderPassAttachmentToVKAttachment(attachment);
+			if (attachment.usage != AttachmentUsage::Sample)
+			{
+				m_vkDepthAttachments[depthAttachmentVkCount] = RenderPassAttachmentToVKAttachment(attachment);
+				depthAttachmentVkCount++;
+			}
 		}
+
+		m_depthAttachmentsCreated = true;
 
 		return m_vkDepthAttachments;
 	}
@@ -172,7 +193,7 @@ namespace Pudu
 
 			Pipeline* pipeline = GetPipeline({
 				.renderPass = frameData.currentRenderPass.get(),
-				.shader = drawCall.MaterialPtr.Shader.get(),
+				.shader = drawCall.GetRenderMaterial()->Shader.get(),
 				.renderer = frameData.renderer
 				});
 			if (pipeline != frameData.currentPipeline)
@@ -340,14 +361,15 @@ namespace Pudu
 
 	VkRenderingInfo RenderPass::GetRenderingInfo(RenderFrameData& data)
 	{
-		VkRenderingInfo renderInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+		VkRenderingInfo renderInfo = {};
+		renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
 		renderInfo.renderArea = renderArea;
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = attachments.colorAttachmentVkCount;
-		renderInfo.pColorAttachments = attachments.GetColorAttachments();
-		renderInfo.pDepthAttachment = attachments.depthAttachmentCount > 0
-			? attachments.GetDepthAttachments()
+		renderInfo.pColorAttachments = attachments.colorAttachmentVkCount > 0 ? attachments.GetColorAttachments() : nullptr;
+		renderInfo.pDepthAttachment = attachments.depthAttachmentVkCount > 0 ? attachments.GetDepthAttachments()
 			: nullptr;
+
 
 		renderInfo.pStencilAttachment = nullptr;
 
@@ -366,13 +388,13 @@ namespace Pudu
 		data.currentCommand->EndRenderingPass();
 	}
 
-	void RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp,
+	void RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, LoadOperation loadOp,
 		vec4 clearColor)
 	{
 		RenderPassAttachment attachment = {};
 		attachment.resource = rt;
-		attachment.loadOperation = loadOp;
-		attachment.storeOp = storeOp;
+		attachment.loadOperation = ToVk(loadOp);
+		attachment.storeOp = ToVk(usage);
 
 		VkClearValue clear;
 		clear.color = { {clearColor.x, clearColor.y, clearColor.z, clearColor.w} };
@@ -383,13 +405,13 @@ namespace Pudu
 		AddColorAttachment(attachment);
 	}
 
-	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, VkAttachmentLoadOp loadOp,
-		VkAttachmentStoreOp storeOp, float depthClear, uint32_t stencilClear)
+	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, LoadOperation loadOp,
+		float depthClear, uint32_t stencilClear)
 	{
 		RenderPassAttachment attachment = {};
 		attachment.resource = rt;
-		attachment.loadOperation = loadOp;
-		attachment.storeOp = storeOp;
+		attachment.loadOperation = ToVk(loadOp);
+		attachment.storeOp = ToVk(usage);
 
 		VkClearValue clear;
 		clear.depthStencil = { depthClear, stencilClear };

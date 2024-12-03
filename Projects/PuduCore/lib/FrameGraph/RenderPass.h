@@ -10,19 +10,60 @@ namespace Pudu
 {
 	class PuduGraphics;
 
-	enum RenderPassOperation
+	enum LoadOperation
 	{
 		DontCare,
 		Load,
 		Clear,
-		Count
 	}; // enum Enum
 
 	enum AttachmentUsage {
 		Read = 1,
 		Write = 2,
-		ReadAndWrite = 3
+		ReadAndWrite = 3,
+		Sample = 4
 	};
+
+	static VkAttachmentLoadOp ToVk(LoadOperation op) {
+		switch (op)
+		{
+		case Pudu::DontCare:
+			return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			break;
+		case Pudu::Load:
+			return VK_ATTACHMENT_LOAD_OP_LOAD;
+			break;
+		case Pudu::Clear:
+			return VK_ATTACHMENT_LOAD_OP_CLEAR;
+			break;
+		default:
+			break;
+		}
+
+		return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	}
+
+	static VkAttachmentStoreOp ToVk(AttachmentUsage usage) {
+		switch (usage)
+		{
+		case Pudu::ReadAndWrite:
+			return VK_ATTACHMENT_STORE_OP_STORE;
+			break;
+		case Pudu::Write:
+			return VK_ATTACHMENT_STORE_OP_STORE;
+			break;
+		case Pudu::Read:
+			return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			break;
+		case Pudu::Sample:
+			return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			break;
+		default:
+			break;
+		}
+
+		return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	}
 
 	struct RenderPassAttachment
 	{
@@ -54,21 +95,20 @@ namespace Pudu
 
 		bool writeDepth;
 
-		RenderPassOperation depthOperation = RenderPassOperation::DontCare;
-		RenderPassOperation stencilOperation = RenderPassOperation::DontCare;
+		LoadOperation depthOperation = LoadOperation::DontCare;
+		LoadOperation stencilOperation = LoadOperation::DontCare;
 
 		RenderPassAttachments& Reset();
 		RenderPassAttachments& AddColorAttachment(RenderPassAttachment attachment);
 		RenderPassAttachments& SetDepthStencilAttachment(RenderPassAttachment attachment);
-		RenderPassAttachments& SetDepthStencilOperations(RenderPassOperation depth, RenderPassOperation stencil);
+		RenderPassAttachments& SetDepthStencilOperations(LoadOperation depth, LoadOperation stencil);
 		VkFormat GetStencilFormat();
 
 		uint16_t AttachmentCount();
-		uint16_t colorAttachmentCount = 0;
 		uint16_t colorAttachmentVkCount = 0;
+		uint16_t depthAttachmentVkCount = 0;
 
 		uint16_t numColorFormats = 0;
-		uint16_t depthAttachmentCount = 0;
 
 		VkFormat colorAttachmentsFormat[K_MAX_IMAGE_OUTPUTS];
 
@@ -80,6 +120,12 @@ namespace Pudu
 		RenderPassAttachment depthAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment stencilAttachments[K_MAX_IMAGE_OUTPUTS];
 
+	private:
+		friend class FrameGraph;
+		friend class RenderPass;
+		uint16_t depthAttachmentCount = 0;
+		uint16_t colorAttachmentCount = 0;
+
 
 	private:
 		bool m_colorAttachmentsCreated;
@@ -87,7 +133,7 @@ namespace Pudu
 		bool m_stencilAttachmentsCreated;
 
 		VkRenderingAttachmentInfo m_vkcolorAttachments[K_MAX_IMAGE_OUTPUTS];
-		VkRenderingAttachmentInfo m_vkDepthAttachments[K_MAX_IMAGE_OUTPUTS];
+		VkRenderingAttachmentInfo m_vkDepthAttachments[1];
 		VkRenderingAttachmentInfo m_vkStencilAttachments[K_MAX_IMAGE_OUTPUTS];
 	};
 
@@ -109,8 +155,8 @@ namespace Pudu
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);
-		void AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, vec4 clearColor = vec4(0));
-		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE, float depthClear = 0.0f, uint32_t stencilClear = 0);
+		void AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, vec4 clearColor = vec4(0));
+		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
 		void AddColorAttachment(RenderPassAttachment& attachment);
 		void AddDepthStencilAttachment(RenderPassAttachment& attachment);
 

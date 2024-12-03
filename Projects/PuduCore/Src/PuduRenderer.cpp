@@ -42,34 +42,22 @@ namespace Pudu
 
 		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
 		m_depthRenderPass->name = "DepthPrepassRenderPass";
-		m_depthRenderPass->AddDepthStencilAttachment(depthRT);
+		m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Clear);
 
 		m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
 		m_shadowMapRenderPass->name = "ShadowMapRenderPass";
-		m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT);
+		m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT, AttachmentUsage::Write, LoadOperation::Clear);
 
 		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
 		m_forwardRenderPass->name = "ForwardRenderPass";
 		m_forwardRenderPass->AddColorAttachment(colorRT);
-		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read);
-		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read);
+		//m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read);
+		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
 
-		FrameGraphNodeCreation depthNode;
-		depthNode.name = "DepthPrepass";
-		depthNode.renderPass = m_depthRenderPass->Handle();
-		depthNode.enabled = true;
 
-		FrameGraphNodeCreation shadowNode;
-		shadowNode.name = "Shadowmap";
-		shadowNode.renderPass = m_shadowMapRenderPass->Handle();
-
-		FrameGraphNodeCreation colorNode;
-		colorNode.name = "ForwardPass";
-		colorNode.renderPass = m_forwardRenderPass->Handle();
-
-		frameGraph.CreateNode(shadowNode);
-		frameGraph.CreateNode(depthNode);
-		frameGraph.CreateNode(colorNode);
+		AddRenderPass(m_depthRenderPass.get());
+		AddRenderPass(m_shadowMapRenderPass.get());
+		AddRenderPass(m_forwardRenderPass.get());
 
 		frameGraph.AllocateRequiredResources();
 		frameGraph.Compile();
@@ -90,9 +78,16 @@ namespace Pudu
 		graphics->DrawFrame(renderData);
 	}
 
-	void PuduRenderer::AddRenderPass(RenderPass* renderPass, RenderPassType renderPasstype)
+	void PuduRenderer::AddRenderPass(RenderPass* renderPass)
 	{
 		renderPass->Initialize(graphics);
+
+		FrameGraphNodeCreation frameGraphNode;
+		frameGraphNode.name = renderPass->name;
+		frameGraphNode.renderPass = renderPass->Handle();
+		frameGraphNode.enabled = true;
+
+		frameGraph.CreateNode(frameGraphNode);
 	}
 
 

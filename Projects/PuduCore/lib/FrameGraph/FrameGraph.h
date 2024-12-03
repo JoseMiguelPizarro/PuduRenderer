@@ -19,7 +19,7 @@ namespace Pudu {
 	class PuduGraphics;
 
 
-	VkAttachmentLoadOp GetVkAttachmentLoadOp(RenderPassOperation op);
+	VkAttachmentLoadOp GetVkAttachmentLoadOp(LoadOperation op);
 
 
 
@@ -65,10 +65,10 @@ namespace Pudu {
 
 		GPUResourceHandle<RenderPass> renderPass;
 
-		bool enabled;
+		bool enabled = true;
 		bool isCompute = false;
 
-		char const* name;
+		std::string name;
 	};
 
 	struct FrameGraphNode {

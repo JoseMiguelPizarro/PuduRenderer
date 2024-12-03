@@ -764,15 +764,15 @@ namespace Pudu
 		return VK_FORMAT_UNDEFINED;
 	}
 
-	RenderPassOperation RenderPassOperationFromString(char const* op) {
+	LoadOperation RenderPassOperationFromString(char const* op) {
 		if (strcmp(op, "VK_ATTACHMENT_LOAD_OP_CLEAR") == 0) {
-			return RenderPassOperation::Clear;
+			return LoadOperation::Clear;
 		}
 		else if (strcmp(op, "VK_ATTACHMENT_LOAD_OP_LOAD") == 0) {
-			return RenderPassOperation::Load;
+			return LoadOperation::Load;
 		}
 
-		return RenderPassOperation::DontCare;
+		return LoadOperation::DontCare;
 	}
 
 	/*static  std::unordered_map<std::string, FrameGraphResourceType> const FrameGraphResourceTypeTable = {
@@ -1374,8 +1374,6 @@ namespace Pudu
 			renderData.width = width;
 			renderData.height = height;
 
-			/*auto graphRenderPass = renderData.m_renderPassesByType->find(node->type)->second;*/
-
 			renderData.activeRenderTarget = node->outputs[0].resource;
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
@@ -1461,7 +1459,7 @@ namespace Pudu
 	void FrameGraphRenderPassCache::Shutdown()
 	{
 	}
-	VkAttachmentLoadOp GetVkAttachmentLoadOp(RenderPassOperation op)
+	VkAttachmentLoadOp GetVkAttachmentLoadOp(LoadOperation op)
 	{
 		switch (op)
 		{
@@ -1473,9 +1471,6 @@ namespace Pudu
 			break;
 		case Pudu::Clear:
 			return VK_ATTACHMENT_LOAD_OP_CLEAR;
-			break;
-		case Pudu::Count:
-			return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
 			break;
 		default:
 			return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
