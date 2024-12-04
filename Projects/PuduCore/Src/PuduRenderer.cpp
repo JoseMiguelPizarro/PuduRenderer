@@ -51,7 +51,7 @@ namespace Pudu
 		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
 		m_forwardRenderPass->name = "ForwardRenderPass";
 		m_forwardRenderPass->AddColorAttachment(colorRT);
-		//m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read);
+		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
 		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
 
 
