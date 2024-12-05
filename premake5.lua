@@ -59,7 +59,7 @@ function includeAndLinkDxc()
 end
 
 function includeAndLinkFastGltf()
-    includedirs {"lib/fastgltf/include", "lib/simdjson"}
+    includedirs {"lib/fastgltf/include", "lib/simdjson/include"}
     libdirs {"lib/fastgltf/%{cfg.buildcfg}", "lib/simdjson/%{cfg.buildcfg}"}
     links {"fastgltf", "simdjson"}
 end
@@ -69,8 +69,8 @@ function includeBooling()
 end
 
 function includeAndLinkSPIRV_Reflect()
-    includedirs "lib/SPIRV-Reflect"
-    libdirs "lib/SPIRV-Reflect"
+    includedirs {"lib/SPIRV-Reflect/Include","lib/SPIRV-Reflect/Include/**"}
+    libdirs "lib/SPIRV-Reflect/%{cfg.buildcfg}"
     links "SPIRV-Reflect"
 end
 
@@ -185,7 +185,7 @@ CppVer()
 targetdir "lib/SPIRV-Reflect/%{cfg.buildcfg}"
 objdir("lib/SPIRV-Reflect/SPIRV-Reflect.dir/%{cfg.buildcfg}")
 files "lib/SPIRV-Reflect/spirv_reflect.cpp"
-includedirs {"lib/SPIRV-Reflect","include"}
+includedirs {"lib/SPIRV-Reflect/include"}
 
 --Projects
 project "PuduCore"
@@ -193,7 +193,7 @@ kind "StaticLib"
 language "C++"
 CppVer()
 targetDir()
-
+defines {"SPIRV_REFLECT_USE_SYSTEM_SPIRV_H"}
 files "Projects/PuduCore/**"
 includedirs {"Projects/PuduCore/lib","Prjects/PuduCore/vendor"}
 

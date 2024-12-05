@@ -11,7 +11,6 @@ Imgui.ini
 **.vcxproj
 *.filters
 /lib/simdjson.dir/**
-/lib/simdjson/Release/**
 /lib/fastgltf/fastgltf.dir/**
 *.idb
 *.pdb
