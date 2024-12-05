@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <vector>
 #include <fastgltf/core.hpp>
-#include "FileManager.h"
 
 #include "Mesh.h"
 #include "MeshCreationData.h"
@@ -16,14 +15,13 @@ namespace fs = std::filesystem;
 namespace fg = fastgltf;
 
 namespace Pudu {
-	typedef fg::Expected<fastgltf::Asset> GltfAsset;
+	typedef fastgltf::Expected<fastgltf::Asset> GltfAsset;
 
 	static const fs::path ASSETS_FOLDER_PATH = fs::path("../../../Assets");
 	class FileManager
 	{
 	public:
 		static std::vector<char> ReadFile(std::filesystem::path const& fileName);
-
 		/// <summary>
 		/// Get path relative to assets folder
 		/// </summary>

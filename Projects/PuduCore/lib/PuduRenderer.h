@@ -31,6 +31,7 @@ namespace Pudu
 		SPtr<RenderPass> m_depthRenderPass;
 		SPtr<RenderPass> m_forwardRenderPass;
 		SPtr<RenderPass> m_shadowMapRenderPass;
+		SPtr<RenderPass> m_postProcessingRenderPass;
 
 		std::unordered_map < RenderPass*, std::unordered_map<Shader*, Pipeline*>> m_pipelinesByRenderPass;
 

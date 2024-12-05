@@ -4,6 +4,7 @@
 #include "SPIRVParser.h"
 #include "FrameGraph/ForwardRenderPass.h"
 #include "FrameGraph/DepthStencilRenderPass.h"
+#include "FrameGraph/PostProcessingRenderPass.h"
 #include <Logger.h>
 #include "Shader.h"
 
@@ -50,14 +51,19 @@ namespace Pudu
 
 		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
 		m_forwardRenderPass->name = "ForwardRenderPass";
-		m_forwardRenderPass->AddColorAttachment(colorRT);
+		m_forwardRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Clear);
 		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
 		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
+
+		m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
+		m_postProcessingRenderPass->name = "Postprocessing";
+		m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
 
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
+		AddRenderPass(m_postProcessingRenderPass.get());
 
 		frameGraph.AllocateRequiredResources();
 		frameGraph.Compile();

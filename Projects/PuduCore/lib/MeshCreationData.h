@@ -18,10 +18,10 @@ namespace Pudu
             uint32_t IndicesCount;
         };
 
-        std::vector<ModelLayout> ModelLayouts;
         std::string Name;
         std::vector<Vertex> Vertices;
         std::vector<uint32_t> Indices;
+        std::vector<ModelLayout> ModelLayouts;
         MaterialCreationData Material;
     };
 }

@@ -151,7 +151,6 @@ namespace Pudu
 	class RenderPass :public GPUResource<RenderPass>, std::enable_shared_from_this<RenderPass>
 	{
 	public:
-
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);

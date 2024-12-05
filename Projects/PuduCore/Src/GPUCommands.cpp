@@ -370,6 +370,19 @@ namespace Pudu
 		vkCmdSetDepthBias(vkHandle, constantBias, 0.0f, slopeBias);
 	}
 
+	void GPUCommands::BindMesh(Mesh* mesh)
+	{
+		VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->vkHandler };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(vkHandle, 0, 1, vertexBuffers, offsets);
+		vkCmdBindIndexBuffer(vkHandle, mesh->GetIndexBuffer()->vkHandler, 0, VK_INDEX_TYPE_UINT32);
+	}
+
+	void GPUCommands::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+	{
+		vkCmdDrawIndexed(vkHandle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	}
+
 	void GPUCommands::Reset()
 	{
 		m_hasRecordedCommand = false;

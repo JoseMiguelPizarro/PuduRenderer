@@ -56,7 +56,7 @@ namespace Pudu
 		return s_instance;
 	}
 
-	bool useImgui = true;
+	bool useImgui = false;
 
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{
@@ -345,12 +345,18 @@ namespace Pudu
 
 	void PuduGraphics::CreateImGuiRenderPass()
 	{
-		m_ImGuiRenderPass = GetRenderPass<RenderPass>();
+		auto imguiRenderPass = GetRenderPass<RenderPass>();
 
-		m_ImGuiRenderPass->AddColorAttachment(m_swapChainTextures[0],AttachmentUsage::Write,LoadOperation::Load);
-		m_ImGuiRenderPass->name = "Imgui";
+		RenderPassAttachment rpcolorAttachment;
+		rpcolorAttachment.resource = m_swapChainTextures[0];
+		rpcolorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		rpcolorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		rpcolorAttachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
 
-		m_ImGuiRenderPass->Create(this);
+		imguiRenderPass->attachments.AddColorAttachment(rpcolorAttachment);
+		imguiRenderPass->name = "Imgui";
+
+		imguiRenderPass->Create(this);
 	}
 
 	void PuduGraphics::CreateImGUICommandBuffers()
@@ -1587,6 +1593,7 @@ namespace Pudu
 		rt->m_flags = static_cast<TextureFlags::Enum>(TextureFlags::RenderTargetMask | TextureFlags::Sample |
 			TextureFlags::Compute);
 
+		rt->bindless = true;
 		return rt;
 	}
 
@@ -2035,7 +2042,6 @@ namespace Pudu
 		data.maxLOD = texture->mipLevels;
 		CreateVKTextureSampler(data, texture->Sampler.vkHandle);
 
-		LOG("Created Texture {} id: {}", texture->name, texture->Handle().Index());
 
 		return texture->Handle();
 	}
@@ -2177,6 +2183,9 @@ namespace Pudu
 		{
 			UploadTextureData(texture, texture->pixels, subresourceRange, &bufferCopyRegions);
 		}
+
+		LOG("Created Texture {} id: {}", texture->name, texture->Handle().Index());
+
 	}
 
 	void PuduGraphics::UploadTextureData(Texture* texture, void* pixels, VkImageSubresourceRange& range,
@@ -2628,7 +2637,7 @@ namespace Pudu
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
 		//ImGui::StyleColorsLight();
-		ImGui_ImplGlfw_InitForVulkan(WindowPtr, true);
+		(WindowPtr, true);
 
 		// Create Descriptor Pool
 		// The example only requires a single combined image sampler descriptor for the font image and only uses one descriptor set (for that)
@@ -2685,7 +2694,6 @@ namespace Pudu
 		//initInfo.PipelineCache = m_pipelineCache;
 
 		ImGui_ImplVulkan_Init(&initInfo, m_ImGuiRenderPass->vkHandle);
-		
 		vkDeviceWaitIdle(m_device);
 
 		//ImGui_ImplVulkan_DestroyFontsTexture();

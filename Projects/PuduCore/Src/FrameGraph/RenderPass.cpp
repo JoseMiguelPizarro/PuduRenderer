@@ -253,10 +253,7 @@ namespace Pudu
 				}
 			}
 
-			VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->vkHandler };
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindVertexBuffers(commands->vkHandle, 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(commands->vkHandle, mesh->GetIndexBuffer()->vkHandler, 0, VK_INDEX_TYPE_UINT32);
+			commands->BindMesh(mesh.get());
 
 			auto ubo = frameData.graphics->GetUniformBufferObject(frameData.camera, drawCall);
 
@@ -268,7 +265,7 @@ namespace Pudu
 				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
 				sizeof(UniformBufferObject), &ubo);
 
-			vkCmdDrawIndexed(commands->vkHandle, static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
+			commands->DrawIndexed(static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
 
 			AfterRenderDrawcall(frameData, drawCall);
 		}
