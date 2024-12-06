@@ -63,7 +63,7 @@ namespace Pudu
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
-		AddRenderPass(m_postProcessingRenderPass.get());
+	//	AddRenderPass(m_postProcessingRenderPass.get());
 
 		frameGraph.AllocateRequiredResources();
 		frameGraph.Compile();

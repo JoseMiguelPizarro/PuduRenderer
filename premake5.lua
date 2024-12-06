@@ -69,8 +69,8 @@ function includeBooling()
 end
 
 function includeAndLinkSPIRV_Reflect()
-    includedirs {"lib/SPIRV-Reflect/Include","lib/SPIRV-Reflect/Include/**"}
-    libdirs "lib/SPIRV-Reflect/%{cfg.buildcfg}"
+    includedirs {"lib/SPIRV_Reflect/Include","lib/SPIRV-Reflect/Include/**"}
+    libdirs "lib/SPIRV_Reflect/%{cfg.buildcfg}"
     links "SPIRV-Reflect"
 end
 
@@ -178,14 +178,14 @@ end
 -- includedirs "lib/simdjson"
 
 
-project "SPIRV-Reflect"
-kind "StaticLib"
-language "C++"
-CppVer()
-targetdir "lib/SPIRV-Reflect/%{cfg.buildcfg}"
-objdir("lib/SPIRV-Reflect/SPIRV-Reflect.dir/%{cfg.buildcfg}")
-files "lib/SPIRV-Reflect/spirv_reflect.cpp"
-includedirs {"lib/SPIRV-Reflect/include"}
+-- project "SPIRV-Reflect"
+-- kind "StaticLib"
+-- language "C++"
+-- CppVer()
+-- targetdir "lib/SPIRV-Reflect/%{cfg.buildcfg}"
+-- objdir("lib/SPIRV-Reflect/SPIRV-Reflect.dir/%{cfg.buildcfg}")
+-- files "lib/SPIRV-Reflect/spirv_reflect.cpp"
+-- includedirs {"lib/SPIRV-Reflect/include"}
 
 --Projects
 project "PuduCore"
