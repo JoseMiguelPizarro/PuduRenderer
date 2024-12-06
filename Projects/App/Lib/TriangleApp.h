@@ -9,6 +9,9 @@
 #include "Model.h"
 #include "Texture2d.h"
 #include "ImGuiUtils.h"
+#include <memory.h>
+#include <memory_resource>
+#include <filesystem>
 
 using namespace Pudu;
 

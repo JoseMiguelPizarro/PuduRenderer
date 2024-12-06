@@ -21,7 +21,6 @@
 #include <chrono>
 #include <PuduMath.h>
 
-#include "FileManager.h"
 
 #include "DrawCall.h"
 #include "ImGui/imgui_impl_glfw.h"
@@ -42,6 +41,8 @@
 
 #include <ktx.h>
 #include <ktxvulkan.h>
+#include "FileManager.h"
+
 
 namespace Pudu
 {

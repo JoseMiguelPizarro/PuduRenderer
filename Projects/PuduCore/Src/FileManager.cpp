@@ -195,13 +195,11 @@ namespace Pudu {
 			fastgltf::Options::GenerateMeshIndices;
 
 		fastgltf::Parser parser;
-		fastgltf::GltfDataBuffer data;
 		//data.FromPath(pathAssetFolder);
 
-		data.loadFromFile(pathAssetFolder);
-		fastgltf::GltfDataBuffer* dataPtr = &data;
+		auto gltfFile = fastgltf::MappedGltfFile::FromPath(pathAssetFolder);
 
-		GltfAsset asset = parser.loadGltf(&data, pathAssetFolder.parent_path(), gltfOptions);
+		GltfAsset asset = parser.loadGltf(gltfFile.get(), pathAssetFolder.parent_path(), gltfOptions);
 
 		if (auto error = asset.error() != fastgltf::Error::None)
 		{
@@ -227,7 +225,7 @@ namespace Pudu {
 
 		for (auto& mesh : gltfAsset->meshes) {
 			LOG("Processing mesh {} primitives: {}\n", mesh.name, mesh.primitives.size());
-			for (auto primitive : mesh.primitives) {
+			for (auto& primitive : mesh.primitives) {
 				if (!primitive.indicesAccessor.has_value())
 				{
 					continue;
@@ -242,13 +240,13 @@ namespace Pudu {
 					indices[i] = index;
 				});
 
-				auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->second];
+				auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->accessorIndex];
 				vertices.resize(positionsAccessor.count);
 
 				for (auto& attribute : primitive.attributes) {
 
-					auto accessor = gltfAsset->accessors[attribute.second];
-					const char* attribName = attribute.first.c_str();
+					auto accessor = gltfAsset->accessors[attribute.accessorIndex];
+					const char* attribName = attribute.name.c_str();
 					if (strcmp(attribName, "POSITION") == 0)
 					{
 						std::size_t idx = 0;

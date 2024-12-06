@@ -1,11 +1,14 @@
-//NOTE: ONLY INCLUDE THIS IN A .H FILE
+//NOTE: ONLY INCLUDE THIS IN A .CPP FILE. Reason: It needs to compile some templates
 
 #pragma once
 #define NOMINMAX
 #include <fstream>
 #include <filesystem>
 #include <vector>
+
 #include <fastgltf/core.hpp>
+#include <fastgltf/types.hpp>
+#include <fastgltf/tools.hpp>
 
 #include "Mesh.h"
 #include "MeshCreationData.h"

@@ -1,6 +1,4 @@
-#include <filesystem>
 #include <fmt/core.h>
-#include <Logger.h>
 
 #include <FileManager.h>
 #include "TriangleApp.h"
