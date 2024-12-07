@@ -57,7 +57,7 @@ namespace Pudu
 		return s_instance;
 	}
 
-	bool useImgui = false;
+	bool useImgui = true;
 
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{

@@ -212,6 +212,17 @@ vpaths {
     -- leave it empty to generate filters respecting the folder structure
 }
 
+project "PuduRenderer"
+kind "StaticLib"
+language "C++"
+CppVer()
+targetDir()
+files "Projects/PuduRenderer/**"
+includeVulkan()
+useCoreLib()
+includedirs "Projects/PuduRenderer/lib"
+
+
 project "App"
 
 kind "ConsoleApp"

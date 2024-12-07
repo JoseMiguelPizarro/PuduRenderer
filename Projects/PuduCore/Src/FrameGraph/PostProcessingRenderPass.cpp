@@ -1,7 +1,6 @@
-
+#include "FileManager.h"
 #include "FrameGraph/PostProcessingRenderPass.h"
 #include <filesystem>
-//#include "FileManager.h"
 
 namespace Pudu
 {
@@ -14,10 +13,10 @@ namespace Pudu
 		};
 
 		m_quadMesh = gpu->CreateMesh(meshCreation);
-	/*	auto fragmentshaderPath = FileManager::GetAssetPath(m_shaderPath);
+		auto fragmentshaderPath = FileManager::GetAssetPath(m_shaderPath);
 		auto vertexshaderPath = FileManager::GetAssetPath(m_shaderPathV);
 
-		m_postProcessingShader = gpu->CreateShader(fragmentshaderPath, vertexshaderPath, "Postprocessing");*/
+		m_postProcessingShader = gpu->CreateShader(fragmentshaderPath, vertexshaderPath, "Postprocessing");
 	}
 
 	void PostProcessingRenderPass::Render(RenderFrameData& renderData)
