@@ -41,7 +41,7 @@
 #include "GPUCommands.h"
 #include <ComputeShader.h>
 #include "Pipeline.h"
-
+#include "Resources/CommandPool.h"
 
 
 namespace Pudu
@@ -49,6 +49,14 @@ namespace Pudu
 	typedef std::optional<uint32_t> Optional;
 
 	using namespace glm;
+
+
+	enum QueueFamily {
+		Graphics,
+		Compute,
+		Transfer,
+		Present
+	};
 
 	struct QueueFamilyIndices
 	{
@@ -81,6 +89,11 @@ namespace Pudu
 		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 	};
+
+	static uint32_t const K_BINDLESS_SET_INDEX = 0;
+	static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
+	static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
+	static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
 
 	class PuduGraphics
 	{
@@ -191,11 +204,9 @@ namespace Pudu
 		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 		void UpdateBindlessResources(Pipeline* pipeline);
+		SPtr<CommandPool> GetCommandPool(QueueFamily type);
 
-		static uint32_t const K_BINDLESS_SET_INDEX = 0;
-		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
-		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
-		static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
+
 	private:
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
 		friend class GPUResourcesManager;
@@ -236,7 +247,7 @@ namespace Pudu
 
 		void CreateBindlessDescriptorPool();
 		void CreateFrames();
-		void CreateCommandPool(VkCommandPool* cmdPool);
+		void CreateCommandPool(VkCommandPool* cmdPool, uint32_t familyIndex);
 
 		void CreateTextureImageView(Texture2d& texture2d);
 		SPtr<Semaphore> CreateTimelineSemaphore(const char* name = nullptr);
@@ -247,7 +258,7 @@ namespace Pudu
 		void DestroyShader(SPtr<Shader> shader);
 		void DestroyShaderModule(VkShaderModule& state);
 		void DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset);
-
+		void DestroyCommandPool(CommandPool* commandPool);
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
 		void CreateSwapChainSyncObjects();
@@ -336,7 +347,7 @@ namespace Pudu
 		std::vector<VkImage> m_swapChainImages;
 		std::vector<SPtr<RenderTexture>> m_swapChainTextures;
 
-		VkCommandPool m_commandPool;
+		SPtr<CommandPool> m_commandPool;
 
 		std::vector<SPtr<GraphicsBuffer>> m_uniformBuffers;
 		std::vector<SPtr<GraphicsBuffer>> m_lightingBuffers;

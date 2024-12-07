@@ -151,6 +151,16 @@ namespace Pudu {
 		return std::static_pointer_cast<RenderTexture>(m_textures.GetResource(handle));
 	}
 
+	SPtr<CommandPool> GPUResourcesManager::AllocateCommandPool()
+	{
+		return AllocateGPUResource<CommandPool>(m_commandPools);
+	}
+
+	SPtr<CommandPool> GPUResourcesManager::GetCommandPool(GPUResourceHandle<CommandPool> handle)
+	{
+		return m_commandPools.GetResource(handle);
+	}
+
 	void GPUResourcesManager::DestroyAllResources(PuduGraphics* gfx)
 	{
 		for (auto& t : m_textures.m_resources)
@@ -204,6 +214,10 @@ namespace Pudu {
 		for (auto& ds : m_descriptorSetLayouts.m_resources) {
 
 			gfx->DestroyDescriptorSetLayout(*ds);
+		}
+
+		for (auto& cp : m_commandPools.m_resources) {
+			gfx->DestroyCommandPool(cp.get());
 		}
 
 	}

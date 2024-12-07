@@ -67,6 +67,9 @@ namespace Pudu {
 		SPtr<RenderTexture> AllocateRenderTexture();
 		SPtr<RenderTexture> GetRenderTexture(GPUResourceHandle<RenderTexture> handle);
 
+		SPtr<CommandPool> AllocateCommandPool();
+		SPtr<CommandPool> GetCommandPool(GPUResourceHandle<CommandPool> handle);
+
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
@@ -111,6 +114,8 @@ namespace Pudu {
 		ResourcePool<SPtr<DescriptorSetLayout>> m_descriptorSetLayouts;
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
 		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
+		ResourcePool<SPtr<CommandPool>> m_commandPools;
+
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};
 }
