@@ -1,13 +1,16 @@
 #include "FrameGraph/RenderPass.h"
 #include "RenderFrameData.h"
 #include "DrawCall.h"
-#include "PuduRenderer.h"
+#include "Scene.h"
+#include "PuduGraphics.h"
 #include "Resources/Resources.h"
 #include "SPIRVParser.h"
 #include <GPUCommands.h>
 #include "Lighting/Light.h"
 #include "Material.h"
 #include <stdexcept>
+#include "Pipeline.h"
+#include "Renderer.h"
 #undef VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vk_enum_string_helper.h>
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -19,9 +22,9 @@ namespace Pudu
 #pragma region attachments
 	static VkRenderingAttachmentInfo RenderPassAttachmentToVKAttachment(RenderPassAttachment& attachment)
 	{
-		assert(
+		/*assert(
 			attachment.resource->IsAllocated() && fmt::format("Texture {} is not allocated", attachment.resource->name).
-			c_str());
+			c_str());*/
 
 		VkRenderingAttachmentInfo renderingAttachment = {};
 		renderingAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;

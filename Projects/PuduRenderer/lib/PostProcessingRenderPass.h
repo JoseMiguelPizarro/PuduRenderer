@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderPass.h"
+#include "FrameGraph/RenderPass.h"
 #include "vertex.h"
 #include "PuduGraphics.h"
 

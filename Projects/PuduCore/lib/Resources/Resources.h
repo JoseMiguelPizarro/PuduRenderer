@@ -286,8 +286,6 @@ namespace Pudu
 
 	static VkImageType ToVkImageType(TextureType::Enum type)
 	{
-		VkImageType vktype;
-
 		switch (type)
 		{
 		case Pudu::TextureType::Texture1D:

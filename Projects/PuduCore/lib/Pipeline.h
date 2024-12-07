@@ -7,12 +7,12 @@ namespace Pudu
 {
 	class Shader;
 	class RenderPass;
-	class PuduRenderer;
+	class Renderer;
 
 	struct PipelineQueryData {
 		RenderPass* renderPass;
 		Shader* shader;
-		PuduRenderer* renderer;
+		Renderer* renderer;
 	};
 
 	class Pipeline :public GPUResource<Pipeline>

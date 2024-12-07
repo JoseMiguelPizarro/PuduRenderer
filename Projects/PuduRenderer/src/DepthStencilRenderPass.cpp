@@ -1,9 +1,9 @@
 #include "PuduCore.h"
-#include "FrameGraph/DepthStencilRenderPass.h"
+#include "DepthStencilRenderPass.h"
 #include "FileManager.h"
 #include <memory>
 #include "PuduRenderer.h"
-#include "FrameGraph/DepthStencilRenderPass.h"
+#include "DepthStencilRenderPass.h"
 
 namespace Pudu
 {

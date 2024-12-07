@@ -14,7 +14,7 @@ namespace Pudu
 	class Scene;
 	class GPUCommands;
 	class PuduGraphics;
-	class PuduRenderer;
+	class Renderer;
 	struct Framebuffer;
 	enum RenderPassType;
 	class RenderPass;
@@ -31,7 +31,7 @@ namespace Pudu
 		Scene* scene;
 		SPtr<GPUCommands> currentCommand;
 		PuduGraphics* graphics;
-		PuduRenderer* renderer;
+		Renderer* renderer;
 		SPtr<RenderTexture> activeRenderTarget;
 		SPtr<RenderPass> currentRenderPass;
 		DrawCall* currentDrawCall;

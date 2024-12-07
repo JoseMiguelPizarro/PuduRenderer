@@ -1,4 +1,4 @@
-#include "FrameGraph/ShadowMapRenderPass.h"
+#include "ShadowMapRenderPass.h"
 #include "Resources/Resources.h"
 
 namespace Pudu {

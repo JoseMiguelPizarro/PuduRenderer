@@ -86,6 +86,12 @@ function includedxc()
     includedirs "lib/dxc/include"
 end
 
+
+
+function includeFastGltf()
+  includedirs {"lib/fastgltf/include", "lib/simdjson/include"}
+end
+
 function includeAndLinkFmtlib()
     includedirs "lib/fmt/include"
     libdirs "lib/fmt/%{cfg.longname}"
@@ -146,6 +152,13 @@ function useCoreLib()
 
     filter {"system:windows"}
 end
+
+function usePuduRenderer()
+  includedirs "Projects/PuduRenderer/lib"
+  links "PuduRenderer"
+  linkGLFW()
+end
+
 
 function  targetDir()
     targetdir "bin/%{prj.name}/%{cfg.buildcfg}"
@@ -220,6 +233,8 @@ targetDir()
 files "Projects/PuduRenderer/**"
 includeVulkan()
 useCoreLib()
+includeGLFW()
+includeFastGltf()
 includedirs "Projects/PuduRenderer/lib"
 
 
@@ -232,6 +247,7 @@ CppVer()
 includeGLFW()
 includeVulkan()
 useCoreLib()
+usePuduRenderer()
 includeStb_Image()
 includeTinyObjLoader()
 includeAndLinkFastGltf()

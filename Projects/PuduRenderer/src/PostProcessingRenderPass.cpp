@@ -1,5 +1,5 @@
 #include "FileManager.h"
-#include "FrameGraph/PostProcessingRenderPass.h"
+#include "PostProcessingRenderPass.h"
 #include <filesystem>
 
 namespace Pudu
