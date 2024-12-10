@@ -37,11 +37,13 @@
 #include <Resources/Resources.h>
 #include "FrameGraph/RenderPass.h"
 #include <Resources/FrameBufferCreationData.h>
-#include <RenderFrameData.h>
 #include "GPUCommands.h"
 #include <ComputeShader.h>
 #include "Pipeline.h"
 #include "Resources/CommandPool.h"
+#include <Resources/DescriptorPool.h>
+#include "Resources/CommandPool.h"
+#include "Resources/DescriptorPool.h"
 
 
 namespace Pudu
@@ -49,6 +51,9 @@ namespace Pudu
 	typedef std::optional<uint32_t> Optional;
 
 	using namespace glm;
+	namespace fs = std::filesystem;
+
+	struct RenderFrameData;
 
 
 	enum QueueFamily {
@@ -90,13 +95,15 @@ namespace Pudu
 		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 	};
 
-	static uint32_t const K_BINDLESS_SET_INDEX = 0;
-	static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
-	static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
-	static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
 
 	class PuduGraphics
 	{
+	public:
+		static uint32_t const K_BINDLESS_SET_INDEX = 0;
+		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
+		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
+		static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
+
 	public:
 		static PuduGraphics* Instance();
 		void Init(int windowWidth, int windowHeight);
@@ -126,6 +133,13 @@ namespace Pudu
 		void DestroyMesh(SPtr<Mesh> mesh);
 		void DestroyTexture(SPtr<Texture> texture);
 		void WaitIdle();
+		VkInstance GetVkInstance() { return m_vkInstance; }
+		VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
+		VkDevice GetDevice() { return m_device; }
+		std::vector<VkImageView>* GetSwapchainImageViews() {
+			return &m_swapChainImagesViews;
+		}
+		QueueFamilyIndices GetQueueFamiliesIndex();
 
 		void DestroyRenderPass(SPtr<RenderPass> renderPass);
 		void DestroyFrameBuffer(SPtr<Framebuffer> frameBuffer);
@@ -186,8 +200,6 @@ namespace Pudu
 		GPUResourceHandle<Pipeline> CreateGraphicsPipeline(PipelineCreationData& creationData);
 		GPUResourceHandle<Pipeline> CreateComputePipeline(ComputePipelineCreationData& creationData);
 
-
-		void DrawImGui(RenderFrameData& frameData);
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera* cam, DrawCall& drawCall);
@@ -205,7 +217,11 @@ namespace Pudu
 
 		void UpdateBindlessResources(Pipeline* pipeline);
 		SPtr<CommandPool> GetCommandPool(QueueFamily type);
-
+		SPtr<DescriptorPool> GetDescriptorPool(DescriptorPoolCreationData& creationData);
+		VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
+		uint32_t GetImageCount() { return m_imageCount; }
+		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
+		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
 
 	private:
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
@@ -274,19 +290,7 @@ namespace Pudu
 		VmaAllocator m_VmaAllocator;
 
 		PhysicalDeviceCreationData m_physicalDeviceData;
-#pragma region  ImGUI
-		void InitImgui();
-		VkCommandPool m_ImGuiCommandPool;
-		SPtr<RenderPass> m_ImGuiRenderPass;
-		VkPipeline m_imguiPipeline;
-		VkDescriptorPool m_ImGuiDescriptorPool;
-		std::vector<SPtr<GPUCommands>> m_ImGuiCommandBuffers;
-		std::vector<SPtr<Framebuffer>> m_ImGuiFrameBuffers;
 
-		void CreateImGuiRenderPass();
-		void CreateImGUICommandBuffers();
-		void CreateImGUIFrameBuffers();
-#pragma endregion
 #pragma region DepthBuffer
 		void CreateDepthResources();
 		VkFormat FindDepthFormat();
@@ -367,7 +371,6 @@ namespace Pudu
 
 		VkAllocationCallbacks* m_allocatorPtr = nullptr;
 	};
-
 
 
 	void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)

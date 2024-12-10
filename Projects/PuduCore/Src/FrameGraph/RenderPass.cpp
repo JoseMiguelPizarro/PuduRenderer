@@ -354,7 +354,7 @@ namespace Pudu
 		return m_computeShader;
 	}
 
-	void RenderPass::Create(PuduGraphics* gpu)
+	void RenderPass::OnCreate(PuduGraphics* gpu)
 	{
 		gpu->CreateRenderPass(this);
 	}

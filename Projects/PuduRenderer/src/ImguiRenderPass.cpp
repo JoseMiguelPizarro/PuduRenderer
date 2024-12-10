@@ -6,8 +6,56 @@
 #include "Logger.h"
 #include "PuduGraphics.h"
 
+
 namespace Pudu
 {
+	void ImguiRenderPass::Render(RenderFrameData& frameData)
+	{
+		VkRenderPassBeginInfo imGuiRenderPassInfo = {};
+		imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		imGuiRenderPassInfo.renderPass = this->vkHandle;
+
+		imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[frameData.frameIndex]->vkHandle;
+		imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
+		imGuiRenderPassInfo.renderArea.extent = { frameData.width,frameData.height };
+		VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
+		imGuiRenderPassInfo.clearValueCount = 1;
+		imGuiRenderPassInfo.pClearValues = &clearColor;
+
+		// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
+		VkCommandBufferBeginInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+
+		auto imguiCommands = m_ImGuiCommandBuffers[frameData.frameIndex];
+		imguiCommands->BeginCommands();
+		imguiCommands->BegingRenderPass(imGuiRenderPassInfo);
+
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+
+		ImGui::NewFrame();
+		ImGui::Begin("Pudu Renderer Debug");
+
+
+		//Tree begin
+
+		frameData.app->DrawImGUI();
+
+		ImGui::End();
+		ImGui::Render();
+
+		// Record dear imgui primitives into command buffer
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommands->vkHandle);
+
+		imguiCommands->EndRenderPass();
+		imguiCommands->EndCommands();
+
+		ImGui::EndFrame();
+
+		frameData.commandsToSubmit.push_back(imguiCommands->vkHandle);
+	}
 	void ImguiRenderPass::Initialize(PuduGraphics* gpu)
 	{
 		LOG("ImGUI Init");
@@ -18,64 +66,82 @@ namespace Pudu
 
 		ImGui_ImplGlfw_InitForVulkan(gpu->WindowPtr, true);
 
-		// Create Descriptor Pool
-		// The example only requires a single combined image sampler descriptor for the font image and only uses one descriptor set (for that)
-		// If you wish to load e.g. additional textures you may need to alter pools sizes.
+
+		VkDescriptorPoolSize pool_sizes[] =
 		{
-			{
-				VkDescriptorPoolSize pool_sizes[] =
-				{
-					{VK_DESCRIPTOR_TYPE_SAMPLER, 1},
-					{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
-					{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
-					{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
-					{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1},
-					{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1},
-					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
-					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
-					{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
-					{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1},
-					{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1}
-				};
+			{VK_DESCRIPTOR_TYPE_SAMPLER, 1},
+			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1},
+			{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1},
+			{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
+			{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1},
+			{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1},
+			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
+			{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1},
+			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
+			{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1},
+			{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1}
+		};
 
-				VkDescriptorPoolCreateInfo pool_info = {};
-				pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-				pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-				pool_info.maxSets = IM_ARRAYSIZE(pool_sizes);
-				pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-				pool_info.pPoolSizes = pool_sizes;
+		DescriptorPoolCreationData descriptorPoolData;
 
-				if (vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS)
-					throw std::runtime_error("Create DescriptorPool for m_ImGuiDescriptorPool failed!");
-			}
-		}
+		descriptorPoolData
+			.AddDescriptorType(VK_DESCRIPTOR_TYPE_SAMPLER, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1)
+			->AddDescriptorType(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1);
 
-		CreateImGuiRenderPass();
-		CreateCommandPool(&m_ImGuiCommandPool);
-		CreateImGUIFrameBuffers();
-		CreateImGUICommandBuffers();
+
+		descriptorPoolData.bindless = false;
+		m_descriptorPool = gpu->GetDescriptorPool(descriptorPoolData);
+		m_ImGuiCommandPool = gpu->GetCommandPool(QueueFamily::Graphics);
+		CreateImguiFrameBuffers(gpu);
 
 		ImGui_ImplVulkan_InitInfo initInfo{};
-		initInfo.Instance = m_vkInstance;
-		initInfo.PhysicalDevice = m_physicalDevice;
-		initInfo.Device = m_device;
-		initInfo.QueueFamily = FindQueueFamilies(m_physicalDevice).graphicsFamily.value();
-		initInfo.Queue = m_graphicsQueue;
+		initInfo.Instance = gpu->GetVkInstance();
+		initInfo.PhysicalDevice = gpu->GetPhysicalDevice();
+		initInfo.Device = gpu->GetDevice();
+		initInfo.QueueFamily = gpu->GetQueueFamiliesIndex().graphicsFamily.value();
+		initInfo.Queue = gpu->GetGraphicsQueue();
 		initInfo.PipelineCache = VK_NULL_HANDLE;
-		initInfo.DescriptorPool = m_ImGuiDescriptorPool;
+		initInfo.DescriptorPool = m_descriptorPool->vkHandle;
 		initInfo.Subpass = 0;
-		initInfo.ImageCount = m_imageCount;
-		initInfo.MinImageCount = m_imageCount;
+		initInfo.ImageCount = gpu->GetImageCount();
+		initInfo.MinImageCount = gpu->GetImageCount();
 		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-		initInfo.Allocator = m_allocatorPtr;
-		initInfo.CheckVkResultFn = check_vk_result;
+		initInfo.Allocator = nullptr;
+		initInfo.CheckVkResultFn = nullptr;
 
-		//initInfo.PipelineCache = m_pipelineCache;
+		ImGui_ImplVulkan_Init(&initInfo, vkHandle);
+		vkDeviceWaitIdle(gpu->GetDevice());
 
-		ImGui_ImplVulkan_Init(&initInfo, m_ImGuiRenderPass->vkHandle);
-		vkDeviceWaitIdle(m_device);
-
-		//ImGui_ImplVulkan_DestroyFontsTexture();
 		LOG("ImGUI init end");
+	}
+	void ImguiRenderPass::CreateImguiFrameBuffers(PuduGraphics* gpu)
+	{
+		LOG("Create ImGUI FrameBuffers");
+
+		m_ImGuiFrameBuffers.resize(gpu->GetImageCount());
+
+		for (size_t i = 0; i < gpu->GetImageCount(); i++)
+		{
+			std::array<VkImageView, 1> attachments = {
+				gpu->GetSwapchainImageViews()->at(i)
+			};
+
+			FramebufferCreationData fbCreationData;
+			fbCreationData.AddRenderTexture(gpu->GetSwapchainTextures()->at(i)->Handle());
+			fbCreationData.renderPassHandle = this->Handle();
+			fbCreationData.width = gpu->GetSwapchainExtend().width;
+			fbCreationData.height = gpu->GetSwapchainExtend().height;
+
+			m_ImGuiFrameBuffers[i] = gpu->CreateFramebuffer(fbCreationData);
+		}
 	}
 }

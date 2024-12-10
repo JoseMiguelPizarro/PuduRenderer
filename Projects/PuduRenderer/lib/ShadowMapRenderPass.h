@@ -1,6 +1,7 @@
 #pragma once
 #include "FrameGraph/RenderPass.h"
 #include "PuduGraphics.h"
+#include "RenderFrameData.h"
 
 namespace Pudu
 {

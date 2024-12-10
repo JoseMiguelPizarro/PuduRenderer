@@ -84,7 +84,6 @@ namespace Pudu {
 		//Edges represent nodes this node is connected TO
 		std::vector<NodeEdgeHandle> outputEdges;
 		std::vector<NodeEdgeHandle> inputEdges;
-		RenderPassType type;
 		bool isCompute;
 
 		bool enabled = true;
@@ -174,8 +173,6 @@ namespace Pudu {
 		void DisableRenderPass(char* renderPassName);
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
 		std::string ToString();
-
-		void AttachRenderPass(RenderPass renderPass, RenderPassType type);
 
 		FrameGraphNode* GetNode(char* name);
 		FrameGraphNode* GetNode(FrameGraphNodeHandle nodeHandle);

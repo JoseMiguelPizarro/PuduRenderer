@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPass.h"
+#include "RenderFrameData.h"
 #include <Resources/FrameBufferCreationData.h>
 #include "Texture2D.h"
 #include <algorithm>
@@ -1400,10 +1401,6 @@ namespace Pudu
 		}
 
 		return ss.str();
-	}
-	void FrameGraph::AttachRenderPass(RenderPass renderPass, RenderPassType type)
-	{
-
 	}
 
 	FrameGraphNode* FrameGraph::GetNode(char* name)

@@ -39,6 +39,7 @@
 #include <ktx.h>
 #include <ktxvulkan.h>
 #include "FileManager.h"
+#include "RenderFrameData.h"
 
 
 namespace Pudu
@@ -54,8 +55,6 @@ namespace Pudu
 		return s_instance;
 	}
 
-	bool useImgui = false;
-
 	void PuduGraphics::Init(int windowWidth, int windowHeight)
 	{
 		PuduGraphics::s_instance = this;
@@ -67,11 +66,6 @@ namespace Pudu
 
 		InitWindow();
 		InitVulkan();
-
-		if (useImgui)
-		{
-			InitImgui();
-		}
 
 		m_initialized = true;
 	}
@@ -91,10 +85,10 @@ namespace Pudu
 
 		CreateBindlessDescriptorPool();
 
-		m_commandPool = GetCommandPool(QueueFamily::Graphics);
 		CreateUniformBuffers();
 		CreateLightingBuffers();
 
+		m_commandPool = GetCommandPool(QueueFamily::Graphics);
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
 	}
@@ -341,57 +335,6 @@ namespace Pudu
 	}
 
 
-	void PuduGraphics::CreateImGuiRenderPass()
-	{
-		auto imguiRenderPass = GetRenderPass<RenderPass>();
-
-		RenderPassAttachment rpcolorAttachment;
-		rpcolorAttachment.resource = m_swapChainTextures[0];
-		rpcolorAttachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		rpcolorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		rpcolorAttachment.loadOperation = VK_ATTACHMENT_LOAD_OP_LOAD;
-
-		imguiRenderPass->attachments.AddColorAttachment(rpcolorAttachment);
-		imguiRenderPass->name = "Imgui";
-
-		imguiRenderPass->Create(this);
-	}
-
-	void PuduGraphics::CreateImGUICommandBuffers()
-	{
-		m_ImGuiCommandBuffers.resize(m_swapChainImagesViews.size());
-
-		GPUCommands::CreationData creationData;
-		creationData.count = m_swapChainImagesViews.size();
-		creationData.pool = m_ImGuiCommandPool;
-
-
-		m_ImGuiCommandBuffers = CreateCommandBuffers(creationData);
-	}
-
-	void PuduGraphics::CreateImGUIFrameBuffers()
-	{
-		LOG("Create ImGUI FrameBuffers");
-		m_ImGuiFrameBuffers.resize(m_swapChainImagesViews.size());
-
-		for (size_t i = 0; i < m_swapChainImagesViews.size(); i++)
-		{
-			std::array<VkImageView, 1> attachments = {
-				m_swapChainImagesViews[i]
-			};
-
-			FramebufferCreationData fbCreationData;
-			fbCreationData.AddRenderTexture(m_swapChainTextures[i]->Handle());
-			fbCreationData.renderPassHandle = m_ImGuiRenderPass->Handle();
-			fbCreationData.width = m_swapChainExtent.width;
-			fbCreationData.height = m_swapChainExtent.height;
-
-			m_ImGuiFrameBuffers[i] = CreateFramebuffer(fbCreationData);
-		}
-
-		Print("Created frame buffers");
-	}
-
 	void PuduGraphics::DrawFrame(RenderFrameData& frameData)
 	{
 		auto frameGraph = frameData.frameGraph;
@@ -446,11 +389,6 @@ namespace Pudu
 		frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
 
 		frameGraph->RenderFrame(frameData);
-
-		if (useImgui)
-		{
-			DrawImGui(frameData);
-		}
 
 		frameData.currentCommand->TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle,
 			frameData.activeRenderTarget->format,
@@ -634,58 +572,6 @@ namespace Pudu
 		AdvanceFrame();
 	}
 
-	void PuduGraphics::DrawImGui(RenderFrameData& frameData)
-	{
-		//ImGui Pass
-		if (true)
-		{
-			VkRenderPassBeginInfo imGuiRenderPassInfo = {};
-			imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			imGuiRenderPassInfo.renderPass = m_ImGuiRenderPass->vkHandle;
-
-			imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[frameData.frameIndex]->vkHandle;
-			imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
-			imGuiRenderPassInfo.renderArea.extent = m_swapChainExtent;
-			VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
-			imGuiRenderPassInfo.clearValueCount = 1;
-			imGuiRenderPassInfo.pClearValues = &clearColor;
-
-			// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
-			VkCommandBufferBeginInfo info = {};
-			info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-
-			auto imguiCommands = m_ImGuiCommandBuffers[m_currentFrameIndex];
-			imguiCommands->BeginCommands();
-			imguiCommands->BegingRenderPass(imGuiRenderPassInfo);
-
-			ImGui_ImplVulkan_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-
-			ImGui::NewFrame();
-			ImGui::Begin("Pudu Renderer Debug");
-
-
-			//Tree begin
-
-			frameData.app->DrawImGUI();
-
-			ImGui::End();
-			ImGui::Render();
-
-			// Record dear imgui primitives into command buffer
-			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommands->vkHandle);
-
-			imguiCommands->EndRenderPass();
-			imguiCommands->EndCommands();
-
-			ImGui::EndFrame();
-
-			frameData.commandsToSubmit.push_back(m_ImGuiCommandBuffers[m_currentFrameIndex]->vkHandle);
-		}
-	}
-
 	void PuduGraphics::CreateVulkanInstance()
 	{
 		if (enableValidationLayers && !CheckValidationLayerSupport())
@@ -775,7 +661,6 @@ namespace Pudu
 		framebuffer->resize = creationData.resize;
 		framebuffer->name = creationData.name;
 		framebuffer->renderPassHandle = creationData.renderPassHandle;
-
 
 		auto renderPass = m_resources.GetRenderPass(framebuffer->renderPassHandle);
 
@@ -2477,13 +2362,40 @@ namespace Pudu
 			familyIndex = queueFamilyIndices.presentFamily.value();
 			break;
 		default:
-			throw std::exception(fmt::format("Error: Invalid family type {}", type).c_str());
+			throw std::exception("Error: Invalid family type");
 			break;
 		}
 
 		CreateCommandPool(&commandPool->vkHandle, familyIndex);
 
-		return SPtr<CommandPool>();
+		return commandPool;
+	}
+
+	SPtr<DescriptorPool> PuduGraphics::GetDescriptorPool(DescriptorPoolCreationData& creationData)
+	{
+		auto descriptorPool = m_resources.AllocateDescriptorPool();
+
+		VkDescriptorPoolCreateFlags flags = {};
+
+
+		if (creationData.bindless)
+		{
+			flags |= VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+		}
+		else {
+			flags |= VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		}
+
+		VkDescriptorPoolCreateInfo pool_info = {};
+		pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		pool_info.flags = flags;
+		pool_info.maxSets = creationData.poolSizes.size();
+		pool_info.poolSizeCount = creationData.poolSizes.size();
+		//pool_info.pPoolSizes = pool_sizes;
+
+		VKCheck(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &descriptorPool->vkHandle), "Error creation descriptor pool");
+
+		return descriptorPool;
 	}
 
 	void PuduGraphics::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
@@ -2595,6 +2507,11 @@ namespace Pudu
 		return m_resources.GetTexture<Texture>(textureHandle);
 	}
 
+	QueueFamilyIndices PuduGraphics::GetQueueFamiliesIndex()
+	{
+		return FindQueueFamilies(m_physicalDevice);
+	}
+
 	void PuduGraphics::DestroyRenderPass(SPtr<RenderPass> handle)
 	{
 		vkDestroyRenderPass(m_device, handle->vkHandle, nullptr);
@@ -2656,11 +2573,6 @@ namespace Pudu
 		fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
 		if (err < 0)
 			abort();
-	}
-
-	void PuduGraphics::InitImgui()
-	{
-		
 	}
 
 	void PuduGraphics::CreateDepthResources()
@@ -3005,14 +2917,6 @@ namespace Pudu
 		}
 
 		vkDestroyCommandPool(m_device, m_commandPool->vkHandle, m_allocatorPtr);
-		if (useImgui)
-		{
-			vkDestroyCommandPool(m_device, m_ImGuiCommandPool, m_allocatorPtr);
-			vkDestroyDescriptorPool(m_device, m_ImGuiDescriptorPool, m_allocatorPtr);
-			ImGui_ImplVulkan_Shutdown();
-			ImGui_ImplGlfw_Shutdown();
-			ImGui::DestroyContext();
-		}
 
 		if (enableValidationLayers)
 		{

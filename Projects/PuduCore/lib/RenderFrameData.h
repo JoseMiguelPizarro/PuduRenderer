@@ -4,6 +4,7 @@
 #include "PuduCore.h"
 #include "GraphicsBuffer.h"
 #include <vulkan/vulkan_core.h>
+#include "PuduApp.h"
 
 namespace Pudu
 {
@@ -16,7 +17,6 @@ namespace Pudu
 	class PuduGraphics;
 	class Renderer;
 	struct Framebuffer;
-	enum RenderPassType;
 	class RenderPass;
 	class Texture2d;
 	class PuduApp;

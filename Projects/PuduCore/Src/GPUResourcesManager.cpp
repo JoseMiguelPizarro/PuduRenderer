@@ -156,6 +156,16 @@ namespace Pudu {
 		return AllocateGPUResource<CommandPool>(m_commandPools);
 	}
 
+	SPtr<DescriptorPool> GPUResourcesManager::AllocateDescriptorPool()
+	{
+		return AllocateGPUResource<DescriptorPool>(m_descriptorPools);
+	}
+
+	SPtr<DescriptorPool> GPUResourcesManager::GetDescriptorPool(GPUResourceHandle<DescriptorPool> handle)
+	{
+		return m_descriptorPools.GetResource(handle);
+	}
+
 	SPtr<CommandPool> GPUResourcesManager::GetCommandPool(GPUResourceHandle<CommandPool> handle)
 	{
 		return m_commandPools.GetResource(handle);

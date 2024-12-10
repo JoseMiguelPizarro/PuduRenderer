@@ -1,7 +1,6 @@
 #pragma once
 #include <GPUCommands.h>
 #include "Resources/Resources.h"
-#include "RenderFrameData.h"
 #include "DrawCall.h"
 #include "Pipeline.h"
 #include "glm/vec4.hpp"
@@ -9,6 +8,7 @@
 namespace Pudu
 {
 	class PuduGraphics;
+	struct RenderFrameData;
 
 	enum LoadOperation
 	{
@@ -142,7 +142,6 @@ namespace Pudu
 		bool isCompute;
 		bool isEnabled;
 		ComputeShader* computeShader;
-		RenderPassType type;
 		std::string name;
 
 		RenderPassAttachments attachments;
@@ -172,7 +171,9 @@ namespace Pudu
 		virtual void Initialize(PuduGraphics* gpu) {};
 		void SetComputeShader(ComputeShader* shader);
 		ComputeShader* GetComputeShader();
-		void Create(PuduGraphics* gpu) override;
+
+	protected:
+		void OnCreate(PuduGraphics* gpu) override;
 
 	public:
 

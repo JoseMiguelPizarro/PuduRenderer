@@ -17,6 +17,8 @@
 #include "Logger.h"
 #include <Semaphore.h>
 #include <Resources/GPUResource.h>
+#include "Resources/CommandPool.h"
+#include "Resources/DescriptorPool.h"
 
 namespace Pudu {
 	class PuduGraphics;
@@ -70,6 +72,9 @@ namespace Pudu {
 		SPtr<CommandPool> AllocateCommandPool();
 		SPtr<CommandPool> GetCommandPool(GPUResourceHandle<CommandPool> handle);
 
+		SPtr<DescriptorPool> AllocateDescriptorPool();
+		SPtr<DescriptorPool> GetDescriptorPool(GPUResourceHandle<DescriptorPool> handle);
+
 		void DestroyAllResources(PuduGraphics* gfx);
 
 
@@ -115,6 +120,7 @@ namespace Pudu {
 		ResourcePool<SPtr<Semaphore>> m_semaphores;
 		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
 		ResourcePool<SPtr<CommandPool>> m_commandPools;
+		ResourcePool<SPtr<DescriptorPool>> m_descriptorPools;
 
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};

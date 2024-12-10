@@ -81,6 +81,7 @@ namespace Pudu
 		vkCmdSetViewport(vkHandle, 0, 1, &vkViewport);
 
 	}
+
 	void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)
 	{
 		vkCmdBeginRendering(vkHandle, &renderInfo);

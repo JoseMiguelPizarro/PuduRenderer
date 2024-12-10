@@ -3,6 +3,7 @@
 #include "FrameGraph/RenderPass.h"
 #include "vertex.h"
 #include "PuduGraphics.h"
+#include "RenderFrameData.h"
 
 
 namespace Pudu
