@@ -134,6 +134,7 @@ namespace Pudu
 
 	void Renderer::AddRenderPass(RenderPass* renderPass)
 	{
+		renderPass->Create(graphics);
 		renderPass->Initialize(graphics);
 
 		FrameGraphNodeCreation frameGraphNode;

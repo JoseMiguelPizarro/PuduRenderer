@@ -206,7 +206,7 @@ kind "StaticLib"
 language "C++"
 CppVer()
 targetDir()
-defines {"SPIRV_REFLECT_USE_SYSTEM_SPIRV_H"}
+defines {"SPIRV_REFLECT_USE_SYSTEM_SPIRV_H", "IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"}
 files "Projects/PuduCore/**"
 includedirs {"Projects/PuduCore/lib","Prjects/PuduCore/vendor"}
 
@@ -236,7 +236,7 @@ useCoreLib()
 includeGLFW()
 includeFastGltf()
 includedirs "Projects/PuduRenderer/lib"
-
+defines {"IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"}
 
 project "App"
 

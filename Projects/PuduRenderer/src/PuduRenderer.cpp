@@ -54,10 +54,14 @@ namespace Pudu
 		m_postProcessingRenderPass->name = "Postprocessing";
 		m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
+		m_imguiRenderPass = graphics->GetRenderPass<ImguiRenderPass>();
+		m_imguiRenderPass->name = "ImGui";
+		m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
+		AddRenderPass(m_imguiRenderPass.get());
 		//	AddRenderPass(m_postProcessingRenderPass.get());
 
 		frameGraph.AllocateRequiredResources();

@@ -1211,28 +1211,16 @@ namespace Pudu
 	{
 		builder->GetNode(renderPassName)->enabled = false;
 	}
+
+	static void VisitFramegraphNode(FrameGraphNode* node) {
+
+	}
+
 	void FrameGraph::Compile()
 	{
 		LOG("FrameGraph Compile");
 
 		ComputeEdges(this);
-
-		/*	for (auto nodeHande : nodes) {
-				FrameGraphNode* node = builder->GetNode(nodeHande);
-
-				node->outputEdges.clear();
-			}*/
-
-			//for (auto nodeHandle : nodes) {
-			//	FrameGraphNode* node = builder->GetNode(nodeHandle);
-
-			//	if (!node->enabled)
-			//	{
-			//		continue;
-			//	}
-
-			//	//	ComputeEdges(this, node, nodeHandle);
-			//}
 
 			//Sorted nodes in reverse order
 		std::vector<FrameGraphNodeHandle> sortedNodes;
@@ -1243,6 +1231,7 @@ namespace Pudu
 
 		std::vector<FrameGraphNodeHandle> nodesToBeVisitedStack;
 		nodesToBeVisitedStack.reserve(nodes.size());
+
 
 		//Topological Sorting
 		for (FrameGraphNodeHandle nodeHandle : nodes)
@@ -1258,6 +1247,7 @@ namespace Pudu
 			while (nodesToBeVisitedStack.size() > 0)
 			{
 				FrameGraphNodeHandle nodeToVisitHandle = nodesToBeVisitedStack.back();
+				auto node = builder->GetNode(nodeToVisitHandle);
 
 				if (visited[nodeToVisitHandle] == 2)
 				{
@@ -1300,6 +1290,7 @@ namespace Pudu
 		for (int32_t i = sortedNodes.size() - 1; i >= 0; i--)
 		{
 			nodes.push_back(sortedNodes[i]);
+			LOG("Node {}", builder->GetNode(sortedNodes[i])->name.c_str());
 		}
 
 		for (auto nodeHandle : nodes)

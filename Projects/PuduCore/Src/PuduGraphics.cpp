@@ -2391,7 +2391,7 @@ namespace Pudu
 		pool_info.flags = flags;
 		pool_info.maxSets = creationData.poolSizes.size();
 		pool_info.poolSizeCount = creationData.poolSizes.size();
-		//pool_info.pPoolSizes = pool_sizes;
+		pool_info.pPoolSizes = creationData.poolSizes.data();
 
 		VKCheck(vkCreateDescriptorPool(m_device, &pool_info, nullptr, &descriptorPool->vkHandle), "Error creation descriptor pool");
 

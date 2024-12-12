@@ -11,35 +11,13 @@ namespace Pudu
 {
 	void ImguiRenderPass::Render(RenderFrameData& frameData)
 	{
-		VkRenderPassBeginInfo imGuiRenderPassInfo = {};
-		imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		imGuiRenderPassInfo.renderPass = this->vkHandle;
-
-		imGuiRenderPassInfo.framebuffer = m_ImGuiFrameBuffers[frameData.frameIndex]->vkHandle;
-		imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
-		imGuiRenderPassInfo.renderArea.extent = { frameData.width,frameData.height };
-		VkClearValue clearColor = { 0.886f, 1.0f, 0.996f, 1.0f };
-		imGuiRenderPassInfo.clearValueCount = 1;
-		imGuiRenderPassInfo.pClearValues = &clearColor;
-
-		// vkResetCommandPool(Device, m_ImGuiCommandPool, 0);
-		VkCommandBufferBeginInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-
-		auto imguiCommands = m_ImGuiCommandBuffers[frameData.frameIndex];
-		imguiCommands->BeginCommands();
-		imguiCommands->BegingRenderPass(imGuiRenderPassInfo);
+		auto imguiCommands = frameData.currentCommand;
 
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 
 		ImGui::NewFrame();
 		ImGui::Begin("Pudu Renderer Debug");
-
-
-		//Tree begin
 
 		frameData.app->DrawImGUI();
 
@@ -49,19 +27,13 @@ namespace Pudu
 		// Record dear imgui primitives into command buffer
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommands->vkHandle);
 
-		imguiCommands->EndRenderPass();
-		imguiCommands->EndCommands();
-
 		ImGui::EndFrame();
-
-		frameData.commandsToSubmit.push_back(imguiCommands->vkHandle);
 	}
 	void ImguiRenderPass::Initialize(PuduGraphics* gpu)
 	{
 		LOG("ImGUI Init");
 
 		ImGui::CreateContext();
-		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplGlfw_InitForVulkan(gpu->WindowPtr, true);
@@ -101,7 +73,10 @@ namespace Pudu
 		descriptorPoolData.bindless = false;
 		m_descriptorPool = gpu->GetDescriptorPool(descriptorPoolData);
 		m_ImGuiCommandPool = gpu->GetCommandPool(QueueFamily::Graphics);
-		CreateImguiFrameBuffers(gpu);
+
+		m_ImGuiCommandBuffers = gpu->CreateCommandBuffers({ .pool = m_ImGuiCommandPool->vkHandle, .count = gpu->GetImageCount() });
+
+		//CreateImguiFrameBuffers(gpu);
 
 		ImGui_ImplVulkan_InitInfo initInfo{};
 		initInfo.Instance = gpu->GetVkInstance();
@@ -117,6 +92,8 @@ namespace Pudu
 		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		initInfo.Allocator = nullptr;
 		initInfo.CheckVkResultFn = nullptr;
+		initInfo.UseDynamicRendering = true;
+		initInfo.ColorAttachmentFormat = attachments.colorAttachments[0].resource->format;
 
 		ImGui_ImplVulkan_Init(&initInfo, vkHandle);
 		vkDeviceWaitIdle(gpu->GetDevice());

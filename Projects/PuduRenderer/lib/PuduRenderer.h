@@ -8,6 +8,7 @@
 #include "DepthStencilRenderPass.h"
 #include "ShadowMapRenderPass.h"
 #include <PuduApp.h>
+#include "ImguiRenderPass.h"
 
 namespace Pudu
 {
@@ -24,7 +25,7 @@ namespace Pudu
 		SPtr<RenderPass> m_forwardRenderPass;
 		SPtr<RenderPass> m_shadowMapRenderPass;
 		SPtr<RenderPass> m_postProcessingRenderPass;
-
+		SPtr<ImguiRenderPass> m_imguiRenderPass;
 	};
 }
 

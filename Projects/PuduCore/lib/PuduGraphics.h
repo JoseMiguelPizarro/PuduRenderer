@@ -222,6 +222,8 @@ namespace Pudu
 		uint32_t GetImageCount() { return m_imageCount; }
 		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
 		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
+		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
+
 
 	private:
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
@@ -268,7 +270,6 @@ namespace Pudu
 		void CreateTextureImageView(Texture2d& texture2d);
 		SPtr<Semaphore> CreateTimelineSemaphore(const char* name = nullptr);
 		SPtr<Semaphore> CreateSemaphoreSPtr(const char* name = nullptr);
-		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 
 		void DestroySemaphore(SPtr<Semaphore> semaphore);
 		void DestroyShader(SPtr<Shader> shader);
