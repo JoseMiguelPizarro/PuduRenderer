@@ -18,6 +18,5 @@ namespace Pudu
 
 	private:
 		void Initialize(PuduGraphics* gpu) override;
-		void CreateImguiFrameBuffers(PuduGraphics* gpu);
 	};
 }

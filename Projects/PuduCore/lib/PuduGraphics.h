@@ -220,27 +220,20 @@ namespace Pudu
 		SPtr<DescriptorPool> GetDescriptorPool(DescriptorPoolCreationData& creationData);
 		VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
 		uint32_t GetImageCount() { return m_imageCount; }
+
+		/// <summary>
+		/// Format of the surface used to create the swapchain
+		/// </summary>
+		/// <returns></returns>
+		VkFormat GetSurfaceFormat() { return m_surfaceFormat; }
 		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
 		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 
 
 	private:
-		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
 		friend class GPUResourcesManager;
-
-		static PuduGraphics* s_instance;
-
-		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
-		VkDevice m_device;
-
-		GPUResourcesManager m_resources;
-		SPtr<Semaphore> m_graphicsTimelineSemaphore;
-		SPtr<Semaphore> m_computeTimelineSemaphore;
-		uint64_t m_lastComputeTimelineValue = 0;
-
-		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
-
+		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
 		void InitVulkan();
 		void InitVMA();
 		void CreateVulkanInstance();
@@ -288,9 +281,7 @@ namespace Pudu
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
 
-		VmaAllocator m_VmaAllocator;
-
-		PhysicalDeviceCreationData m_physicalDeviceData;
+	
 
 #pragma region DepthBuffer
 		void CreateDepthResources();
@@ -305,7 +296,6 @@ namespace Pudu
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
 
-		VkPipelineCache m_pipelineCache;
 		void CleanupSwapChain();
 
 		VkImageView CreateImageView(ImageViewCreateData data);
@@ -339,6 +329,20 @@ namespace Pudu
 		void DestroyBuffer(SPtr<GraphicsBuffer> buffer);
 		void AdvanceFrame();
 		std::vector<const char*> GetInstanceExtensions();
+
+	private:
+		static PuduGraphics* s_instance;
+
+		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
+		VkFormat m_surfaceFormat;
+		VkDevice m_device;
+
+		GPUResourcesManager m_resources;
+		SPtr<Semaphore> m_graphicsTimelineSemaphore;
+		SPtr<Semaphore> m_computeTimelineSemaphore;
+		uint64_t m_lastComputeTimelineValue = 0;
+
+		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 		std::vector<VkImageView> m_swapChainImagesViews;
 		VkFormat m_swapChainImageFormat;
 		VkSwapchainKHR m_swapChain;
@@ -371,6 +375,9 @@ namespace Pudu
 		bool m_initialized = false;
 
 		VkAllocationCallbacks* m_allocatorPtr = nullptr;
+		VkPipelineCache m_pipelineCache;
+		VmaAllocator m_VmaAllocator;
+		PhysicalDeviceCreationData m_physicalDeviceData;
 	};
 
 

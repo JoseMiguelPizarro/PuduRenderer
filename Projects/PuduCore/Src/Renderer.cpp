@@ -152,7 +152,6 @@ namespace Pudu
 		frameGraphBuilder.Init(graphics);
 		frameGraph.Init(&frameGraphBuilder);
 
-
 		this->graphics = graphics;
 		this->app = app;
 

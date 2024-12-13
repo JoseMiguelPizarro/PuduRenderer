@@ -105,7 +105,13 @@ namespace Pudu {
 			return AllocateGPUResource<T>(m_renderPasses);
 		}
 
+
+		ResourcePool<SPtr<Texture>>* GetAllocatedTextures() { return &m_textures; }
+
 	private:
+		friend class PuduGraphics;
+		friend class Renderer;
+
 		PuduGraphics* m_graphics = nullptr;
 		ResourcePool<SPtr<Texture>> m_textures;
 		ResourcePool<SPtr<Shader>> m_shaders;

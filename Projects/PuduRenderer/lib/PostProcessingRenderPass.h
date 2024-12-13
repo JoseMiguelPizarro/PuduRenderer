@@ -24,14 +24,14 @@ namespace Pudu
 	public:
 		void Initialize(PuduGraphics* gpu) override;
 		void Render(RenderFrameData& renderData) override;
+		void PreRender(RenderFrameData& renderData) override;
 
 	private:
 		SPtr<Mesh> m_quadMesh;
 		SPtr<Shader> m_postProcessingShader;
+		SPtr<RenderTexture> m_screenColor;
 
 		std::filesystem::path m_shaderPath = "Shaders/postprocessing.frag";
 		std::filesystem::path m_shaderPathV = "Shaders/postprocessing.vert";
-
-
 	};
 }

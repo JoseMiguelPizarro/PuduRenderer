@@ -403,6 +403,7 @@ namespace Pudu
 			m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
+
 		frame.CommandBuffer->EndCommands();
 
 		auto computeCommands = frame.ComputeCommandBuffer;
@@ -974,6 +975,9 @@ namespace Pudu
 		createInfo.imageExtent = extent;
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+
+		m_surfaceFormat = surfaceFormat.format;
 
 		QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
 		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };

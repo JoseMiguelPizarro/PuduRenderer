@@ -102,6 +102,22 @@ void TriangleApp::DrawImGUI()
 	ImGui::Text(fmt::format("DeltaTime: {}", Time.DeltaTime()).c_str());
 
 	ImGuiUtils::DrawEntityTree(entities);
+
+	auto textures = Graphics.Resources()->GetAllocatedTextures()->GetAllResources();
+
+	if (ImGui::BeginTable("textures", 2))
+	{
+		for (size_t row = 0; row < textures.size(); row++)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::Text(textures[row]->name.c_str());
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text("%d", textures[row]->Handle().Index());
+		}
+
+		ImGui::EndTable();
+	}
 }
 
 void TriangleApp::OnCleanup()

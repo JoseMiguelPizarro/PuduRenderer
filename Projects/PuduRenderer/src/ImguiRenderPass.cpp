@@ -100,25 +100,4 @@ namespace Pudu
 
 		LOG("ImGUI init end");
 	}
-	void ImguiRenderPass::CreateImguiFrameBuffers(PuduGraphics* gpu)
-	{
-		LOG("Create ImGUI FrameBuffers");
-
-		m_ImGuiFrameBuffers.resize(gpu->GetImageCount());
-
-		for (size_t i = 0; i < gpu->GetImageCount(); i++)
-		{
-			std::array<VkImageView, 1> attachments = {
-				gpu->GetSwapchainImageViews()->at(i)
-			};
-
-			FramebufferCreationData fbCreationData;
-			fbCreationData.AddRenderTexture(gpu->GetSwapchainTextures()->at(i)->Handle());
-			fbCreationData.renderPassHandle = this->Handle();
-			fbCreationData.width = gpu->GetSwapchainExtend().width;
-			fbCreationData.height = gpu->GetSwapchainExtend().height;
-
-			m_ImGuiFrameBuffers[i] = gpu->CreateFramebuffer(fbCreationData);
-		}
-	}
 }
