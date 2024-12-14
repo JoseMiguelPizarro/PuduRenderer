@@ -6,5 +6,8 @@
 float4 main(VSOut input):SV_TARGET {
      Sampler2D tex = global_textures[NonUniformResourceIndex(5)];
 
-    return float4(input.TexCoord.xy,0,0);
+    float r = tex.Sample(input.TexCoord.xy).x;
+    float g = tex.Sample(input.TexCoord.xy + float2(0.01,0.01)).y;
+    float b = tex.Sample(input.TexCoord.xy + float2(-0.02,-0.015)).z;
+    return float4(r,g,b,0);
 }

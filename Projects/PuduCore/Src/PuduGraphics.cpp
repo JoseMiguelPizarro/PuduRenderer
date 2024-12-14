@@ -1126,31 +1126,36 @@ namespace Pudu
 
 		//Color attachments
 		uint32_t colorAttachmentsCount = 0;
+		auto colorRenderPassAttachments = output.GetColorRenderPassAttachments();
 
-		for (; colorAttachmentsCount < output.numColorFormats; colorAttachmentsCount++)
+
+		for (; colorAttachmentsCount < colorRenderPassAttachments->size(); colorAttachmentsCount++)
 		{
+			auto attachment = colorRenderPassAttachments->at(colorAttachmentsCount);
+
 			VkAttachmentLoadOp colorLoadOp;
 			VkImageLayout colorInitialLayout;
 
-			colorLoadOp = colorAttachments[colorAttachmentsCount].loadOp;
-			colorInitialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			colorLoadOp = attachment.loadOperation;
+			colorInitialLayout = attachment.layout;
 
 			VkAttachmentDescription2& colorAttachment = colorAttachments[colorAttachmentsCount];
 			colorAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
-			colorAttachment.format = output.colorAttachmentsFormat[colorAttachmentsCount];
+			colorAttachment.format = attachment.resource->format;
 			colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			colorAttachment.loadOp = colorLoadOp;
 			colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 			colorAttachment.stencilLoadOp = stencilLoadOp;
 			colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			colorAttachment.initialLayout = colorInitialLayout;
-			colorAttachment.finalLayout = output.colorAttachments[colorAttachmentsCount].layout;
+			colorAttachment.finalLayout = attachment.layout;
 
 			VkAttachmentReference2& colorAttachmentRef = colorAttachmentsRef[colorAttachmentsCount];
 			colorAttachmentRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
 			colorAttachmentRef.attachment = colorAttachmentsCount;
 			colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
+
 
 		//Depth attachment
 		VkAttachmentDescription2 depthAttachment{};
@@ -1180,13 +1185,14 @@ namespace Pudu
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
 		VkAttachmentDescription2 attachments[K_MAX_IMAGE_OUTPUTS + 1]{};
-		for (uint32_t activeAttachmentIndex = 0; activeAttachmentIndex < output.numColorFormats; activeAttachmentIndex
+
+		for (uint32_t activeAttachmentIndex = 0; activeAttachmentIndex < colorAttachmentsCount; activeAttachmentIndex
 			++)
 		{
 			attachments[activeAttachmentIndex] = colorAttachments[activeAttachmentIndex];
 		}
 
-		subpass.colorAttachmentCount = output.numColorFormats;
+		subpass.colorAttachmentCount = colorAttachmentsCount;
 		subpass.pColorAttachments = colorAttachmentsRef;
 		subpass.pDepthStencilAttachment = nullptr;
 
@@ -1748,7 +1754,7 @@ namespace Pudu
 			VkPipelineRenderingCreateInfoKHR pipelineRenderingInfo{};
 			pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 			pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentVkCount;
-			pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.colorAttachmentsFormat;
+			pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.GetColorAttachmentsFormat();
 			pipelineRenderingInfo.depthAttachmentFormat = renderPass->attachments.depthStencilFormat;
 			pipelineRenderingInfo.stencilAttachmentFormat = renderPass->attachments.GetStencilFormat();
 
@@ -2919,8 +2925,6 @@ namespace Pudu
 		{
 			vkDestroyFence(m_device, m_Frames[i].InFlightFence, m_allocatorPtr);
 		}
-
-		vkDestroyCommandPool(m_device, m_commandPool->vkHandle, m_allocatorPtr);
 
 		if (enableValidationLayers)
 		{

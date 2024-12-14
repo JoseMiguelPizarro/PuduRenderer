@@ -72,6 +72,7 @@ namespace Pudu
 		VkAttachmentStoreOp storeOp;
 		VkClearValue clearValue;
 		VkImageLayout layout;
+		VkImageLayout finalLayout;
 		GPUResourceType::Type type = GPUResourceType::Texture;
 		AttachmentUsage usage = AttachmentUsage::Write;
 
@@ -108,17 +109,18 @@ namespace Pudu
 		uint16_t colorAttachmentVkCount = 0;
 		uint16_t depthAttachmentVkCount = 0;
 
-		uint16_t numColorFormats = 0;
 
-		VkFormat colorAttachmentsFormat[K_MAX_IMAGE_OUTPUTS];
+		std::vector<RenderPassAttachment>* GetColorRenderPassAttachments();
 
-		VkRenderingAttachmentInfo* GetColorAttachments();
+		VkRenderingAttachmentInfo* GetVkColorAttachments();
 		VkRenderingAttachmentInfo* GetDepthAttachments();
 		VkRenderingAttachmentInfo* GetStencilAttachments();
 
 		RenderPassAttachment colorAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment depthAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment stencilAttachments[K_MAX_IMAGE_OUTPUTS];
+
+		VkFormat* GetColorAttachmentsFormat();
 
 	private:
 		friend class FrameGraph;
@@ -128,13 +130,18 @@ namespace Pudu
 
 
 	private:
-		bool m_colorAttachmentsCreated;
+		bool m_VkcolorAttachmentsCreated;
+		bool m_colorRenderPassAttachmentsCreated;
 		bool m_depthAttachmentsCreated;
 		bool m_stencilAttachmentsCreated;
 
 		VkRenderingAttachmentInfo m_vkcolorAttachments[K_MAX_IMAGE_OUTPUTS];
 		VkRenderingAttachmentInfo m_vkDepthAttachments[1];
 		VkRenderingAttachmentInfo m_vkStencilAttachments[K_MAX_IMAGE_OUTPUTS];
+		VkFormat m_colorAttachmentsFormat[K_MAX_IMAGE_OUTPUTS];
+
+
+		std::vector <RenderPassAttachment> m_colorRenderPassAttachments;
 	};
 
 	struct RenderPassCreationData

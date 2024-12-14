@@ -36,13 +36,6 @@ namespace Pudu
 		colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
 		colorRT->name = "ForwardColor";
 
-		auto colorCopy = graphics->GetRenderTexture();
-		colorCopy->depth = 1;
-		colorCopy->height = graphics->WindowHeight;
-		colorCopy->width = graphics->WindowWidth;
-		colorCopy->format = colorRT->format;
-		colorCopy->name = "ScreenColor";
-
 		m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
 		m_depthRenderPass->name = "DepthPrepassRenderPass";
 		m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Clear);

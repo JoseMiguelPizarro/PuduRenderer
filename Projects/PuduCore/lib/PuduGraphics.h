@@ -144,7 +144,6 @@ namespace Pudu
 		void DestroyRenderPass(SPtr<RenderPass> renderPass);
 		void DestroyFrameBuffer(SPtr<Framebuffer> frameBuffer);
 
-
 		/// <summary>
 		/// Creates a vkRenderPass and attach it to the passed RenderPass object
 		/// </summary>

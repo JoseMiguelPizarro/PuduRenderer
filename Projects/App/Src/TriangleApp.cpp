@@ -91,7 +91,7 @@ void TriangleApp::OnInit()
 		}
 	}
 
-	m_scene.AddEntities(cube);
+//	m_scene.AddEntities(cube);
 }
 
 void TriangleApp::DrawImGUI()

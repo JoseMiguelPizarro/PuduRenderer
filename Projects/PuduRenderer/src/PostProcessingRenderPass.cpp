@@ -17,11 +17,13 @@ namespace Pudu
 		auto vertexshaderPath = FileManager::GetAssetPath(m_shaderPathV);
 
 		m_screenColor = gpu->GetRenderTexture();
+		m_screenColor->name = "ScreenColor";
 		m_screenColor->bindless = true;
 		m_screenColor->width = gpu->WindowWidth;
 		m_screenColor->height = gpu->WindowHeight;
 		m_screenColor->depth = 1;
 		m_screenColor->format = gpu->GetSurfaceFormat();
+		m_screenColor->layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		m_screenColor->Create(gpu);
 
 		m_postProcessingShader = gpu->CreateShader(fragmentshaderPath, vertexshaderPath, "Postprocessing");
@@ -48,7 +50,7 @@ namespace Pudu
 		auto command = renderData.currentCommand;
 		auto frameColor = attachments.colorAttachments[0].resource;
 
-
+		command->TransitionImageLayout(m_screenColor->vkImageHandle, m_screenColor->format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		command->TransitionImageLayout(frameColor->vkImageHandle, frameColor->format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		command->Blit(attachments.colorAttachments[0].resource, m_screenColor, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		command->TransitionImageLayout(m_screenColor->vkImageHandle, m_screenColor->format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

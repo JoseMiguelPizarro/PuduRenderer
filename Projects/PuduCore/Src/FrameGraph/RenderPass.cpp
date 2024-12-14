@@ -48,7 +48,6 @@ namespace Pudu
 
 	RenderPassAttachments& RenderPassAttachments::AddColorAttachment(RenderPassAttachment attachment)
 	{
-		colorAttachmentsFormat[numColorFormats++] = attachment.resource->format;
 		colorAttachments[colorAttachmentCount++] = attachment;
 
 		if (attachment.usage & AttachmentUsage::Write)
@@ -117,9 +116,9 @@ namespace Pudu
 		return colorAttachmentCount + depthAttachmentCount;
 	}
 
-	VkRenderingAttachmentInfo* RenderPassAttachments::GetColorAttachments()
+	VkRenderingAttachmentInfo* RenderPassAttachments::GetVkColorAttachments()
 	{
-		if (m_colorAttachmentsCreated)
+		if (m_VkcolorAttachmentsCreated)
 		{
 			return m_vkcolorAttachments;
 		}
@@ -137,9 +136,29 @@ namespace Pudu
 			}
 		}
 
-		m_colorAttachmentsCreated = true;
+		m_VkcolorAttachmentsCreated = true;
 
 		return m_vkcolorAttachments;
+	}
+
+	std::vector<RenderPassAttachment>* RenderPassAttachments::GetColorRenderPassAttachments()
+	{
+		if (m_colorRenderPassAttachmentsCreated)
+		{
+			return &m_colorRenderPassAttachments;
+		}
+
+		for (size_t i = 0; i < colorAttachmentCount; i++)
+		{
+			auto attachment = colorAttachments[i];
+
+			if (attachment.usage & AttachmentUsage::Write)
+			{
+				m_colorRenderPassAttachments.push_back(attachment);
+			}
+		}
+
+		return &m_colorRenderPassAttachments;
 	}
 
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthAttachments()
@@ -170,6 +189,21 @@ namespace Pudu
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetStencilAttachments()
 	{
 		return nullptr;
+	}
+
+	VkFormat* RenderPassAttachments::GetColorAttachmentsFormat()
+	{
+		for (size_t i = 0; i < colorAttachmentCount; i++)
+		{
+			auto attachment = colorAttachments[i];
+
+			if (attachment.usage & AttachmentUsage::Write)
+			{
+				m_colorAttachmentsFormat[i] = attachment.resource->format;
+			}
+		}
+
+		return m_colorAttachmentsFormat;
 	}
 
 #pragma endregion
@@ -366,7 +400,7 @@ namespace Pudu
 		renderInfo.renderArea = renderArea;
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = attachments.colorAttachmentVkCount;
-		renderInfo.pColorAttachments = attachments.colorAttachmentVkCount > 0 ? attachments.GetColorAttachments() : nullptr;
+		renderInfo.pColorAttachments = attachments.colorAttachmentVkCount > 0 ? attachments.GetVkColorAttachments() : nullptr;
 		renderInfo.pDepthAttachment = attachments.depthAttachmentVkCount > 0 ? attachments.GetDepthAttachments()
 			: nullptr;
 
@@ -426,7 +460,14 @@ namespace Pudu
 
 	void RenderPass::AddColorAttachment(RenderPassAttachment& attachment)
 	{
-		attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		if (TextureFormat::IsDepthStencil(attachment.resource->format))
+		{
+			attachment.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+		}
+		else
+		{
+			attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
 		attachments.AddColorAttachment(attachment);
 	}
 
@@ -435,8 +476,6 @@ namespace Pudu
 		attachment.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
 		attachments.depthStencilFormat = attachment.resource->format;
 		attachments.SetDepthStencilAttachment(attachment);
-
-		LOG("Depth Attachment format {}", string_VkFormat(attachments.depthStencilFormat));
 	}
 
 	void RenderPass::SetName(const char* name)
