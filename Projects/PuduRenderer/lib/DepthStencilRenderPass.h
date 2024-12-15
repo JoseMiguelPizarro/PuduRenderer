@@ -6,7 +6,7 @@ namespace Pudu
 	class DepthPrepassRenderPass : public RenderPass
 	{
 	public:
-		const std::filesystem::path K_DepthShaderPath = "Shaders/depth.vert";
+		const std::filesystem::path K_DepthShaderPath = "Shaders/depth.vert.slang";
 		void Initialize(PuduGraphics* gpu) override;
 		void PreRender(RenderFrameData& renderData) override;
 		void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;

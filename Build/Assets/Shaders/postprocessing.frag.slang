@@ -9,5 +9,6 @@ float4 main(VSOut input):SV_TARGET {
     float r = tex.Sample(input.TexCoord.xy).x;
     float g = tex.Sample(input.TexCoord.xy + float2(0.01,0.01)).y;
     float b = tex.Sample(input.TexCoord.xy + float2(-0.02,-0.015)).z;
+
     return float4(r,g,b,0);
 }

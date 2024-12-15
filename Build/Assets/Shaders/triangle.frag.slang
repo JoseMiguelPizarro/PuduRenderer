@@ -18,12 +18,12 @@ float linearDepth(float d, float near, float far)
     return near * far / (far + d * (near - far));
 }
 
-vec4 GetLighting(vec3 normal, vec3 lightDirection)
+float4 GetLighting(float3 normal, float3 lightDirection)
 {
     float ndl = dot(normal, lightDirection) * 0.5 + 0.5;
     //    return vec4(ndl);
 
-    return mix(vec4(1), vec4(0.54, 0.95, 1, 0), 1 - ndl);
+    return lerp(1., float4(0.54, 0.95, 1, 0), 1 - ndl);
 }
 
 

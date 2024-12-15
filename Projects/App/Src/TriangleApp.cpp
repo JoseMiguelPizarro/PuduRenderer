@@ -47,9 +47,9 @@ void TriangleApp::OnInit()
 
 	m_puduRenderer.Init(&Graphics, this);
 
-	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag");
-	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert");
-	auto cubeShaderPath = FileManager::GetAssetPath("Shaders/cubemap.frag");
+	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag.slang");
+	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert.slang");
+	auto cubeShaderPath = FileManager::GetAssetPath("Shaders/cubemap.frag.slang");
 
 	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath, "standard");
 	cubemapShader = Graphics.CreateShader(cubeShaderPath, vertexShaderPath, "Cubemap");
