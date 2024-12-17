@@ -407,7 +407,7 @@ namespace Pudu
 		bool bindless;
 		TextureType::Enum textureType = TextureType::Texture2D;
 		VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-		SamplerCreationData* samplerData;
+		SamplerCreationData samplerData;
 	};
 
 	struct TextureCreationData
@@ -421,7 +421,7 @@ namespace Pudu
 
 		TextureFlags::Enum flags = TextureFlags::Default;
 
-		SamplerCreationData samplerData;
+		SamplerCreationData* samplerData;
 		VkFormat format;
 		TextureType::Enum textureType = TextureType::Texture2D;
 		bool bindless;

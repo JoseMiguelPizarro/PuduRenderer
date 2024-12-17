@@ -13,7 +13,7 @@ void TriangleApp::OnRun()
 	float radius = 20;
 	float pich = 45;
 
-	float speed = 0.35f;
+	float speed = 0.15f;
 	float phase = Time.Time() * speed;
 
 	float x = cos(phase) * radius;

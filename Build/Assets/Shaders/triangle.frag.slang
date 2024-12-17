@@ -79,6 +79,10 @@ float4 main(VSOut input): SV_TARGET
     float4 col = pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), lightingBuffer.lightDirection.xyz);
     col = lerp(col, float4(0.2, 0.2, 0.3, 1.0), 1 - shadow);
 
+    float3 viewPos = float3(ubo.view._14, ubo.view._24, ubo.view._34);
+    float d = 1. - saturate(distance(input.PosWS.xyz, viewPos)/80.f);
+    return lerp(float4(0.9,.4,0.6,0.), col, d);
+
   //  return SHADOWMAP.Sample(suv);
     //return SHADOWMAP.Sample((input.ShadowCoords / input.ShadowCoords.w).xy).xxxx;
     // return shadow;

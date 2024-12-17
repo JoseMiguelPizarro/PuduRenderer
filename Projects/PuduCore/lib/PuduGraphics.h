@@ -210,7 +210,7 @@ namespace Pudu
 		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureCreationSettings& creationSettings);
 		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
 		void CreateVKTexture(Texture* texture);
-		void CreateVKTextureSampler(SamplerCreationData data, VkSampler& sampler);
+		void CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler);
 
 		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 

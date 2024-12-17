@@ -1930,9 +1930,9 @@ namespace Pudu
 
 		CreateVKTexture(texture.get());
 
-		SamplerCreationData data = creationData.samplerData;
-		data.maxLOD = texture->mipLevels;
-		CreateVKTextureSampler(data, texture->Sampler.vkHandle);
+		SamplerCreationData* data = creationData.samplerData;
+		data->maxLOD = texture->mipLevels;
+		CreateVKTextureSampler(*data, texture->Sampler.vkHandle);
 
 
 		return texture->Handle();
@@ -2121,7 +2121,7 @@ namespace Pudu
 		texture2d.vkImageViewHandle = CreateImageView(createData);
 	}
 
-	void PuduGraphics::CreateVKTextureSampler(SamplerCreationData data, VkSampler& sampler)
+	void PuduGraphics::CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler)
 	{
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -2502,6 +2502,7 @@ namespace Pudu
 		creationData.layers = layers;
 		creationData.pixels = pixelsData;
 		creationData.sourceData = sourceData;
+		creationData.samplerData = &settings.samplerData;
 
 		auto textureHandle = CreateTexture(creationData);
 
@@ -2555,6 +2556,7 @@ namespace Pudu
 			TextureCreationSettings settings{};
 			settings.bindless = true;
 			settings.name = "Albedo";
+			settings.samplerData.wrap = true;
 
 			material.Texture = LoadTexture2D(path, settings);
 		}
