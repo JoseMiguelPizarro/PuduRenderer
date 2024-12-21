@@ -44,7 +44,7 @@
 #include <Resources/DescriptorPool.h>
 #include "Resources/CommandPool.h"
 #include "Resources/DescriptorPool.h"
-
+#include "ShaderCompiler.h"
 
 namespace Pudu
 {
@@ -202,7 +202,7 @@ namespace Pudu
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera* cam, DrawCall& drawCall);
-		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
+		SPtr<Shader> CreateShader(fs::path shaderPath, const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		SPtr<RenderTexture> GetRenderTexture();
@@ -303,7 +303,7 @@ namespace Pudu
 		/// <summary>
 		/// size in bytes
 		/// </summary>
-		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size, const char* name = nullptr);
+		VkShaderModule CreateShaderModule(const void* code, size_t size, const char* name = nullptr);
 
 		void CreateUniformBuffers();
 		void CreateLightingBuffers();
@@ -377,6 +377,7 @@ namespace Pudu
 		VkPipelineCache m_pipelineCache;
 		VmaAllocator m_VmaAllocator;
 		PhysicalDeviceCreationData m_physicalDeviceData;
+		ShaderCompiler m_shaderCompiler;
 	};
 
 

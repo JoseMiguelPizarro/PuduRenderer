@@ -1,7 +1,13 @@
 #pragma once
 #include "vulkan/vulkan_core.h"
-struct TextureSampler
+#include "Resources/GPUResource.h"
+
+namespace Pudu
 {
-	VkSampler vkHandle;
-};
+	class TextureSampler 
+	{
+	public:
+		VkSampler vkHandle;
+	};
+}
 

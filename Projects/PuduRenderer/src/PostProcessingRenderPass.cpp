@@ -14,7 +14,6 @@ namespace Pudu
 
 		m_quadMesh = gpu->CreateMesh(meshCreation);
 		auto fragmentshaderPath = FileManager::GetAssetPath(m_shaderPath);
-		auto vertexshaderPath = FileManager::GetAssetPath(m_shaderPathV);
 
 		m_screenColor = gpu->GetRenderTexture();
 		m_screenColor->name = "ScreenColor";
@@ -26,7 +25,7 @@ namespace Pudu
 		m_screenColor->layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		m_screenColor->Create(gpu);
 
-		m_postProcessingShader = gpu->CreateShader(fragmentshaderPath, vertexshaderPath, "Postprocessing");
+		m_postProcessingShader = gpu->CreateShader(fragmentshaderPath, "Postprocessing");
 	}
 
 	void PostProcessingRenderPass::Render(RenderFrameData& renderData)

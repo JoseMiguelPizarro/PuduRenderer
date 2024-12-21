@@ -7,7 +7,7 @@
 using namespace boolinq;
 
 namespace Pudu {
-	void SPIRVParser::GetDescriptorSetLayout(const char* spirvData, uint32_t size, DescriptorsCreationData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(const void* spirvData, uint32_t size, DescriptorsCreationData& outDescriptorSetLayoutData)
 	{
 		SpvReflectShaderModule module{};
 		SpvReflectResult result = spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_NONE, size, spirvData, &module);
@@ -104,14 +104,14 @@ namespace Pudu {
 
 	void SPIRVParser::GetDescriptorSetLayout(Shader* creationData, DescriptorsCreationData& outDescriptorSetLayoutData)
 	{
-		if (creationData->vertexData.size() > 0)
+		if (creationData->vertexDataSize> 0)
 		{
-			GetDescriptorSetLayout(creationData->vertexData.data(), creationData->vertexData.size() * sizeof(char), outDescriptorSetLayoutData);
+			GetDescriptorSetLayout(creationData->vertexData, creationData->vertexDataSize, outDescriptorSetLayoutData);
 		}
 
-		if (creationData->fragmentData.size() > 0)
+		if (creationData->fragmentDataSize > 0)
 		{
-			GetDescriptorSetLayout(creationData->fragmentData.data(), creationData->fragmentData.size() * sizeof(char), outDescriptorSetLayoutData);
+			GetDescriptorSetLayout(creationData->fragmentData, creationData->fragmentDataSize, outDescriptorSetLayoutData);
 		}
 
 		std::sort(outDescriptorSetLayoutData.layoutData.begin(), outDescriptorSetLayoutData.layoutData.end(), SortBySetNumber);

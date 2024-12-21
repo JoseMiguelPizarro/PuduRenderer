@@ -315,7 +315,9 @@ namespace Pudu
 		auto shader = frameData.currentDrawCall->MaterialPtr.Shader;
 
 		creationData.vertexShaderData = shader->vertexData;
+		creationData.vertexShaderSize = shader->vertexDataSize;
 		creationData.fragmentShaderData = shader->fragmentData;
+		creationData.fragmentShaderSize = shader->vertexDataSize;
 
 		BlendStateCreation blendStateCreation;
 		blendStateCreation.AddBlendState()
@@ -357,12 +359,12 @@ namespace Pudu
 		shaderData.SetName(shader->name.c_str());
 		if (shader->HasFragmentData())
 		{
-			shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char),
+			shaderData.AddStage(shader->fragmentData, shader->fragmentDataSize,
 				VK_SHADER_STAGE_FRAGMENT_BIT);
 		}
 		if (shader->HasVertexData())
 		{
-			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char),
+			shaderData.AddStage(shader->vertexData, shader->vertexDataSize,
 				VK_SHADER_STAGE_VERTEX_BIT);
 		}
 

@@ -9,8 +9,7 @@ namespace Pudu
 {
 	void DepthPrepassRenderPass::Initialize(PuduGraphics* graphics)
 	{
-		auto shaderFile = FileManager::LoadShader(K_DepthShaderPath);
-		m_depthShader = graphics->CreateShader(fs::path(), K_DepthShaderPath, "Depth");
+		m_depthShader = graphics->CreateShader(K_DepthShaderPath, "Depth");
 		auto m = Material();
 		m.Shader = m_depthShader;
 		m.Name = "DepthPassMaterial";

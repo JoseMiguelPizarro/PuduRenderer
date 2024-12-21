@@ -3,6 +3,7 @@
 
 namespace Pudu
 {
+   
     void Texture::Destroy()
     {
         if (!m_disposed)

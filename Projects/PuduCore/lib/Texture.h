@@ -4,6 +4,7 @@
 #include <vma/vk_mem_alloc.h>
 #include "Resources/Resources.h"
 #include "TextureSampler.h"
+#include "ShaderObject.h"
 
 namespace Pudu
 {
@@ -40,6 +41,7 @@ namespace Pudu
 		Texture() {
 			m_flags = PopulateFlags();
 		}
+
 
 	protected:
 		virtual TextureFlags::Enum PopulateFlags() { return TextureFlags::Default; };

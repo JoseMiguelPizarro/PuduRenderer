@@ -1,7 +1,7 @@
 VULKAN_SDK = os.getenv("VULKAN_SDK")
 IncludeDir = {}
 IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
-IncludeDir["VulkanVMA"]= "%{VULKAN_SDK}/Include/vma"
+IncludeDir["VulkanVMA"] = "%{VULKAN_SDK}/Include/vma"
 
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
@@ -49,7 +49,7 @@ targetdir("Build/Bin/%{prj.name}/%{cfg.longname}")
 objdir("Build/Obj/%{prj.name}/%{cfg.longname}")
 
 function CppVer()
-	-- cppdialect "C++23"
+    -- cppdialect "C++23"
 end
 
 function includeAndLinkDxc()
@@ -65,11 +65,11 @@ function includeAndLinkFastGltf()
 end
 
 function includeBooling()
-    includedirs{"lib/boolinq"}
+    includedirs {"lib/boolinq"}
 end
 
 function includeAndLinkSPIRV_Reflect()
-    includedirs {"lib/SPIRV_Reflect/Include","lib/SPIRV-Reflect/Include/**"}
+    includedirs {"lib/SPIRV_Reflect/Include", "lib/SPIRV-Reflect/Include/**"}
     libdirs "lib/SPIRV_Reflect/%{cfg.buildcfg}"
     links "SPIRV-Reflect"
 end
@@ -86,10 +86,8 @@ function includedxc()
     includedirs "lib/dxc/include"
 end
 
-
-
 function includeFastGltf()
-  includedirs {"lib/fastgltf/include", "lib/simdjson/include"}
+    includedirs {"lib/fastgltf/include", "lib/simdjson/include"}
 end
 
 function includeAndLinkFmtlib()
@@ -109,13 +107,14 @@ end
 
 function IncludeKTX()
     libdirs {"lib/ktx/Debug"}
-    includedirs {"lib/ktx/include","lib/ktx/other_include"}
-    files {"lib/ktx/lib/texture.c",
-    "lib/ktx/lib/hashlist.c",
-    "lib/ktx/lib/checkheader.c",
-    "lib/ktx/lib/swap.c",
-    "lib/ktx/lib/memstream.c",
-    "lib/ktx/lib/filestream.c"}
+    includedirs {"lib/ktx/include", "lib/ktx/other_include"}
+    files {"lib/ktx/lib/texture.c", "lib/ktx/lib/hashlist.c", "lib/ktx/lib/checkheader.c", "lib/ktx/lib/swap.c",
+           "lib/ktx/lib/memstream.c", "lib/ktx/lib/filestream.c"}
+end
+
+function includeSlang()
+    libdirs "lib/slang/%{cfg.buildcfg}/lib"
+    includedirs "lib/slang/%{cfg.buildcfg}/include"
 end
 
 function includeTinyObjLoader()
@@ -149,18 +148,18 @@ function useCoreLib()
     linkGLFW()
     linkdxc()
     includeAndLinkFmtlib()
+    includeSlang()
 
     filter {"system:windows"}
 end
 
 function usePuduRenderer()
-  includedirs "Projects/PuduRenderer/lib"
-  links "PuduRenderer"
-  linkGLFW()
+    includedirs "Projects/PuduRenderer/lib"
+    links "PuduRenderer"
+    linkGLFW()
 end
 
-
-function  targetDir()
+function targetDir()
     targetdir "bin/%{prj.name}/%{cfg.buildcfg}"
 end
 
@@ -179,8 +178,7 @@ function FrameGraphProject()
     os.mkdir(srcPath)
 end
 
-
---Dependencies projects
+-- Dependencies projects
 -- project "simdjson"
 -- kind "StaticLib"
 -- language "C++"
@@ -189,7 +187,6 @@ end
 -- objdir("lib/simdjson.dir/%{cfg.buildcfg}")
 -- files "lib/simdjson/**"
 -- includedirs "lib/simdjson"
-
 
 -- project "SPIRV-Reflect"
 -- kind "StaticLib"
@@ -200,7 +197,7 @@ end
 -- files "lib/SPIRV-Reflect/spirv_reflect.cpp"
 -- includedirs {"lib/SPIRV-Reflect/include"}
 
---Projects
+-- Projects
 project "PuduCore"
 kind "StaticLib"
 language "C++"
@@ -208,7 +205,7 @@ CppVer()
 targetDir()
 defines {"SPIRV_REFLECT_USE_SYSTEM_SPIRV_H", "IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"}
 files "Projects/PuduCore/**"
-includedirs {"Projects/PuduCore/lib","Prjects/PuduCore/vendor"}
+includedirs {"Projects/PuduCore/lib", "Prjects/PuduCore/vendor"}
 
 includeGLFW()
 includedxc()
@@ -220,6 +217,7 @@ includeAndLinkSPIRV_Reflect()
 includeBooling()
 includeVulkan()
 IncludeKTX()
+includeSlang()
 
 vpaths {
     -- leave it empty to generate filters respecting the folder structure
@@ -251,6 +249,7 @@ usePuduRenderer()
 includeStb_Image()
 includeTinyObjLoader()
 includeAndLinkFastGltf()
+includeSlang()
 links "vulkan-1"
 defines {"HLSLPP_FEATURE_TRANSFORM"}
 debugdir "$(ProjectDir)Build/Bin/$(ProjectName)/%{cfg.longname}"

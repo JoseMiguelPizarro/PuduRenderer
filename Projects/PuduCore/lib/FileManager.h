@@ -13,6 +13,8 @@
 #include "Mesh.h"
 #include "MeshCreationData.h"
 #include "RenderEntity.h"
+#include "Paths.h"
+#include <ShaderCompiler.h>
 
 namespace fs = std::filesystem;
 namespace fg = fastgltf;
@@ -20,7 +22,6 @@ namespace fg = fastgltf;
 namespace Pudu {
 	typedef fastgltf::Expected<fastgltf::Asset> GltfAsset;
 
-	static const fs::path ASSETS_FOLDER_PATH = fs::path("../../../Assets");
 	class FileManager
 	{
 	public:
@@ -36,13 +37,11 @@ namespace Pudu {
 		static std::vector<char> ReadAssetFile(const std::string& fileName);
 		static std::vector<char> ReadAssetFile(const fs::path& path);
 
-		static MeshCreationData LoadModelObj(std::string const& assetPath);
 
 		static std::vector<MeshCreationData> LoadModelGltf(fs::path const& path);
 
 		static std::vector<EntitySPtr> LoadGltfScene(fs::path const& path);
 
-		static std::vector<char> LoadShader(fs::path const& path);
 
 	private:
 		/// <summary>
