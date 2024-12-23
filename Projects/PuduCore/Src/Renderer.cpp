@@ -102,7 +102,7 @@ namespace Pudu
 				VK_SHADER_STAGE_VERTEX_BIT);
 		}
 
-		creationData.descriptorCreationData = shader->descriptors;
+		creationData.descriptorCreationData = shader->GetDescriptorSetLayouts();
 		creationData.blendState = blendStateCreation;
 		creationData.rasterization = rasterizationCreation;
 		creationData.depthStencil = depthStencilCreation;

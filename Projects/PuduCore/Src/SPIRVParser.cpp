@@ -7,7 +7,7 @@
 using namespace boolinq;
 
 namespace Pudu {
-	void SPIRVParser::GetDescriptorSetLayout(const char* spirvData, uint32_t size, DescriptorsCreationData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(const char* spirvData, uint32_t size, DescriptorSetLayoutsData& outDescriptorSetLayoutData)
 	{
 		SpvReflectShaderModule module{};
 		SpvReflectResult result = spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_NONE, size, spirvData, &module);
@@ -102,7 +102,7 @@ namespace Pudu {
 		return a.SetNumber < b.SetNumber;
 	}
 
-	void SPIRVParser::GetDescriptorSetLayout(Shader* creationData, DescriptorsCreationData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(Shader* creationData, DescriptorSetLayoutsData& outDescriptorSetLayoutData)
 	{
 		if (creationData->vertexData.size() > 0)
 		{

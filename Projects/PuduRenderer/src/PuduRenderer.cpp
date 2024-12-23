@@ -5,6 +5,7 @@
 #include "ForwardRenderPass.h"
 #include "DepthStencilRenderPass.h"
 #include "PostProcessingRenderPass.h"
+#include "ComputeRenderPass.h"
 #include <Logger.h>
 #include "Shader.h"
 
@@ -58,10 +59,22 @@ namespace Pudu
 		m_imguiRenderPass->name = "ImGui";
 		m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
+
+		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
+
+
+		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
+
+		computeRP->SetComputeShader(compute.get());
+		computeRP->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
+
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
+		AddRenderPass(computeRP.get());
+
 		AddRenderPass(m_postProcessingRenderPass.get());
+
 
 		AddRenderPass(m_imguiRenderPass.get());
 		frameGraph.AllocateRequiredResources();

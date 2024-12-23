@@ -1793,8 +1793,9 @@ namespace Pudu
 		auto computeShader = m_resources.GetComputeShader(creationData.computeShaderHandle);
 		VkPipelineShaderStageCreateInfo computeShaderStageInfo{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-		computeShaderStageInfo.module = computeShader->vkShaderModule;
-		computeShaderStageInfo.pName = "main";
+		computeShaderStageInfo.module = computeShader->GetModule();
+		computeShaderStageInfo.pName = creationData.kernel;
+		computeShader->m_descriptors = creationData.descriptorsCreationData;
 
 		auto pipeline = m_resources.AllocatePipeline();
 		pipeline->vkPipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
@@ -2252,7 +2253,7 @@ namespace Pudu
 		ubo.viewMatrix = cam->GetViewMatrix();
 		ubo.ProjectionMatrix = cam->Projection.GetProjectionMatrix();
 
-		if (drawCall.GetRenderMaterial()->Shader->HasFragmentData())
+		if (drawCall.GetRenderMaterial()->shader->HasFragmentData())
 		{
 			if (drawCall.MaterialPtr.Texture != nullptr) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
 			{
@@ -2274,7 +2275,7 @@ namespace Pudu
 		shader->LoadVertexData(vertexData);
 		shader->name = name;
 
-		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->descriptors);
+		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->m_descriptors);
 
 		return shader;
 	}
@@ -2285,12 +2286,13 @@ namespace Pudu
 		auto shader = m_resources.AllocateComputeShader();
 
 		auto data = FileManager::LoadShader(shaderPath);
-		shader->vkShaderModule = CreateShaderModule(data, data.size() * sizeof(char), name);
+		shader->m_module = CreateShaderModule(data, data.size() * sizeof(char), name);
 
 		ComputePipelineCreationData creationData{};
 		creationData.computeShaderHandle = shader->Handle();
 		creationData.data = data;
 		creationData.name = name;
+		creationData.kernel = "main";
 
 		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char),
 			creationData.descriptorsCreationData);

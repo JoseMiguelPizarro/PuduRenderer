@@ -34,7 +34,7 @@ namespace Pudu {
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;
 	};
 
-	struct DescriptorsCreationData {
+	struct DescriptorSetLayoutsData {
 		std::vector<DescriptorSetLayoutData> layoutData;
 		uint16_t setsCount;
 		std::vector<DescriptorBinding> bindingsData;

@@ -86,7 +86,7 @@ void TriangleApp::OnInit()
 		if (re != nullptr)
 		{
 			auto mat = &re->GetModel().Materials[0];
-			mat->Shader = cubemapShader;
+			mat->shader = cubemapShader;
 			mat->SetProperty("testText", m_cubemapTexture);
 		}
 	}
@@ -148,7 +148,7 @@ void TriangleApp::LoadGameboyModel()
 
 		if (re != nullptr)
 		{
-			re->GetModel().Materials[0].Shader = standardShader;
+			re->GetModel().Materials[0].shader = standardShader;
 		}
 	}
 

@@ -12,7 +12,7 @@ namespace Pudu
 		auto shaderFile = FileManager::LoadShader(K_DepthShaderPath);
 		m_depthShader = graphics->CreateShader(fs::path(), K_DepthShaderPath, "Depth");
 		auto m = Material();
-		m.Shader = m_depthShader;
+		m.shader = m_depthShader;
 		m.Name = "DepthPassMaterial";
 		m_depthMaterial = std::make_shared<Material>(m);
 	}

@@ -116,6 +116,11 @@ namespace Pudu
 		return colorAttachmentCount + depthAttachmentCount;
 	}
 
+	uint16_t RenderPassAttachments::ColorAttachmentCount()
+	{
+		return colorAttachmentCount;
+	}
+
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetVkColorAttachments()
 	{
 		if (m_VkcolorAttachmentsCreated)
@@ -230,7 +235,7 @@ namespace Pudu
 
 			Pipeline* pipeline = GetPipeline({
 				.renderPass = frameData.currentRenderPass.get(),
-				.shader = drawCall.GetRenderMaterial()->Shader.get(),
+				.shader = drawCall.GetRenderMaterial()->shader.get(),
 				.renderer = frameData.renderer
 				});
 			if (pipeline != frameData.currentPipeline)
@@ -262,27 +267,7 @@ namespace Pudu
 
 					for (auto mat : model.Materials)
 					{
-						for (auto& request : mat.descriptorUpdateRequests)
-						{
-							//For this to work each material will need its own descriptorset that will have to be bind each frame
-							if (!request.uploaded)
-							{
-								VkDescriptorImageInfo imageInfo{};
-								imageInfo.imageView = request.texture->vkImageViewHandle;
-								imageInfo.sampler = request.texture->Sampler.vkHandle;
-								imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-								VkWriteDescriptorSet imageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-								imageWrite.descriptorCount = 1;
-								imageWrite.dstBinding = request.binding->index;
-								imageWrite.dstSet = pipeline->vkDescriptorSets[request.binding->set];
-								imageWrite.pImageInfo = &imageInfo;
-								imageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-								frameData.graphics->UpdateDescriptorSet(1, &imageWrite);
-								request.uploaded = true;
-							}
-						}
+						mat.GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
 					}
 
 					commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets,
@@ -312,7 +297,7 @@ namespace Pudu
 	{
 		PipelineCreationData creationData;
 
-		auto shader = frameData.currentDrawCall->MaterialPtr.Shader;
+		auto shader = frameData.currentDrawCall->MaterialPtr.shader;
 
 		creationData.vertexShaderData = shader->vertexData;
 		creationData.fragmentShaderData = shader->fragmentData;
@@ -366,7 +351,7 @@ namespace Pudu
 				VK_SHADER_STAGE_VERTEX_BIT);
 		}
 
-		creationData.descriptorCreationData = shader->descriptors;
+		creationData.descriptorCreationData = shader->GetDescriptorSetLayouts();
 		creationData.blendState = blendStateCreation;
 		creationData.rasterization = rasterizationCreation;
 		creationData.depthStencil = depthStencilCreation;

@@ -106,6 +106,7 @@ namespace Pudu
 		VkFormat GetStencilFormat();
 
 		uint16_t AttachmentCount();
+		uint16_t ColorAttachmentCount();
 		uint16_t colorAttachmentVkCount = 0;
 		uint16_t depthAttachmentVkCount = 0;
 
