@@ -78,6 +78,7 @@ namespace Pudu {
 					binding.name = refl_binding.name;
 					binding.set = refl_binding.set;
 					binding.index = refl_binding.binding;
+					binding.type = layoutBinding.descriptorType;
 
 					outDescriptorSetLayoutData.bindingsData.push_back(binding);
 				}

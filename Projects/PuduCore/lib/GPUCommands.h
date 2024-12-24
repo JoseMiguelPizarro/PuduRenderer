@@ -34,6 +34,8 @@ namespace Pudu
 		void ClearDepthStencil(float depth, float stencil);
 		void AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel,
 			u32 mipCount, bool isDepth);
+		void AddMemoryBarrier(VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask,
+			VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetViewport(Viewport const& viewport);
 
@@ -50,6 +52,7 @@ namespace Pudu
 		void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);
 		void Blit(SPtr<Texture> source, SPtr<Texture> dst, VkImageLayout srcLayout, VkImageLayout dstLayout);
 		void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ);
+		void DispatchIndirect(GraphicsBuffer* paramsBuffer, uint64_t offset);
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
 			VkImageSubresourceRange* range = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -62,6 +65,8 @@ namespace Pudu
 			uint32_t firstIndex = 0,
 			int32_t vertexOffset = 0,
 			uint32_t firstInstance = 0);
+
+		void DrawIndirect(GraphicsBuffer* buffer, uint64_t offset, uint32_t drawCount, uint32_t stride);
 
 
 		VkCommandBuffer vkHandle;

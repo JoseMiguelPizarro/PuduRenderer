@@ -28,12 +28,18 @@ namespace Pudu
 
 		computeCommands->BindPipeline(pipeline.get());
 
-
 		for (size_t i = 0; i < attachments.ColorAttachmentCount(); i++)
 		{
 			auto attachment = attachments.colorAttachments[i];
-
+			auto texture = attachment.resource;
 			m_shader->SetTexture(attachment.resource->name.c_str(), attachment.resource);
+		}
+
+		for (size_t i = 0; i < attachments.BufferCount(); i++)
+		{
+			auto attachment = attachments.bufferAttachments[i];
+
+			m_shader->SetBuffer(attachment.buffer->name.c_str(), attachment.buffer);
 		}
 
 		m_shader->GetPropertiesBlock()->ApplyProperties(frameData.graphics, m_shader.get(), pipeline.get());

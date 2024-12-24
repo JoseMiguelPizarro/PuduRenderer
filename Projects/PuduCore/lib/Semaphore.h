@@ -11,6 +11,13 @@ namespace Pudu
 		operator VkSemaphore& () { return vkHandle; }
 		operator VkSemaphore* () { return &vkHandle; }
 		operator VkSemaphore() const { return vkHandle; }
+
+
+		uint64_t Signal();
+		uint64_t TimelineValue();
+
+	private:
+		uint64_t m_timelineValue;
 	};
 }
 

@@ -103,6 +103,16 @@ namespace Pudu
 		return *this;
 	}
 
+	RenderPassAttachments& RenderPassAttachments::AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage)
+	{
+		RenderPassAttachment attachment;
+		attachment.type = GPUResourceType::Buffer;
+		attachment.buffer = buffer;
+		bufferAttachments[buffersCount++] = attachment;
+
+		return *this;
+	}
+
 	VkFormat RenderPassAttachments::GetStencilFormat()
 	{
 		return VK_FORMAT_UNDEFINED;
@@ -119,6 +129,11 @@ namespace Pudu
 	uint16_t RenderPassAttachments::ColorAttachmentCount()
 	{
 		return colorAttachmentCount;
+	}
+
+	uint16_t RenderPassAttachments::BufferCount()
+	{
+		return buffersCount;
 	}
 
 	VkRenderingAttachmentInfo* RenderPassAttachments::GetVkColorAttachments()
@@ -249,7 +264,7 @@ namespace Pudu
 				{
 					//Bind Lighting Buffer
 					VkDescriptorBufferInfo bufferInfo{};
-					bufferInfo.buffer = frameData.lightingBuffer->vkHandler;
+					bufferInfo.buffer = frameData.lightingBuffer->vkHandle;
 					bufferInfo.range = sizeof(LightBuffer);
 
 					VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
@@ -461,6 +476,11 @@ namespace Pudu
 		attachment.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
 		attachments.depthStencilFormat = attachment.resource->format;
 		attachments.SetDepthStencilAttachment(attachment);
+	}
+
+	void RenderPass::AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage)
+	{
+		attachments.AddBufferAttachment(buffer, usage);
 	}
 
 	void RenderPass::SetName(const char* name)

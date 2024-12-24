@@ -5,8 +5,7 @@
 #include <stb_image.h>
 #include <fmt/core.h>
 
-#define VMA_IMPLEMENTATION
-#include <vma/vk_mem_alloc.h>
+#include "VmaUsage.h"
 
 #include <limits>
 
@@ -40,6 +39,7 @@
 #include <ktxvulkan.h>
 #include "FileManager.h"
 #include "RenderFrameData.h"
+#include <vk_mem_alloc.h>
 
 
 namespace Pudu
@@ -251,11 +251,10 @@ namespace Pudu
 		//Create buffer, allocate the memory and binds memory to buffer
 		VKCheck(vmaCreateBuffer(m_VmaAllocator, &bufferInfo, &allocCreateInfo, &buffer, &alloc, &allocInfo),
 			"Failed creating buffer");
-
 		if (name != nullptr)
 		{
 			SetResourceName(VK_OBJECT_TYPE_BUFFER, (glm::u64)buffer, name);
-			SetResourceName(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)alloc->GetMemory(), name);
+			SetResourceName(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)allocInfo.deviceMemory, name);
 		}
 
 		return alloc;
@@ -276,7 +275,7 @@ namespace Pudu
 		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
 		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-		memcpy(buffer->allocation->GetMappedData(), &lightBuffer, sizeof(LightBuffer));
+		memcpy(buffer->GetMappedData(), &lightBuffer, sizeof(LightBuffer));
 
 		frame.lightingBuffer = m_lightingBuffers[frame.frameIndex];
 	}
@@ -311,7 +310,8 @@ namespace Pudu
 	{
 		if (!buffer->IsDestroyed())
 		{
-			vmaDestroyBuffer(m_VmaAllocator, buffer->vkHandler, buffer->allocation);
+
+			vmaDestroyBuffer(m_VmaAllocator, buffer->vkHandle, buffer->allocation);
 			buffer->Destroy();
 		}
 	}
@@ -344,7 +344,7 @@ namespace Pudu
 		if (m_absoluteFrame >= MAX_FRAMES_IN_FLIGHT)
 		{
 			uint64_t graphicsTimelineValue = m_absoluteFrame;
-			uint64_t computeTimelineValue = m_lastComputeTimelineValue;
+			uint64_t computeTimelineValue = m_computeTimelineSemaphore->TimelineValue();
 
 			uint64_t timelineValues[]{ graphicsTimelineValue, computeTimelineValue };
 			VkSemaphore semaphores[]{ m_graphicsTimelineSemaphore->vkHandle, m_computeTimelineSemaphore->vkHandle };
@@ -380,6 +380,7 @@ namespace Pudu
 		frame.CommandBuffer->Reset();
 
 		frame.CommandBuffer->BeginCommands();
+		frame.ComputeCommandBuffer->BeginCommands();
 
 		frameData.frame = &m_Frames[m_currentFrameIndex];
 		frameData.currentCommand = frame.CommandBuffer;
@@ -405,6 +406,7 @@ namespace Pudu
 
 
 		frame.CommandBuffer->EndCommands();
+		frame.ComputeCommandBuffer->EndCommands();
 
 		auto computeCommands = frame.ComputeCommandBuffer;
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
@@ -420,21 +422,20 @@ namespace Pudu
 	{
 		auto frame = frameData.frame;
 
-		bool hasWaitSemaphore = m_lastComputeTimelineValue > 0;
+		bool hasWaitSemaphore = m_computeTimelineSemaphore->TimelineValue() > 0;
 
 		VkSemaphoreSubmitInfo waitSemaphores[]{
 			{
 				VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle,
-				m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0
+				m_computeTimelineSemaphore->TimelineValue(), VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0
 			},
 		};
 
-		m_lastComputeTimelineValue++;
 
 		VkSemaphoreSubmitInfo signalSemaphores[]{
 			{
 				VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle,
-				m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0
+				m_computeTimelineSemaphore->Signal(), VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0
 			}
 		};
 
@@ -482,7 +483,7 @@ namespace Pudu
 			},
 			{
 				VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle,
-				m_lastComputeTimelineValue, VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT, 0
+				m_computeTimelineSemaphore->TimelineValue(), VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT, 0
 			},
 			{
 				VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore->vkHandle,
@@ -517,7 +518,7 @@ namespace Pudu
 			*frame->RenderFinishedSemaphore
 		};
 
-		submitInfo.waitSemaphoreInfoCount = 2;
+		submitInfo.waitSemaphoreInfoCount = 3;
 		submitInfo.pWaitSemaphoreInfos = waitSemaphores;
 
 		submitInfo.signalSemaphoreInfoCount = 2;
@@ -711,7 +712,9 @@ namespace Pudu
 				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
 				VMA_ALLOCATION_CREATE_MAPPED_BIT, stagingBuffer);
 
-			memcpy(stagingAllocation->GetMappedData(), bufferData, (size_t)bufferSize);
+			VmaAllocationInfo allocInfo;
+			vmaGetAllocationInfo(m_VmaAllocator, stagingAllocation, &allocInfo);
+			memcpy(allocInfo.pMappedData, bufferData, (size_t)bufferSize);
 			vmaFlushAllocation(m_VmaAllocator, stagingAllocation, 0, VK_WHOLE_SIZE);
 
 			bufferAlloc = CreateBuffer(bufferSize, usage, flags, vkBuffer,
@@ -728,8 +731,12 @@ namespace Pudu
 		}
 
 		auto graphicsBuffer = m_resources.AllocateGraphicsBuffer();
-		graphicsBuffer->vkHandler = vkBuffer;
+		graphicsBuffer->vkHandle = vkBuffer;
+
+		VmaAllocationInfo allocInfo;
+		vmaGetAllocationInfo(m_VmaAllocator, bufferAlloc, &allocInfo);
 		graphicsBuffer->allocation = bufferAlloc;
+		graphicsBuffer->allocationInfo = allocInfo;
 		if (name != nullptr)
 		{
 			graphicsBuffer->name.append(name);
@@ -2093,7 +2100,7 @@ namespace Pudu
 		VmaAllocationCreateInfo memoryInfo{};
 		memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-		memcpy(stagingBuffer->allocation->GetMappedData(), pixels, static_cast<size_t>(imageSize));
+		memcpy(stagingBuffer->GetMappedData(), pixels, static_cast<size_t>(imageSize));
 		vmaFlushAllocation(m_VmaAllocator, stagingBuffer->allocation, 0, VK_WHOLE_SIZE);
 
 		auto cmd = BeginSingleTimeCommands();
@@ -2101,7 +2108,7 @@ namespace Pudu
 		cmd.TransitionImageLayout(texture->vkImageHandle, texture->format, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &range);
 
-		cmd.CopyBufferToImage(stagingBuffer->vkHandler, texture->vkImageHandle, static_cast<uint32_t>(texture->width),
+		cmd.CopyBufferToImage(stagingBuffer->vkHandle, texture->vkImageHandle, static_cast<uint32_t>(texture->width),
 			static_cast<uint32_t>(texture->height), regions);
 
 		cmd.TransitionImageLayout(texture->vkImageHandle, texture->format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,

@@ -47,6 +47,21 @@ namespace Pudu
 		vkCmdPipelineBarrier(vkHandle, sourceStageMask, destionationStageMask, 0,
 			0, nullptr, 0, nullptr, 1, &barrier);
 	}
+	void GPUCommands::AddMemoryBarrier(VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask, VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask)
+	{
+		VkMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_MEMORY_BARRIER_2 };
+		barrier.srcStageMask = srcStageMask;
+		barrier.dstStageMask = dstStageMask;
+		barrier.srcAccessMask = srcAccessMask;
+		barrier.dstAccessMask = dstAccessMask;
+
+		VkDependencyInfo barrierInfo{ VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
+		barrierInfo.memoryBarrierCount = 1;
+		barrierInfo.pMemoryBarriers = &barrier;
+
+		vkCmdPipelineBarrier2(vkHandle, &barrierInfo);
+	}
+
 	void GPUCommands::SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 	{
 		VkRect2D scissor;
@@ -192,12 +207,18 @@ namespace Pudu
 		blitInfo.regionCount = 1;
 
 		vkCmdBlitImage2(vkHandle, &blitInfo);
+
+		m_hasRecordedCommand = true;
 	}
 	void GPUCommands::Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
 	{
 		vkCmdDispatch(vkHandle, groupCountX, groupCountY, groupCountZ);
 
 		m_hasRecordedCommand = true;
+	}
+	void GPUCommands::DispatchIndirect(GraphicsBuffer* paramsBuffer, uint64_t offset)
+	{
+		vkCmdDispatchIndirect(vkHandle, paramsBuffer->vkHandle, offset);
 	}
 	void GPUCommands::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange* range)
 	{
@@ -274,7 +295,9 @@ namespace Pudu
 			sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 			destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 		}
-		else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+		else if ((oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
+			oldLayout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL)
+			&& (newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR || newLayout == VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR || newLayout == VK_IMAGE_LAYOUT_GENERAL))
 		{
 			barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 			barrier.dstAccessMask = 0;
@@ -316,6 +339,8 @@ namespace Pudu
 			PUDU_ERROR("unsupported layout transition!");
 		}
 		vkCmdPipelineBarrier(vkHandle, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -324,6 +349,8 @@ namespace Pudu
 		copyRegion.size = size;
 
 		vkCmdCopyBuffer(vkHandle, srcBuffer, dstBuffer, 1, &copyRegion);
+
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions)
@@ -371,24 +398,37 @@ namespace Pudu
 			vkHandle,
 			&copyInfo
 		);
+
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::SetDepthBias(float slopeBias, float constantBias)
 	{
 		vkCmdSetDepthBias(vkHandle, constantBias, 0.0f, slopeBias);
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::BindMesh(Mesh* mesh)
 	{
-		VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->vkHandler };
+		VkBuffer vertexBuffers[] = { mesh->GetVertexBuffer()->vkHandle };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(vkHandle, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(vkHandle, mesh->GetIndexBuffer()->vkHandler, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(vkHandle, mesh->GetIndexBuffer()->vkHandle, 0, VK_INDEX_TYPE_UINT32);
+
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 	{
 		vkCmdDrawIndexed(vkHandle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+
+		m_hasRecordedCommand = true;
+	}
+
+	void GPUCommands::DrawIndirect(GraphicsBuffer* buffer, uint64_t offset, uint32_t drawCount, uint32_t stride)
+	{
+		vkCmdDrawIndirect(vkHandle, buffer->vkHandle, offset, drawCount, stride);
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::Reset()

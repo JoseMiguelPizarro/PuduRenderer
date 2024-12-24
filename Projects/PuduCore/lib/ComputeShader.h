@@ -2,6 +2,7 @@
 #include "Resources/Resources.h"
 #include "ShaderObject.h"
 #include "Material.h"
+#include <GraphicsBuffer.h>
 
 namespace Pudu
 {
@@ -16,6 +17,7 @@ namespace Pudu
 		void MarkAsResourcesUpdated() { m_resourcesUpdated = true; }
 		void MarkResourcesDirty() { m_resourcesUpdated = false; }
 		void SetTexture(const char* name, SPtr<Texture> texture);
+		void SetBuffer(const char* name, SPtr<GraphicsBuffer> buffer);
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 
 	private:

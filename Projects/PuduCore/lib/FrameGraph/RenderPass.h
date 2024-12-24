@@ -68,6 +68,7 @@ namespace Pudu
 	struct RenderPassAttachment
 	{
 		SPtr<RenderTexture> resource;
+		SPtr<GraphicsBuffer> buffer;
 		VkAttachmentLoadOp loadOperation;
 		VkAttachmentStoreOp storeOp;
 		VkClearValue clearValue;
@@ -103,13 +104,15 @@ namespace Pudu
 		RenderPassAttachments& AddColorAttachment(RenderPassAttachment attachment);
 		RenderPassAttachments& SetDepthStencilAttachment(RenderPassAttachment attachment);
 		RenderPassAttachments& SetDepthStencilOperations(LoadOperation depth, LoadOperation stencil);
+		RenderPassAttachments& AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage = AttachmentUsage::Write);
+
 		VkFormat GetStencilFormat();
 
 		uint16_t AttachmentCount();
 		uint16_t ColorAttachmentCount();
+		uint16_t BufferCount();
 		uint16_t colorAttachmentVkCount = 0;
 		uint16_t depthAttachmentVkCount = 0;
-
 
 		std::vector<RenderPassAttachment>* GetColorRenderPassAttachments();
 
@@ -117,9 +120,11 @@ namespace Pudu
 		VkRenderingAttachmentInfo* GetDepthAttachments();
 		VkRenderingAttachmentInfo* GetStencilAttachments();
 
+
 		RenderPassAttachment colorAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment depthAttachments[K_MAX_IMAGE_OUTPUTS];
 		RenderPassAttachment stencilAttachments[K_MAX_IMAGE_OUTPUTS];
+		RenderPassAttachment bufferAttachments[8];
 
 		VkFormat* GetColorAttachmentsFormat();
 
@@ -128,6 +133,7 @@ namespace Pudu
 		friend class RenderPass;
 		uint16_t depthAttachmentCount = 0;
 		uint16_t colorAttachmentCount = 0;
+		uint16_t buffersCount = 0;
 
 
 	private:
@@ -165,6 +171,7 @@ namespace Pudu
 		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
 		void AddColorAttachment(RenderPassAttachment& attachment);
 		void AddDepthStencilAttachment(RenderPassAttachment& attachment);
+		void AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage);
 
 		void SetName(const char* name);
 

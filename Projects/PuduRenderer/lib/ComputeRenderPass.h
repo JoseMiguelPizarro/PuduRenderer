@@ -11,6 +11,8 @@ namespace Pudu
 		void SetKernel(std::string& name);
 		void SetShader(SPtr<ComputeShader> shader);
 		void Render(RenderFrameData& frameData) override;
+		void PreRender(RenderFrameData& frameData) override {};
+		void AfterRender(RenderFrameData& frameData) override {};
 
 	private:
 		std::string m_kernel;

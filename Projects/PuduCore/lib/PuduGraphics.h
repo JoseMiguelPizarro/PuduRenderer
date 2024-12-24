@@ -13,7 +13,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-#include "vma/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 
 #include <optional>
 #include <Frame.h>
@@ -228,7 +228,8 @@ namespace Pudu
 		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
 		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
-
+		GPUCommands BeginSingleTimeCommands();
+		void EndSingleTimeCommands(GPUCommands commandBuffer);
 
 	private:
 		friend class GPUResourcesManager;
@@ -292,8 +293,7 @@ namespace Pudu
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
 			VkFormatFeatureFlags features);
 
-		GPUCommands BeginSingleTimeCommands();
-		void EndSingleTimeCommands(GPUCommands commandBuffer);
+		
 
 		void CleanupSwapChain();
 
@@ -339,7 +339,6 @@ namespace Pudu
 		GPUResourcesManager m_resources;
 		SPtr<Semaphore> m_graphicsTimelineSemaphore;
 		SPtr<Semaphore> m_computeTimelineSemaphore;
-		uint64_t m_lastComputeTimelineValue = 0;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 		std::vector<VkImageView> m_swapChainImagesViews;
