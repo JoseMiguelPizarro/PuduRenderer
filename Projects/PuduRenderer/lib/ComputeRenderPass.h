@@ -15,6 +15,7 @@ namespace Pudu
 		void BeginRender(RenderFrameData& frameData) override {};
 		void EndRender(RenderFrameData& frameData) override {};
 		void AfterRender(RenderFrameData& frameData) override {};
+		void SetupRender(RenderFrameData& frameData) override {};
 		void Create(PuduGraphics* gfx) override {};
 
 	private:

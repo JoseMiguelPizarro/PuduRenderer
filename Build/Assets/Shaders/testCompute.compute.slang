@@ -1,6 +1,11 @@
+struct Grass
+{
+    float3 pos;
+}
+
 struct GrassData
 {
-    RWBuffer<float3> GrassPos;
+    RWStructuredBuffer<Grass> GrassPos;
 };
 
 ParameterBlock<GrassData> Data;
@@ -11,5 +16,5 @@ void main(uint3 threadId: SV_DispatchThreadID)
 {
     float2 resolution = float2(1024, 1024);
     float2 uv = threadId.xy / resolution;
-    Data.GrassPos[threadId.x] = float3(1, 0, 0);
+    Data.GrassPos[threadId.x] = { float3(1, 0, 0) };
 }

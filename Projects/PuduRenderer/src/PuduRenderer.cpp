@@ -62,17 +62,18 @@ namespace Pudu
 
 		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
 		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
-
+		
+		computeRP->SetGroupSize(64, 64, 1);
 
 		uint32_t grassCount = 10000;
 
 
-		auto buffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec3) * grassCount, nullptr, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
+		auto buffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec3) * grassCount, nullptr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
 		computeRP->SetShader(compute);
 		computeRP->AddBufferAttachment(buffer, AttachmentUsage::Write);
 
-		//AddRenderPass(computeRP.get());
+		AddRenderPass(computeRP.get());
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());

@@ -33,8 +33,6 @@ namespace Pudu
 	{
 		auto command = renderData.currentCommand;
 
-		
-
 		command->BindMesh(m_quadMesh.get());
 		Pipeline* pipeline = GetPipeline({
 			.renderPass = this,
