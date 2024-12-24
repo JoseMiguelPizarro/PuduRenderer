@@ -117,7 +117,7 @@ namespace Pudu
 		std::vector<RenderPassAttachment>* GetColorRenderPassAttachments();
 
 		VkRenderingAttachmentInfo* GetVkColorAttachments();
-		VkRenderingAttachmentInfo* GetDepthAttachments();
+		VkRenderingAttachmentInfo* GetDepthVkAttachments();
 		VkRenderingAttachmentInfo* GetStencilAttachments();
 
 
@@ -176,8 +176,9 @@ namespace Pudu
 		void SetName(const char* name);
 
 		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
-		virtual void PreRender(RenderFrameData& renderData) { }
+		virtual void PreRender(RenderFrameData& renderData);
 		virtual void Render(RenderFrameData& frameData);
+		virtual void SetupRender(RenderFrameData& frameData);
 		virtual void AfterRender(RenderFrameData& frameData) {};
 		virtual void OnResize(PuduGraphics& gpu, uint32_t newWidth, uint32_t newHeight) {}
 		virtual void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}

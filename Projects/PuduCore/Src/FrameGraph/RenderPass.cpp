@@ -181,7 +181,7 @@ namespace Pudu
 		return &m_colorRenderPassAttachments;
 	}
 
-	VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthAttachments()
+	VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthVkAttachments()
 	{
 		if (m_depthAttachmentsCreated)
 		{
@@ -232,6 +232,11 @@ namespace Pudu
 	Pipeline* RenderPass::GetPipeline(PipelineQueryData pipelineQuery)
 	{
 		return pipelineQuery.renderer->GetOrCreatePipeline(pipelineQuery);
+	}
+
+	void RenderPass::PreRender(RenderFrameData& renderData)
+	{
+		
 	}
 
 	void RenderPass::Render(RenderFrameData& frameData)
@@ -306,6 +311,26 @@ namespace Pudu
 
 			AfterRenderDrawcall(frameData, drawCall);
 		}
+	}
+
+	void RenderPass::SetupRender(RenderFrameData& renderData)
+	{
+		auto commands = renderData.currentCommand;
+		commands->SetDepthBias(0, 0);
+		commands->SetScissor(0, 0, renderData.width, renderData.height);
+		commands->SetViewport({ {0,0,renderData.width,renderData.height},0,1 });
+
+		SPtr<RenderTexture> renderTarget;
+		if (attachments.ColorAttachmentCount())
+		{
+			renderTarget = attachments.GetColorRenderPassAttachments()->at(0).resource;
+		}
+		else if (attachments.depthAttachmentCount)
+		{
+			renderTarget = attachments.depthAttachments[0].resource;
+		}
+
+		renderData.activeRenderTarget = renderTarget;
 	}
 
 	PipelineCreationData RenderPass::GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall)
@@ -401,7 +426,7 @@ namespace Pudu
 		renderInfo.layerCount = 1;
 		renderInfo.colorAttachmentCount = attachments.colorAttachmentVkCount;
 		renderInfo.pColorAttachments = attachments.colorAttachmentVkCount > 0 ? attachments.GetVkColorAttachments() : nullptr;
-		renderInfo.pDepthAttachment = attachments.depthAttachmentVkCount > 0 ? attachments.GetDepthAttachments()
+		renderInfo.pDepthAttachment = attachments.depthAttachmentVkCount > 0 ? attachments.GetDepthVkAttachments()
 			: nullptr;
 
 

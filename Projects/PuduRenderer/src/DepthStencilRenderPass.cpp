@@ -17,10 +17,6 @@ namespace Pudu
 		m_depthMaterial = std::make_shared<Material>(m);
 	}
 
-	void DepthPrepassRenderPass::PreRender(RenderFrameData& renderData)
-	{
-	}
-
 	void DepthPrepassRenderPass::BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)
 	{
 		drawcall.SetReplacementMaterial(m_depthMaterial);

@@ -8,6 +8,8 @@ namespace Pudu {
 	}
 	void ShadowMapRenderPass::PreRender(RenderFrameData& renderData)
 	{
+		RenderPass::PreRender(renderData);
+
 		InitializeShadowMap(renderData.graphics);
 
 		m_previousCamera = renderData.camera;

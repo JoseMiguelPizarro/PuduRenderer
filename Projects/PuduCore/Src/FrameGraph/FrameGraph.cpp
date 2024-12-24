@@ -1360,18 +1360,15 @@ namespace Pudu
 				}
 			}
 
-			commands->SetDepthBias(0, 0);
-			commands->SetScissor(0, 0, width, height);
-			commands->SetViewport({ {0,0,width,height},0,1 });
 			renderData.width = width;
 			renderData.height = height;
 
-			renderData.activeRenderTarget = node->outputs[0].resource;
 			renderPass->PreRender(renderData);
 			renderPass->BeginRender(renderData);
+			renderPass->SetupRender(renderData);
 			renderPass->Render(renderData);
-			renderPass->EndRender(renderData);
 			renderPass->AfterRender(renderData);
+			renderPass->EndRender(renderData);
 			//TODO: IMPLEMENT MARKERS
 		}
 	}

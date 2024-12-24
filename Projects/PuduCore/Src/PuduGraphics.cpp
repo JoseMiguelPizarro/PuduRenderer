@@ -378,6 +378,7 @@ namespace Pudu
 		vkResetFences(m_device, 1, &frame.InFlightFence);
 
 		frame.CommandBuffer->Reset();
+		frame.ComputeCommandBuffer->Reset();
 
 		frame.CommandBuffer->BeginCommands();
 		frame.ComputeCommandBuffer->BeginCommands();
@@ -410,7 +411,6 @@ namespace Pudu
 
 		auto computeCommands = frame.ComputeCommandBuffer;
 		frameData.computeCommandsToSubmit.push_back(computeCommands);
-		computeCommands->Reset();
 
 		SubmitComputeWork(frameData);
 		SubmitFrame(frameData);
@@ -872,6 +872,7 @@ namespace Pudu
 		featuresVulkan12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 		featuresVulkan12.separateDepthStencilLayouts = VK_TRUE;
 		featuresVulkan12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+		featuresVulkan12.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
 
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};

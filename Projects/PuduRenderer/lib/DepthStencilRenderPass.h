@@ -8,7 +8,6 @@ namespace Pudu
 	public:
 		const std::filesystem::path K_DepthShaderPath = "Shaders/depth.vert.slang";
 		void Initialize(PuduGraphics* gpu) override;
-		void PreRender(RenderFrameData& renderData) override;
 		void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;
 		void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;
 

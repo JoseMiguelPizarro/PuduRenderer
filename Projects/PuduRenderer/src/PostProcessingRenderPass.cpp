@@ -33,6 +33,8 @@ namespace Pudu
 	{
 		auto command = renderData.currentCommand;
 
+		
+
 		command->BindMesh(m_quadMesh.get());
 		Pipeline* pipeline = GetPipeline({
 			.renderPass = this,
@@ -44,7 +46,6 @@ namespace Pudu
 
 		command->DrawIndexed(m_quadMesh->GetIndices()->size());
 	}
-
 	void PostProcessingRenderPass::PreRender(RenderFrameData& renderData)
 	{
 		auto command = renderData.currentCommand;
@@ -56,5 +57,4 @@ namespace Pudu
 		command->TransitionImageLayout(m_screenColor->vkImageHandle, m_screenColor->format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		command->TransitionImageLayout(frameColor->vkImageHandle, m_screenColor->format, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
-
 }

@@ -1,5 +1,9 @@
-RWTexture2D ForwardColor;
-RWBuffer<float3> GrassPos;
+struct GrassData
+{
+    RWBuffer<float3> GrassPos;
+};
+
+ParameterBlock<GrassData> Data;
 
 [shader("compute")]
 [numthreads(32, 32, 1)]
@@ -7,5 +11,5 @@ void main(uint3 threadId: SV_DispatchThreadID)
 {
     float2 resolution = float2(1024, 1024);
     float2 uv = threadId.xy / resolution;
-    ForwardColor[threadId.x + threadId.y * 1024] = float4(1, 0, 0, 0);
+    Data.GrassPos[threadId.x] = float3(1, 0, 0);
 }

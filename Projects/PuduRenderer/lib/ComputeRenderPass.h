@@ -12,7 +12,10 @@ namespace Pudu
 		void SetShader(SPtr<ComputeShader> shader);
 		void Render(RenderFrameData& frameData) override;
 		void PreRender(RenderFrameData& frameData) override {};
+		void BeginRender(RenderFrameData& frameData) override {};
+		void EndRender(RenderFrameData& frameData) override {};
 		void AfterRender(RenderFrameData& frameData) override {};
+		void Create(PuduGraphics* gfx) override {};
 
 	private:
 		std::string m_kernel;
