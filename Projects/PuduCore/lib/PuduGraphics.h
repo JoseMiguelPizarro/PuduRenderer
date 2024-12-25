@@ -247,7 +247,6 @@ namespace Pudu
 		/// Setup and dispatch compute workload for the frame
 		/// </summary>
 		void SubmitComputeWork(RenderFrameData& frameData);
-		void UpdateComputeResources(ComputeShader* shader);
 
 		void InitDebugUtilsObjectName();
 

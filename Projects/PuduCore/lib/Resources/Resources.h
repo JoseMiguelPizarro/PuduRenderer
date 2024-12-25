@@ -7,6 +7,7 @@
 #include "PuduCore.h"
 #include "DescriptorSetLayoutData.h"
 #include "GPUResource.h"
+#include "PuduConstants.h"
 
 namespace Pudu
 {
@@ -19,7 +20,6 @@ namespace Pudu
 	typedef uint32_t FrameGraphNodeHandle;
 	typedef uint32_t ResourceHandle;
 
-	static const uint32_t k_INVALID_HANDLE = 0xffffffff;
 
 
 #pragma endregion
@@ -621,7 +621,6 @@ namespace Pudu
 	struct ComputePipelineCreationData {
 		const char* name;
 		const char* kernel;
-		std::vector<char> data;
 		DescriptorSetLayoutsData descriptorsCreationData;
 		GPUResourceHandle<ComputeShader> computeShaderHandle;
 	};

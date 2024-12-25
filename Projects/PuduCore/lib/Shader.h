@@ -8,6 +8,10 @@
 
 namespace Pudu
 {
+	class Pipeline;
+	class RenderPass;
+	class PuduGraphics;
+
 	class Shader : public GPUResource<Shader>, public IShaderObject
 	{
 	public:
@@ -36,6 +40,8 @@ namespace Pudu
 
 		bool HasFragmentData() { return m_hasFragmentData; }
 		bool HasVertexData() { return m_hasVertexData; }
+
+		 SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
 	private:
 		friend class PuduGraphics;

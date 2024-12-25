@@ -40,79 +40,9 @@ namespace Pudu
 		return nullptr;
 	}
 
-	Pipeline* Renderer::CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader)
+	Pipeline* Renderer::CreatePipelineByRenderPassAndShader(RenderPass* renderPass, IShaderObject* shader)
 	{
-		PipelineCreationData creationData; //"Question now, how do we populate this?"
-		creationData.vertexShaderData = shader->vertexData;
-		creationData.fragmentShaderData = shader->fragmentData;
-		creationData.name = renderPass->name.c_str();
-
-		BlendStateCreation blendStateCreation;
-
-		if (shader->HasFragmentData())
-		{
-			blendStateCreation.AddBlendState()
-				.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorWriteMask(ColorWriteEnabled::All_mask);
-		}
-
-		RasterizationCreation rasterizationCreation;
-		rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizationCreation.fill = FillMode::Solid;
-		rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
-		DepthStencilCreation depthStencilCreation;
-		depthStencilCreation.SetDepth(renderPass->writeDepth, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-		VertexInputCreation vertexInputCreation;
-		auto attribDescriptions = Vertex::GetAttributeDescriptions();
-		auto bindingDescriptions = Vertex::GetBindingDescription();
-
-		for (auto attrib : attribDescriptions)
-		{
-			VertexAttribute a;
-			a.binding = attrib.binding;
-			a.format = attrib.format;
-			a.location = attrib.location;
-			a.offset = attrib.offset;
-
-			vertexInputCreation.AddVertexAttribute(a);
-		}
-
-		VertexStream vertexStream;
-		vertexStream.binding = bindingDescriptions.binding;
-		vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
-		vertexStream.stride = bindingDescriptions.stride;
-
-		vertexInputCreation.AddVertexStream(vertexStream);
-
-		ShaderStateCreationData shaderData;
-		shaderData.SetName(shader->name.c_str());
-
-		if (shader->HasFragmentData())
-		{
-			shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char),
-				VK_SHADER_STAGE_FRAGMENT_BIT);
-		}
-
-		if (shader->HasVertexData())
-		{
-			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char),
-				VK_SHADER_STAGE_VERTEX_BIT);
-		}
-
-		creationData.descriptorCreationData = shader->GetDescriptorSetLayouts();
-		creationData.blendState = blendStateCreation;
-		creationData.rasterization = rasterizationCreation;
-		creationData.depthStencil = depthStencilCreation;
-		creationData.vertexInput = vertexInputCreation;
-		creationData.shadersStateCreationData = shaderData;
-
-		creationData.renderPassHandle = renderPass->Handle();
-
-		auto handle = graphics->CreateGraphicsPipeline(creationData);
-		auto pipeline = graphics->Resources()->GetPipeline(handle).get();
+		auto pipeline = shader->CreatePipeline(graphics, renderPass).get();
 
 		//Renderpass already cached
 		if (m_pipelinesByRenderPass.contains(renderPass))
@@ -123,7 +53,7 @@ namespace Pudu
 		//Create new cache
 		else
 		{
-			std::unordered_map<Shader*, Pipeline*> pipelineByShaderMap;
+			std::unordered_map<IShaderObject*, Pipeline*> pipelineByShaderMap;
 			pipelineByShaderMap.insert(std::make_pair(shader, pipeline));
 
 			m_pipelinesByRenderPass.insert(std::make_pair(renderPass, pipelineByShaderMap));

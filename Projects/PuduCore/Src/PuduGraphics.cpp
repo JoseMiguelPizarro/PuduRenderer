@@ -1860,30 +1860,6 @@ namespace Pudu
 		return pipeline->Handle();
 	}
 
-	void PuduGraphics::UpdateComputeResources(ComputeShader* shader)
-	{
-		auto pipeline = m_resources.GetPipeline(shader->pipelineHandle);
-
-		//PROXY TEX WRITE
-		VkDescriptorImageInfo computeImage{};
-		computeImage.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		computeImage.imageView = m_resources.GetTextureByName("forward_color")->vkImageViewHandle;
-
-		VkWriteDescriptorSet drawImageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-		drawImageWrite.pNext = nullptr;
-
-		drawImageWrite.dstBinding = 0;
-		drawImageWrite.dstSet = pipeline->vkDescriptorSets[0];
-		drawImageWrite.descriptorCount = 1;
-		drawImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		drawImageWrite.pImageInfo = &computeImage;
-
-		vkUpdateDescriptorSets(m_device, 1, &drawImageWrite, 0, nullptr);
-
-		shader->MarkAsResourcesUpdated();
-	}
-
-
 	void PuduGraphics::CreateFrames()
 	{
 		m_Frames.resize(MAX_FRAMES_IN_FLIGHT);
@@ -2296,16 +2272,10 @@ namespace Pudu
 		auto data = FileManager::LoadShader(shaderPath);
 		shader->m_module = CreateShaderModule(data, data.size() * sizeof(char), name);
 
-		ComputePipelineCreationData creationData{};
-		creationData.computeShaderHandle = shader->Handle();
-		creationData.data = data;
-		creationData.name = name;
-		creationData.kernel = "main";
-
 		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char),
-			creationData.descriptorsCreationData);
+			shader->m_descriptors);
 
-		shader->pipelineHandle = CreateComputePipeline(creationData);
+		shader->CreatePipeline(this, nullptr);
 
 		return shader;
 	}

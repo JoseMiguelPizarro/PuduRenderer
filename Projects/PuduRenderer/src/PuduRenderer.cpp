@@ -8,6 +8,7 @@
 #include "ComputeRenderPass.h"
 #include <Logger.h>
 #include "Shader.h"
+#include <DrawIndirectRenderPass.h>
 
 namespace Pudu
 {
@@ -51,6 +52,19 @@ namespace Pudu
 		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
 		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
 
+		uint32_t grassCount = 10000;
+		VkDrawIndirectCommand indirectData{};
+		indirectData.firstInstance = 0;
+		indirectData.firstVertex = 0;
+		indirectData.vertexCount = 3;
+		indirectData.instanceCount = grassCount;
+
+		//auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(indirectData), &indirectData, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
+
+		//auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
+		//SPtr<IShaderObject> grassShader;
+		//drawGrassRP.get()->SetShader(grassShader)->SetOffset(0)->SeStride(sizeof(int32_t))->SetDrawCount(grassCount)->SetIndirectBuffer(indirectBuffer);
+
 		m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
 		m_postProcessingRenderPass->name = "Postprocessing";
 		m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
@@ -59,14 +73,10 @@ namespace Pudu
 		m_imguiRenderPass->name = "ImGui";
 		m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
-
 		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
 		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
 		
 		computeRP->SetGroupSize(64, 64, 1);
-
-		uint32_t grassCount = 10000;
-
 
 		auto buffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec3) * grassCount, nullptr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 

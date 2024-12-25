@@ -22,7 +22,7 @@ namespace Pudu
 
 	void ComputeRenderPass::Render(RenderFrameData& frameData)
 	{
-		auto pipeline = frameData.graphics->Resources()->GetPipeline(m_shader->pipelineHandle);
+		auto pipeline = frameData.graphics->Resources()->GetPipeline(m_shader->GetPipelineHandle());
 
 		auto computeCommands = frameData.frame->ComputeCommandBuffer;
 

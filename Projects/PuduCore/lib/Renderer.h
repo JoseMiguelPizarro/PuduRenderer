@@ -13,7 +13,7 @@ namespace Pudu {
 	public:
 		Pipeline* GetOrCreatePipeline(PipelineQueryData query);
 
-		Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, Shader* shader);
+		Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, IShaderObject* shader);
 
 		void AddRenderPass(RenderPass* renderPass);
 
@@ -30,6 +30,6 @@ namespace Pudu {
 
 		FrameGraph frameGraph;
 		FrameGraphBuilder frameGraphBuilder;
-		std::unordered_map < RenderPass*, std::unordered_map<Shader*, Pipeline*>> m_pipelinesByRenderPass;
+		std::unordered_map < RenderPass*, std::unordered_map<IShaderObject*, Pipeline*>> m_pipelinesByRenderPass;
 	};
 }

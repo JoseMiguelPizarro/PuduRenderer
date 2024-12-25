@@ -1,6 +1,7 @@
 #pragma once
 #include <concepts>
 #include <string>
+#include "PuduConstants.h"
 
 namespace Pudu
 {
@@ -24,7 +25,9 @@ namespace Pudu
 
 		friend class GPUResourcesManager;
 		void SetIndex(uint32_t index) { m_Index = index; }
-		uint32_t m_Index;
+		uint32_t m_Index = k_INVALID_HANDLE;
+
+		bool IsValid() { return m_Index != k_INVALID_HANDLE; }
 
 		operator uint32_t& () { return m_Index; }
 	};

@@ -5,13 +5,13 @@
 
 namespace Pudu
 {
-	class Shader;
+	class IShaderObject;
 	class RenderPass;
 	class Renderer;
 
 	struct PipelineQueryData {
 		RenderPass* renderPass;
-		Shader* shader;
+		IShaderObject* shader;
 		Renderer* renderer;
 	};
 
