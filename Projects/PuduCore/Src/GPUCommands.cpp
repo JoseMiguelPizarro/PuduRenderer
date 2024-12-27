@@ -97,6 +97,11 @@ namespace Pudu
 
 	}
 
+	void GPUCommands::PushConstants(VkPipelineLayout pipelineLayout, VkPipelineStageFlags stagesFlag, uint32_t offset, uint32_t size, void* data)
+	{
+		vkCmdPushConstants(vkHandle, pipelineLayout, stagesFlag, offset, size, data);
+	}
+
 	void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)
 	{
 		vkCmdBeginRendering(vkHandle, &renderInfo);

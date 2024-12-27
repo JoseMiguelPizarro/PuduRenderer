@@ -873,11 +873,12 @@ namespace Pudu
 		featuresVulkan12.separateDepthStencilLayouts = VK_TRUE;
 		featuresVulkan12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
 		featuresVulkan12.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
-
+		featuresVulkan12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
 
 		VkPhysicalDeviceFeatures2 deviceFeatures{};
 		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
+		deviceFeatures.features.multiDrawIndirect = VK_TRUE;
 
 		VkPhysicalDeviceSynchronization2Features syncFeatures{};
 		syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
@@ -2762,6 +2763,8 @@ namespace Pudu
 
 		currentPNext = &indexingFeatures;
 
+		VkPhysicalDeviceMultiDrawFeaturesEXT multiDrawFeatures;
+
 		//This feature is to simplify barriers and semaphore
 		VkPhysicalDeviceSynchronization2Features synchronization2Features{
 			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES
@@ -2814,6 +2817,9 @@ namespace Pudu
 		LOG("Bindless suported {}", bindlessSupported);
 		m_physicalDeviceData.IndexingFeatures = indexingFeatures;
 		m_physicalDeviceData.SupportsBindless = bindlessSupported;
+		m_physicalDeviceData.features = deviceFeatures;
+
+		LOG("Multidraw indirect supported {}", deviceFeatures.features.multiDrawIndirect);
 
 		return indices.IsComplete() && extensionsSupported && swapChainAdequate && deviceFeatures.features.
 			samplerAnisotropy && bindlessSupported;

@@ -38,6 +38,7 @@ namespace Pudu
 			VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetViewport(Viewport const& viewport);
+		void PushConstants(VkPipelineLayout pipelineLayout, VkPipelineStageFlags stagesFlag, uint32_t offset, uint32_t size, void* data);
 
 		/// <summary>
 		/// Beging dynamic rendering renderpass

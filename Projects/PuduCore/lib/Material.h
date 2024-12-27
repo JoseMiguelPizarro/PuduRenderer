@@ -9,7 +9,6 @@
 
 namespace Pudu {
 
-
 	class ShaderPropertyType {
 	public:
 		enum Enum{
@@ -29,7 +28,7 @@ namespace Pudu {
 	class ShaderPropertiesBlock
 	{
 	public:
-		void SetProperty(std::string name, SPtr<Pudu::Texture> texture);
+		void SetProperty(std::string name, SPtr<Texture> texture);
 		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
 		void ApplyProperties(PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline);
 
@@ -49,6 +48,7 @@ namespace Pudu {
 
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		void SetProperty(std::string name, SPtr<Pudu::Texture> texture);
+		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
 
 	private:
 		friend class PuduGraphics;

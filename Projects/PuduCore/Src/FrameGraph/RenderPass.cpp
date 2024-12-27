@@ -236,7 +236,7 @@ namespace Pudu
 
 	void RenderPass::PreRender(RenderFrameData& renderData)
 	{
-		
+
 	}
 
 	void RenderPass::Render(RenderFrameData& frameData)
@@ -303,7 +303,7 @@ namespace Pudu
 			viewport.rect = { 0, 0, (uint16)frameData.graphics->WindowWidth, (uint16)frameData.graphics->WindowHeight };
 			viewport.maxDepth = 1;
 			commands->SetViewport(viewport);
-			vkCmdPushConstants(commands->vkHandle, pipeline->vkPipelineLayoutHandle,
+			commands->PushConstants(pipeline->vkPipelineLayoutHandle,
 				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
 				sizeof(UniformBufferObject), &ubo);
 
@@ -447,7 +447,7 @@ namespace Pudu
 		data.currentCommand->EndRenderingPass();
 	}
 
-	void RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, LoadOperation loadOp,
+	RenderPass* RenderPass::AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, LoadOperation loadOp,
 		vec4 clearColor)
 	{
 		RenderPassAttachment attachment = {};
@@ -461,10 +461,10 @@ namespace Pudu
 		attachment.clearValue = clear;
 		attachment.usage = usage;
 
-		AddColorAttachment(attachment);
+		return AddColorAttachment(attachment);
 	}
 
-	void RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, LoadOperation loadOp,
+	RenderPass* RenderPass::AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage, LoadOperation loadOp,
 		float depthClear, uint32_t stencilClear)
 	{
 		RenderPassAttachment attachment = {};
@@ -480,10 +480,10 @@ namespace Pudu
 
 		writeDepth = usage & AttachmentUsage::Write;
 
-		AddDepthStencilAttachment(attachment);
+		return AddDepthStencilAttachment(attachment);
 	}
 
-	void RenderPass::AddColorAttachment(RenderPassAttachment& attachment)
+	RenderPass* RenderPass::AddColorAttachment(RenderPassAttachment& attachment)
 	{
 		if (TextureFormat::IsDepthStencil(attachment.resource->format))
 		{
@@ -493,23 +493,32 @@ namespace Pudu
 		{
 			attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
+
 		attachments.AddColorAttachment(attachment);
+
+		return this;
 	}
 
-	void RenderPass::AddDepthStencilAttachment(RenderPassAttachment& attachment)
+	RenderPass* RenderPass::AddDepthStencilAttachment(RenderPassAttachment& attachment)
 	{
 		attachment.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
 		attachments.depthStencilFormat = attachment.resource->format;
 		attachments.SetDepthStencilAttachment(attachment);
+
+		return this;
 	}
 
-	void RenderPass::AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage)
+	RenderPass* RenderPass::AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage)
 	{
 		attachments.AddBufferAttachment(buffer, usage);
+
+		return this;
 	}
 
-	void RenderPass::SetName(const char* name)
+	RenderPass* RenderPass::SetName(const char* name)
 	{
 		this->name.append(name);
+
+		return this;
 	}
 }

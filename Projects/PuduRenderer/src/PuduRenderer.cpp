@@ -52,18 +52,46 @@ namespace Pudu
 		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
 		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
 
-		uint32_t grassCount = 10000;
-		VkDrawIndirectCommand indirectData{};
-		indirectData.firstInstance = 0;
-		indirectData.firstVertex = 0;
-		indirectData.vertexCount = 3;
-		indirectData.instanceCount = grassCount;
+		const uint32_t grassCount = 1;
 
-		//auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(indirectData), &indirectData, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
+		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
+		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
 
-		//auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
-		//SPtr<IShaderObject> grassShader;
-		//drawGrassRP.get()->SetShader(grassShader)->SetOffset(0)->SeStride(sizeof(int32_t))->SetDrawCount(grassCount)->SetIndirectBuffer(indirectBuffer);
+		computeRP->SetGroupSize(64, 64, 1);
+
+		auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec3) * grassCount, nullptr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
+
+		computeRP->SetShader(compute);
+		computeRP->AddBufferAttachment(grassBuffer, AttachmentUsage::Write);
+
+		std::array<VkDrawIndirectCommand, grassCount> indirectCommands;
+		for (size_t i = 0; i < grassCount; i++)
+		{
+			auto indirectData = &indirectCommands[i];
+			indirectData->firstInstance = 0;
+			indirectData->firstVertex = 0;
+			indirectData->vertexCount = 3;
+			indirectData->instanceCount = grassCount;
+		}
+
+		auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(), indirectCommands.data(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
+
+		auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
+		SPtr<Shader> grassShader = graphics->CreateShader("Shaders/grass.frag.slang", "Shaders/grass.vert.slang", "Grass");
+
+		Material material;
+		material.shader = grassShader;
+		material.SetProperty("Data.GrassPos", grassBuffer);
+
+		drawGrassRP.get()
+			->SetMaterial(material)
+			->SetOffset(0)
+			->SeStride(sizeof(VkDrawIndirectCommand))
+			->SetDrawCount(grassCount)
+			->SetIndirectBuffer(indirectBuffer)
+			->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
+			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load);
+
 
 		m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
 		m_postProcessingRenderPass->name = "Postprocessing";
@@ -73,22 +101,15 @@ namespace Pudu
 		m_imguiRenderPass->name = "ImGui";
 		m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
-		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
-		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
-		
-		computeRP->SetGroupSize(64, 64, 1);
 
-		auto buffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec3) * grassCount, nullptr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
-
-		computeRP->SetShader(compute);
-		computeRP->AddBufferAttachment(buffer, AttachmentUsage::Write);
 
 		AddRenderPass(computeRP.get());
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
+		AddRenderPass(drawGrassRP.get());
 
-		AddRenderPass(m_postProcessingRenderPass.get());
+		//AddRenderPass(m_postProcessingRenderPass.get());
 
 
 		AddRenderPass(m_imguiRenderPass.get());

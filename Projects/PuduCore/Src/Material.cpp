@@ -3,10 +3,15 @@
 namespace Pudu {
 	void Material::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
 	{
-		//	m_propertiesBlock.SetProperty(name, texture);
+			m_propertiesBlock.SetProperty(name, texture);
+			
 	}
 
-	void ShaderPropertiesBlock::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
+	void Material::SetProperty(std::string name, SPtr<GraphicsBuffer> buffer) {
+		m_propertiesBlock.SetProperty(name, buffer);
+	}
+
+	void ShaderPropertiesBlock::SetProperty(std::string name, SPtr<Texture> texture)
 	{
 		PropertyUpdateRequest updateRequest{};
 		updateRequest.texture = texture;

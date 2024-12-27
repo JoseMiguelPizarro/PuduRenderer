@@ -8,4 +8,5 @@ struct PhysicalDeviceCreationData {
 	/// Number of resources pools
 	/// </summary>
 	size_t PoolSizesCount; 
+	VkPhysicalDeviceFeatures2 features;
 };

@@ -167,13 +167,13 @@ namespace Pudu
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);
-		void AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, vec4 clearColor = vec4(0));
-		void AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
-		void AddColorAttachment(RenderPassAttachment& attachment);
-		void AddDepthStencilAttachment(RenderPassAttachment& attachment);
-		void AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage);
+		RenderPass* AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, vec4 clearColor = vec4(0));
+		RenderPass* AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
+		RenderPass* AddColorAttachment(RenderPassAttachment& attachment);
+		RenderPass* AddDepthStencilAttachment(RenderPassAttachment& attachment);
+		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage);
+		RenderPass* SetName(const char* name);
 
-		void SetName(const char* name);
 
 		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
 		virtual void PreRender(RenderFrameData& renderData);

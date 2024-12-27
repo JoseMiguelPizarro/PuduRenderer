@@ -41,6 +41,7 @@ namespace Pudu
 			});
 
 		command->BindPipeline(pipeline);
+		command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
 
 		command->DrawIndexed(m_quadMesh->GetIndices()->size());
 	}
