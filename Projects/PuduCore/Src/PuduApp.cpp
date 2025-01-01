@@ -18,6 +18,7 @@ namespace Pudu
 
 		Time.m_startTime = std::chrono::high_resolution_clock::now();
 		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
+		Graphics.SetTime(&Time);
 	}
 
 	void PuduApp::Cleanup()

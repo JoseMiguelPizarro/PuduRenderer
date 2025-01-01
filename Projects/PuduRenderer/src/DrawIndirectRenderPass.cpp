@@ -10,6 +10,7 @@ namespace Pudu
 		UniformBufferObject ubo;
 		ubo.ProjectionMatrix = frameData.camera->Projection.GetProjectionMatrix();
 		ubo.viewMatrix = frameData.camera->GetViewMatrix();
+		ubo.time = frameData.graphics->GetTime()->Time();
 		m_material.GetPropertiesBlock()->ApplyProperties(frameData.graphics, m_material.shader.get(), pipeline);
 		commands->BindPipeline(pipeline);
 		commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);

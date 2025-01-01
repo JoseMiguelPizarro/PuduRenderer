@@ -46,7 +46,7 @@ namespace Pudu
 		}
 
 		RasterizationCreation rasterizationCreation;
-		rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizationCreation.cullMode = ToVk(renderPass->GetCullMode());
 		rasterizationCreation.fill = FillMode::Solid;
 		rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 

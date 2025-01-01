@@ -521,4 +521,13 @@ namespace Pudu
 
 		return this;
 	}
+	RenderPass* RenderPass::SetCullMode(CullMode cullMode)
+	{
+		m_cullMode = cullMode;
+		return this;
+	}
+	CullMode RenderPass::GetCullMode()
+	{
+		return m_cullMode;
+	}
 }

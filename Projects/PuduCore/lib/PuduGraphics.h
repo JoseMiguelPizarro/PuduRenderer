@@ -44,7 +44,7 @@
 #include <Resources/DescriptorPool.h>
 #include "Resources/CommandPool.h"
 #include "Resources/DescriptorPool.h"
-
+#include "PuduTime.h"
 
 namespace Pudu
 {
@@ -111,6 +111,9 @@ namespace Pudu
 
 		uint32_t WindowWidth = 1280;
 		uint32_t WindowHeight = 800;
+
+		void SetTime(PuduTime* time) { m_time = time; }
+		PuduTime* GetTime() { return m_time; }
 
 		const std::vector<const char*> validationLayers =
 		{
@@ -231,6 +234,8 @@ namespace Pudu
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
 
+
+
 	private:
 		friend class GPUResourcesManager;
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
@@ -330,6 +335,7 @@ namespace Pudu
 
 	private:
 		static PuduGraphics* s_instance;
+		PuduTime* m_time;
 
 		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
 		VkFormat m_surfaceFormat;

@@ -7,6 +7,7 @@ struct UniformBufferObject {
 	mat4 viewMatrix;
 	mat4 ProjectionMatrix;
 	uint32_t materialId;
+	float time;
 };
 
 //16bit alignment 

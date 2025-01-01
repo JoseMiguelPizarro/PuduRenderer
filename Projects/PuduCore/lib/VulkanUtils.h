@@ -1,8 +1,31 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include "Resources/Resources.h"
+#include "GPUEnums.h"
 
 namespace Pudu {
+
+    static VkCullModeFlagBits ToVkCullMode(CullMode cullMode) {
+        switch (cullMode)
+        {
+        case Pudu::Front:
+            return VK_CULL_MODE_FRONT_BIT;
+            break;
+        case Pudu::Back:
+            return VK_CULL_MODE_BACK_BIT;
+            break;
+        case Pudu::Both:
+            return VK_CULL_MODE_FRONT_AND_BACK;
+            break;
+        case Pudu::None:
+            return VK_CULL_MODE_NONE;
+            break;
+        default:
+            return VK_CULL_MODE_BACK_BIT;
+            break;
+        }
+    }
+
 	static VkImageLayout VkImageLayoutFromUsage(ResourceState usage) {
 		if (usage & RESOURCE_STATE_COPY_SOURCE)
 			return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;

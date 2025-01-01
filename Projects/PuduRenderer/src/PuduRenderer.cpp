@@ -55,23 +55,26 @@ namespace Pudu
 		const uint32_t grassCount = 1;
 
 		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
+		computeRP.get()->SetName("Grass Compute");
 		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
 
-		computeRP->SetGroupSize(64, 64, 1);
-
-		auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec3) * grassCount, nullptr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
+		const uint32_t instances = 1000000;
+		auto groupSize = ceil(sqrt(instances / (32 * 32)));
+		computeRP->SetGroupSize(groupSize, groupSize, 1);
+		auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec2) * instances, nullptr, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
 		computeRP->SetShader(compute);
 		computeRP->AddBufferAttachment(grassBuffer, AttachmentUsage::Write);
 
+		uint32_t bladesStripe = 6;
 		std::array<VkDrawIndirectCommand, grassCount> indirectCommands;
 		for (size_t i = 0; i < grassCount; i++)
 		{
 			auto indirectData = &indirectCommands[i];
 			indirectData->firstInstance = 0;
 			indirectData->firstVertex = 0;
-			indirectData->vertexCount = 3;
-			indirectData->instanceCount = grassCount;
+			indirectData->vertexCount = 3 * bladesStripe * 2 + 3;
+			indirectData->instanceCount = instances;
 		}
 
 		auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(), indirectCommands.data(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
@@ -87,9 +90,11 @@ namespace Pudu
 			->SetMaterial(material)
 			->SetOffset(0)
 			->SeStride(sizeof(VkDrawIndirectCommand))
-			->SetDrawCount(grassCount)
+			->SetDrawCount(indirectCommands.size())
 			->SetIndirectBuffer(indirectBuffer)
+			->SetCullMode(CullMode::None)
 			->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
+			->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
 			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load);
 
 

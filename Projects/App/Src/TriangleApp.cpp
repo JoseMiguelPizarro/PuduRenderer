@@ -9,11 +9,11 @@ namespace fs = std::filesystem;
 void TriangleApp::OnRun()
 {
 	m_puduRenderer.Render(&m_scene);
-
+	return;
 	float radius = 20;
 	float pich = 45;
 
-	float speed = 0.15f;
+	float speed = 0.45f;
 	float phase = Time.Time() * speed;
 
 	float x = cos(phase) * radius;
@@ -31,8 +31,8 @@ void TriangleApp::OnRun()
 void TriangleApp::OnInit()
 {
 	m_camera = {};
-	m_camera.Transform.SetForward(vec3(0, -.7, -1), vec3(0, 1, 0));
-	m_camera.Transform.SetLocalPosition({ 0, 14.0f, 23.0f });
+	m_camera.Transform.SetForward(vec3(0, -.8, -1), vec3(0, 1, 0));
+	m_camera.Transform.SetLocalPosition({ 0, 14.0f, 20.0f });
 	Projection projection;
 
 	projection.Width = Graphics.WindowWidth;

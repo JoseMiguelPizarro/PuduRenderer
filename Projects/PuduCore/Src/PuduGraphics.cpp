@@ -115,6 +115,8 @@ namespace Pudu
 		glfwSetFramebufferSizeCallback(WindowPtr, FramebufferResizeCallback);
 	}
 
+	
+
 	bool PuduGraphics::CheckValidationLayerSupport()
 	{
 		uint32_t layerCount;
@@ -212,6 +214,7 @@ namespace Pudu
 
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
+
 
 	VkExtent2D PuduGraphics::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{

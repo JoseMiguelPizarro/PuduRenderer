@@ -6,7 +6,13 @@ ParameterBlock<GrassData> Data;
 [numthreads(32, 32, 1)]
 void main(uint3 threadId: SV_DispatchThreadID)
 {
-    float2 resolution = float2(1024, 1024);
-    float2 uv = threadId.xy / resolution;
-    Data.GrassPos[threadId.x] = { float2(1, 0) };
+    uint dimensions;
+    uint stride;
+
+    Data.GrassPos.GetDimensions(dimensions, stride);
+    var sqrtDimension = sqrt(dimensions);
+    var size = sqrtDimension * 0.5;
+
+    uint id = (uint)sqrtDimension * threadId.y + threadId.x;
+    Data.GrassPos[id] = { (float2(threadId.x, threadId.y) - float2(size, size)) * 0.2 };
 }

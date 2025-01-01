@@ -4,66 +4,12 @@
 #include "DrawCall.h"
 #include "Pipeline.h"
 #include "glm/vec4.hpp"
+#include "GPUEnums.h"
 
 namespace Pudu
 {
 	class PuduGraphics;
 	struct RenderFrameData;
-
-	enum LoadOperation
-	{
-		DontCare,
-		Load,
-		Clear,
-	}; // enum Enum
-
-	enum AttachmentUsage {
-		Read = 1,
-		Write = 2,
-		ReadAndWrite = 3,
-		Sample = 4
-	};
-
-	static VkAttachmentLoadOp ToVk(LoadOperation op) {
-		switch (op)
-		{
-		case Pudu::DontCare:
-			return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-			break;
-		case Pudu::Load:
-			return VK_ATTACHMENT_LOAD_OP_LOAD;
-			break;
-		case Pudu::Clear:
-			return VK_ATTACHMENT_LOAD_OP_CLEAR;
-			break;
-		default:
-			break;
-		}
-
-		return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	}
-
-	static VkAttachmentStoreOp ToVk(AttachmentUsage usage) {
-		switch (usage)
-		{
-		case Pudu::ReadAndWrite:
-			return VK_ATTACHMENT_STORE_OP_STORE;
-			break;
-		case Pudu::Write:
-			return VK_ATTACHMENT_STORE_OP_STORE;
-			break;
-		case Pudu::Read:
-			return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			break;
-		case Pudu::Sample:
-			return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-			break;
-		default:
-			break;
-		}
-
-		return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	}
 
 	struct RenderPassAttachment
 	{
@@ -157,6 +103,7 @@ namespace Pudu
 		bool isEnabled;
 		ComputeShader* computeShader;
 		std::string name;
+		CullMode cullMode = CullMode::Back;
 
 		RenderPassAttachments attachments;
 	};
@@ -173,7 +120,8 @@ namespace Pudu
 		RenderPass* AddDepthStencilAttachment(RenderPassAttachment& attachment);
 		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage);
 		RenderPass* SetName(const char* name);
-
+		RenderPass* SetCullMode(CullMode cullMode);
+		CullMode GetCullMode();
 
 		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
 		virtual void PreRender(RenderFrameData& renderData);
@@ -214,6 +162,7 @@ namespace Pudu
 
 	private:
 		friend class PuduGraphics;
+		CullMode m_cullMode = CullMode::Back;
 		ComputeShader* m_computeShader;
 	};
 
