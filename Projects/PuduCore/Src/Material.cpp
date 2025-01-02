@@ -37,7 +37,6 @@ namespace Pudu {
 		{
 			auto binding = shader->GetBindingByName(request.name.c_str());
 
-
 			switch (request.type)
 			{
 			case ShaderPropertyType::Texture:

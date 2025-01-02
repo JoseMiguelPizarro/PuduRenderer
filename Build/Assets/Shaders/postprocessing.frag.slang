@@ -1,14 +1,21 @@
 #include "Lib/DefaultVertexInput.hlsl"
 
-[[vk::binding(32, 0)]]Sampler2D global_textures[];
+struct PostProcessingData
+{
+    Sampler2D colorTex;
+}
+
+ParameterBlock<PostProcessingData> Data;
 
 [shader("pixel")]
-float4 main(VSOut input):SV_TARGET {
-     Sampler2D tex = global_textures[NonUniformResourceIndex(5)];
+float4 main(VSOut input)
+    : SV_TARGET
+{
+    Sampler2D tex = Data.colorTex;
 
     float r = tex.Sample(input.TexCoord.xy).x;
-    float g = tex.Sample(input.TexCoord.xy + float2(0.01,0.01)).y;
-    float b = tex.Sample(input.TexCoord.xy + float2(0.02,0.015)).z;
+    float g = tex.Sample(input.TexCoord.xy + float2(0.01, 0.01)).y;
+    float b = tex.Sample(input.TexCoord.xy + float2(0.02, 0.015)).z;
 
-    return float4(r,g,b,0);
+    return float4(r, g, b, 0);
 }

@@ -99,8 +99,8 @@ namespace Pudu
 			->SetCullMode(CullMode::None)
 			->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
 			->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
-			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load);
-
+			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load)
+			->SetName("Grass indirect");
 
 		m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
 		m_postProcessingRenderPass->name = "Postprocessing";
@@ -117,7 +117,7 @@ namespace Pudu
 		AddRenderPass(m_forwardRenderPass.get());
 		AddRenderPass(drawGrassRP.get());
 
-		//AddRenderPass(m_postProcessingRenderPass.get());
+		AddRenderPass(m_postProcessingRenderPass.get());
 
 
 		AddRenderPass(m_imguiRenderPass.get());

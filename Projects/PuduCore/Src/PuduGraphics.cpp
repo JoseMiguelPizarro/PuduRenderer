@@ -1143,7 +1143,7 @@ namespace Pudu
 			colorAttachment.format = attachment.resource->format;
 			colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 			colorAttachment.loadOp = colorLoadOp;
-			colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+			colorAttachment.storeOp = attachment.storeOp;
 			colorAttachment.stencilLoadOp = stencilLoadOp;
 			colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			colorAttachment.initialLayout = colorInitialLayout;

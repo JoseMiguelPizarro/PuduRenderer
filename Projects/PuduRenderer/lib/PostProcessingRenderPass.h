@@ -30,6 +30,7 @@ namespace Pudu
 		SPtr<Mesh> m_quadMesh;
 		SPtr<Shader> m_postProcessingShader;
 		SPtr<RenderTexture> m_screenColor;
+		Material m_material;
 
 		std::filesystem::path m_shaderPath = "Shaders/postprocessing.frag.slang";
 		std::filesystem::path m_shaderPathV = "Shaders/postprocessing.vert.slang";

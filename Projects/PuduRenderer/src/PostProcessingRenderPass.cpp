@@ -27,6 +27,7 @@ namespace Pudu
 		m_screenColor->Create(gpu);
 
 		m_postProcessingShader = gpu->CreateShader(fragmentshaderPath, vertexshaderPath, "Postprocessing");
+		m_material.SetProperty("Data.colorTex", m_screenColor);
 	}
 
 	void PostProcessingRenderPass::Render(RenderFrameData& renderData)
@@ -39,6 +40,8 @@ namespace Pudu
 			.shader = m_postProcessingShader.get(),
 			.renderer = renderData.renderer,
 			});
+
+		m_material.GetPropertiesBlock()->ApplyProperties(renderData.graphics, m_postProcessingShader.get(), pipeline);
 
 		command->BindPipeline(pipeline);
 		command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
