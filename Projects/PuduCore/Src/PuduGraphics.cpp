@@ -86,7 +86,6 @@ namespace Pudu
 		CreateBindlessDescriptorPool();
 
 		CreateUniformBuffers();
-		CreateLightingBuffers();
 
 		m_commandPool = GetCommandPool(QueueFamily::Graphics);
 		CreateFramesCommandBuffer();
@@ -269,18 +268,8 @@ namespace Pudu
 		vkUpdateDescriptorSets(m_device, count, write, copyCount, copy);
 	}
 
-	void PuduGraphics::UpdateLightingBuffer(RenderFrameData& frame)
-	{
-		auto buffer = m_lightingBuffers[frame.frameIndex];
-
-		LightBuffer lightBuffer{};
-		lightBuffer.lightDirection = { -frame.scene->directionalLight->Direction(), 0.0f };
-		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
-		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
-
-		memcpy(buffer->GetMappedData(), &lightBuffer, sizeof(LightBuffer));
-
-		frame.lightingBuffer = m_lightingBuffers[frame.frameIndex];
+	void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size) {
+		memcpy(buffer->GetMappedData(), data, size);
 	}
 
 	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -359,8 +348,6 @@ namespace Pudu
 
 			vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
 		}
-
-		UpdateLightingBuffer(frameData);
 
 		////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
 		//vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
@@ -1284,21 +1271,6 @@ namespace Pudu
 			m_uniformBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
 				VMA_ALLOCATION_CREATE_MAPPED_BIT, "UniformBufer");
-		}
-	}
-
-
-	void PuduGraphics::CreateLightingBuffers()
-	{
-		m_lightingBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-		VkDeviceSize const bufferSize = sizeof(LightBuffer);
-		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			m_lightingBuffers[i] = CreateGraphicsBuffer(bufferSize, nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-				VMA_ALLOCATION_CREATE_MAPPED_BIT
-				, "LightingBuffer");
 		}
 	}
 

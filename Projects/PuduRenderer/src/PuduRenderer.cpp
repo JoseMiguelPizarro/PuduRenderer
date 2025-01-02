@@ -9,6 +9,7 @@
 #include <Logger.h>
 #include "Shader.h"
 #include <DrawIndirectRenderPass.h>
+#include "Lighting/LightBuffer.h"
 
 namespace Pudu
 {
@@ -16,6 +17,8 @@ namespace Pudu
 	{
 		this->graphics = graphics;
 		this->app = app;
+
+		InitLightingBuffer(graphics);
 
 		auto depthRT = graphics->GetRenderTexture();
 		depthRT->depth = 1;
@@ -85,6 +88,7 @@ namespace Pudu
 		Material material;
 		material.shader = grassShader;
 		material.SetProperty("Data.GrassPos", grassBuffer);
+		//material.SetProperty("Data.shadowMap", shadowRT);
 
 		drawGrassRP.get()
 			->SetMaterial(material)
@@ -107,7 +111,6 @@ namespace Pudu
 		m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
 
-
 		AddRenderPass(computeRP.get());
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
@@ -122,5 +125,29 @@ namespace Pudu
 		frameGraph.Compile();
 
 		std::printf(frameGraph.ToString().c_str());
+	}
+
+	void PuduRenderer::OnRender(RenderFrameData& data)
+	{
+		UpdateLightingBuffer(data);
+	}
+
+	void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame)
+	{
+		LightBuffer lightBuffer{};
+		lightBuffer.lightDirection = { -frame.scene->directionalLight->Direction(), 0.0f };
+		lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
+		lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
+
+		frame.graphics->UploadBufferData(m_lightingBuffer.get(), &lightBuffer, sizeof(LightBuffer));
+
+		frame.lightingBuffer = m_lightingBuffer;
+	}
+	void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
+	{
+		m_lightingBuffer = graphics->CreateGraphicsBuffer(sizeof(LightBuffer), nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+			VMA_ALLOCATION_CREATE_MAPPED_BIT
+			, "LightingBuffer");
 	}
 }

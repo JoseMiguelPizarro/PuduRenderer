@@ -1,4 +1,5 @@
 #include "lib/Lighting.hlsl"
+#include "lib/Shadowmap.slang"
 #include "lib/grass.slang"
 
 [[vk::push_constant]]

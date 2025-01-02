@@ -6,6 +6,7 @@ struct Grass
 struct GrassData
 {
     RWStructuredBuffer<Grass> GrassPos;
+    Sampler2D shadowMap;
     uint stripes;
 };
 

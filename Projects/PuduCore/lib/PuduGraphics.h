@@ -233,8 +233,7 @@ namespace Pudu
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
-
-
+		void UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size);
 
 	private:
 		friend class GPUResourcesManager;
@@ -279,8 +278,6 @@ namespace Pudu
 		void RecreateSwapChain();
 		void UpdateUniformBuffer(uint32_t currentImage);
 
-		void UpdateLightingBuffer(RenderFrameData& frame);
-
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
@@ -310,7 +307,6 @@ namespace Pudu
 		VkShaderModule CreateShaderModule(const std::vector<char>& code, size_t size, const char* name = nullptr);
 
 		void CreateUniformBuffers();
-		void CreateLightingBuffers();
 
 
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
@@ -362,7 +358,6 @@ namespace Pudu
 		SPtr<CommandPool> m_commandPool;
 
 		std::vector<SPtr<GraphicsBuffer>> m_uniformBuffers;
-		std::vector<SPtr<GraphicsBuffer>> m_lightingBuffers;
 
 		VkDescriptorPool m_bindlessDescriptorPool;
 

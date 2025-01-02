@@ -19,6 +19,11 @@ namespace Pudu
 
 	protected:
 		void OnInit(PuduGraphics* graphics, PuduApp* app) override;
+		virtual void OnRender(RenderFrameData& data) override;
+
+	private:
+		void UpdateLightingBuffer(RenderFrameData& data);
+		void InitLightingBuffer(PuduGraphics* graphics);
 
 	private:
 		SPtr<RenderPass> m_depthRenderPass;
@@ -26,6 +31,8 @@ namespace Pudu
 		SPtr<RenderPass> m_shadowMapRenderPass;
 		SPtr<RenderPass> m_postProcessingRenderPass;
 		SPtr<ImguiRenderPass> m_imguiRenderPass;
+		SPtr<GraphicsBuffer> m_lightingBuffer;
+
 	};
 }
 
