@@ -206,6 +206,7 @@ namespace Pudu
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera* cam, DrawCall& drawCall);
 		SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
+		SPtr<Shader> CreateShader(fs::path shaderPath , const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		SPtr<RenderTexture> GetRenderTexture();
@@ -217,7 +218,7 @@ namespace Pudu
 
 		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
-		void UpdateBindlessResources(Pipeline* pipeline);
+		void UpdateBindlessResources(VkDescriptorSet descriptorSet, uint32_t binding);
 		SPtr<CommandPool> GetCommandPool(QueueFamily type);
 		SPtr<DescriptorPool> GetDescriptorPool(DescriptorPoolCreationData& creationData);
 		VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
@@ -234,6 +235,7 @@ namespace Pudu
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
 		void UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size);
+		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 
 	private:
 		friend class GPUResourcesManager;
@@ -281,7 +283,7 @@ namespace Pudu
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions = nullptr);
 
-
+		
 	
 
 #pragma region DepthBuffer

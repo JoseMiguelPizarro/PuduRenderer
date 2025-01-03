@@ -1,17 +1,19 @@
-struct Grass
+module GrassModule;
+
+public struct Grass
 {
-    float2 pos;
+    public float2 pos;
 }
 
-struct GrassData
+public struct GrassData
 {
-    RWStructuredBuffer<Grass> GrassPos;
-    Sampler2D shadowMap;
-    uint stripes;
+    public RWStructuredBuffer<Grass> GrassPos;
+    public Sampler2D shadowMap;
+    public uint stripes;
 };
 
-struct GrassVertexOutput
+public struct GrassVertexOutput
 {
-    float4 positionCS : SV_Position;
-    float4 color : COLOR;
+    public float4 positionCS : SV_Position;
+    public float4 color : COLOR;
 }

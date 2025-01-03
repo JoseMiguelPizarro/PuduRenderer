@@ -50,8 +50,9 @@ void TriangleApp::OnInit()
 	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag.slang");
 	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert.slang");
 	auto cubeShaderPath = FileManager::GetAssetPath("Shaders/cubemap.frag.slang");
+	auto standardShaderPath = FileManager::GetAssetPath("Shaders/triangle.shader.slang");
 
-	standardShader = Graphics.CreateShader(fragmentShaderPath, vertexShaderPath, "standard");
+	standardShader = Graphics.CreateShader(standardShaderPath, "standard");
 	cubemapShader = Graphics.CreateShader(cubeShaderPath, vertexShaderPath, "Cubemap");
 
 	projection.nearPlane = 5;
@@ -128,12 +129,6 @@ void TriangleApp::OnCleanup()
 		auto model = entity->GetModel();
 		for (auto mesh : model.Meshes) {
 			Graphics.DestroyMesh(mesh);
-		}
-		for (auto material : model.Materials) {
-			if (material.Texture != nullptr)
-			{
-				Graphics.DestroyTexture(material.Texture);
-			}
 		}
 	}
 }

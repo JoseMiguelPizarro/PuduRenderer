@@ -21,12 +21,13 @@ namespace Pudu
 		this->name = name;
 		return *this;
 	}
-	ShaderStateCreationData& ShaderStateCreationData::AddStage(std::vector<char>* code, size_t code_size, VkShaderStageFlagBits type)
+	ShaderStateCreationData& ShaderStateCreationData::AddStage(std::vector<char>* code,const char* entryPointName, size_t code_size, VkShaderStageFlagBits type)
 	{
 		ShaderStage stage;
 		stage.code = code;
 		stage.codeSize = code_size;
 		stage.type = type;
+		stage.entryPointName = entryPointName;
 
 		stages[stageCount++] = stage;
 

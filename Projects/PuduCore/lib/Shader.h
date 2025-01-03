@@ -31,15 +31,20 @@ namespace Pudu
 		}
 
 
-		void LoadFragmentData(std::vector<char> data);
-		void LoadVertexData(std::vector<char> data);
+		void LoadFragmentData(std::vector<char> data, const char* entryPoint = "main");
+		void LoadVertexData(std::vector<char> data, const char* entryPoint = "main");
 
 		std::vector<char> fragmentData;
 		std::vector<char> vertexData;
-		std::string name;
 
 		bool HasFragmentData() { return m_hasFragmentData; }
 		bool HasVertexData() { return m_hasVertexData; }
+
+		const char* GetFragmentEntryPoint() { return m_fragmentEntryPoint.c_str(); }
+		const char* GetVertexEntryPoint() { return m_vertexEntryPoint.c_str(); }
+
+		void SetName(const char* name) override { this->name = name; };
+		const char* GetName() override { return this->name.c_str(); };
 
 		 SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
@@ -48,5 +53,7 @@ namespace Pudu
 		std::filesystem::path m_shaderPath;
 		bool m_hasFragmentData;
 		bool m_hasVertexData;
+		std::string m_fragmentEntryPoint;
+		std::string m_vertexEntryPoint;
 	};
 }

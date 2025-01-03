@@ -16,12 +16,12 @@ namespace Pudu {
 		virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
 		VkShaderModule GetModule() { return m_module; }
 		DescriptorBinding* GetBindingByName(const char* name);
-		const char* Name() { return m_name.c_str(); }
+		virtual void SetName(const char* name) = 0;
+		virtual const char* GetName() = 0;
 
 	protected:
 		friend class PuduGraphics;
 		VkShaderModule m_module;
 		DescriptorSetLayoutsData m_descriptors;
-		std::string m_name;
 	};
 }

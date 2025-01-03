@@ -260,32 +260,14 @@ namespace Pudu
 				});
 			if (pipeline != frameData.currentPipeline)
 			{
-				frameData.graphics->UpdateBindlessResources(pipeline);
-
 				commands->BindPipeline(pipeline);
 				frameData.currentPipeline = pipeline;
 
 				if (pipeline->numActiveLayouts > 0)
 				{
-					//Bind Lighting Buffer
-					VkDescriptorBufferInfo bufferInfo{};
-					bufferInfo.buffer = frameData.lightingBuffer->vkHandle;
-					bufferInfo.range = sizeof(LightBuffer);
+					frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
 
-					VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-					bufferWrite.pNext = nullptr;
-
-					bufferWrite.dstBinding = PuduGraphics::K_LIGHTING_BUFFER_BINDING;
-					bufferWrite.dstSet = pipeline->vkDescriptorSets[1];
-					bufferWrite.descriptorCount = 1;
-					bufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-					bufferWrite.pBufferInfo = &bufferInfo;
-
-					frameData.graphics->UpdateDescriptorSet(1, &bufferWrite);
-
-					//Bind the per material properties here
-
-					for (auto mat : model.Materials)
+					for (auto& mat : model.Materials)
 					{
 						mat.GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
 					}
@@ -331,76 +313,6 @@ namespace Pudu
 		}
 
 		renderData.activeRenderTarget = renderTarget;
-	}
-
-	PipelineCreationData RenderPass::GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall)
-	{
-		PipelineCreationData creationData;
-
-		auto shader = frameData.currentDrawCall->MaterialPtr.shader;
-
-		creationData.vertexShaderData = shader->vertexData;
-		creationData.fragmentShaderData = shader->fragmentData;
-
-		BlendStateCreation blendStateCreation;
-		blendStateCreation.AddBlendState()
-			.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-			.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-			.SetColorWriteMask(ColorWriteEnabled::All_mask);
-
-		RasterizationCreation rasterizationCreation;
-		rasterizationCreation.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizationCreation.fill = FillMode::Solid;
-		rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
-		DepthStencilCreation depthStencilCreation;
-		depthStencilCreation.SetDepth(true, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-		VertexInputCreation vertexInputCreation;
-		auto attribDescriptions = Vertex::GetAttributeDescriptions();
-		auto bindingDescriptions = Vertex::GetBindingDescription();
-
-		for (auto attrib : attribDescriptions)
-		{
-			VertexAttribute a;
-			a.binding = attrib.binding;
-			a.format = attrib.format;
-			a.location = attrib.location;
-			a.offset = attrib.offset;
-
-			vertexInputCreation.AddVertexAttribute(a);
-		}
-
-		VertexStream vertexStream;
-		vertexStream.binding = bindingDescriptions.binding;
-		vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
-		vertexStream.stride = bindingDescriptions.stride;
-
-		vertexInputCreation.AddVertexStream(vertexStream);
-
-		ShaderStateCreationData shaderData;
-		shaderData.SetName(shader->name.c_str());
-		if (shader->HasFragmentData())
-		{
-			shaderData.AddStage(&shader->fragmentData, shader->fragmentData.size() * sizeof(char),
-				VK_SHADER_STAGE_FRAGMENT_BIT);
-		}
-		if (shader->HasVertexData())
-		{
-			shaderData.AddStage(&shader->vertexData, shader->vertexData.size() * sizeof(char),
-				VK_SHADER_STAGE_VERTEX_BIT);
-		}
-
-		creationData.descriptorCreationData = shader->GetDescriptorSetLayouts();
-		creationData.blendState = blendStateCreation;
-		creationData.rasterization = rasterizationCreation;
-		creationData.depthStencil = depthStencilCreation;
-		creationData.vertexInput = vertexInputCreation;
-		creationData.shadersStateCreationData = shaderData;
-
-		creationData.renderPassHandle = frameData.currentRenderPass->Handle();
-
-		return creationData;
 	}
 
 	void RenderPass::SetComputeShader(ComputeShader* shader)

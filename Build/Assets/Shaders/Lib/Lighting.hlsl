@@ -1,19 +1,19 @@
 ﻿#if !defined(PUDU_LIGHTING)
 #define PUDU_LIGHTING
-struct LightBuffer
+public struct LightBuffer
 {
-    float4 lightDirection;
-    float4x4 lightMatrix;
-    float4x4 shadowMatrix;
+    public float4 lightDirection;
+    public float4x4 lightMatrix;
+    public float4x4 shadowMatrix;
 };
 
-struct UniformBufferObject
+public struct UniformBufferObject
 {
-    float4x4 model;
-    float4x4 view;
-    float4x4 proj;
-    uint materialId;
-    float time;
+    public float4x4 model;
+    public float4x4 view;
+    public float4x4 proj;
+    public uint materialId;
+    public float time;
 };
 
 #endif 

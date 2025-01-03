@@ -7,16 +7,16 @@
 using namespace boolinq;
 
 namespace Pudu {
-	void SPIRVParser::GetDescriptorSetLayout(const char* spirvData, uint32_t size, DescriptorSetLayoutsData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(const char* entryPoint, const char* spirvData, uint32_t size, DescriptorSetLayoutsData& outDescriptorSetLayoutData)
 	{
 		SpvReflectShaderModule module{};
 		SpvReflectResult result = spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_NONE, size, spirvData, &module);
-
+		
 		uint32_t count = 0;
-		result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
+		result = spvReflectEnumerateEntryPointDescriptorSets(&module, entryPoint, &count, nullptr);
 
 		std::vector<SpvReflectDescriptorSet*> sets(count);
-		result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
+		result = spvReflectEnumerateEntryPointDescriptorSets(&module, entryPoint, &count, sets.data());
 
 		for (size_t setIndex = 0; setIndex < sets.size(); ++setIndex)
 		{
@@ -69,7 +69,7 @@ namespace Pudu {
 					for (uint32_t i_dim = 0; i_dim < refl_binding.array.dims_count; ++i_dim) {
 						layoutBinding.descriptorCount *= refl_binding.array.dims[i_dim];
 					}
-					layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(module.shader_stage);
+					layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(module.shader_stage); //Hack, lets put descriptors in both stages
 					layoutBinding.pImmutableSamplers = nullptr;
 
 					storedLayout->Bindings.push_back(layoutBinding);
@@ -107,12 +107,12 @@ namespace Pudu {
 	{
 		if (creationData->vertexData.size() > 0)
 		{
-			GetDescriptorSetLayout(creationData->vertexData.data(), creationData->vertexData.size() * sizeof(char), outDescriptorSetLayoutData);
+			GetDescriptorSetLayout(creationData->GetVertexEntryPoint(), creationData->vertexData.data(), creationData->vertexData.size() * sizeof(char), outDescriptorSetLayoutData);
 		}
 
 		if (creationData->fragmentData.size() > 0)
 		{
-			GetDescriptorSetLayout(creationData->fragmentData.data(), creationData->fragmentData.size() * sizeof(char), outDescriptorSetLayoutData);
+			GetDescriptorSetLayout(creationData->GetFragmentEntryPoint(), creationData->fragmentData.data(), creationData->fragmentData.size() * sizeof(char), outDescriptorSetLayoutData);
 		}
 
 		std::sort(outDescriptorSetLayoutData.layoutData.begin(), outDescriptorSetLayoutData.layoutData.end(), SortBySetNumber);

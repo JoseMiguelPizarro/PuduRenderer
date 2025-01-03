@@ -83,12 +83,12 @@ namespace Pudu
 		auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(), indirectCommands.data(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
 		auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
-		SPtr<Shader> grassShader = graphics->CreateShader("Shaders/grass.frag.slang", "Shaders/grass.vert.slang", "Grass");
+		SPtr<Shader> grassShader = graphics->CreateShader("Shaders/grass.shader.slang", "Grass");
 
 		Material material;
 		material.shader = grassShader;
 		material.SetProperty("Data.GrassPos", grassBuffer);
-		//material.SetProperty("Data.shadowMap", shadowRT);
+		material.SetProperty("Data.shadowMap", shadowRT);
 
 		drawGrassRP.get()
 			->SetMaterial(material)
@@ -119,17 +119,21 @@ namespace Pudu
 
 		AddRenderPass(m_postProcessingRenderPass.get());
 
-
 		AddRenderPass(m_imguiRenderPass.get());
 		frameGraph.AllocateRequiredResources();
 		frameGraph.Compile();
 
 		std::printf(frameGraph.ToString().c_str());
+
+		m_globalPropertiesMaterial.SetProperty("GLOBALS.shadowMap", shadowRT);
+		m_globalPropertiesMaterial.SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
 	}
 
 	void PuduRenderer::OnRender(RenderFrameData& data)
 	{
+		data.globalPropertiesMaterial = &m_globalPropertiesMaterial;
 		UpdateLightingBuffer(data);
+
 	}
 
 	void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame)
@@ -143,6 +147,7 @@ namespace Pudu
 
 		frame.lightingBuffer = m_lightingBuffer;
 	}
+
 	void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
 	{
 		m_lightingBuffer = graphics->CreateGraphicsBuffer(sizeof(LightBuffer), nullptr, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,

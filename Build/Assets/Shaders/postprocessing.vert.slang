@@ -8,7 +8,7 @@ static float4 pos[] = {
 };
 
 [shader("vertex")]
-VSOut main(VertexInput in, uint vertexId: SV_VertexID)
+VSOut vertexMain(VertexInput in, uint vertexId: SV_VertexID)
 {
     VSOut output = (VSOut)0.0;
     output.PositionCS = float4(pos[vertexId].xyz, 1);

@@ -1,5 +1,7 @@
-#include "lib/Lighting.hlsl"
-#include "lib/grass.slang"
+
+import PuduGraphics;
+import "Lib/grass";
+
 #include "lib/lygia/generative/cnoise.hlsl"
 #include "lib/lygia/generative/random.hlsl"
 
@@ -14,7 +16,7 @@ ParameterBlock<GrassData> Data;
 ConstantBuffer<UniformBufferObject> ubo;
 
 [shader("vertex")]
-GrassVertexOutput main(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
+GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
 {
     GrassVertexOutput output = {};
     var grass = Data.GrassPos[id];

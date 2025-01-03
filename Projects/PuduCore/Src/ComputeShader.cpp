@@ -20,7 +20,7 @@ namespace Pudu
 
 		ComputePipelineCreationData creationData{};
 		creationData.computeShaderHandle = Handle();
-		creationData.name = Name();
+		creationData.name = GetName();
 		creationData.kernel = "main";
 		creationData.descriptorsCreationData = m_descriptors;
 

@@ -131,7 +131,6 @@ namespace Pudu
 		virtual void OnResize(PuduGraphics& gpu, uint32_t newWidth, uint32_t newHeight) {}
 		virtual void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
 		virtual void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
-		virtual PipelineCreationData GetPipelineCreationData(RenderFrameData& frameData, DrawCall& drawcall);
 		virtual void Initialize(PuduGraphics* gpu) {};
 		void SetComputeShader(ComputeShader* shader);
 		ComputeShader* GetComputeShader();

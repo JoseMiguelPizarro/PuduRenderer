@@ -4,7 +4,7 @@
 $exit = $false
 
 
-$files = Get-ChildItem -Filter "*" .\* | Where-Object { $_.Name -match '^*.vert.slang|^*.frag.slang|^*.compute.slang' }
+$files = Get-ChildItem -Filter "*" .\* | Where-Object { $_.Name -match '^*.vert.slang|^*.frag.slang|^*.compute.slang|^*.shader.slang' }
 
 while (!$exit) {
     # Loop over each file
@@ -16,7 +16,7 @@ while (!$exit) {
         $outputFile = ".\Compiled\$($file.Name).spv"
 
         # Run the command with the current file
-        & "./slang/bin/slangc.exe" "$($file.FullName)" -profile sm_6_3 -target spirv -matrix-layout-column-major -o $outputFile
+        & "./slang/bin/slangc.exe" "$($file.FullName)" -target spirv -matrix-layout-column-major -fvk-use-entrypoint-name -o $outputFile
     }
 
     Write-Host -NoNewLine 'Press Enter to rerun, press any key to exit'

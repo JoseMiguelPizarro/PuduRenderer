@@ -21,6 +21,8 @@ namespace Pudu
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		GPUResourceHandle<Pipeline> GetPipelineHandle() { return m_pipelineHandle; };
 
+		void SetName(const char* name) override { this->name = name; };
+		const char* GetName() override { return this->name.c_str(); };
 
 	private:
 		friend class PuduGraphics;

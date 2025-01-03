@@ -7,8 +7,8 @@ struct PostProcessingData
 
 ParameterBlock<PostProcessingData> Data;
 
-[shader("pixel")]
-float4 main(VSOut input)
+[shader("fragment")]
+float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
     Sampler2D tex = Data.colorTex;

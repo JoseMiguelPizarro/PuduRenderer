@@ -13,7 +13,8 @@ namespace Pudu {
 	public:
 		enum Enum{
 			Texture,
-			Buffer
+			Buffer,
+			TextureArray
 		};
 	};
 
@@ -21,6 +22,7 @@ namespace Pudu {
 		std::string name;
 		SPtr<Texture> texture;
 		SPtr<GraphicsBuffer> buffer;
+		std::vector<SPtr<Texture>>* textureArray;
 		DescriptorBinding* binding;
 		ShaderPropertyType::Enum type;
 	};
@@ -30,10 +32,15 @@ namespace Pudu {
 	public:
 		void SetProperty(std::string name, SPtr<Texture> texture);
 		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
+		void SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray);
 		void ApplyProperties(PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline);
 
 	private:
 		std::vector<PropertyUpdateRequest> m_descriptorUpdateRequests;
+
+		void ApplyTexture(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline);
+		void ApplyBuffer(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline);
+		void ApplyTextureArray(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline);
 	};
 
 
@@ -42,20 +49,17 @@ namespace Pudu {
 	{
 	public:
 		SPtr<Shader> shader;
-		SPtr<Texture2d> Texture;
-		SPtr<Texture2d> NormalMap;
 		std::string Name;
 
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		void SetProperty(std::string name, SPtr<Pudu::Texture> texture);
 		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
+		void SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray);
 
 	private:
 		friend class PuduGraphics;
 		friend class RenderPass;
 		ShaderPropertiesBlock m_propertiesBlock;
-
-
 	};
 }
 

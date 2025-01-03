@@ -114,7 +114,7 @@ namespace Pudu
 		glfwSetFramebufferSizeCallback(WindowPtr, FramebufferResizeCallback);
 	}
 
-	
+
 
 	bool PuduGraphics::CheckValidationLayerSupport()
 	{
@@ -270,6 +270,11 @@ namespace Pudu
 
 	void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size) {
 		memcpy(buffer->GetMappedData(), data, size);
+	}
+
+	std::vector<ResourceUpdate>* PuduGraphics::GetBindlessResourcesToUpdate()
+	{
+		return &m_bindlessResourcesToUpdate;
 	}
 
 	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -1235,7 +1240,7 @@ namespace Pudu
 			shaderStageInfo = {};
 			shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStageInfo.stage = stage.type;
-			shaderStageInfo.pName = SHADER_ENTRY_POINT;
+			shaderStageInfo.pName = stage.entryPointName;
 			shaderStageInfo.module = CreateShaderModule(*stage.code, stage.codeSize, shaderState->name.c_str());
 		}
 
@@ -1358,7 +1363,6 @@ namespace Pudu
 		createInfo.flags = creationData.CreateInfo.flags | VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 		createInfo.pBindings = creationData.Bindings.data();
 		createInfo.pNext = &extendedInfo;
-
 
 		VkDescriptorSetLayout layout{};
 
@@ -1828,10 +1832,10 @@ namespace Pudu
 
 		pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
 
-		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle),
-			"Failed to create compute pipeline");
+		//VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle),
+		//	"Failed to create compute pipeline");
 
-		SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkHandle, pipeline->name.c_str());
+		//SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkHandle, pipeline->name.c_str());
 
 		return pipeline->Handle();
 	}
@@ -2215,14 +2219,15 @@ namespace Pudu
 
 		if (drawCall.GetRenderMaterial()->shader->HasFragmentData())
 		{
-			if (drawCall.MaterialPtr.Texture != nullptr) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
-			{
-				ubo.materialId = drawCall.MaterialPtr.Texture->Handle().Index();
-			}
+			//if (drawCall.MaterialPtr.baseColorHandle.IsValid()) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
+			//{
+			//	ubo.materialId = drawCall.MaterialPtr.baseColorHandle.Index();
+			//}
 		}
 
 		return ubo;
 	}
+
 
 	SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name)
 	{
@@ -2231,9 +2236,23 @@ namespace Pudu
 		auto fragmentData = fragmentPath.empty() ? std::vector<char>() : FileManager::LoadShader(fragmentPath);
 		auto vertexData = vertexPath.empty() ? std::vector<char>() : FileManager::LoadShader(vertexPath);
 
-		shader->LoadFragmentData(fragmentData);
-		shader->LoadVertexData(vertexData);
-		shader->name = name;
+		shader->LoadFragmentData(fragmentData, "fragmentMain");
+		shader->LoadVertexData(vertexData, "vertexMain");
+		shader->SetName(name);
+
+		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->m_descriptors);
+
+		return shader;
+	}
+
+	SPtr<Shader> PuduGraphics::CreateShader(fs::path shaderPath, const char* name)
+	{
+		auto shader = m_resources.AllocateShader();
+
+		auto data = FileManager::LoadShader(shaderPath);
+		shader->LoadFragmentData(data, "fragmentMain");
+		shader->LoadVertexData(data,"vertexMain");
+		shader->SetName(name);
 
 		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->m_descriptors);
 
@@ -2248,7 +2267,7 @@ namespace Pudu
 		auto data = FileManager::LoadShader(shaderPath);
 		shader->m_module = CreateShaderModule(data, data.size() * sizeof(char), name);
 
-		SPIRVParser::GetDescriptorSetLayout(data.data(), data.size() * sizeof(char),
+		SPIRVParser::GetDescriptorSetLayout("main", data.data(), data.size() * sizeof(char),
 			shader->m_descriptors);
 
 		shader->CreatePipeline(this, nullptr);
@@ -2256,53 +2275,44 @@ namespace Pudu
 		return shader;
 	}
 
-	void PuduGraphics::UpdateBindlessResources(Pipeline* pipeline)
+	void PuduGraphics::UpdateBindlessResources(VkDescriptorSet set, uint32_t binding)
 	{
-		/*if (pipeline->bindlessUpdated)
-		{
-			return;
-		}*/
-
 		VkWriteDescriptorSet bindlessDescriptorWrites[k_MAX_BINDLESS_RESOURCES];
 		VkDescriptorImageInfo bindlessImageInfos[k_MAX_BINDLESS_RESOURCES];
 		uint32_t currentWriteIndex = 0;
 
-		if (pipeline->numDescriptorSets != VK_FALSE)
+
+		for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
 		{
-			for (int i = 0; i < m_bindlessResourcesToUpdate.size(); i++)
-			{
-				ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
+			ResourceUpdate& textureToUpdate = m_bindlessResourcesToUpdate[i];
 
-				auto texture = m_resources.GetTexture<Texture2d>({ textureToUpdate.handle });
-				VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
-				descriptorWrite = {};
-				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				descriptorWrite.descriptorCount = 1;
-				descriptorWrite.dstArrayElement = textureToUpdate.handle;
-				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				descriptorWrite.dstSet = pipeline->vkDescriptorSets[0];
+			auto texture = m_resources.GetTexture<Texture2d>({ textureToUpdate.handle });
+			VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
+			descriptorWrite = {};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.dstArrayElement = textureToUpdate.handle;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrite.dstSet = set;
 
-				descriptorWrite.dstBinding = k_BINDLESS_TEXTURE_BINDING;
+			descriptorWrite.dstBinding = binding;
 
-				auto textureSampler = texture->Sampler;
+			auto textureSampler = texture->Sampler;
 
-				VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
-				descriptorImageInfo.sampler = textureSampler.vkHandle;
-				descriptorImageInfo.imageView = texture->vkImageViewHandle;
-				descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
+			descriptorImageInfo.sampler = textureSampler.vkHandle;
+			descriptorImageInfo.imageView = texture->vkImageViewHandle;
+			descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-				descriptorWrite.pImageInfo = &descriptorImageInfo;
+			descriptorWrite.pImageInfo = &descriptorImageInfo;
 
-				currentWriteIndex++;
-			}
+			currentWriteIndex++;
 		}
 
 		if (currentWriteIndex)
 		{
 			vkUpdateDescriptorSets(m_device, currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
 		}
-
-		pipeline->bindlessUpdated = true;
 	}
 
 	SPtr<CommandPool> PuduGraphics::GetCommandPool(QueueFamily type)
@@ -2514,7 +2524,7 @@ namespace Pudu
 			settings.name = "Albedo";
 			settings.samplerData.wrap = true;
 
-			material.Texture = LoadTexture2D(path, settings);
+			material.SetProperty("material.baseColorTex", LoadTexture2D(path, settings));
 		}
 
 		if (data.Material.hasNormalMap)
@@ -2526,7 +2536,7 @@ namespace Pudu
 			normalCreation.name = "Normal";
 			normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-			material.NormalMap = LoadTexture2D(path, normalCreation);
+			material.SetProperty("material.normalTex", LoadTexture2D(path, normalCreation));
 		}
 
 		auto m = CreateModel(mesh, material);

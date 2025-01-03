@@ -1,5 +1,13 @@
-#ifndef SHADOW_MAP
-#define SHADOW_MAP
+module ShadowMapModule;
+import "../PuduGraphics";
+
+// Column major
+static const float4x4 biasMat = float4x4(
+    { 0.5, 0, 0, 0.5 },
+    { 0, 0.5, 0, 0.5 },
+    { 0, 0, 1.0, 0 },
+    { 0, 0, 0, 1.0 });
+
 float TextureProj(float4 shadowCoord, float2 off, Sampler2D shadowMap)
 {
     float shadow = 1.0;
@@ -37,4 +45,3 @@ float FilterPCF(float4 sc, Sampler2D shadowMap)
     }
     return shadowFactor / count;
 }
-#endif 

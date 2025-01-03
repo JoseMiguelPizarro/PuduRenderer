@@ -583,6 +583,7 @@ namespace Pudu
 		std::vector<char>* code;
 		uint32_t codeSize = 0;
 		VkShaderStageFlagBits type = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+		const char* entryPointName;
 		DescriptorSetLayoutData descriptorSetLayoutData;
 	};
 
@@ -593,7 +594,7 @@ namespace Pudu
 		uint32_t stageCount = 0;
 
 		ShaderStateCreationData& SetName(const char* name);
-		ShaderStateCreationData& AddStage(std::vector<char>* code, size_t code_size, VkShaderStageFlagBits type);
+		ShaderStateCreationData& AddStage(std::vector<char>* code, const char* entryPointName, size_t code_size, VkShaderStageFlagBits type);
 		ShaderStage& GetStage(VkShaderStageFlagBits stageFlag);
 	};
 
