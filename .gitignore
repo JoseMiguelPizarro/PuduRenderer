@@ -22,3 +22,6 @@ Imgui.ini
 **.sln
 **.vcs.xml
 *.sln
+/CMakeFiles/3.25.1
+/CMakeFiles
+*.sln
