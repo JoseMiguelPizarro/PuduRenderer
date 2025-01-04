@@ -2426,6 +2426,8 @@ namespace Pudu
 		ktxTexture* ktxTexture;
 		if (isKTX)
 		{
+			ktxTexture_CreateFromNamedFile(FileManager::GetAssetPath(path).string().c_str(),
+				KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
 			auto result = ktxTexture_CreateFromNamedFile(FileManager::GetAssetPath(path).string().c_str(),
 				KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
 
@@ -2438,8 +2440,7 @@ namespace Pudu
 			depth = ktxTexture->baseDepth;
 			layers = ktxTexture->numLayers;
 			levels = ktxTexture->numLevels;
-
-			dataSize = ktxTexture_GetSize(ktxTexture);
+			dataSize = ktxTexture->dataSize;
 
 			if (ktxTexture->isCubemap)
 			{
