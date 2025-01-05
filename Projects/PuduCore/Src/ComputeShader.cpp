@@ -21,10 +21,10 @@ namespace Pudu
 		ComputePipelineCreationData creationData{};
 		creationData.computeShaderHandle = Handle();
 		creationData.name = GetName();
-		creationData.kernel = "main";
+		creationData.kernel = m_kernel.c_str();
 		creationData.descriptorsCreationData = m_descriptors;
 
-		m_pipelineHandle =  graphics->CreateComputePipeline(creationData);
+		m_pipelineHandle = graphics->CreateComputePipeline(creationData);
 
 		return graphics->Resources()->GetPipeline(m_pipelineHandle);
 	}

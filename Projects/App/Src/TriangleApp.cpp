@@ -47,13 +47,7 @@ void TriangleApp::OnInit()
 
 	m_puduRenderer.Init(&Graphics, this);
 
-	auto fragmentShaderPath = FileManager::GetAssetPath("Shaders/triangle.frag.slang");
-	auto vertexShaderPath = FileManager::GetAssetPath("Shaders/triangle.vert.slang");
-	auto cubeShaderPath = FileManager::GetAssetPath("Shaders/cubemap.frag.slang");
-	auto standardShaderPath = FileManager::GetAssetPath("Shaders/triangle.shader.slang");
-
-	standardShader = Graphics.CreateShader(standardShaderPath, "standard");
-	cubemapShader = Graphics.CreateShader(cubeShaderPath, vertexShaderPath, "Cubemap");
+	standardShader = Graphics.CreateShader("triangle.shader.slang", "standard");
 
 	projection.nearPlane = 5;
 	projection.farPlane = 50;
@@ -79,7 +73,7 @@ void TriangleApp::OnInit()
 
 	auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
 
-	for (auto e : cube) {
+	/*for (auto e : cube) {
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
 		re->GetTransform().SetLocalPosition({ 0,5,0 });
 		re->GetTransform().SetLocalScale({ 3,3,3 });
@@ -90,7 +84,7 @@ void TriangleApp::OnInit()
 			mat->shader = cubemapShader;
 			mat->SetProperty("testText", m_cubemapTexture);
 		}
-	}
+	}*/
 
 //	m_scene.AddEntities(cube);
 }

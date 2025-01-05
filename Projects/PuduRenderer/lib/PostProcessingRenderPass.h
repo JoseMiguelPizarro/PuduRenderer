@@ -32,7 +32,6 @@ namespace Pudu
 		SPtr<RenderTexture> m_screenColor;
 		Material m_material;
 
-		std::filesystem::path m_shaderPath = "Shaders/postprocessing.frag.slang";
-		std::filesystem::path m_shaderPathV = "Shaders/postprocessing.vert.slang";
+		std::filesystem::path m_shaderPath = "postprocessing.shader.slang";
 	};
 }

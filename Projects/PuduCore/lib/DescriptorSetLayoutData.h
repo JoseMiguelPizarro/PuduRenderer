@@ -18,8 +18,8 @@ namespace Pudu {
 
 	struct DescriptorSetLayout :GPUResource<DescriptorSetLayout>
 	{
+		std::string name;
 		VkDescriptorSetLayout vkHandle;
-
 		VkDescriptorSetLayoutBinding* vkBinding = nullptr;
 		DescriptorBinding* bindings = nullptr;
 		uint8_t* indexToBinding = nullptr; // Mapping between binding point and binding data.
@@ -29,6 +29,7 @@ namespace Pudu {
 	}; // struct DesciptorSetLayoutVulkan
 
 	struct DescriptorSetLayoutData {
+		std::string name;
 		uint32_t SetNumber;
 		VkDescriptorSetLayoutCreateInfo CreateInfo;
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;

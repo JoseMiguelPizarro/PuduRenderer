@@ -11,7 +11,7 @@ namespace Pudu {
 	class SPIRVParser
 	{
 	public:
-		static void GetDescriptorSetLayout(const char* entryPoint, const char* spirvData, uint32_t size, DescriptorSetLayoutsData& outDescriptorSetLayoutData);
+		static void GetDescriptorSetLayout(const char* entryPoint, const void* spirvData, uint32_t size, DescriptorSetLayoutsData& outDescriptorSetLayoutData);
 		static void GetDescriptorSetLayout(Shader* creationData, DescriptorSetLayoutsData& outDescriptorSetLayoutData);
 	};
 }

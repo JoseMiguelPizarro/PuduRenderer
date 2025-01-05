@@ -1,4 +1,3 @@
-module ShadowMapModule;
 import "../PuduGraphics";
 
 // Column major

@@ -6,7 +6,6 @@ namespace Pudu {
 	void Material::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
 	{
 			m_propertiesBlock.SetProperty(name, texture);
-			
 	}
 
 	void Material::SetProperty(std::string name, SPtr<GraphicsBuffer> buffer) {
@@ -77,6 +76,11 @@ namespace Pudu {
 	{
 		auto binding = shader->GetBindingByName(request.name.c_str());
 
+		if (binding == nullptr)
+		{
+			LOG("Trying to set non-existing parameter {} for shader {}", request.name, shader->GetName());
+			return;
+		}
 
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageView = request.texture->vkImageViewHandle;
@@ -95,6 +99,12 @@ namespace Pudu {
 	{
 		auto binding = shader->GetBindingByName(request.name.c_str());
 
+		if (binding == nullptr)
+		{
+			LOG("Trying to set non-existing parameter {} for shader {}", request.name, shader->GetName());
+			return;
+		}
+
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = request.buffer->vkHandle;
 		bufferInfo.offset = request.buffer->GetOffset();
@@ -112,6 +122,12 @@ namespace Pudu {
 	{
 		auto binding = shader->GetBindingByName(request.name.c_str());
 
+		if (binding == nullptr)
+		{
+			LOG("Trying to set non-existing parameter {} for shader {}", request.name, shader->GetName());
+			return;
+		}
+		
 		static VkWriteDescriptorSet bindlessDescriptorWrites[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
 		static VkDescriptorImageInfo bindlessImageInfos[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
 

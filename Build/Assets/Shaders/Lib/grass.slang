@@ -9,7 +9,6 @@ public struct GrassData
 {
     public RWStructuredBuffer<Grass> GrassPos;
     public Sampler2D shadowMap;
-    public uint stripes;
 };
 
 public struct GrassVertexOutput

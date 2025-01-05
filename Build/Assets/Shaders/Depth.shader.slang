@@ -24,3 +24,10 @@ VSOut vertexMain(VertexInput input)
     output.PosOS = float4(input.Position, 0.);
     return output;
 }
+
+[shader("fragment")]
+float4 fragmentMain(VSOut input)
+    : SV_Target
+{
+    return 0;
+}

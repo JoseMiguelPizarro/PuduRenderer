@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 # Define the workspace/project
 project(PuduRenderer LANGUAGES CXX)
+include(FetchContent)
 
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 23)
@@ -61,6 +62,17 @@ set(LIBS
     fmtd
 )
 
+set(SLANG_VERSION 2024.17)
+FetchContent_Declare(
+  slang
+  URL https://github.com/shader-slang/slang/releases/download/v2024.17/slang-${SLANG_VERSION}-windows-x86_64.tar.gz
+  DOWNLOAD_EXTRACT_TIMESTAMP true
+)
+FetchContent_MakeAvailable(slang)
+
+set(SLANG_LIB_DIR ${slang_SOURCE_DIR}/lib)
+set(SLANG_INCLUDE_DIR ${slang_SOURCE_DIR}/include)
+
 # Helper macros
 macro(add_target target_name target_type)
     if(${target_type} STREQUAL STATIC)
@@ -86,7 +98,8 @@ add_target(PuduCore STATIC)
 set_target_properties(PuduCore PROPERTIES
     COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"
 )
-
+target_link_directories(PuduCore PUBLIC ${SLANG_LIB_DIR})
+target_include_directories(PuduCore PUBLIC ${SLANG_INCLUDE_DIR})
 
 file(GLOB_RECURSE PuduCore_SOURCES Projects/PuduCore/**)
 target_sources(PuduCore PRIVATE ${PuduCore_SOURCES})
@@ -108,4 +121,4 @@ set_target_properties(App PROPERTIES
 )
 file(GLOB_RECURSE App_SOURCES Projects/App/**)
 target_sources(App PRIVATE ${App_SOURCES})
-target_link_libraries(App PRIVATE PuduRenderer PuduCore ${LIBS})
+target_link_libraries(App PRIVATE PuduRenderer PuduCore ${LIBS} ${SLANG_LIB_DIR}/**)

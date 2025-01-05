@@ -64,6 +64,8 @@ namespace Pudu
 
 		m_resources.Init(this);
 
+		m_shaderCompiler.Init();
+
 		InitWindow();
 		InitVulkan();
 
@@ -1241,7 +1243,7 @@ namespace Pudu
 			shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStageInfo.stage = stage.type;
 			shaderStageInfo.pName = stage.entryPointName;
-			shaderStageInfo.module = CreateShaderModule(*stage.code, stage.codeSize, shaderState->name.c_str());
+			shaderStageInfo.module = CreateShaderModule(stage.code, stage.codeSize, shaderState->name.c_str());
 		}
 
 		return shaderState->Handle();
@@ -1832,10 +1834,10 @@ namespace Pudu
 
 		pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
 
-		//VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle),
-		//	"Failed to create compute pipeline");
+		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle),
+			"Failed to create compute pipeline");
 
-		//SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkHandle, pipeline->name.c_str());
+		SetResourceName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->vkHandle, pipeline->name.c_str());
 
 		return pipeline->Handle();
 	}
@@ -2229,32 +2231,39 @@ namespace Pudu
 	}
 
 
-	SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name)
+	/*SPtr<Shader> PuduGraphics::CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name)
 	{
 		auto shader = m_resources.AllocateShader();
 
-		auto fragmentData = fragmentPath.empty() ? std::vector<char>() : FileManager::LoadShader(fragmentPath);
-		auto vertexData = vertexPath.empty() ? std::vector<char>() : FileManager::LoadShader(vertexPath);
+		auto m_fragmentData = fragmentPath.empty() ? std::vector<char>() : FileManager::LoadShader(fragmentPath);
+		auto m_vertexData = vertexPath.empty() ? std::vector<char>() : FileManager::LoadShader(vertexPath);
 
-		shader->LoadFragmentData(fragmentData, "fragmentMain");
-		shader->LoadVertexData(vertexData, "vertexMain");
+		shader->LoadFragmentData(m_fragmentData, "fragmentMain");
+		shader->LoadVertexData(m_vertexData, "vertexMain");
 		shader->SetName(name);
 
 		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->m_descriptors);
 
 		return shader;
-	}
+	}*/
 
 	SPtr<Shader> PuduGraphics::CreateShader(fs::path shaderPath, const char* name)
 	{
 		auto shader = m_resources.AllocateShader();
 
-		auto data = FileManager::LoadShader(shaderPath);
-		shader->LoadFragmentData(data, "fragmentMain");
-		shader->LoadVertexData(data,"vertexMain");
+		const char* fragmentEntryPoint = "fragmentMain";
+		const char* vertexEntryPoint = "vertexMain";
+
+		std::vector<const char*> entryPoints = { fragmentEntryPoint, vertexEntryPoint };
+		auto compileData = m_shaderCompiler.Compile(shaderPath.string().c_str(), entryPoints);
+
+		auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
+		auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
+		shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
+		shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
 		shader->SetName(name);
 
-		SPIRVParser::GetDescriptorSetLayout(shader.get(), shader->m_descriptors);
+		shader->m_descriptors = compileData.descriptorsData;
 
 		return shader;
 	}
@@ -2264,12 +2273,13 @@ namespace Pudu
 		LOG("Creating Compute Shader {}:", name);
 		auto shader = m_resources.AllocateComputeShader();
 
-		auto data = FileManager::LoadShader(shaderPath);
-		shader->m_module = CreateShaderModule(data, data.size() * sizeof(char), name);
+		auto compiledShader =  m_shaderCompiler.Compile(shaderPath.string().c_str(), { "computeMain" });
 
-		SPIRVParser::GetDescriptorSetLayout("main", data.data(), data.size() * sizeof(char),
-			shader->m_descriptors);
-
+		const char* kernelName = "computeMain";
+		auto kernel = compiledShader.GetKernel(kernelName);
+		shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, name);
+		shader->m_descriptors = compiledShader.descriptorsData;
+		shader->SetKernel(kernelName);
 		shader->CreatePipeline(this, nullptr);
 
 		return shader;
@@ -2687,12 +2697,12 @@ namespace Pudu
 		vkFreeCommandBuffers(m_device, m_commandPool->vkHandle, 1, &commandBuffer.vkHandle);
 	}
 
-	VkShaderModule PuduGraphics::CreateShaderModule(const std::vector<char>& code, size_t size, const char* name)
+	VkShaderModule PuduGraphics::CreateShaderModule(const uint32_t* code, size_t size, const char* name)
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 		createInfo.codeSize = size;
-		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+		createInfo.pCode = reinterpret_cast<const uint32_t*>(code);
 
 		VkShaderModule shaderModule;
 		if (vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)

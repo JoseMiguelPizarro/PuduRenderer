@@ -4,7 +4,7 @@ ParameterBlock<GrassData> Data;
 
 [shader("compute")]
 [numthreads(32, 32, 1)]
-void main(uint3 threadId: SV_DispatchThreadID)
+void computeMain(uint3 threadId: SV_DispatchThreadID)
 {
     uint dimensions;
     uint stride;

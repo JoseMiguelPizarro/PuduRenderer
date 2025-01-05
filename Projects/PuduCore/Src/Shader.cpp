@@ -14,27 +14,39 @@ namespace Pudu
 		return std::filesystem::path();
 	}
 
-	void Shader::LoadFragmentData(std::vector<char> data, const char* entryPoint)
+	void Shader::LoadFragmentData(const uint32_t* data, size_t dataSize, const char* entryPoint)
 	{
-		m_hasFragmentData = data.size() > 0;
+		m_hasFragmentData = dataSize > 0;
 
 		m_fragmentEntryPoint = entryPoint;
-		fragmentData.append_range(data);
+		if (dataSize > 0)
+		{
+			m_fragmentData = (uint32_t*)malloc(dataSize);
+			memcpy(m_fragmentData, data, dataSize);
+
+		}
+		m_fragmentDataSize = dataSize;
 	}
 
-	void Shader::LoadVertexData(std::vector<char> data, const char* entryPoint)
+	void Shader::LoadVertexData(const uint32_t* data, size_t dataSize, const char* entryPoint)
 	{
-		m_hasVertexData = data.size() > 0;
-
+		m_hasVertexData = dataSize > 0;
 		m_vertexEntryPoint = entryPoint;
-		vertexData.append_range(data);
+
+		if (dataSize > 0)
+		{
+			m_vertexData = (uint32_t*)malloc(dataSize);
+			memcpy(m_vertexData, data, dataSize);
+		}
+
+		m_vertexDataSize = dataSize;
 	}
 
 	SPtr<Pipeline> Shader::CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass)
 	{
 		PipelineCreationData creationData;
-		creationData.vertexShaderData = vertexData;
-		creationData.fragmentShaderData = fragmentData;
+		creationData.vertexShaderData = m_vertexData;
+		creationData.fragmentShaderData = m_fragmentData;
 		creationData.name = renderPass->name.c_str();
 
 		BlendStateCreation blendStateCreation;
@@ -82,13 +94,13 @@ namespace Pudu
 
 		if (HasFragmentData())
 		{
-			shaderData.AddStage(&fragmentData,"fragmentMain", fragmentData.size() * sizeof(char),
+			shaderData.AddStage(m_fragmentData, "fragmentMain", m_fragmentDataSize,
 				VK_SHADER_STAGE_FRAGMENT_BIT);
 		}
 
 		if (HasVertexData())
 		{
-			shaderData.AddStage(&vertexData,"vertexMain", vertexData.size() * sizeof(char),
+			shaderData.AddStage(m_vertexData, "vertexMain", m_vertexDataSize,
 				VK_SHADER_STAGE_VERTEX_BIT);
 		}
 

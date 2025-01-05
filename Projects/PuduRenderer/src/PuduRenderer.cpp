@@ -10,6 +10,7 @@
 #include "Shader.h"
 #include <DrawIndirectRenderPass.h>
 #include "Lighting/LightBuffer.h"
+#include "ShaderCompiler.h"
 
 namespace Pudu
 {
@@ -59,7 +60,7 @@ namespace Pudu
 
 		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
 		computeRP.get()->SetName("Grass Compute");
-		auto compute = graphics->CreateComputeShader("Shaders/testCompute.compute.slang", "Test Compute");
+		auto compute = graphics->CreateComputeShader("testCompute.compute.slang", "Test Compute");
 
 		const uint32_t instances = 1000000;
 		auto groupSize = ceil(sqrt(instances / (32 * 32)));
@@ -83,7 +84,7 @@ namespace Pudu
 		auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(), indirectCommands.data(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
 		auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
-		SPtr<Shader> grassShader = graphics->CreateShader("Shaders/grass.shader.slang", "Grass");
+		SPtr<Shader> grassShader = graphics->CreateShader("grass.shader.slang", "Grass");
 
 		Material material;
 		material.shader = grassShader;

@@ -2,6 +2,12 @@
 
 module PuduGraphics;
 
+[__AttributeUsage(_AttributeTargets.Var)]
+struct BindlessAttribute
+{
+    bool value;
+};
+
 public struct Globals
 {
     public Sampler2D shadowMap;
@@ -14,6 +20,8 @@ public struct GlobalsBindless
 }
 
 public ParameterBlock<Globals> GLOBALS;
+
+[Bindless(true)]
 public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]

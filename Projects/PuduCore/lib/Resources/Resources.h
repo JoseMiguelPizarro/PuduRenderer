@@ -580,7 +580,7 @@ namespace Pudu
 
 	struct ShaderStage
 	{
-		std::vector<char>* code;
+		const uint32_t* code;
 		uint32_t codeSize = 0;
 		VkShaderStageFlagBits type = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 		const char* entryPointName;
@@ -594,14 +594,14 @@ namespace Pudu
 		uint32_t stageCount = 0;
 
 		ShaderStateCreationData& SetName(const char* name);
-		ShaderStateCreationData& AddStage(std::vector<char>* code, const char* entryPointName, size_t code_size, VkShaderStageFlagBits type);
+		ShaderStateCreationData& AddStage(const uint32_t* code, const char* entryPointName, size_t code_size, VkShaderStageFlagBits type);
 		ShaderStage& GetStage(VkShaderStageFlagBits stageFlag);
 	};
 
 	struct PipelineCreationData
 	{
-		std::vector<char> vertexShaderData;
-		std::vector<char> fragmentShaderData;
+		const uint32_t* vertexShaderData;
+		const uint32_t* fragmentShaderData;
 		DescriptorSetLayoutsData descriptorCreationData;
 
 		RasterizationCreation rasterization;

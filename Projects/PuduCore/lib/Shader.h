@@ -31,11 +31,14 @@ namespace Pudu
 		}
 
 
-		void LoadFragmentData(std::vector<char> data, const char* entryPoint = "main");
-		void LoadVertexData(std::vector<char> data, const char* entryPoint = "main");
+		void LoadFragmentData(const uint32_t* data, size_t dataSize, const char* entryPoint = "main");
+		void LoadVertexData(const uint32_t* data, size_t dataSize, const char* entryPoint = "main");
 
-		std::vector<char> fragmentData;
-		std::vector<char> vertexData;
+	
+		const uint32_t* GetFragmentData() { return m_fragmentData; }
+		const uint32_t* GetVertexData() { return m_vertexData; }
+		size_t GetVertexDataSize() { return m_vertexDataSize; }
+		size_t GetFragmentDataSize() { return m_fragmentDataSize; }
 
 		bool HasFragmentData() { return m_hasFragmentData; }
 		bool HasVertexData() { return m_hasVertexData; }
@@ -46,7 +49,7 @@ namespace Pudu
 		void SetName(const char* name) override { this->name = name; };
 		const char* GetName() override { return this->name.c_str(); };
 
-		 SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
+		SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
 	private:
 		friend class PuduGraphics;
@@ -55,5 +58,10 @@ namespace Pudu
 		bool m_hasVertexData;
 		std::string m_fragmentEntryPoint;
 		std::string m_vertexEntryPoint;
+
+		uint32_t* m_fragmentData;
+		size_t m_fragmentDataSize;
+		uint32_t* m_vertexData;
+		size_t m_vertexDataSize;
 	};
 }
