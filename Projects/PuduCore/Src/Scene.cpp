@@ -29,18 +29,17 @@ namespace Pudu {
 	{
 		m_renderEntities.push_back(renderEntity);
 
-		auto& model = renderEntity->GetModel();
-		for (size_t i = 0; i < model.Meshes.size(); i++)
+		auto model = renderEntity->GetModel();
+		for (size_t i = 0; i < model->Meshes.size(); i++)
 		{
-			Material material = model.Materials[0];
-			if (i >= model.Materials.size())
+			Material* material = &model->Materials[0];
+			if (i >= model->Materials.size())
 			{
-				material = model.Materials[0];
+				material = &model->Materials[0];
 			}
 
-			Model m = model;
-			model.Transform = renderEntity->GetTransform();
-			DrawCall dc(m, model.Meshes[i], material);
+			model->Transform = renderEntity->GetTransform();
+			DrawCall dc(model, model->Meshes[i], material);
 			dc.TransformMatrix = renderEntity->GetTransform().GetTransformationMatrix();
 			m_DrawCalls.push_back(dc);
 		}

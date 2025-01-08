@@ -70,7 +70,7 @@ namespace Pudu {
 			}
 		}
 
-		m_descriptorUpdateRequests.clear();
+		//m_descriptorUpdateRequests.clear();
 	}
 	void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline)
 	{
@@ -78,7 +78,7 @@ namespace Pudu {
 
 		if (binding == nullptr)
 		{
-			LOG("Trying to set non-existing parameter {} for shader {}", request.name, shader->GetName());
+			//LOG("Trying to set non-existing texture {} for shader {}", request.name, shader->GetName());
 			return;
 		}
 
@@ -107,8 +107,8 @@ namespace Pudu {
 
 		VkDescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = request.buffer->vkHandle;
-		bufferInfo.offset = request.buffer->GetOffset();
-		bufferInfo.range = request.buffer->GetSize();
+		bufferInfo.offset = 0;
+		bufferInfo.range = VK_WHOLE_SIZE;
 
 		VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		bufferWrite.descriptorCount = 1;

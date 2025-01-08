@@ -249,11 +249,12 @@ namespace Pudu
 		allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
 		allocCreateInfo.flags = properties;
 
+
 		VmaAllocation alloc;
 		VmaAllocationInfo allocInfo;
 
 		//Create buffer, allocate the memory and binds memory to buffer
-		VKCheck(vmaCreateBuffer(m_VmaAllocator, &bufferInfo, &allocCreateInfo, &buffer, &alloc, &allocInfo),
+		VKCheck(vmaCreateBufferWithAlignment(m_VmaAllocator, &bufferInfo, &allocCreateInfo, 16, &buffer, &alloc, &allocInfo),
 			"Failed creating buffer");
 		if (name != nullptr)
 		{
@@ -2273,7 +2274,7 @@ namespace Pudu
 		LOG("Creating Compute Shader {}:", name);
 		auto shader = m_resources.AllocateComputeShader();
 
-		auto compiledShader =  m_shaderCompiler.Compile(shaderPath.string().c_str(), { "computeMain" });
+		auto compiledShader = m_shaderCompiler.Compile(shaderPath.string().c_str(), { "computeMain" });
 
 		const char* kernelName = "computeMain";
 		auto kernel = compiledShader.GetKernel(kernelName);

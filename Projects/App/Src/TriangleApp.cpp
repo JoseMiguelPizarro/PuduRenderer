@@ -62,7 +62,6 @@ void TriangleApp::OnInit()
 	TextureCreationSettings planeSettings{};
 	planeSettings.bindless = false;
 	planeSettings.name = "Plane";
-	m_planeTexture = Graphics.LoadTexture2D(planeTexturePath, planeSettings);
 
 	TextureCreationSettings cubemapSettings{};
 	cubemapSettings.bindless = false;
@@ -121,7 +120,7 @@ void TriangleApp::OnCleanup()
 	for (auto entity : renderEntities)
 	{
 		auto model = entity->GetModel();
-		for (auto mesh : model.Meshes) {
+		for (auto mesh : model->Meshes) {
 			Graphics.DestroyMesh(mesh);
 		}
 	}
@@ -137,7 +136,7 @@ void TriangleApp::LoadGameboyModel()
 
 		if (re != nullptr)
 		{
-			re->GetModel().Materials[0].shader = standardShader;
+			re->GetModel()->Materials[0].shader = standardShader;
 		}
 	}
 

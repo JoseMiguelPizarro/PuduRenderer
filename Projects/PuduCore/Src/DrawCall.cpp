@@ -10,7 +10,7 @@ namespace Pudu
 			return m_replacementMaterial.get();
 		}
 
-		return &MaterialPtr;
+		return MaterialPtr;
 	}
 
 	void DrawCall::SetReplacementMaterial(SPtr<Material> material)

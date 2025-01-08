@@ -250,7 +250,7 @@ namespace Pudu
 
 			BeforeRenderDrawcall(frameData, drawCall);
 
-			Model model = drawCall.ModelPtr;
+			auto model = drawCall.ModelPtr;
 			auto mesh = drawCall.MeshPtr;
 
 			Pipeline* pipeline = GetPipeline({
@@ -258,23 +258,25 @@ namespace Pudu
 				.shader = drawCall.GetRenderMaterial()->shader.get(),
 				.renderer = frameData.renderer
 				});
+
+			frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
+
 			if (pipeline != frameData.currentPipeline)
 			{
 				commands->BindPipeline(pipeline);
 				frameData.currentPipeline = pipeline;
+			}
 
-				if (pipeline->numActiveLayouts > 0)
+			if (pipeline->numActiveLayouts > 0)
+			{
+
+				for (auto& mat : model->Materials)
 				{
-					frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
-
-					for (auto& mat : model.Materials)
-					{
-						mat.GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
-					}
-
-					commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets,
-						pipeline->numDescriptorSets);
+					mat.GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
 				}
+
+				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets,
+					pipeline->numDescriptorSets);
 			}
 
 			commands->BindMesh(mesh.get());

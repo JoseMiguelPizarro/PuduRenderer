@@ -3,9 +3,9 @@
 
 namespace Pudu {
 
-	Model& RenderEntity::GetModel()
+	Model* RenderEntity::GetModel()
 	{
-		return m_model;
+		return &m_model;
 	}
 
 	void RenderEntity::SetModel(Model& model)

@@ -37,7 +37,8 @@ VSOut vertexMain(VertexInput input)
     output.PosOS = float4(input.Position, 0.);
 
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
-    output.ShadowCoords = mul(biasMat, mul(lightingBuffer.shadowMatrix, mul(lightingBuffer.lightMatrix, mul(UBO.model, float4(input.Position, 1.0)))));
+    output.ShadowCoords = GetShadowCoord(lightingBuffer.shadowMatrix, lightingBuffer.lightMatrix, mul(UBO.model, float4(input.Position, 1.)));
+    // mul(biasMat, mul(lightingBuffer.shadowMatrix, mul(lightingBuffer.lightMatrix, mul(UBO.model, float4(input.Position, 1.0)))));
     //  output.ShadowCoords = mul(float4(input.Position, 1.0), mul(ubo.model, mul(lightingBuffer.lightMatrix, mul(lightingBuffer.shadowMatrix, biasMat))));
 
     return output;

@@ -14,7 +14,7 @@ namespace Pudu {
 			return "RenderEntity";
 		}
 
-		Model& GetModel();
+		Model* GetModel();
 		void SetModel(Model& model);
 		void AttatchToScene(Scene& scene) override;
 

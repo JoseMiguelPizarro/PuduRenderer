@@ -134,7 +134,6 @@ namespace Pudu
 	{
 		data.globalPropertiesMaterial = &m_globalPropertiesMaterial;
 		UpdateLightingBuffer(data);
-
 	}
 
 	void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame)

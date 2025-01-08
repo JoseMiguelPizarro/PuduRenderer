@@ -5,8 +5,7 @@ import "Lib/Shadowmap";
 #include "lib/lygia/generative/cnoise.hlsl"
 #include "lib/lygia/generative/random.hlsl"
 
-[[vk::push_constant]]
-ConstantBuffer<UniformBufferObject> ubo;
+import PuduGraphics;
 
 ParameterBlock<GrassData> Data;
 
@@ -47,7 +46,7 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
 
     var vgradient = vertexPos.y / size.y;
     float windIntensity = 0.1 + randomPos.y;
-    float2 wind = cnoise(pos * .3 + ubo.time * .6) * windIntensity + pow(cnoise(pos * 0.1 + ubo.time * 2) * windIntensity * 2, 3);
+    float2 wind = cnoise(pos * .3 + UBO.time * .6) * windIntensity + pow(cnoise(pos * 0.1 + UBO.time * 2) * windIntensity * 2, 3);
     wind *= vgradient;
 
     float3 vertex = { vertexPos.x + wind.x, vertexPos.y, wind.y };
@@ -57,7 +56,9 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
     float ratio = grassLength / newLength;
     pos += vertex * ratio;
 
-    output.positionCS = mul(ubo.proj, mul(ubo.view, float4(pos, 1)));
+    LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
+    output.shadowCoords = GetShadowCoord(GLOBALS.lightingBuffer.shadowMatrix, GLOBALS.lightingBuffer.lightMatrix, float4(pos, 1));
+    output.positionCS = mul(UBO.proj, mul(UBO.view, float4(pos, 1)));
 
     output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind));
 
@@ -68,6 +69,12 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
 float4 fragmentMain(GrassVertexOutput input)
     : SV_Target
 {
-    return input.color;
+    float4 col = input.color;
+    float3 viewPos = float3(UBO.view._14, UBO.view._24, UBO.view._34);
+    float d = 1. - saturate(distance(input.posWS.xyz, viewPos) / 80.f);
+    float shadow = saturate(FilterPCF(input.shadowCoords / input.shadowCoords.w, GLOBALS.shadowMap) + 0.5);
+
+    col = lerp(col, float4(0.2, 0.2, 0.3, 1.0), 1 - shadow);
+    return lerp(float4(0.9, .4, 0.6, 0.), col, d);
 }
 

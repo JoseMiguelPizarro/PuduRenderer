@@ -44,3 +44,8 @@ float FilterPCF(float4 sc, Sampler2D shadowMap)
     }
     return shadowFactor / count;
 }
+
+float4 GetShadowCoord(float4x4 shadowMatrix, float4x4 lightMatrix, float4 posWS)
+{
+    return mul(biasMat, mul(shadowMatrix, mul(lightMatrix, posWS)));
+}
