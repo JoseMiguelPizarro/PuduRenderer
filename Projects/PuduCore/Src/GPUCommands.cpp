@@ -100,6 +100,14 @@ namespace Pudu
 	void GPUCommands::PushConstants(VkPipelineLayout pipelineLayout, VkPipelineStageFlags stagesFlag, uint32_t offset, uint32_t size, void* data)
 	{
 		vkCmdPushConstants(vkHandle, pipelineLayout, stagesFlag, offset, size, data);
+		m_hasRecordedCommand = true;
+	}
+
+	void GPUCommands::PushDescriptorSets(VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout pipelineLayout, uint32_t set, uint32_t writeCount,const VkWriteDescriptorSet* writes)
+	{
+		m_graphics->vkCmdPushDescriptorSetKHR(vkHandle, pipelineBindPoint, pipelineLayout, set, writeCount, writes);
+
+		m_hasRecordedCommand = true;
 	}
 
 	void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)

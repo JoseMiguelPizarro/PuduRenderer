@@ -12,8 +12,8 @@ namespace Pudu
 		ubo.viewMatrix = frameData.camera->GetViewMatrix();
 		ubo.time = frameData.graphics->GetTime()->Time();
 
-		frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties(frameData.graphics, m_material.shader.get(), pipeline);
-		m_material.GetPropertiesBlock()->ApplyProperties(frameData.graphics, m_material.shader.get(), pipeline);
+		frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material.shader.get(), pipeline, commands.get() });
+		m_material.GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material.shader.get(), pipeline,commands.get() });
 		commands->BindPipeline(pipeline);
 		commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
 

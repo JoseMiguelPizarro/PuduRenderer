@@ -39,7 +39,7 @@ namespace Pudu
 			.renderer = renderData.renderer,
 			});
 
-		m_material.GetPropertiesBlock()->ApplyProperties(renderData.graphics, m_postProcessingShader.get(), pipeline);
+		m_material.GetPropertiesBlock()->ApplyProperties({ renderData.graphics, m_postProcessingShader.get(), pipeline,command.get() });
 
 		command->BindPipeline(pipeline);
 		command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);

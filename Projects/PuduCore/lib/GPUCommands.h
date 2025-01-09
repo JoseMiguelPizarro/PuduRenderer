@@ -39,6 +39,7 @@ namespace Pudu
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 		void SetViewport(Viewport const& viewport);
 		void PushConstants(VkPipelineLayout pipelineLayout, VkPipelineStageFlags stagesFlag, uint32_t offset, uint32_t size, void* data);
+		void PushDescriptorSets(VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout pipelineLayout, uint32_t set, uint32_t writeCount, const VkWriteDescriptorSet* writes);
 
 		/// <summary>
 		/// Beging dynamic rendering renderpass

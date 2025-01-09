@@ -259,7 +259,7 @@ namespace Pudu
 				.renderer = frameData.renderer
 				});
 
-			frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
+			frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline,commands.get() });
 
 			if (pipeline != frameData.currentPipeline)
 			{
@@ -272,7 +272,7 @@ namespace Pudu
 
 				for (auto& mat : model->Materials)
 				{
-					mat.GetPropertiesBlock()->ApplyProperties(frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline);
+					mat.GetPropertiesBlock()->ApplyProperties({ frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline, commands.get() });
 				}
 
 				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets,

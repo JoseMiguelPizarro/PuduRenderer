@@ -42,7 +42,7 @@ namespace Pudu
 			m_shader->SetBuffer(attachment.buffer->name.c_str(), attachment.buffer);
 		}
 
-		m_shader->GetPropertiesBlock()->ApplyProperties(frameData.graphics, m_shader.get(), pipeline.get());
+		m_shader->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_shader.get(), pipeline.get(),computeCommands.get() });
 
 
 		computeCommands->BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->descriptorSetLayoutHandles.size());

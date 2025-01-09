@@ -3,9 +3,23 @@
 #include "PuduConstants.h"
 
 namespace Pudu {
+
+	VkPipelineBindPoint GetBindingPoint(Pipeline* pipeline) {
+
+		switch (pipeline->pipelineType)
+		{
+		case PipelineType::Compute:
+			return VK_PIPELINE_BIND_POINT_COMPUTE;
+		case PipelineType::Graphics:
+			return VK_PIPELINE_BIND_POINT_GRAPHICS;
+		default:
+			break;
+		}
+	}
+
 	void Material::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
 	{
-			m_propertiesBlock.SetProperty(name, texture);
+		m_propertiesBlock.SetProperty(name, texture);
 	}
 
 	void Material::SetProperty(std::string name, SPtr<GraphicsBuffer> buffer) {
@@ -47,7 +61,7 @@ namespace Pudu {
 		m_descriptorUpdateRequests.push_back(updateRequest);
 	}
 
-	void ShaderPropertiesBlock::ApplyProperties(PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline)
+	void ShaderPropertiesBlock::ApplyProperties(MaterialApplyPropertyGPUTarget target)
 	{
 		for (auto& request : m_descriptorUpdateRequests)
 		{
@@ -55,15 +69,15 @@ namespace Pudu {
 			{
 			case ShaderPropertyType::Texture:
 			{
-				ApplyTexture(request,graphics,shader,pipeline);
+				ApplyTexture(request, target);
 				break;
 			}
 			case ShaderPropertyType::Buffer:
 			{
-				ApplyBuffer(request, graphics, shader, pipeline);
+				ApplyBuffer(request, target);
 				break;
 			}case ShaderPropertyType::TextureArray:
-				ApplyTextureArray(request, graphics, shader, pipeline);
+				ApplyTextureArray(request, target);
 				break;
 			default:
 				break;
@@ -72,9 +86,9 @@ namespace Pudu {
 
 		//m_descriptorUpdateRequests.clear();
 	}
-	void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline)
+	void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget target)
 	{
-		auto binding = shader->GetBindingByName(request.name.c_str());
+		auto binding = target.shader->GetBindingByName(request.name.c_str());
 
 		if (binding == nullptr)
 		{
@@ -90,18 +104,21 @@ namespace Pudu {
 		VkWriteDescriptorSet imageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		imageWrite.descriptorCount = 1;
 		imageWrite.dstBinding = binding->index;
-		imageWrite.dstSet = pipeline->vkDescriptorSets[binding->set];
+		imageWrite.dstSet = target.pipeline->vkDescriptorSets[binding->set];
 		imageWrite.pImageInfo = &imageInfo;
 		imageWrite.descriptorType = binding->type;
-		graphics->UpdateDescriptorSet(1, &imageWrite);
+
+		target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &imageWrite);
+
+		//target.graphics->UpdateDescriptorSet(1, &imageWrite);
 	}
-	void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline)
+	void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget target)
 	{
-		auto binding = shader->GetBindingByName(request.name.c_str());
+		auto binding = target.shader->GetBindingByName(request.name.c_str());
 
 		if (binding == nullptr)
 		{
-			LOG("Trying to set non-existing parameter {} for shader {}", request.name, shader->GetName());
+			LOG("Trying to set non-existing parameter {} for shader {}", request.name, target.shader->GetName());
 			return;
 		}
 
@@ -113,26 +130,30 @@ namespace Pudu {
 		VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		bufferWrite.descriptorCount = 1;
 		bufferWrite.dstBinding = binding->index;
-		bufferWrite.dstSet = pipeline->vkDescriptorSets[binding->set];
+		bufferWrite.dstSet = target.pipeline->vkDescriptorSets[binding->set];
 		bufferWrite.pBufferInfo = &bufferInfo;
 		bufferWrite.descriptorType = binding->type;
-		graphics->UpdateDescriptorSet(1, &bufferWrite);
+		//target.graphics->UpdateDescriptorSet(1, &bufferWrite);
+
+
+		target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
 	}
-	void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request, PuduGraphics* graphics, IShaderObject* shader, Pipeline* pipeline)
+	void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings)
 	{
-		auto binding = shader->GetBindingByName(request.name.c_str());
+		auto binding = settings.shader->GetBindingByName(request.name.c_str());
 
 		if (binding == nullptr)
 		{
-			LOG("Trying to set non-existing parameter {} for shader {}", request.name, shader->GetName());
+			LOG("Trying to set non-existing parameter {} for shader {}", request.name, settings.shader->GetName());
 			return;
 		}
-		
+
 		static VkWriteDescriptorSet bindlessDescriptorWrites[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
 		static VkDescriptorImageInfo bindlessImageInfos[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
 
 		auto textureArray = request.textureArray;
 		uint32_t currentWriteIndex = 0;
+		uint32_t setIndex;
 
 		for (int i = 0; i < textureArray->size(); i++)
 		{
@@ -143,7 +164,7 @@ namespace Pudu {
 			descriptorWrite.descriptorCount = 1;
 			descriptorWrite.dstArrayElement = texture->Handle();
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite.dstSet = pipeline->vkDescriptorSets[binding->set];
+			descriptorWrite.dstSet = settings.pipeline->vkDescriptorSets[binding->set];
 
 			descriptorWrite.dstBinding = binding->index;
 
@@ -157,11 +178,9 @@ namespace Pudu {
 			descriptorWrite.pImageInfo = &descriptorImageInfo;
 
 			currentWriteIndex++;
+			setIndex = binding->set;
 		}
 
-		if (currentWriteIndex)
-		{
-			graphics->UpdateDescriptorSet(currentWriteIndex, bindlessDescriptorWrites, 0, nullptr);
-		}
+		settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, bindlessDescriptorWrites);
 	}
 }

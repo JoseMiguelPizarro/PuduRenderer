@@ -92,6 +92,11 @@ namespace Pudu
 		m_commandPool = GetCommandPool(QueueFamily::Graphics);
 		CreateFramesCommandBuffer();
 		CreateSwapChainSyncObjects();
+
+		vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device, "vkCmdPushDescriptorSetKHR");
+		if (!vkCmdPushDescriptorSetKHR) {
+			PUDU_ERROR("Could not get a valid function pointer for vkCmdPushDescriptorSetKHR");
+		}
 	}
 
 	void PuduGraphics::InitVMA()
@@ -1527,6 +1532,7 @@ namespace Pudu
 		pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
 		pipeline->shaderState = shaderStateHandle;
 		pipeline->depthStencilFormat = renderPassOutput.depthStencilFormat;
+		pipeline->pipelineType = PipelineType::Graphics;
 
 		CreateDescriptorsLayouts(creationData.descriptorCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
 
@@ -1790,6 +1796,7 @@ namespace Pudu
 
 		auto pipeline = m_resources.AllocatePipeline();
 		pipeline->vkPipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+		pipeline->pipelineType = PipelineType::Compute;
 
 		if (creationData.name != nullptr)
 		{

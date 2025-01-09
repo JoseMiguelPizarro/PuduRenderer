@@ -15,6 +15,13 @@ namespace Pudu
 		Renderer* renderer;
 	};
 
+	namespace PipelineType {
+		enum Type {
+			Graphics,
+			Compute
+		};
+	};
+
 	class Pipeline :public GPUResource<Pipeline>
 	{
 	public:
@@ -40,6 +47,7 @@ namespace Pudu
 		RasterizationCreation rasterization;
 
 		bool bindlessUpdated;
+		PipelineType::Type pipelineType;
 
 		bool graphicsPipeline = true;
 	}; // struct Pipeline
