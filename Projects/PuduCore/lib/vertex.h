@@ -9,7 +9,7 @@ namespace Pudu
 {
 	struct Vertex {
 		vec3 pos;
-		vec3 color;
+		vec3 color = { 1,1,1 };
 		vec2 texcoord;
 		vec3 normal;
 
