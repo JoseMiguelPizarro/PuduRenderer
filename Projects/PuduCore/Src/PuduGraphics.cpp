@@ -95,7 +95,7 @@ namespace Pudu
 
 		vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(m_device, "vkCmdPushDescriptorSetKHR");
 		if (!vkCmdPushDescriptorSetKHR) {
-			PUDU_ERROR("Could not get a valid function pointer for vkCmdPushDescriptorSetKHR");
+		 	LOG("Could not get a valid function pointer for vkCmdPushDescriptorSetKHR");
 		}
 	}
 
