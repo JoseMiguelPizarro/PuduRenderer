@@ -108,9 +108,9 @@ namespace Pudu {
 		imageWrite.pImageInfo = &imageInfo;
 		imageWrite.descriptorType = binding->type;
 
-		target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &imageWrite);
+		//target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &imageWrite);
 
-		//target.graphics->UpdateDescriptorSet(1, &imageWrite);
+		target.graphics->UpdateDescriptorSet(1, &imageWrite);
 	}
 	void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget target)
 	{
@@ -133,10 +133,10 @@ namespace Pudu {
 		bufferWrite.dstSet = target.pipeline->vkDescriptorSets[binding->set];
 		bufferWrite.pBufferInfo = &bufferInfo;
 		bufferWrite.descriptorType = binding->type;
-		//target.graphics->UpdateDescriptorSet(1, &bufferWrite);
 
+		target.graphics->UpdateDescriptorSet(1, &bufferWrite);
 
-		target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
+	//	target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
 	}
 	void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings)
 	{
@@ -148,8 +148,8 @@ namespace Pudu {
 			return;
 		}
 
-		static VkWriteDescriptorSet bindlessDescriptorWrites[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
-		static VkDescriptorImageInfo bindlessImageInfos[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
+		static VkWriteDescriptorSet descriptorWrites[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
+		static VkDescriptorImageInfo imageInfos[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
 
 		auto textureArray = request.textureArray;
 		uint32_t currentWriteIndex = 0;
@@ -158,7 +158,7 @@ namespace Pudu {
 		for (int i = 0; i < textureArray->size(); i++)
 		{
 			auto texture = textureArray->at(i);
-			VkWriteDescriptorSet& descriptorWrite = bindlessDescriptorWrites[currentWriteIndex];
+			VkWriteDescriptorSet& descriptorWrite = descriptorWrites[currentWriteIndex];
 			descriptorWrite = {};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrite.descriptorCount = 1;
@@ -170,7 +170,7 @@ namespace Pudu {
 
 			auto textureSampler = texture->Sampler;
 
-			VkDescriptorImageInfo& descriptorImageInfo = bindlessImageInfos[currentWriteIndex];
+			VkDescriptorImageInfo& descriptorImageInfo = imageInfos[currentWriteIndex];
 			descriptorImageInfo.sampler = textureSampler.vkHandle;
 			descriptorImageInfo.imageView = texture->vkImageViewHandle;
 			descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -181,6 +181,10 @@ namespace Pudu {
 			setIndex = binding->set;
 		}
 
-		settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, bindlessDescriptorWrites);
+		settings.graphics->UpdateDescriptorSet(currentWriteIndex, descriptorWrites);
+
+
+
+		settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, descriptorWrites);
 	}
 }
