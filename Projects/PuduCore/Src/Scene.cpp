@@ -41,8 +41,13 @@ namespace Pudu {
 			model->Transform = renderEntity->GetTransform();
 			DrawCall dc(model, model->Meshes[i], material);
 			dc.TransformMatrix = renderEntity->GetTransform().GetTransformationMatrix();
-			m_DrawCalls.push_back(dc);
+
+			AddDrawCall(dc, renderEntity->GetRenderSettings());
 		}
+	}
+	void Scene::AddDrawCall(DrawCall& drawCall, RenderSettings& settings)
+	{
+		m_drawCallsPerMask[settings.layer].push_back(drawCall);
 	}
 	void Scene::RemoveRenderEntity(RenderEntitySPtr renderEntity)
 	{

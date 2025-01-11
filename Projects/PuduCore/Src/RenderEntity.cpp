@@ -16,4 +16,9 @@ namespace Pudu {
 	{
 		scene.AddRendererEntity(dynamic_pointer_cast<RenderEntity>(m_entitySPtr));
 	}
+
+	RenderSettings& RenderEntity::GetRenderSettings()
+	{
+		return this->m_renderSettings;
+	}
 }

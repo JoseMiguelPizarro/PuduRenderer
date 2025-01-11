@@ -143,10 +143,13 @@ namespace Pudu {
 			//Node is a Model
 			if (meshIndex.has_value())
 			{
-				auto meshData = meshCreationData[meshIndex.value()];
+				const auto& meshData = meshCreationData[meshIndex.value()];
 				auto model = PuduGraphics::Instance()->CreateModel(meshData);
 
-				entity = EntityManager::AllocateRenderEntity(name, model);
+				auto renderEntity = EntityManager::AllocateRenderEntity(name, model);
+				auto [layer] = renderEntity->GetRenderSettings();
+				layer = 0;
+				entity = renderEntity;
 			}
 			//Node is a transform
 			else {
@@ -158,13 +161,13 @@ namespace Pudu {
 			entities.push_back(entity);
 
 			//Set node transform
-			fg::TRS transform = std::get<fg::TRS>(node.transform);
-			glm::quat r = glm::quat(transform.rotation[3], transform.rotation[0], transform.rotation[1], transform.rotation[2]);
+			auto [translation, rotation, scale] = std::get<fg::TRS>(node.transform);
+			auto r = glm::quat(rotation[3], rotation[0], rotation[1], rotation[2]);
 
 			Transform& t = entity->GetTransform();
 			t.SetRotation(r);
-			t.SetLocalPosition(vec3(transform.translation[0], transform.translation[1], transform.translation[2]));
-			t.SetLocalScale(vec3(transform.scale[0], transform.scale[1], transform.scale[2]));
+			t.SetLocalPosition(vec3(translation[0], translation[1], translation[2]));
+			t.SetLocalScale(vec3(scale[0], scale[1], scale[2]));
 
 			if (shouldUpdateTransforms)
 			{
@@ -275,13 +278,9 @@ namespace Pudu {
 				MeshCreationData meshCreationData{};
 				MaterialCreationData materialCreationData{};
 
-				bool hasMat = gltfAsset->materials.size() > 0;
-
-				if (hasMat)
+				if (bool hasMat = !gltfAsset->materials.empty())
 				{
-
 					auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
-
 
 					bool hasBaseTexture, hasNormalMap = false;
 

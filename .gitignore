@@ -3,6 +3,8 @@ Build/obj
 !Build/Assets/**
 Bin
 
+cmake-build*/
+
 .idea
 .vs
 **.vcxproj.user
@@ -40,3 +42,4 @@ _deps
 CMakeUserPresets.json
 **.dir
 Debug
+

@@ -51,10 +51,21 @@ namespace Pudu
 		m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT, AttachmentUsage::Write, LoadOperation::Clear);
 
 		m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
-		m_forwardRenderPass->name = "ForwardRenderPass";
-		m_forwardRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Clear);
-		m_forwardRenderPass->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
-		m_forwardRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
+		m_forwardRenderPass
+			->SetName("ForwardRenderPass")
+			->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Clear)
+			->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
+			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
+
+
+		auto transparentRP = graphics->GetRenderPass<ForwardRenderPass>();
+		transparentRP->SetName("Transparent")
+			->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
+			->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
+			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
+
+
+
 
 		const uint32_t grassCount = 1;
 

@@ -14,6 +14,8 @@ namespace Pudu
 		destinationColorFactor = destinationColor;
 		colorBlendOperation = colorOperation;
 
+		blendEnabled = true;
+
 		return *this;
 	}
 	BlendState& BlendState::SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha, VkBlendOp alphaOperation)
@@ -21,6 +23,8 @@ namespace Pudu
 		sourceAlphaFactor = sourceAlpha;
 		destinationAlphaFactor = destinationAlpha;
 		alphaBlendOperation = alphaOperation;
+
+		blendEnabled = true;
 
 		return *this;
 	}

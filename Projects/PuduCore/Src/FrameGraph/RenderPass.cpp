@@ -244,7 +244,10 @@ namespace Pudu
 		auto renderScene = frameData.scene;
 		auto commands = frameData.currentCommand;
 
-		for (DrawCall drawCall : renderScene->GetDrawCalls())
+		auto drawCalls = renderScene->GetDrawCalls(renderMask);
+
+
+		for (DrawCall drawCall : *renderScene->GetDrawCalls(renderMask))
 		{
 			frameData.currentDrawCall = &drawCall;
 
@@ -439,6 +442,21 @@ namespace Pudu
 	{
 		m_cullMode = cullMode;
 		return this;
+	}
+	RenderPass* RenderPass::SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor, VkBlendOp colorOperation)
+	{
+		m_blendState.SetColorBlending(sourceColor, destinationColor, colorOperation);
+
+		return this;
+	}
+	RenderPass* RenderPass::SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha, VkBlendOp alphaOperation)
+	{
+		m_blendState.SetAlphaBlending(sourceAlpha, destinationAlpha, alphaOperation);
+		return this;
+	}
+	BlendState* RenderPass::GetBlendState()
+	{
+		return &this->m_blendState;
 	}
 	CullMode RenderPass::GetCullMode()
 	{

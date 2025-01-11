@@ -1455,7 +1455,6 @@ namespace Pudu
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = pool;
-		allocInfo.descriptorSetCount = layoutsCount;
 		allocInfo.pSetLayouts = layouts;
 		allocInfo.descriptorSetCount = setsCount;
 

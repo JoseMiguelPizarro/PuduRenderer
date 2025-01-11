@@ -39,6 +39,7 @@ namespace Pudu {
 		std::string m_name;
 		EntitySPtr GetRoot(EntitySPtr const & entity) const;
 		void AddChild(EntitySPtr& entity);
+
 	};
 
 	typedef std::shared_ptr<Entity> EntitySPtr;

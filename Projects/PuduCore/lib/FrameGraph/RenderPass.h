@@ -121,6 +121,12 @@ namespace Pudu
 		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage);
 		RenderPass* SetName(const char* name);
 		RenderPass* SetCullMode(CullMode cullMode);
+		RenderPass* SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor, VkBlendOp colorOperation);
+		RenderPass* SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha, VkBlendOp alphaOperation);
+
+
+		BlendState* GetBlendState();
+
 		CullMode GetCullMode();
 
 		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
@@ -162,7 +168,9 @@ namespace Pudu
 	private:
 		friend class PuduGraphics;
 		CullMode m_cullMode = CullMode::Back;
+		BlendState m_blendState;
 		ComputeShader* m_computeShader;
+		uint32_t renderMask;
 	};
 
 }

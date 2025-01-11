@@ -9,7 +9,6 @@ namespace fs = std::filesystem;
 void TriangleApp::OnRun()
 {
 	m_puduRenderer.Render(&m_scene);
-	return;
 	float radius = 20;
 	float pich = 45;
 

@@ -32,7 +32,7 @@ namespace Pudu {
 		targetDesc.profile = m_globalSession->findProfile("spirv_1_5");
 		targetDesc.format = SLANG_SPIRV;
 
-		const char* searchPaths[] = { "../../../Assets/Shaders" };
+		const char* searchPaths[] = { "Assets/Shaders" };
 
 		SessionDesc sessionDesc;
 		sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;

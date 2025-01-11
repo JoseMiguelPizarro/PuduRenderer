@@ -8,8 +8,10 @@
 #include "EntityManager.h"
 #include "Resources/Resources.h"
 #include "Lighting/Light.h"
+#include "RenderSettings.h"
 
 namespace Pudu {
+
 	class Scene
 	{
 	public:
@@ -26,10 +28,10 @@ namespace Pudu {
 		PuduTime* time;
 		Light* directionalLight;
 
-		std::vector<DrawCall> GetDrawCalls() {
-			return m_DrawCalls;
-		}
 
+		const std::vector<DrawCall>* GetDrawCalls(uint32_t renderMask) const {
+			return &m_drawCallsPerMask[renderMask];
+		}
 
 		Scene() {
 			sceneRoot = EntityManager::AllocateEntity();
@@ -47,9 +49,11 @@ namespace Pudu {
 		friend class RenderEntity;
 
 		void AddRendererEntity(RenderEntitySPtr renderEntity);
-		std::vector<DrawCall> m_DrawCalls;
+		void AddDrawCall(DrawCall& drawCall, RenderSettings& settings);
 		std::vector<EntitySPtr> m_entities;
 		std::vector<RenderEntitySPtr> m_renderEntities;
+
+		std::vector<DrawCall> m_drawCallsPerMask[32];
 	};
 }
 

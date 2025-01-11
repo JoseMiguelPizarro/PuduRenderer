@@ -62,16 +62,39 @@ set(LIBS
     fmtd
 )
 
-set(SLANG_VERSION 2024.17)
-FetchContent_Declare(
-  slang
-  URL https://github.com/shader-slang/slang/releases/download/v2024.17/slang-${SLANG_VERSION}-windows-x86_64.tar.gz
-  DOWNLOAD_EXTRACT_TIMESTAMP true
-)
-FetchContent_MakeAvailable(slang)
+set(SLANG_VERSION "2025.2")
+if(WIN32)
+    set(SLANG_OS "windows-x86_64")
+elseif(APPLE)
+    set(SLANG_OS "macos-aarch64")
+elseif(UNIX)
+    set(SLANG_OS "linux-x86_64")
+endif()
 
-set(SLANG_LIB_DIR ${slang_SOURCE_DIR}/lib)
-set(SLANG_INCLUDE_DIR ${slang_SOURCE_DIR}/include)
+include(FetchContent)
+FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-${SLANG_OS}.zip QUIET)
+message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
+add_library(slang SHARED IMPORTED GLOBAL)
+if(WIN32)
+    set_target_properties(slang PROPERTIES
+            SLANG_DLL ${slang_zip_SOURCE_DIR}/bin/slang.dll
+            GLSLANG_DLL ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
+            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+elseif(APPLE)
+    set_target_properties(slang PROPERTIES
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+elseif(UNIX)
+    set_target_properties(slang PROPERTIES
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
+            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.so
+            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
+    )
+endif()
 
 # Helper macros
 macro(add_target target_name target_type)
@@ -98,8 +121,8 @@ add_target(PuduCore STATIC)
 set_target_properties(PuduCore PROPERTIES
     COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"
 )
-target_link_directories(PuduCore PUBLIC ${SLANG_LIB_DIR})
-target_include_directories(PuduCore PUBLIC ${SLANG_INCLUDE_DIR})
+target_link_libraries(PuduCore PUBLIC slang)
+
 
 file(GLOB_RECURSE PuduCore_SOURCES Projects/PuduCore/**)
 target_sources(PuduCore PRIVATE ${PuduCore_SOURCES})
@@ -121,4 +144,19 @@ set_target_properties(App PROPERTIES
 )
 file(GLOB_RECURSE App_SOURCES Projects/App/**)
 target_sources(App PRIVATE ${App_SOURCES})
-target_link_libraries(App PRIVATE PuduRenderer PuduCore ${LIBS} ${SLANG_LIB_DIR}/**)
+
+target_link_libraries(App PUBLIC PuduRenderer PuduCore PUBLIC slang)
+
+get_target_property(slangDLL slang SLANG_DLL)
+get_target_property(glslangDLL slang GLSLANG_DLL)
+configure_file(${slangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}" COPYONLY)
+configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}" COPYONLY)
+
+
+add_custom_command(
+        TARGET App
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/Assets"
+        "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Assets/"
+)

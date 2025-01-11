@@ -2,6 +2,7 @@
 #include <memory>
 #include "Entity.h"
 #include "Model.h"
+#include "RenderSettings.h"
 
 namespace Pudu {
 	
@@ -17,9 +18,11 @@ namespace Pudu {
 		Model* GetModel();
 		void SetModel(Model& model);
 		void AttatchToScene(Scene& scene) override;
+		RenderSettings& GetRenderSettings();
 
 	private:
-		Model m_model;
+		Model m_model = {};
+		RenderSettings m_renderSettings = {};
 	};
 
 	typedef std::shared_ptr<RenderEntity> RenderEntitySPtr;

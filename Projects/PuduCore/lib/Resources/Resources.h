@@ -187,11 +187,11 @@ namespace Pudu
 	struct BlendState
 	{
 		VkBlendFactor sourceColorFactor = VK_BLEND_FACTOR_ONE;
-		VkBlendFactor destinationColorFactor = VK_BLEND_FACTOR_ONE;
+		VkBlendFactor destinationColorFactor = VK_BLEND_FACTOR_ZERO;
 		VkBlendOp colorBlendOperation = VK_BLEND_OP_ADD;
 
 		VkBlendFactor sourceAlphaFactor = VK_BLEND_FACTOR_ONE;
-		VkBlendFactor destinationAlphaFactor = VK_BLEND_FACTOR_ONE;
+		VkBlendFactor destinationAlphaFactor = VK_BLEND_FACTOR_ZERO;
 		VkBlendOp alphaBlendOperation = VK_BLEND_OP_ADD;
 
 		ColorWriteEnabled::Mask colorWriteMask = ColorWriteEnabled::All_mask;

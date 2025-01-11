@@ -20,7 +20,7 @@ namespace fg = fastgltf;
 namespace Pudu {
 	typedef fastgltf::Expected<fastgltf::Asset> GltfAsset;
 
-	static const fs::path ASSETS_FOLDER_PATH = fs::path("../../../Assets");
+	static const fs::path ASSETS_FOLDER_PATH = fs::path("Assets");
 	class FileManager
 	{
 	public:

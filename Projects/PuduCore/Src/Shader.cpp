@@ -53,9 +53,10 @@ namespace Pudu
 
 		if (HasFragmentData())
 		{
+			auto renderPassBlendState = renderPass->GetBlendState();
 			blendStateCreation.AddBlendState()
-				.SetAlphaBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
-				.SetColorBlending(VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD)
+				.SetAlphaBlending(renderPassBlendState->sourceAlphaFactor, renderPassBlendState->destinationAlphaFactor, renderPassBlendState->alphaBlendOperation)
+				.SetColorBlending(renderPassBlendState->sourceColorFactor, renderPassBlendState->destinationColorFactor, renderPassBlendState->colorBlendOperation)
 				.SetColorWriteMask(ColorWriteEnabled::All_mask);
 		}
 
