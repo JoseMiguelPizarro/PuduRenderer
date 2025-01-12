@@ -6,14 +6,12 @@
 #include "Resources/Resources.h"
 #include "SPIRVParser.h"
 #include <GPUCommands.h>
-#include "Lighting/Light.h"
+
 #include "Material.h"
-#include <stdexcept>
+
 #include "Pipeline.h"
 #include "Renderer.h"
-#undef VK_USE_PLATFORM_WIN32_KHR
-#include <vulkan/vk_enum_string_helper.h>
-#define VK_USE_PLATFORM_WIN32_KHR
+
 #include <Lighting/LightBuffer.h>
 
 
@@ -256,13 +254,15 @@ namespace Pudu
 			auto model = drawCall.ModelPtr;
 			auto mesh = drawCall.MeshPtr;
 
+			auto material = drawCall.GetRenderMaterial();
+
 			Pipeline* pipeline = GetPipeline({
 				.renderPass = frameData.currentRenderPass.get(),
-				.shader = drawCall.GetRenderMaterial()->shader.get(),
+				.shader = material->m_shader.get(),
 				.renderer = frameData.renderer
 				});
 
-			frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline,commands.get() });
+			frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, material->m_shader.get(), material->GetDescriptorSets(),commands.get() });
 
 			if (pipeline != frameData.currentPipeline)
 			{
@@ -272,14 +272,13 @@ namespace Pudu
 
 			if (pipeline->numActiveLayouts > 0)
 			{
-
 				for (auto& mat : model->Materials)
 				{
-					mat.GetPropertiesBlock()->ApplyProperties({ frameData.graphics, frameData.currentDrawCall->GetRenderMaterial()->shader.get(), pipeline, commands.get() });
+					mat->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, material->m_shader.get(), material->GetDescriptorSets(), commands.get() });
 				}
 
 				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets,
-					pipeline->numDescriptorSets);
+					pipeline->numDescriptorSets, frameData.descriptorSetOffset);
 			}
 
 			commands->BindMesh(mesh.get());

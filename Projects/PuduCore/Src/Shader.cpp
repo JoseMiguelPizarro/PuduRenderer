@@ -105,7 +105,6 @@ namespace Pudu
 				VK_SHADER_STAGE_VERTEX_BIT);
 		}
 
-		creationData.descriptorCreationData = GetDescriptorSetLayouts();
 		creationData.blendState = blendStateCreation;
 		creationData.rasterization = rasterizationCreation;
 		creationData.depthStencil = depthStencilCreation;
@@ -113,6 +112,10 @@ namespace Pudu
 		creationData.shadersStateCreationData = shaderData;
 
 		creationData.renderPassHandle = renderPass->Handle();
+
+		creationData.descriptorSetLayouts = &descriptorSetLayouts;
+		creationData.activeLayouts = numActiveLayouts;
+		creationData.vkDescriptorSetLayout = GetVkDescriptorSetLayouts();
 
 		auto handle = graphics->CreateGraphicsPipeline(creationData);
 		auto pipeline = graphics->Resources()->GetPipeline(handle);

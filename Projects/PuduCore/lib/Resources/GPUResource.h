@@ -53,6 +53,7 @@ namespace Pudu
 	protected:
 		friend class GPUResourcesManager;
 		bool m_allocated;
+		PuduGraphics* m_gpu;
 
 		virtual void OnCreate(PuduGraphics* gpu)
 		{

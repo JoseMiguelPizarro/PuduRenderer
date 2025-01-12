@@ -19,6 +19,8 @@ namespace Pudu
 		this->graphics = graphics;
 		this->app = app;
 
+		m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
+
 		InitLightingBuffer(graphics);
 
 		auto depthRT = graphics->GetRenderTexture();
@@ -64,9 +66,6 @@ namespace Pudu
 			->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
 			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
 
-
-
-
 		const uint32_t grassCount = 1;
 
 		auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
@@ -97,22 +96,22 @@ namespace Pudu
 		auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
 		SPtr<Shader> grassShader = graphics->CreateShader("grass.shader.slang", "Grass");
 
-		Material material;
-		material.shader = grassShader;
-		material.SetProperty("Data.GrassPos", grassBuffer);
-		material.SetProperty("Data.shadowMap", shadowRT);
+		SPtr<Material> material = graphics->Resources()->AllocateMaterial();
+		material->SetShader(grassShader);
+		material->SetProperty("Data.GrassPos", grassBuffer);
+		material->SetProperty("Data.shadowMap", shadowRT);
 
 		drawGrassRP.get()
-			->SetMaterial(material)
-			->SetOffset(0)
-			->SeStride(sizeof(VkDrawIndirectCommand))
-			->SetDrawCount(indirectCommands.size())
-			->SetIndirectBuffer(indirectBuffer)
-			->SetCullMode(CullMode::None)
-			->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
-			->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
-			->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load)
-			->SetName("Grass indirect");
+		           ->SetMaterial(material)
+		           ->SetOffset(0)
+		           ->SeStride(sizeof(VkDrawIndirectCommand))
+		           ->SetDrawCount(indirectCommands.size())
+		           ->SetIndirectBuffer(indirectBuffer)
+		           ->SetCullMode(CullMode::None)
+		           ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
+		           ->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
+		           ->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load)
+		           ->SetName("Grass indirect");
 
 		m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
 		m_postProcessingRenderPass->name = "Postprocessing";
@@ -137,13 +136,13 @@ namespace Pudu
 
 		std::printf(frameGraph.ToString().c_str());
 
-		m_globalPropertiesMaterial.SetProperty("GLOBALS.shadowMap", shadowRT);
-		m_globalPropertiesMaterial.SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
+		m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
+		m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
 	}
 
 	void PuduRenderer::OnRender(RenderFrameData& data)
 	{
-		data.globalPropertiesMaterial = &m_globalPropertiesMaterial;
+		data.globalPropertiesMaterial = m_globalPropertiesMaterial;
 		UpdateLightingBuffer(data);
 	}
 

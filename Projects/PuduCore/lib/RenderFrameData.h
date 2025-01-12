@@ -41,7 +41,8 @@ namespace Pudu
 		uint16_t height;
 		Camera* camera;
 		SPtr<GraphicsBuffer> lightingBuffer;
-		Material* globalPropertiesMaterial;
+		SPtr<Material> globalPropertiesMaterial;
+		uint32_t descriptorSetOffset;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<SPtr<GPUCommands>> computeCommandsToSubmit;

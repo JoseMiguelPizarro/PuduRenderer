@@ -1448,7 +1448,7 @@ namespace Pudu
 	}
 
 	void PuduGraphics::CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount,
-		VkDescriptorSetLayout* layouts, uint32_t layoutsCount)
+		VkDescriptorSetLayout* layouts)
 	{
 		LOG("Creating descriptor set");
 
@@ -1461,6 +1461,12 @@ namespace Pudu
 		VKCheck(vkAllocateDescriptorSets(m_device, &allocInfo, descriptorSet), "Failed creating descriptor set");
 
 		LOG("Creating descriptor set end");
+	}
+
+	void PuduGraphics::CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount,
+		VkDescriptorSetLayout* layouts)
+	{
+		CreateDescriptorSets(m_bindlessDescriptorPool, descriptorSet,setsCount, layouts);
 	}
 
 	void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
@@ -1533,16 +1539,6 @@ namespace Pudu
 		pipeline->depthStencilFormat = renderPassOutput.depthStencilFormat;
 		pipeline->pipelineType = PipelineType::Graphics;
 
-		CreateDescriptorsLayouts(creationData.descriptorCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
-
-		for (uint32_t i = 0; i < pipeline->descriptorSetLayoutHandles.size(); i++)
-		{
-			pipeline->descriptorSetLayouts[i] = m_resources.GetDescriptorSetLayout(
-				pipeline->descriptorSetLayoutHandles[i]); //DESCRIPTOR SET LAYOUTS NOT SET IN RESOURCES
-		}
-		pipeline->numActiveLayouts = pipeline->descriptorSetLayoutHandles.size();
-
-
 		VkPushConstantRange pushConstant{};
 		pushConstant.offset = 0;
 		pushConstant.size = sizeof(UniformBufferObject);
@@ -1551,16 +1547,11 @@ namespace Pudu
 		//Push contants support
 		VkPushConstantRange constants[1]{ pushConstant };
 
-		std::vector<VkDescriptorSetLayout> pipelineDescriptorSetLayouts;
-		for (uint32_t i = 0; i < pipeline->numActiveLayouts; i++)
-		{
-			pipelineDescriptorSetLayouts.push_back(pipeline->descriptorSetLayouts[i]->vkHandle);
-		}
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = pipelineDescriptorSetLayouts.size();
-		pipelineLayoutInfo.pSetLayouts = pipelineDescriptorSetLayouts.data();
+		pipelineLayoutInfo.setLayoutCount = creationData.vkDescriptorSetLayout->size();
+		pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout->data();
 		pipelineLayoutInfo.pPushConstantRanges = constants;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 
@@ -1568,7 +1559,6 @@ namespace Pudu
 		vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
 
 		pipeline->vkPipelineLayoutHandle = pipelineLayout;
-		pipeline->numActiveLayouts = pipelineDescriptorSetLayouts.size();
 
 		if (shaderState->graphicsPipeline)
 		{
@@ -1772,12 +1762,13 @@ namespace Pudu
 			pipeline->bindlessUpdated = false;
 		}
 
-		if (pipelineDescriptorSetLayouts.size() > 0)
+		if (creationData.vkDescriptorSetLayout->size() > 0)
 		{
 			//Create pipeline descriptor set, only handling bindless for now
 			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
-				creationData.descriptorCreationData.setsCount, pipelineDescriptorSetLayouts.data(), 1);
-			pipeline->numDescriptorSets = creationData.descriptorCreationData.setsCount;
+				creationData.descriptorSetLayouts->size(), creationData.vkDescriptorSetLayout->data());
+
+			pipeline->numActiveLayouts = creationData.vkDescriptorSetLayout->size();
 		}
 
 		LOG("Create Pipeline End");
@@ -1791,7 +1782,7 @@ namespace Pudu
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = computeShader->GetModule();
 		computeShaderStageInfo.pName = creationData.kernel;
-		computeShader->m_descriptors = creationData.descriptorsCreationData;
+		computeShader->m_descriptorLayoutsData = creationData.descriptorsCreationData;
 
 		auto pipeline = m_resources.AllocatePipeline();
 		pipeline->vkPipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
@@ -1802,15 +1793,7 @@ namespace Pudu
 			pipeline->name.append(creationData.name);
 		}
 
-		CreateDescriptorsLayouts(creationData.descriptorsCreationData.layoutData, pipeline->descriptorSetLayoutHandles);
-
-		for (uint32_t i = 0; i < pipeline->descriptorSetLayoutHandles.size(); i++)
-		{
-			pipeline->descriptorSetLayouts[i] = m_resources.GetDescriptorSetLayout(
-				pipeline->descriptorSetLayoutHandles[i]); //DESCRIPTOR SET LAYOUTS NOT SET IN RESOURCES
-		}
-
-		pipeline->numActiveLayouts = pipeline->descriptorSetLayoutHandles.size();
+		pipeline->numActiveLayouts = creationData.activeLayouts;
 
 		std::vector<VkDescriptorSetLayout> pipelineDescriptorSetLayouts;
 		for (uint32_t i = 0; i < pipeline->numActiveLayouts; i++)
@@ -1834,8 +1817,7 @@ namespace Pudu
 		if (pipelineDescriptorSetLayouts.size() > 0)
 		{
 			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
-				creationData.descriptorsCreationData.setsCount, pipelineDescriptorSetLayouts.data(),
-				1);
+				creationData.descriptorsCreationData.setsCount, pipelineDescriptorSetLayouts.data());
 			pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
 		}
 
@@ -2202,7 +2184,6 @@ namespace Pudu
 
 		CreateSwapChain();
 		CreateSwapchainImageViews();
-		CreateDepthResources();
 	}
 
 	void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
@@ -2226,7 +2207,7 @@ namespace Pudu
 		ubo.viewMatrix = cam->GetViewMatrix();
 		ubo.ProjectionMatrix = cam->Projection.GetProjectionMatrix();
 
-		if (drawCall.GetRenderMaterial()->shader->HasFragmentData())
+		if (drawCall.GetRenderMaterial()->m_shader->HasFragmentData())
 		{
 			//if (drawCall.MaterialPtr.baseColorHandle.IsValid()) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
 			//{
@@ -2261,7 +2242,7 @@ namespace Pudu
 		const char* fragmentEntryPoint = "fragmentMain";
 		const char* vertexEntryPoint = "vertexMain";
 
-		std::vector<const char*> entryPoints = { fragmentEntryPoint, vertexEntryPoint };
+		const std::vector entryPoints = { fragmentEntryPoint, vertexEntryPoint };
 		auto compileData = m_shaderCompiler.Compile(shaderPath.string().c_str(), entryPoints);
 
 		auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
@@ -2269,8 +2250,20 @@ namespace Pudu
 		shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
 		shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
 		shader->SetName(name);
+		shader->m_descriptorLayoutsData = compileData.descriptorsData;
 
-		shader->m_descriptors = compileData.descriptorsData;
+		CreateDescriptorsLayouts(shader->m_descriptorLayoutsData.layoutData,shader->m_descriptorSetLayoutHandles);
+
+		std::vector<SPtr<DescriptorSetLayout>> layouts;
+		for (uint32_t i = 0; i < shader->m_descriptorSetLayoutHandles.size(); i++)
+		{
+			layouts.push_back( m_resources.GetDescriptorSetLayout(
+				shader->m_descriptorSetLayoutHandles[i]));
+		}
+
+		shader->SetDescriptorSetLayouts(layouts);
+
+		shader->numActiveLayouts = shader->m_descriptorSetLayoutHandles.size();
 
 		return shader;
 	}
@@ -2285,8 +2278,22 @@ namespace Pudu
 		const char* kernelName = "computeMain";
 		auto kernel = compiledShader.GetKernel(kernelName);
 		shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, name);
-		shader->m_descriptors = compiledShader.descriptorsData;
+		shader->m_descriptorLayoutsData = compiledShader.descriptorsData;
 		shader->SetKernel(kernelName);
+
+		CreateDescriptorsLayouts(shader->m_descriptorLayoutsData.layoutData,shader->m_descriptorSetLayoutHandles);
+
+		std::vector<SPtr<DescriptorSetLayout>> layouts;
+		for (uint32_t i = 0; i < shader->m_descriptorSetLayoutHandles.size(); i++)
+		{
+			layouts.push_back( m_resources.GetDescriptorSetLayout(
+				shader->m_descriptorSetLayoutHandles[i]));
+		}
+
+		shader->SetDescriptorSetLayouts(layouts);
+
+		shader->numActiveLayouts = shader->m_descriptorSetLayoutHandles.size();
+
 		shader->CreatePipeline(this, nullptr);
 
 		return shader;
@@ -2517,12 +2524,12 @@ namespace Pudu
 		vkDestroyFramebuffer(m_device, handle->vkHandle, nullptr);
 	}
 
-	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, Material& material)
+	Model PuduGraphics::CreateModel(std::shared_ptr<Mesh> mesh, const SPtr<Material> material)
 	{
 		Model model;
 
 		std::vector<std::shared_ptr<Mesh>> meshes{ mesh };
-		std::vector<Material> materials{ material };
+		std::vector<SPtr<Material>> materials{ material };
 		model.Meshes = meshes;
 		model.Materials = materials;
 
@@ -2533,7 +2540,7 @@ namespace Pudu
 	{
 		auto mesh = CreateMesh(data);
 
-		Material material = Material();
+		auto material = m_resources.AllocateMaterial();
 		const std::filesystem::path path = data.Material.BaseTexturePath;
 		if (data.Material.hasBaseTexture)
 		{
@@ -2542,7 +2549,7 @@ namespace Pudu
 			settings.name = "Albedo";
 			settings.samplerData.wrap = true;
 
-			material.SetProperty("material.baseColorTex", LoadTexture2D(path, settings));
+			material->SetProperty("material.baseColorTex", LoadTexture2D(path, settings));
 		}
 
 		if (data.Material.hasNormalMap)
@@ -2554,7 +2561,7 @@ namespace Pudu
 			normalCreation.name = "Normal";
 			normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-			material.SetProperty("material.normalTex", LoadTexture2D(path, normalCreation));
+			material->SetProperty("material.normalTex", LoadTexture2D(path, normalCreation));
 		}
 
 		auto m = CreateModel(mesh, material);
@@ -2570,36 +2577,6 @@ namespace Pudu
 		if (err < 0)
 			abort();
 	}
-
-	void PuduGraphics::CreateDepthResources()
-	{
-		//LOG("CreateDepthResources");
-		//VkFormat depthFormat = FindDepthFormat();
-
-		//ImageCreateData createImageData;
-		//createImageData.width = m_swapChainExtent.width;
-		//createImageData.height = m_swapChainExtent.height;
-		//createImageData.format = depthFormat;
-		//createImageData.tilling = VK_IMAGE_TILING_OPTIMAL;
-		//createImageData.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-		//createImageData.memoryPropertiesFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		//createImageData.image = &m_depthImage;
-		//createImageData.imageMemory = &m_depthImageMemory;
-
-
-		//CreateImage(createImageData);
-
-		//ImageViewCreateData imageViewData;
-		//imageViewData.image = m_depthImage;
-		//imageViewData.format = depthFormat;
-		//imageViewData.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-		//m_depthImageView = CreateImageView(imageViewData);
-
-		//TransitionImageLayout(m_depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
-		//	VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-	}
-
 
 	VkFormat PuduGraphics::FindDepthFormat()
 	{

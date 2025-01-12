@@ -149,10 +149,15 @@ target_link_libraries(App PUBLIC PuduRenderer PuduCore PUBLIC slang)
 
 get_target_property(slangDLL slang SLANG_DLL)
 get_target_property(glslangDLL slang GLSLANG_DLL)
-configure_file(${slangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}" COPYONLY)
-configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}" COPYONLY)
+set(buildDir "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/")
 
+file(MAKE_DIRECTORY ${buildDir})
 
+configure_file(${slangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
+
+configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
+
+message(STATUS "Copying asset files")
 add_custom_command(
         TARGET App
         POST_BUILD

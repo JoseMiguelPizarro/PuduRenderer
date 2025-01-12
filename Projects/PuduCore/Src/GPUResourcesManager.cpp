@@ -105,6 +105,11 @@ namespace Pudu {
 		return m_meshes.GetResource(handle);
 	}
 
+	SPtr<Material> GPUResourcesManager::AllocateMaterial()
+	{
+		return AllocateGPUResource<Material>(m_materials, m_graphics);
+	}
+
 	SPtr<ComputeShader> GPUResourcesManager::AllocateComputeShader()
 	{
 		return AllocateGPUResource<ComputeShader>(m_computeShaders);

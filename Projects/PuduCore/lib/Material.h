@@ -10,6 +10,8 @@
 
 namespace Pudu {
 
+	class PuduGraphics;
+
 	class ShaderPropertyType {
 	public:
 		enum Enum{
@@ -32,7 +34,7 @@ namespace Pudu {
 	{
 		PuduGraphics* graphics;
 		IShaderObject* shader;
-		Pipeline* pipeline;
+		VkDescriptorSet* descriptorSets;
 		GPUCommands* commands;
 	};
 
@@ -52,23 +54,26 @@ namespace Pudu {
 		void ApplyTextureArray(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings);
 	};
 
-
-
-	class Material
+	class Material:public GPUResource<Material>
 	{
 	public:
-		SPtr<Shader> shader;
+		Material(PuduGraphics* graphics);
 		std::string Name;
-
+		void SetShader(SPtr<Shader> shader);
+		SPtr<Shader> GetShader(){return m_shader;}
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		void SetProperty(std::string name, SPtr<Pudu::Texture> texture);
 		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
 		void SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray);
+		VkDescriptorSet* GetDescriptorSets() {return m_descriptorSets;};
 
 	private:
 		friend class PuduGraphics;
 		friend class RenderPass;
+		SPtr<Shader> m_shader;
 		ShaderPropertiesBlock m_propertiesBlock;
+		VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS];
+
 	};
 }
 

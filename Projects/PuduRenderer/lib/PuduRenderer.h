@@ -32,7 +32,7 @@ namespace Pudu
 		SPtr<RenderPass> m_postProcessingRenderPass;
 		SPtr<ImguiRenderPass> m_imguiRenderPass;
 		SPtr<GraphicsBuffer> m_lightingBuffer;
-		Material m_globalPropertiesMaterial;
+		SPtr<Material> m_globalPropertiesMaterial;
 	};
 }
 

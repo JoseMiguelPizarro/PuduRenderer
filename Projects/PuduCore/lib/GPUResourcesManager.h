@@ -55,6 +55,9 @@ namespace Pudu {
 		SPtr<Mesh> AllocateMesh();
 		SPtr<Mesh> GetMesh(GPUResourceHandle<Mesh> handle);
 
+		SPtr<Material> AllocateMaterial();
+		SPtr<Material> GetMaterial(GPUResourceHandle<Material> handle);
+
 		SPtr<ComputeShader> AllocateComputeShader();
 		SPtr<ComputeShader> GetComputeShader(GPUResourceHandle<ComputeShader> handle);
 
@@ -86,12 +89,12 @@ namespace Pudu {
 			return static_pointer_cast<T>(m_textures.GetResource(handle.Index()));
 		}
 
-		template<typename T, typename poolType>
+		template<typename T, typename poolType, typename ...Args>
 		//	requires(std::convertible_to < T, GPUResource<T>>)
-		SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool) {
+		SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool, Args&&... args) {
 
 			uint32_t resourceIndex = { static_cast<uint32_t>(pool.Size()) };
-			SPtr<T> resourcePtr = std::make_shared<T>();
+			SPtr<T> resourcePtr = std::make_shared<T>(args...);
 
 			resourcePtr->m_handle.m_Index = resourceIndex;
 
@@ -128,6 +131,7 @@ namespace Pudu {
 		ResourcePool<SPtr<GPUCommands>> m_commandBuffers;
 		ResourcePool<SPtr<CommandPool>> m_commandPools;
 		ResourcePool<SPtr<DescriptorPool>> m_descriptorPools;
+		ResourcePool<SPtr<Material>> m_materials;
 
 		std::unordered_map<std::string, SPtr<Texture>> m_texturesByName;
 	};

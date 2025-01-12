@@ -10,10 +10,9 @@ namespace Pudu
 	void DepthPrepassRenderPass::Initialize(PuduGraphics* graphics)
 	{
 		m_depthShader = graphics->CreateShader(K_DepthShaderPath, "Depth");
-		auto m = Material();
-		m.shader = m_depthShader;
-		m.Name = "DepthPassMaterial";
-		m_depthMaterial = std::make_shared<Material>(m);
+		m_depthMaterial = graphics->Resources()->AllocateMaterial();
+		m_depthMaterial->SetShader(m_depthShader);
+		m_depthMaterial->Name = "DepthPassMaterial";
 	}
 
 	void DepthPrepassRenderPass::BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)

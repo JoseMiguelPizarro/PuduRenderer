@@ -9,6 +9,8 @@ namespace fs = std::filesystem;
 void TriangleApp::OnRun()
 {
 	m_puduRenderer.Render(&m_scene);
+	return ;
+
 	float radius = 20;
 	float pich = 45;
 
@@ -135,7 +137,7 @@ void TriangleApp::LoadGameboyModel()
 
 		if (re != nullptr)
 		{
-			re->GetModel()->Materials[0].shader = standardShader;
+			re->GetModel()->Materials[0]->SetShader(standardShader);
 		}
 	}
 

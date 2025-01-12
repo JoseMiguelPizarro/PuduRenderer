@@ -22,7 +22,10 @@ namespace Pudu
 		creationData.computeShaderHandle = Handle();
 		creationData.name = GetName();
 		creationData.kernel = m_kernel.c_str();
-		creationData.descriptorsCreationData = m_descriptors;
+
+		creationData.descriptorSetLayouts = &descriptorSetLayouts;
+		creationData.activeLayouts = descriptorSetLayouts.size();
+		creationData.vkDescriptorSetLayout = GetVkDescriptorSetLayouts();
 
 		m_pipelineHandle = graphics->CreateComputePipeline(creationData);
 

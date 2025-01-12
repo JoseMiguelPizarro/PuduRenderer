@@ -5,15 +5,15 @@ namespace Pudu
 	void DrawIndirectRenderPass::Render(RenderFrameData& frameData)
 	{
 		auto commands = frameData.currentCommand;
-		auto pipeline = GetPipeline({ .renderPass = this, .shader = m_material.shader.get(),.renderer = frameData.renderer, });
+		auto pipeline = GetPipeline({ .renderPass = this, .shader = m_material->GetShader().get(),.renderer = frameData.renderer, });
 
 		UniformBufferObject ubo;
 		ubo.ProjectionMatrix = frameData.camera->Projection.GetProjectionMatrix();
 		ubo.viewMatrix = frameData.camera->GetViewMatrix();
 		ubo.time = frameData.graphics->GetTime()->Time();
 
-		frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material.shader.get(), pipeline, commands.get() });
-		m_material.GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material.shader.get(), pipeline,commands.get() });
+		frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), pipeline->vkDescriptorSets, commands.get() });
+		m_material->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), pipeline->vkDescriptorSets,commands.get() });
 		commands->BindPipeline(pipeline);
 		commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
 
@@ -43,7 +43,7 @@ namespace Pudu
 		m_drawCount = drawCount;
 		return this;
 	}
-	DrawIndirectRenderPass* DrawIndirectRenderPass::SetMaterial(Material& material)
+	DrawIndirectRenderPass* DrawIndirectRenderPass::SetMaterial(SPtr<Material> material)
 	{
 		m_material = material;
 		return this;

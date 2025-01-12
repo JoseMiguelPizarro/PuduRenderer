@@ -2,12 +2,11 @@
 
 namespace Pudu
 {
-
-	Material* DrawCall::GetRenderMaterial()
+	SPtr<Material> DrawCall::GetRenderMaterial()
 	{
 		if (m_replacementMaterial != nullptr)
 		{
-			return m_replacementMaterial.get();
+			return m_replacementMaterial;
 		}
 
 		return MaterialPtr;

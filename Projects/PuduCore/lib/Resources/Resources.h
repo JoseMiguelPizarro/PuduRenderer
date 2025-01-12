@@ -598,11 +598,23 @@ namespace Pudu
 		ShaderStage& GetStage(VkShaderStageFlagBits stageFlag);
 	};
 
+	class ComputeShader;
+
+	struct ComputePipelineCreationData {
+		const char* name;
+		const char* kernel;
+		GPUResourceHandle<ComputeShader> computeShaderHandle;
+
+		DescriptorSetLayoutsData descriptorCreationData;
+		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
+		std::vector<VkDescriptorSetLayout>* vkDescriptorSetLayout;
+		uint32_t activeLayouts;
+	};
+
 	struct PipelineCreationData
 	{
 		const uint32_t* vertexShaderData;
 		const uint32_t* fragmentShaderData;
-		DescriptorSetLayoutsData descriptorCreationData;
 
 		RasterizationCreation rasterization;
 		DepthStencilCreation depthStencil;
@@ -612,18 +624,14 @@ namespace Pudu
 
 		GPUResourceHandle<RenderPass> renderPassHandle;
 
-		uint32_t activeLayouts = 0;
+		DescriptorSetLayoutsData descriptorCreationData;
+		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
+		std::vector<VkDescriptorSetLayout>* vkDescriptorSetLayout;
+		uint32_t activeLayouts;
+
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 		const char* name = nullptr;
-	};
-
-	class ComputeShader;
-	struct ComputePipelineCreationData {
-		const char* name;
-		const char* kernel;
-		DescriptorSetLayoutsData descriptorsCreationData;
-		GPUResourceHandle<ComputeShader> computeShaderHandle;
 	};
 }
 

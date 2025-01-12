@@ -179,9 +179,9 @@ namespace Pudu
 		m_hasRecordedCommand = true;
 	}
 
-	void GPUCommands::BindDescriptorSet(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount)
+	void GPUCommands::BindDescriptorSet(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount, uint32_t offset)
 	{
-		vkCmdBindDescriptorSets(vkHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, handlesCount, handles, 0, nullptr);
+		vkCmdBindDescriptorSets(vkHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, offset, handlesCount, handles, 0, nullptr);
 	}
 
 	void GPUCommands::BindDescriptorSetCompute(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount)

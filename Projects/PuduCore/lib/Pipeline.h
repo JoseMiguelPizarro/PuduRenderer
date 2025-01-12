@@ -38,8 +38,6 @@ namespace Pudu
 
 		GPUResourceHandle<ShaderState> shaderState;
 
-		SPtr<DescriptorSetLayout> descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
-		std::vector<GPUResourceHandle<DescriptorSetLayout>> descriptorSetLayoutHandles;
 		uint32_t numActiveLayouts = 0;
 
 		DepthStencilCreation depthStencil;

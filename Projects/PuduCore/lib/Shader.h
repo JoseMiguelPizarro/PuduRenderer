@@ -17,6 +17,7 @@ namespace Pudu
 	public:
 		VkShaderModule GetModule();
 		std::filesystem::path GetPath();
+		VkDescriptorSetLayout* GetDescriptorSetLayouts();
 
 		Shader() = default;
 
@@ -29,7 +30,6 @@ namespace Pudu
 		{
 			this->m_module = module;
 		}
-
 
 		void LoadFragmentData(const uint32_t* data, size_t dataSize, const char* entryPoint = "main");
 		void LoadVertexData(const uint32_t* data, size_t dataSize, const char* entryPoint = "main");
@@ -63,5 +63,8 @@ namespace Pudu
 		size_t m_fragmentDataSize;
 		uint32_t* m_vertexData;
 		size_t m_vertexDataSize;
+
+	private:
+
 	};
 }

@@ -15,6 +15,8 @@ namespace Pudu {
 		default:
 			break;
 		}
+
+		throw std::invalid_argument("Invalid pipeline type");
 	}
 
 	void Material::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
@@ -104,7 +106,7 @@ namespace Pudu {
 		VkWriteDescriptorSet imageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		imageWrite.descriptorCount = 1;
 		imageWrite.dstBinding = binding->index;
-		imageWrite.dstSet = target.pipeline->vkDescriptorSets[binding->set];
+		imageWrite.dstSet = target.descriptorSets[binding->set];
 		imageWrite.pImageInfo = &imageInfo;
 		imageWrite.descriptorType = binding->type;
 
@@ -130,7 +132,7 @@ namespace Pudu {
 		VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		bufferWrite.descriptorCount = 1;
 		bufferWrite.dstBinding = binding->index;
-		bufferWrite.dstSet = target.pipeline->vkDescriptorSets[binding->set];
+		bufferWrite.dstSet = target.descriptorSets[binding->set];
 		bufferWrite.pBufferInfo = &bufferInfo;
 		bufferWrite.descriptorType = binding->type;
 
@@ -164,7 +166,7 @@ namespace Pudu {
 			descriptorWrite.descriptorCount = 1;
 			descriptorWrite.dstArrayElement = texture->Handle();
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite.dstSet = settings.pipeline->vkDescriptorSets[binding->set];
+			descriptorWrite.dstSet = settings.descriptorSets[binding->set];
 
 			descriptorWrite.dstBinding = binding->index;
 
@@ -182,9 +184,18 @@ namespace Pudu {
 		}
 
 		settings.graphics->UpdateDescriptorSet(currentWriteIndex, descriptorWrites);
+		//settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, descriptorWrites);
+	}
 
+	Material::Material(PuduGraphics* graphics)
+	{
+		this->Create(graphics);
+	}
 
+	void Material::SetShader(SPtr<Shader> shader)
+	{
+		m_shader = shader;
 
-		settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, descriptorWrites);
+		m_gpu->CreateDescriptorSets(m_descriptorSets,shader->GetDescriptorSetLayoutsData()->setsCount,shader->GetDescriptorSetLayouts());
 	}
 }

@@ -132,7 +132,7 @@ namespace Pudu
 		GLFWwindow* WindowPtr;
 		bool FramebufferResized = false;
 		void Cleanup();
-		Model CreateModel(std::shared_ptr<Mesh> mesh, Material& material);
+		Model CreateModel(std::shared_ptr<Mesh> mesh, SPtr<Material> material);
 		Model CreateModel(MeshCreationData const& data);
 		SPtr<Mesh> CreateMesh(MeshCreationData const& meshData);
 		void UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
@@ -239,6 +239,8 @@ namespace Pudu
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
 		void UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
+		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
+		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
 
 	private:
 		friend class GPUResourcesManager;
@@ -277,7 +279,6 @@ namespace Pudu
 		void DestroyShaderModule(VkShaderModule& state);
 		void DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset);
 		void DestroyCommandPool(CommandPool* commandPool);
-		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts, uint32_t layoutsCount);
 		void CreateFramesCommandBuffer();
 		void CreateSwapChainSyncObjects();
 		void RecreateSwapChain();
@@ -290,7 +291,6 @@ namespace Pudu
 	
 
 #pragma region DepthBuffer
-		void CreateDepthResources();
 		VkFormat FindDepthFormat();
 
 		bool HasStencilComponent(VkFormat format);
