@@ -1782,7 +1782,6 @@ namespace Pudu
 		computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 		computeShaderStageInfo.module = computeShader->GetModule();
 		computeShaderStageInfo.pName = creationData.kernel;
-		computeShader->m_descriptorLayoutsData = creationData.descriptorsCreationData;
 
 		auto pipeline = m_resources.AllocatePipeline();
 		pipeline->vkPipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
@@ -1795,17 +1794,9 @@ namespace Pudu
 
 		pipeline->numActiveLayouts = creationData.activeLayouts;
 
-		std::vector<VkDescriptorSetLayout> pipelineDescriptorSetLayouts;
-		for (uint32_t i = 0; i < pipeline->numActiveLayouts; i++)
-		{
-			pipelineDescriptorSetLayouts.push_back(pipeline->descriptorSetLayouts[i]->vkHandle);
-		}
-
-
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-		pipelineLayoutInfo.setLayoutCount = creationData.descriptorsCreationData.layoutData.size();
-		pipelineLayoutInfo.pSetLayouts = pipelineDescriptorSetLayouts.data();
-
+		pipelineLayoutInfo.setLayoutCount = creationData.vkDescriptorSetLayout->size();
+		pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout->data();
 
 		VKCheck(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipeline->vkPipelineLayoutHandle),
 			"Failed to create compute pipeline layout");
@@ -1814,14 +1805,12 @@ namespace Pudu
 		pipelineInfo.layout = pipeline->vkPipelineLayoutHandle;
 		pipelineInfo.stage = computeShaderStageInfo;
 
-		if (pipelineDescriptorSetLayouts.size() > 0)
+		if (creationData.vkDescriptorSetLayout->size() > 0)
 		{
 			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
-				creationData.descriptorsCreationData.setsCount, pipelineDescriptorSetLayouts.data());
-			pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
+				creationData.vkDescriptorSetLayout->size(), creationData.vkDescriptorSetLayout->data());
+			pipeline->numDescriptorSets = creationData.vkDescriptorSetLayout->size();
 		}
-
-		pipeline->numDescriptorSets = creationData.descriptorsCreationData.setsCount;
 
 		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle),
 			"Failed to create compute pipeline");
