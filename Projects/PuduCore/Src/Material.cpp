@@ -86,7 +86,7 @@ namespace Pudu {
 			}
 		}
 
-		//m_descriptorUpdateRequests.clear();
+		m_descriptorUpdateRequests.clear();
 	}
 	void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget target)
 	{

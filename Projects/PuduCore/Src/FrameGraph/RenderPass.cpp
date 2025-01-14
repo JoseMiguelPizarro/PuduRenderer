@@ -277,8 +277,8 @@ namespace Pudu
 					mat->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, material->m_shader.get(), material->GetDescriptorSets(), commands.get() });
 				}
 
-				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets,
-					pipeline->numDescriptorSets, frameData.descriptorSetOffset);
+				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, material->GetDescriptorSets(),
+					material->GetShader()->GetActiveLayoutCount(), frameData.descriptorSetOffset);
 			}
 
 			commands->BindMesh(mesh.get());

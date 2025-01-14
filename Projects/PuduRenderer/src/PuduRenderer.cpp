@@ -126,9 +126,9 @@ namespace Pudu
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
-		AddRenderPass(drawGrassRP.get());
+	//	AddRenderPass(drawGrassRP.get());
 
-		AddRenderPass(m_postProcessingRenderPass.get());
+	//	AddRenderPass(m_postProcessingRenderPass.get());
 
 		AddRenderPass(m_imguiRenderPass.get());
 		frameGraph.AllocateRequiredResources();
