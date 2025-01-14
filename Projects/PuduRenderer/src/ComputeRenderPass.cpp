@@ -44,7 +44,7 @@ namespace Pudu
 
 		m_shader->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_shader.get(), pipeline->vkDescriptorSets,computeCommands.get() });
 
-		computeCommands->BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->descriptorSetLayoutHandles.size());
+		computeCommands->BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
 
 		computeCommands->Dispatch(m_groupX, m_groupY, m_groupZ);
 	}

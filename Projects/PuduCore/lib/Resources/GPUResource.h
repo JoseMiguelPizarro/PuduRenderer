@@ -41,6 +41,8 @@ namespace Pudu
 
 		void Create(PuduGraphics* gpu)
 		{
+			m_gpu = gpu;
+
 			if (m_allocated)
 			{
 				return;
@@ -52,7 +54,7 @@ namespace Pudu
 
 	protected:
 		friend class GPUResourcesManager;
-		bool m_allocated;
+		bool m_allocated = false;
 		PuduGraphics* m_gpu;
 
 		virtual void OnCreate(PuduGraphics* gpu)
@@ -80,17 +82,6 @@ namespace Pudu
 	public:
 		GPUResourceHandle<T> Handle() { return m_handle; }
 
-
-		virtual void Create(PuduGraphics* gpu)
-		{
-			if (m_allocated)
-			{
-				return;
-			}
-
-			OnCreate(gpu);
-			m_allocated = true;
-		}
 
 		virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
 		virtual ~GPUResource() = default;

@@ -200,14 +200,8 @@ namespace Pudu {
 			}
 
 			auto fieldLayout = field->getTypeLayout()->getElementTypeLayout();
-			printf(" Block: %s \n", field->getName());
-			Tab(1);
-			printf("Type: %s \n", field->getType()->getName());
-			Tab(1);
+
 			size_t descriptorSet = field->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-			printf("Set: %d \n", field->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE));
-			Tab(1);
-			printf("Stage: %d \n", field->getStage());
 
 			auto propertiesCount = fieldLayout->getFieldCount();
 
@@ -220,10 +214,6 @@ namespace Pudu {
 
 			DescriptorSetLayoutData layoutData{};
 
-			//Create a proxy list that holds pointers to the sets in outDescriptorSetLayoutData, so we can return the pointer in the query
-			auto storedLayout = from(layoutsPtr)
-				.where([descriptorSet](const DescriptorSetLayoutData* l) {return l->SetNumber == descriptorSet; })
-				.firstOrDefault(&layoutData);
 
 			bool layoutExists = from(layoutsPtr).any([descriptorSet](const DescriptorSetLayoutData* l) { return l->SetNumber == descriptorSet; });
 
@@ -266,17 +256,6 @@ namespace Pudu {
 				layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT; //TODO: Hack, but in all stages for now
 				layoutBinding.pImmutableSamplers = nullptr;
 				layoutData.Bindings.push_back(layoutBinding);
-
-				Tab(2);
-				printf("Property: %s \n", property->getName());
-				Tab(3);
-				printf("Type: %s \n", property->getType()->getName());
-				Tab(3);
-				printf("Binding: %d \n", property->getBindingIndex());
-				Tab(3);
-				printf("Stage: %d \n", property->getStage());
-				Tab(3);
-				printf("Elements %d \n", property->getTypeLayout()->getElementCount());
 			}
 			if (!layoutExists)
 			{

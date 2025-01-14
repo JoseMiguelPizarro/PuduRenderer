@@ -1501,11 +1501,10 @@ namespace Pudu
 	/// </summary>
 	/// <param name="layoutData"></param>
 	/// <param name="out"></param>
-	void PuduGraphics::CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData,
+	void PuduGraphics::CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutsData,
 		std::vector<GPUResourceHandle<DescriptorSetLayout>>& out)
 	{
-		//Just have 1 set for now (bindless) so let's keep it simple
-		for (auto& layoutData : layoutData)
+		for (auto& layoutData : layoutsData)
 		{
 			if (layoutData.SetNumber == K_BINDLESS_SET_INDEX) //
 			{
@@ -1550,8 +1549,8 @@ namespace Pudu
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = creationData.vkDescriptorSetLayout->size();
-		pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout->data();
+		pipelineLayoutInfo.setLayoutCount = creationData.activeLayouts;
+		pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout;
 		pipelineLayoutInfo.pPushConstantRanges = constants;
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 
@@ -1762,13 +1761,13 @@ namespace Pudu
 			pipeline->bindlessUpdated = false;
 		}
 
-		if (creationData.vkDescriptorSetLayout->size() > 0)
+		if (creationData.activeLayouts > 0)
 		{
 			//Create pipeline descriptor set, only handling bindless for now
 			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
-				creationData.descriptorSetLayouts->size(), creationData.vkDescriptorSetLayout->data());
+				creationData.activeLayouts, creationData.vkDescriptorSetLayout);
 
-			pipeline->numActiveLayouts = creationData.vkDescriptorSetLayout->size();
+			pipeline->numActiveLayouts = creationData.activeLayouts;
 		}
 
 		LOG("Create Pipeline End");
@@ -1795,8 +1794,8 @@ namespace Pudu
 		pipeline->numActiveLayouts = creationData.activeLayouts;
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-		pipelineLayoutInfo.setLayoutCount = creationData.vkDescriptorSetLayout->size();
-		pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout->data();
+		pipelineLayoutInfo.setLayoutCount = creationData.descriptorSetLayouts->size();
+		pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout;
 
 		VKCheck(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipeline->vkPipelineLayoutHandle),
 			"Failed to create compute pipeline layout");
@@ -1805,11 +1804,11 @@ namespace Pudu
 		pipelineInfo.layout = pipeline->vkPipelineLayoutHandle;
 		pipelineInfo.stage = computeShaderStageInfo;
 
-		if (creationData.vkDescriptorSetLayout->size() > 0)
+		if (creationData.activeLayouts > 0)
 		{
 			CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
-				creationData.vkDescriptorSetLayout->size(), creationData.vkDescriptorSetLayout->data());
-			pipeline->numDescriptorSets = creationData.vkDescriptorSetLayout->size();
+				creationData.activeLayouts, creationData.vkDescriptorSetLayout);
+			pipeline->numDescriptorSets = creationData.activeLayouts;
 		}
 
 		VKCheck(vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->vkHandle),
@@ -2252,7 +2251,7 @@ namespace Pudu
 
 		shader->SetDescriptorSetLayouts(layouts);
 
-		shader->numActiveLayouts = shader->m_descriptorSetLayoutHandles.size();
+		shader->numActiveLayouts = layouts.size();
 
 		return shader;
 	}
@@ -2281,7 +2280,7 @@ namespace Pudu
 
 		shader->SetDescriptorSetLayouts(layouts);
 
-		shader->numActiveLayouts = shader->m_descriptorSetLayoutHandles.size();
+		shader->numActiveLayouts = layouts.size();
 
 		shader->CreatePipeline(this, nullptr);
 

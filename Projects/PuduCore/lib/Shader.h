@@ -17,7 +17,6 @@ namespace Pudu
 	public:
 		VkShaderModule GetModule();
 		std::filesystem::path GetPath();
-		VkDescriptorSetLayout* GetDescriptorSetLayouts();
 
 		Shader() = default;
 

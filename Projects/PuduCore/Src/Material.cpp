@@ -195,7 +195,9 @@ namespace Pudu {
 	void Material::SetShader(SPtr<Shader> shader)
 	{
 		m_shader = shader;
+		const auto layouts = shader->GetVkDescriptorSetLayouts();
+		const auto layoutCount = shader->GetActiveLayoutCount();
 
-		m_gpu->CreateDescriptorSets(m_descriptorSets,shader->GetDescriptorSetLayoutsData()->setsCount,shader->GetDescriptorSetLayouts());
+		m_gpu->CreateDescriptorSets(m_descriptorSets,layoutCount,layouts);
 	}
 }

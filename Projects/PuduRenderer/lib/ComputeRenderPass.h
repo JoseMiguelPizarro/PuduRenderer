@@ -16,7 +16,7 @@ namespace Pudu
 		void EndRender(RenderFrameData& frameData) override {};
 		void AfterRender(RenderFrameData& frameData) override {};
 		void SetupRender(RenderFrameData& frameData) override {};
-		void Create(PuduGraphics* gfx) override {};
+		void OnCreate(PuduGraphics* gfx) override {};
 
 	private:
 		std::string m_kernel;

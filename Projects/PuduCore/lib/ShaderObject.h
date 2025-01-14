@@ -19,7 +19,8 @@ namespace Pudu {
 		virtual void SetName(const char* name) = 0;
 		virtual const char* GetName() = 0;
 
-		std::vector<VkDescriptorSetLayout>* GetVkDescriptorSetLayouts(){return &m_VkpipelineDescriptorSetLayouts;}
+		VkDescriptorSetLayout* GetVkDescriptorSetLayouts(){return m_VkDescriptorSetLayouts.data();}
+		uint32_t GetActiveLayoutCount(){return numActiveLayouts;}
 
 
 	protected:
@@ -30,16 +31,17 @@ namespace Pudu {
 
 			for (const auto& layout: descriptorSetLayouts)
 			{
-				m_VkpipelineDescriptorSetLayouts.push_back(layout->vkHandle);
+				m_VkDescriptorSetLayouts.push_back(layout->vkHandle);
 			}
+
+			numActiveLayouts = descriptorSetLayouts.size();
 		};
 
 		VkShaderModule m_module;
 		DescriptorSetLayoutsData m_descriptorLayoutsData;
 		std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
 		std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
-		std::vector<VkDescriptorSetLayout> m_VkpipelineDescriptorSetLayouts;
-
+		std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
 
 		uint32_t numActiveLayouts;
 	};

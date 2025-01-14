@@ -607,7 +607,7 @@ namespace Pudu
 
 		DescriptorSetLayoutsData descriptorCreationData;
 		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
-		std::vector<VkDescriptorSetLayout>* vkDescriptorSetLayout;
+		VkDescriptorSetLayout* vkDescriptorSetLayout;
 		uint32_t activeLayouts;
 	};
 
@@ -626,7 +626,7 @@ namespace Pudu
 
 		DescriptorSetLayoutsData descriptorCreationData;
 		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
-		std::vector<VkDescriptorSetLayout>* vkDescriptorSetLayout;
+		VkDescriptorSetLayout* vkDescriptorSetLayout;
 		uint32_t activeLayouts;
 
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
