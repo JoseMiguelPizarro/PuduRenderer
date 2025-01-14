@@ -121,14 +121,12 @@ namespace Pudu
 		m_imguiRenderPass->name = "ImGui";
 		m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
 
-
 		AddRenderPass(computeRP.get());
 		AddRenderPass(m_depthRenderPass.get());
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
-	//	AddRenderPass(drawGrassRP.get());
-
-	//	AddRenderPass(m_postProcessingRenderPass.get());
+		AddRenderPass(drawGrassRP.get());
+		AddRenderPass(m_postProcessingRenderPass.get());
 
 		AddRenderPass(m_imguiRenderPass.get());
 		frameGraph.AllocateRequiredResources();
@@ -143,6 +141,7 @@ namespace Pudu
 	void PuduRenderer::OnRender(RenderFrameData& data)
 	{
 		data.globalPropertiesMaterial = m_globalPropertiesMaterial;
+
 		UpdateLightingBuffer(data);
 	}
 

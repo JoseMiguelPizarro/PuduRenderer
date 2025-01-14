@@ -45,7 +45,7 @@ namespace Pudu
 		m_material->GetPropertiesBlock()->ApplyProperties({ renderData.graphics, m_postProcessingShader.get(), m_material->GetDescriptorSets(),command.get() });
 
 		command->BindPipeline(pipeline);
-		command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
+		command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, m_material->GetDescriptorSets() + renderData.descriptorSetOffset, m_material->GetShader()->GetActiveLayoutCount() - renderData.descriptorSetOffset);
 
 		command->DrawIndexed(m_quadMesh->GetIndices()->size());
 	}

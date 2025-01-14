@@ -11,13 +11,13 @@ namespace Pudu
 		ubo.ProjectionMatrix = frameData.camera->Projection.GetProjectionMatrix();
 		ubo.viewMatrix = frameData.camera->GetViewMatrix();
 		ubo.time = frameData.graphics->GetTime()->Time();
-
-		frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), pipeline->vkDescriptorSets, commands.get() });
-		m_material->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), pipeline->vkDescriptorSets,commands.get() });
-		commands->BindPipeline(pipeline);
-		commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
-
 		commands->PushConstants(pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(UniformBufferObject), &ubo);
+
+		//frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), m_material->GetDescriptorSets(), commands.get() });
+		m_material->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), m_material->GetDescriptorSets(),commands.get() });
+		commands->BindPipeline(pipeline);
+		commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, m_material->GetDescriptorSets(),m_material->GetShader()->GetActiveLayoutCount() - frameData.descriptorSetOffset,frameData.descriptorSetOffset);
+
 		commands->DrawIndirect(m_indirectBuffer.get(), m_offset, m_drawCount, m_stride);
 	}
 	DrawIndirectRenderPass* DrawIndirectRenderPass::SetIndirectBuffer(SPtr<GraphicsBuffer> buffer)

@@ -278,7 +278,7 @@ namespace Pudu
 				}
 
 				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, material->GetDescriptorSets(),
-					material->GetShader()->GetActiveLayoutCount(), frameData.descriptorSetOffset);
+					material->GetShader()->GetActiveLayoutCount());
 			}
 
 			commands->BindMesh(mesh.get());

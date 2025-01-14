@@ -94,7 +94,7 @@ namespace Pudu {
 
 		if (binding == nullptr)
 		{
-			//LOG("Trying to set non-existing texture {} for shader {}", request.name, shader->GetName());
+			LOG("Trying to set non-existing texture {} for shader {}", request.name, target.shader->GetName());
 			return;
 		}
 
