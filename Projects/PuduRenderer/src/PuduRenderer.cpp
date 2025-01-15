@@ -126,7 +126,7 @@ namespace Pudu
 		AddRenderPass(m_shadowMapRenderPass.get());
 		AddRenderPass(m_forwardRenderPass.get());
 		AddRenderPass(drawGrassRP.get());
-		AddRenderPass(m_postProcessingRenderPass.get());
+	//	AddRenderPass(m_postProcessingRenderPass.get());
 
 		AddRenderPass(m_imguiRenderPass.get());
 		frameGraph.AllocateRequiredResources();
@@ -134,14 +134,20 @@ namespace Pudu
 
 		std::printf(frameGraph.ToString().c_str());
 
+		m_globalPropertiesMaterial->SetShader(grassShader);
 		m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
 		m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
 	}
 
+	static bool isFirstFrame = true;
 	void PuduRenderer::OnRender(RenderFrameData& data)
 	{
 		data.globalPropertiesMaterial = m_globalPropertiesMaterial;
 
+		m_globalPropertiesMaterial->ApplyProperties();
+
+		data.descriptorSetOffset = isFirstFrame?0:2;
+		isFirstFrame = false;
 		UpdateLightingBuffer(data);
 	}
 

@@ -244,7 +244,6 @@ namespace Pudu
 
 		auto drawCalls = renderScene->GetDrawCalls(renderMask);
 
-
 		for (DrawCall drawCall : *renderScene->GetDrawCalls(renderMask))
 		{
 			frameData.currentDrawCall = &drawCall;
@@ -260,9 +259,7 @@ namespace Pudu
 				.renderPass = frameData.currentRenderPass.get(),
 				.shader = material->m_shader.get(),
 				.renderer = frameData.renderer
-				});
-
-			frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, material->m_shader.get(), material->GetDescriptorSets(),commands.get() });
+			});
 
 			if (pipeline != frameData.currentPipeline)
 			{
@@ -270,15 +267,21 @@ namespace Pudu
 				frameData.currentPipeline = pipeline;
 			}
 
-			if (pipeline->numActiveLayouts > 0)
+			if (frameData.descriptorSetOffset > 0)
 			{
-				for (auto& mat : model->Materials)
-				{
-					mat->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, material->m_shader.get(), material->GetDescriptorSets(), commands.get() });
-				}
+				auto globalMaterial = frameData.globalPropertiesMaterial;
+				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, globalMaterial->GetDescriptorSets(),
+				                            frameData.descriptorSetOffset);
+			}
 
-				commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, material->GetDescriptorSets(),
-					material->GetShader()->GetActiveLayoutCount());
+			for (auto& mat : model->Materials)
+			{
+				mat->ApplyProperties();
+			}
+
+			if (pipeline->numActiveLayouts - frameData.descriptorSetOffset > 0)
+			{
+				BindMaterialDescriptorSets(pipeline, material, frameData);
 			}
 
 			commands->BindMesh(mesh.get());
@@ -286,12 +289,12 @@ namespace Pudu
 			auto ubo = frameData.graphics->GetUniformBufferObject(frameData.camera, drawCall);
 
 			Viewport viewport;
-			viewport.rect = { 0, 0, (uint16)frameData.graphics->WindowWidth, (uint16)frameData.graphics->WindowHeight };
+			viewport.rect = {0, 0, (uint16)frameData.graphics->WindowWidth, (uint16)frameData.graphics->WindowHeight};
 			viewport.maxDepth = 1;
 			commands->SetViewport(viewport);
 			commands->PushConstants(pipeline->vkPipelineLayoutHandle,
-				VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-				sizeof(UniformBufferObject), &ubo);
+			                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+			                        sizeof(UniformBufferObject), &ubo);
 
 			commands->DrawIndexed(static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
 
@@ -332,6 +335,17 @@ namespace Pudu
 	void RenderPass::OnCreate(PuduGraphics* gpu)
 	{
 		gpu->CreateRenderPass(this);
+	}
+
+	void RenderPass::BindMaterialDescriptorSets(Pipeline* pipeline, SPtr<Material> material,
+		RenderFrameData& frameData)
+	{
+		if (pipeline->numActiveLayouts - frameData.descriptorSetOffset > 0)
+		{
+			frameData.currentCommand->BindDescriptorSet(pipeline->vkPipelineLayoutHandle,
+				&material->GetDescriptorSets()[frameData.descriptorSetOffset],
+				material->GetShader()->GetActiveLayoutCount() - frameData.descriptorSetOffset, frameData.descriptorSetOffset);
+		}
 	}
 
 	VkRenderingInfo RenderPass::GetRenderingInfo(RenderFrameData& data)

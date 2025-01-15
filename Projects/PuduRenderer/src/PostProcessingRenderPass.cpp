@@ -42,10 +42,10 @@ namespace Pudu
 			.renderer = renderData.renderer,
 			});
 
-		m_material->GetPropertiesBlock()->ApplyProperties({ renderData.graphics, m_postProcessingShader.get(), m_material->GetDescriptorSets(),command.get() });
-
+		m_material->ApplyProperties();
 		command->BindPipeline(pipeline);
-		command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, m_material->GetDescriptorSets() + renderData.descriptorSetOffset, m_material->GetShader()->GetActiveLayoutCount() - renderData.descriptorSetOffset);
+
+		BindMaterialDescriptorSets(pipeline,m_material,renderData);
 
 		command->DrawIndexed(m_quadMesh->GetIndices()->size());
 	}

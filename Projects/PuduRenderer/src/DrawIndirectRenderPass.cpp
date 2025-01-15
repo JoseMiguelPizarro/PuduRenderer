@@ -13,10 +13,17 @@ namespace Pudu
 		ubo.time = frameData.graphics->GetTime()->Time();
 		commands->PushConstants(pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
-		//frameData.globalPropertiesMaterial->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), m_material->GetDescriptorSets(), commands.get() });
-		m_material->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_material->GetShader().get(), m_material->GetDescriptorSets(),commands.get() });
+		if (frameData.descriptorSetOffset > 0)
+		{
+			auto globalMaterial = frameData.globalPropertiesMaterial;
+			commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, globalMaterial->GetDescriptorSets(),
+										frameData.descriptorSetOffset);
+		}
+
+		m_material->ApplyProperties();
 		commands->BindPipeline(pipeline);
-		commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, m_material->GetDescriptorSets(),m_material->GetShader()->GetActiveLayoutCount() - frameData.descriptorSetOffset,frameData.descriptorSetOffset);
+
+		BindMaterialDescriptorSets(pipeline,m_material,frameData);
 
 		commands->DrawIndirect(m_indirectBuffer.get(), m_offset, m_drawCount, m_stride);
 	}

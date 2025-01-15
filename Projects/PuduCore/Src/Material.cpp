@@ -19,6 +19,11 @@ namespace Pudu {
 		throw std::invalid_argument("Invalid pipeline type");
 	}
 
+	void Material::ApplyProperties()
+	{
+		m_propertiesBlock.ApplyProperties({m_gpu,m_shader.get(),m_descriptorSets});
+	}
+
 	void Material::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
 	{
 		m_propertiesBlock.SetProperty(name, texture);

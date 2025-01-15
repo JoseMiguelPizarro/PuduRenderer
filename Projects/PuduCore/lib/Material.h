@@ -62,6 +62,7 @@ namespace Pudu {
 		void SetShader(SPtr<Shader> shader);
 		SPtr<Shader> GetShader(){return m_shader;}
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
+		void ApplyProperties();
 		void SetProperty(std::string name, SPtr<Pudu::Texture> texture);
 		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
 		void SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray);

@@ -143,9 +143,9 @@ namespace Pudu
 
 	protected:
 		void OnCreate(PuduGraphics* gpu) override;
+		void BindMaterialDescriptorSets(Pipeline* pipeline,SPtr<Material> material, RenderFrameData& frameData);
 
 	public:
-
 		VkRect2D renderArea;
 
 		VkRenderPass vkHandle;
@@ -163,7 +163,6 @@ namespace Pudu
 		uint8_t numRenderTargets = 0;
 
 		std::string name;
-
 
 	private:
 		friend class PuduGraphics;
