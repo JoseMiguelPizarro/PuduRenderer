@@ -29,8 +29,8 @@ namespace Pudu {
 		Light* directionalLight;
 
 
-		const std::vector<DrawCall>* GetDrawCalls(uint32_t renderMask) const {
-			return &m_drawCallsPerMask[renderMask];
+		const std::vector<DrawCall>* GetDrawCalls(uint32_t layer) const {
+			return &m_drawCallsPerLayer[layer];
 		}
 
 		Scene() {
@@ -53,7 +53,7 @@ namespace Pudu {
 		std::vector<EntitySPtr> m_entities;
 		std::vector<RenderEntitySPtr> m_renderEntities;
 
-		std::vector<DrawCall> m_drawCallsPerMask[32];
+		std::vector<DrawCall> m_drawCallsPerLayer[32];
 	};
 }
 

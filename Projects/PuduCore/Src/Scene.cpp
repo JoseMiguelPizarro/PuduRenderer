@@ -47,7 +47,7 @@ namespace Pudu {
 	}
 	void Scene::AddDrawCall(DrawCall& drawCall, RenderSettings& settings)
 	{
-		m_drawCallsPerMask[settings.layer].push_back(drawCall);
+		m_drawCallsPerLayer[settings.layer].push_back(drawCall);
 	}
 	void Scene::RemoveRenderEntity(RenderEntitySPtr renderEntity)
 	{

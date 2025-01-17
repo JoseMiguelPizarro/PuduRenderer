@@ -123,6 +123,10 @@ namespace Pudu
 		RenderPass* SetCullMode(CullMode cullMode);
 		RenderPass* SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor, VkBlendOp colorOperation);
 		RenderPass* SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha, VkBlendOp alphaOperation);
+		RenderPass* SetReplacementMaterial(SPtr<Material> material);
+		RenderPass* SetRenderLayer(uint32_t layer);
+		SPtr<Material> GetReplacementMaterial() const;
+		bool HasReplacementMaterial() const;
 
 
 		BlendState* GetBlendState();
@@ -144,6 +148,7 @@ namespace Pudu
 	protected:
 		void OnCreate(PuduGraphics* gpu) override;
 		void BindMaterialDescriptorSets(Pipeline* pipeline,SPtr<Material> material, RenderFrameData& frameData);
+		SPtr<Material> GetRenderMaterial(const RenderFrameData& frameData) const;
 
 	public:
 		VkRect2D renderArea;
@@ -154,7 +159,6 @@ namespace Pudu
 		bool isEnabled = true;
 		bool writeDepth;
 		RenderPassAttachments attachments;
-
 
 		uint16_t dispatchX = 0;
 		uint16_t dispatchY = 0;
@@ -169,7 +173,8 @@ namespace Pudu
 		CullMode m_cullMode = CullMode::Back;
 		BlendState m_blendState;
 		ComputeShader* m_computeShader;
-		uint32_t renderMask;
+		uint32_t m_renderLayer;
+		SPtr<Material> m_replacementMaterial;
 	};
 
 }

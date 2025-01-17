@@ -15,6 +15,7 @@ namespace Pudu
 
 		SPtr<Material> GetRenderMaterial();
 		void SetReplacementMaterial(SPtr<Material> material);
+		bool HasReplacementMaterial();
 
 		DrawCall() {};
 		DrawCall(Model*  model, SPtr<Mesh> mesh, SPtr<Material> material)

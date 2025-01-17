@@ -16,4 +16,9 @@ namespace Pudu
 	{
 		m_replacementMaterial = material;
 	}
+
+	bool DrawCall::HasReplacementMaterial()
+	{
+		return m_replacementMaterial != nullptr;
+	}
 }

@@ -1,5 +1,4 @@
 #include "Lib/DefaultVertexInput.hlsl"
-#include "Lib/Lighting.hlsl"
 
 import PuduGraphics;
 
@@ -20,5 +19,5 @@ VSOut vertexMain(VertexInput input)
 float4 fragmentMain(VSOut input)
     : SV_Target
 {
-    return 1;
+    return input.Normal * 0.5 + 0.5;
 }

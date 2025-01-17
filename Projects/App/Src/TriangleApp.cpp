@@ -9,7 +9,6 @@ namespace fs = std::filesystem;
 void TriangleApp::OnRun()
 {
 	m_puduRenderer.Render(&m_scene);
-	return ;
 
 	float radius = 20;
 	float pich = 45;
@@ -44,7 +43,7 @@ void TriangleApp::OnInit()
 
 	m_scene = Scene(&Time);
 	m_scene.camera = &m_camera;
-	TargetFPS = 60;
+	TargetFPS = 30;
 
 	m_puduRenderer.Init(&Graphics, this);
 
@@ -70,23 +69,25 @@ void TriangleApp::OnInit()
 	cubemapSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
 
 	m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
+	auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
 
 	auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
 
-	/*for (auto e : cube) {
+	for (auto e : cube) {
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
 		re->GetTransform().SetLocalPosition({ 0,5,0 });
 		re->GetTransform().SetLocalScale({ 3,3,3 });
+		auto& [layer] = re->GetRenderSettings();
+		layer = 1;
 
 		if (re != nullptr)
 		{
-			auto mat = &re->GetModel().Materials[0];
-			mat->shader = cubemapShader;
-			mat->SetProperty("testText", m_cubemapTexture);
+			auto mat = re->GetModel()->Materials[0];
+			mat->SetShader(transParentShader);
 		}
-	}*/
+	}
 
-//	m_scene.AddEntities(cube);
+	m_scene.AddEntities(cube);
 }
 
 void TriangleApp::DrawImGUI()

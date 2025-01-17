@@ -242,9 +242,9 @@ namespace Pudu
 		auto renderScene = frameData.scene;
 		auto commands = frameData.currentCommand;
 
-		auto drawCalls = renderScene->GetDrawCalls(renderMask);
+		auto drawCalls = renderScene->GetDrawCalls(m_renderLayer);
 
-		for (DrawCall drawCall : *renderScene->GetDrawCalls(renderMask))
+		for (DrawCall drawCall : *drawCalls)
 		{
 			frameData.currentDrawCall = &drawCall;
 
@@ -253,7 +253,7 @@ namespace Pudu
 			auto model = drawCall.ModelPtr;
 			auto mesh = drawCall.MeshPtr;
 
-			auto material = drawCall.GetRenderMaterial();
+			auto material = GetRenderMaterial(frameData);
 
 			Pipeline* pipeline = GetPipeline({
 				.renderPass = frameData.currentRenderPass.get(),
@@ -346,6 +346,20 @@ namespace Pudu
 				&material->GetDescriptorSets()[frameData.descriptorSetOffset],
 				material->GetShader()->GetActiveLayoutCount() - frameData.descriptorSetOffset, frameData.descriptorSetOffset);
 		}
+	}
+
+	SPtr<Material> RenderPass::GetRenderMaterial(const RenderFrameData& frameData) const
+	{
+		if (frameData.currentDrawCall->HasReplacementMaterial())
+		{
+			return frameData.currentDrawCall->GetRenderMaterial();
+		}
+		if (this->HasReplacementMaterial())
+		{
+			return GetReplacementMaterial();
+		}
+
+		return frameData.currentDrawCall->GetRenderMaterial();
 	}
 
 	VkRenderingInfo RenderPass::GetRenderingInfo(RenderFrameData& data)
@@ -467,6 +481,31 @@ namespace Pudu
 		m_blendState.SetAlphaBlending(sourceAlpha, destinationAlpha, alphaOperation);
 		return this;
 	}
+
+	RenderPass* RenderPass::SetReplacementMaterial(SPtr<Material> material)
+	{
+		m_replacementMaterial = material;
+
+		return this;
+	}
+
+	RenderPass* RenderPass::SetRenderLayer(uint32_t layer)
+	{
+		m_renderLayer = layer;
+
+		return this;
+	}
+
+	SPtr<Material> RenderPass::GetReplacementMaterial() const
+	{
+		return m_replacementMaterial;
+	}
+
+	bool RenderPass::HasReplacementMaterial() const
+	{
+		return m_replacementMaterial != nullptr;
+	}
+
 	BlendState* RenderPass::GetBlendState()
 	{
 		return &this->m_blendState;

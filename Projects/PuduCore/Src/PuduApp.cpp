@@ -50,9 +50,6 @@ namespace Pudu
 				std::printf(e.what());
 			}
 
-			auto a = std::chrono::duration<float, std::milli>(1.f);
-			std::this_thread::sleep_for(std::chrono::microseconds(100));
-
 			std::chrono::duration<float, std::milli> elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
 
 			//If load is to low, let's artificially wait before continuing
@@ -63,7 +60,7 @@ namespace Pudu
 				elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
 			}
 
-			if (elapsed < targetFrameDuration)
+				if (elapsed < targetFrameDuration)
 			{
 				auto towait = targetFrameDuration - elapsed * 2; //Multiplied by 2 to compensate to next frame
 
