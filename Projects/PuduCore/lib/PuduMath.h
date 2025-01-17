@@ -76,7 +76,7 @@ namespace Pudu {
 
 	static mat4 LookAtInverse(vec3 eyePosition, vec3 forward, vec3 up)
 	{
-		//Right handed, since is the inverse the cross producs right and up are inverted
+		//Right handed, since is the inverse, the cross products right and up are inverted
 		vec3 forward_axis = forward;
 		vec3 right_axis = normalize(cross(forward_axis, up));
 		vec3 up_axis = cross(right_axis, forward_axis);

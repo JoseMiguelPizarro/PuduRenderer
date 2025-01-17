@@ -104,7 +104,8 @@ namespace Pudu {
 					//Obj assumes bottom left corner to be 0. vulkan upload images from (0,-1)
 				};
 
-				vertex.color = { 1.0f, 1.0f, 1.0f };
+				vertex.color =
+					{ attrib.colors[3 * index.vertex_index + 0], attrib.colors[3 * index.vertex_index + 1], attrib.colors[3 * index.vertex_index + 2] };
 
 				vertices.push_back(vertex);
 				indices.push_back(static_cast<uint32_t>(indices.size()));
@@ -271,6 +272,13 @@ namespace Pudu {
 						std::size_t idx = 0;
 						fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v) {
 							vertices[idx++].normal = v;
+						});
+					}
+					if (strcmp(attribName, "COLOR_0") == 0)
+					{
+						std::size_t idx = 0;
+						fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v) {
+							vertices[idx++].color = v;
 						});
 					}
 				}

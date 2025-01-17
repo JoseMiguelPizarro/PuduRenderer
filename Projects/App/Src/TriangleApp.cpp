@@ -10,6 +10,7 @@ void TriangleApp::OnRun()
 {
 	m_puduRenderer.Render(&m_scene);
 
+	return;
 	float radius = 20;
 	float pich = 45;
 
@@ -72,6 +73,22 @@ void TriangleApp::OnInit()
 	auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
 
 	auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
+	auto axisModel = FileManager::LoadGltfScene("models/axis.gltf");
+	auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
+
+	for (auto e : axisModel) {
+		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
+		re->GetTransform().SetLocalPosition({ 0,0,0 });
+		//re->GetTransform().SetLocalScale({ 3,3,3 });
+		auto& [layer] = re->GetRenderSettings();
+		layer = 2;
+
+		if (re != nullptr)
+		{
+			auto mat = re->GetModel()->Materials[0];
+			mat->SetShader(overlayShader);
+		}
+	}
 
 	for (auto e : cube) {
 		RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
@@ -87,6 +104,7 @@ void TriangleApp::OnInit()
 		}
 	}
 
+	m_scene.AddEntities(axisModel);
 	m_scene.AddEntities(cube);
 }
 

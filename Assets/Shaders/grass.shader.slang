@@ -40,9 +40,21 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
         vertexPos = float2(a * (1 - triangleId) + b * triangleId, a * triangleId + b * (1 - triangleId) + stripeId);
     }
 
+    float3 forward = UBO.view[2].xyz;
+    float3 up = float3(0, 1, 0);
+    float3 right = cross(up, forward);
+
+    float4x4 billBoard = {
+        float4(right, 0),
+        float4(up, 0),
+        float4(forward, 0),
+        float4(0, 0, 0, 1)
+    };
+
     float2 size = { .2, .5 };
-    vertexPos.x -= randomPos.x * 0.1;
     vertexPos *= float2(size.x, size.y / 6);
+    vertexPos = mul(biasMat, float4(vertexPos, 0, 1)).xy;
+    vertexPos.x -= randomPos.x * 0.1;
 
     var vgradient = vertexPos.y / size.y;
     float windIntensity = 0.1 + randomPos.y;

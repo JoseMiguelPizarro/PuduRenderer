@@ -72,6 +72,12 @@ namespace Pudu
                      ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
                      ->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
 
+        auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
+        overlayRP
+        ->SetName("Overlay")
+        ->SetRenderLayer(2)
+        ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
+
         auto normalShader = graphics->CreateShader("normals.slang", "Normals");
         auto normalMaterial = graphics->Resources()->AllocateMaterial();
         normalMaterial->SetShader(normalShader);
@@ -151,6 +157,7 @@ namespace Pudu
         AddRenderPass(drawGrassRP.get());
         AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
+        AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();
