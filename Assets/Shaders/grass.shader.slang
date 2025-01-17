@@ -1,11 +1,10 @@
 import PuduGraphics;
-import "Lib/grass";
-import "Lib/Shadowmap";
+
+#include "Lib/grass.slang"
+#include "Lib/Shadowmap.slang"
 
 #include "lib/lygia/generative/cnoise.hlsl"
 #include "lib/lygia/generative/random.hlsl"
-
-import PuduGraphics;
 
 ParameterBlock<GrassData> Data;
 
