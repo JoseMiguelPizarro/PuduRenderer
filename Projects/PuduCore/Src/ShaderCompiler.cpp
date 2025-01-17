@@ -57,11 +57,22 @@ namespace Pudu {
 		m_globalSession->createSession(sessionDesc, m_session.writeRef());
 	}
 
+	void PrintDiagnostics(Slang::ComPtr<IBlob> diagnostics)
+	{
+		if (diagnostics)
+		{
+			fprintf(stderr, "%s\n", static_cast<const char*>(diagnostics->getBufferPointer()));
+			throw std::runtime_error(static_cast<const char*>(diagnostics->getBufferPointer()));
+		}
+	}
+
 	ShaderCompilation ShaderCompiler::Compile(const char* path, std::vector<const char*> entryPoints, bool compute)
 	{
 		Slang::ComPtr<IBlob> diagnostics;
 		IModule* baseModule = m_session->loadModule("PuduGraphics.slang");
 		IModule* module = m_session->loadModule(path, diagnostics.writeRef());
+
+		PrintDiagnostics(diagnostics);
 
 		std::vector<Slang::ComPtr<IEntryPoint>> slangEntryPoints;
 
@@ -86,20 +97,14 @@ namespace Pudu {
 		Slang::ComPtr<IComponentType> program;
 		m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(), diagnostics.writeRef());
 
-		if (diagnostics)
-		{
-			fprintf(stderr, "%s\n", (const char*)diagnostics->getBufferPointer());
-		}
+		PrintDiagnostics(diagnostics);
 
 		slang::ProgramLayout* layout = program->getLayout();
 
 		Slang::ComPtr<IComponentType> linkedProgram;
 		program->link(linkedProgram.writeRef(), diagnostics.writeRef());
 
-		if (diagnostics)
-		{
-			fprintf(stderr, "%s\n", (const char*)diagnostics->getBufferPointer());
-		}
+		PrintDiagnostics(diagnostics);
 
 		//Global
 		printf("Global scope \n");
@@ -111,15 +116,8 @@ namespace Pudu {
 		layoutBuilder.m_globalSession = m_globalSession;
 		layoutBuilder.addBindingsForParameterBlock(globalTypeLayout, compiledData.descriptorsData);
 
-		/*Slang::ComPtr<IBlob> spirvCode;
-		{
-			linkedProgram->getTargetCode(0, spirvCode.writeRef(), diagnostics.writeRef());
-		}*/
 
-		if (diagnostics)
-		{
-			fprintf(stderr, "%s\n", (const char*)diagnostics->getBufferPointer());
-		}
+		PrintDiagnostics(diagnostics);
 
 		for (size_t i = 0; i < entryPoints.size(); i++)
 		{
@@ -132,11 +130,8 @@ namespace Pudu {
 			kernelData.codeSize = kernel->getBufferSize();
 
 			compiledData.AddKernel(entryPoints[i], kernelData);
-		}
 
-		if (diagnostics)
-		{
-			fprintf(stderr, "%s\n", (const char*)diagnostics->getBufferPointer());
+			PrintDiagnostics(diagnostics);
 		}
 
 		return compiledData;
