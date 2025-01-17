@@ -62,7 +62,8 @@ float4 fragmentMain(VSOut input)
     Sampler2D tex = material.baseColorTex;
     float4 base_colour = tex.Sample(input.TexCoord.xy) * input.Color;
     float2 suv = (input.PositionCS * 0.5 + 0.5).xy;
-
+    base_colour = input.Color;
+    
     // Perspective Devide shadow to map 0-1
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
     float4 col = pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), GLOBALS.lightingBuffer.lightDirection.xyz);

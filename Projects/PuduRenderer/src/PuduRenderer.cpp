@@ -76,7 +76,8 @@ namespace Pudu
         overlayRP
         ->SetName("Overlay")
         ->SetRenderLayer(2)
-        ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
+        ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
+        ->AddDepthStencilAttachment(depthRT, AttachmentUsage::ReadAndWrite, LoadOperation::Clear);
 
         auto normalShader = graphics->CreateShader("normals.slang", "Normals");
         auto normalMaterial = graphics->Resources()->AllocateMaterial();
