@@ -10,11 +10,10 @@ void TriangleApp::OnRun()
 {
 	m_puduRenderer.Render(&m_scene);
 
-	return;
 	float radius = 20;
 	float pich = 45;
 
-	float speed = 0.45f;
+	float speed = 0.15f;
 	float phase = Time.Time() * speed;
 
 	float x = cos(phase) * radius;

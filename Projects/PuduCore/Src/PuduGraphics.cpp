@@ -2261,7 +2261,7 @@ namespace Pudu
 		LOG("Creating Compute Shader {}:", name);
 		auto shader = m_resources.AllocateComputeShader();
 
-		auto compiledShader = m_shaderCompiler.Compile(shaderPath.string().c_str(), { "computeMain" });
+		auto compiledShader = m_shaderCompiler.Compile(shaderPath.string().c_str(), { "computeMain" },true);
 
 		const char* kernelName = "computeMain";
 		auto kernel = compiledShader.GetKernel(kernelName);

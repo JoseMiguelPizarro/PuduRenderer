@@ -81,8 +81,6 @@ namespace Pudu {
 		vec3 right_axis = normalize(cross(forward_axis, up));
 		vec3 up_axis = cross(right_axis, forward_axis);
 
-		vec3 t = vec3(-dot(eyePosition, right_axis), -dot(eyePosition, up_axis), -dot(eyePosition, forward_axis));
-
 		return	mat4{
 			vec4(right_axis.x,up_axis.x,forward_axis.x,0.0f),
 			vec4(right_axis.y,up_axis.y,forward_axis.y,0.0f),

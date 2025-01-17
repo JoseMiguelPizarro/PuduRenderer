@@ -30,19 +30,19 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
     float a = (indexId + triangleId) % 3 / 2;
     float b = ceil(indexId / 2.);
 
-    float2 vertexPos;
+    float3 vertexPos;
     if (stripeId >= 6)
     {
-        vertexPos = vertices[indexId].xy + float2(0, stripeId);
+        vertexPos = float3(vertices[indexId].xy, 0) + float3(0, stripeId, 0);
     }
     else
     {
-        vertexPos = float2(a * (1 - triangleId) + b * triangleId, a * triangleId + b * (1 - triangleId) + stripeId);
+        vertexPos = float3(a * (1 - triangleId) + b * triangleId, a * triangleId + b * (1 - triangleId) + stripeId, 0);
     }
 
-    float3 forward = UBO.view[2].xyz;
-    float3 up = float3(0, 1, 0);
-    float3 right = cross(up, forward);
+    float3 forward = float3(UBO.view[0][2], UBO.view[1][2], UBO.view[2][2]);
+    float3 right = float3(UBO.view[0][0], UBO.view[1][0], UBO.view[2][0]);
+    float3 up = float3(UBO.view[0][1], UBO.view[1][1], UBO.view[2][1]);
 
     float4x4 billBoard = {
         float4(right, 0),
@@ -52,16 +52,15 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
     };
 
     float2 size = { .2, .5 };
-    vertexPos *= float2(size.x, size.y / 6);
-    vertexPos = mul(biasMat, float4(vertexPos, 0, 1)).xy;
-    vertexPos.x -= randomPos.x * 0.1;
+    vertexPos *= float3(size.x, size.y / 6, 1);
+    vertexPos = mul(billBoard, float4(vertexPos, 1)).xyz;
 
     var vgradient = vertexPos.y / size.y;
     float windIntensity = 0.1 + randomPos.y;
     float2 wind = cnoise(pos * .3 + UBO.time * .6) * windIntensity + pow(cnoise(pos * 0.1 + UBO.time * 2) * windIntensity * 2, 3);
     wind *= vgradient;
 
-    float3 vertex = { vertexPos.x + wind.x, vertexPos.y, wind.y };
+    float3 vertex = { vertexPos.x + wind.x, vertexPos.y, wind.y + vertexPos.z };
 
     float grassLength = length(vertexPos);
     float newLength = length(vertex);
