@@ -1320,7 +1320,7 @@ namespace Pudu
 			{
 				continue;
 			}
-			commands->Clear(vec4(0.2, 0.2, 0.3, 1.0));
+			commands->Clear(vec4(0.9, 0.4, 0.6, 1.0));
 			commands->ClearDepthStencil(1.0f, 0);
 
 			uint16_t width = 0;

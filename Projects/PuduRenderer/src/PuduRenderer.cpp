@@ -61,7 +61,7 @@ namespace Pudu
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
             ->SetName("ForwardRenderPass")
-            ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Clear)
+            ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Clear,vec4(0.4, .4, 0.6, 0.))
             ->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
             ->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
 
@@ -79,6 +79,7 @@ namespace Pudu
         ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
         ->AddDepthStencilAttachment(depthRT, AttachmentUsage::ReadAndWrite, LoadOperation::Clear);
 
+        SPtr<Shader> grassShader = graphics->CreateShader("grass.slang", "Grass");
         auto normalShader = graphics->CreateShader("normals.slang", "Normals");
         auto normalMaterial = graphics->Resources()->AllocateMaterial();
         normalMaterial->SetShader(normalShader);
@@ -123,7 +124,6 @@ namespace Pudu
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
         auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
-        SPtr<Shader> grassShader = graphics->CreateShader("grass.shader.slang", "Grass");
 
         SPtr<Material> material = graphics->Resources()->AllocateMaterial();
         material->SetShader(grassShader);

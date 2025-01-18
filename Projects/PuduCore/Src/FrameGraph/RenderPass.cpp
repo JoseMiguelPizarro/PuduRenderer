@@ -31,6 +31,7 @@ namespace Pudu
 		renderingAttachment.imageView = attachment.resource->vkImageViewHandle;
 		renderingAttachment.loadOp = attachment.loadOperation;
 		renderingAttachment.storeOp = attachment.storeOp;
+		renderingAttachment.clearValue = attachment.clearValue;
 
 		return renderingAttachment;
 	}

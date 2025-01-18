@@ -62,7 +62,7 @@ set(LIBS
     fmtd
 )
 
-set(SLANG_VERSION "2025.2")
+set(SLANG_VERSION "2025.2.2")
 if(WIN32)
     set(SLANG_OS "windows-x86_64")
 elseif(APPLE)

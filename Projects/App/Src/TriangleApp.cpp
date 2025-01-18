@@ -18,7 +18,7 @@ void TriangleApp::OnRun()
 
     float x = cos(phase) * radius;
     float z = sin(phase) * radius;
-    float y = sin(glm::radians(60.f)) * radius;
+    float y = sin(glm::radians(30.f)) * radius;
 
     vec3 pos = vec3(x, y, z);
     m_camera.Transform.SetLocalPosition(pos);
@@ -150,15 +150,7 @@ void TriangleApp::DrawImGUI()
 
 void TriangleApp::OnCleanup()
 {
-    auto renderEntities = m_scene.GetRenderEntities();
-    for (auto entity : renderEntities)
-    {
-        auto model = entity->GetModel();
-        for (auto mesh : model->Meshes)
-        {
-            Graphics.DestroyMesh(mesh);
-        }
-    }
+
 }
 
 void TriangleApp::LoadGameboyModel()

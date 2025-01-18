@@ -4,16 +4,6 @@
 
 namespace Pudu
 {
-	VkShaderModule Shader::GetModule()
-	{
-		return VkShaderModule();
-	}
-
-	std::filesystem::path Shader::GetPath()
-	{
-		return std::filesystem::path();
-	}
-
 	void Shader::LoadFragmentData(const uint32_t* data, size_t dataSize, const char* entryPoint)
 	{
 		m_hasFragmentData = dataSize > 0;
@@ -21,9 +11,7 @@ namespace Pudu
 		m_fragmentEntryPoint = entryPoint;
 		if (dataSize > 0)
 		{
-			m_fragmentData = (uint32_t*)malloc(dataSize);
-			memcpy(m_fragmentData, data, dataSize);
-
+			m_fragmentData =data;
 		}
 		m_fragmentDataSize = dataSize;
 	}
@@ -35,8 +23,7 @@ namespace Pudu
 
 		if (dataSize > 0)
 		{
-			m_vertexData = (uint32_t*)malloc(dataSize);
-			memcpy(m_vertexData, data, dataSize);
+			m_vertexData = data;
 		}
 
 		m_vertexDataSize = dataSize;

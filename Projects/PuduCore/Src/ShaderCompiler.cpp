@@ -29,7 +29,7 @@ namespace Pudu {
 		createGlobalSession(m_globalSession.writeRef());
 
 		TargetDesc targetDesc;
-		targetDesc.profile = m_globalSession->findProfile("spirv_1_5");
+		targetDesc.profile = m_globalSession->findProfile("spirv_1_6");
 		targetDesc.format = SLANG_SPIRV;
 
 		const char* searchPaths[] = { "Assets/Shaders" };
@@ -125,12 +125,13 @@ namespace Pudu {
 			linkedProgram->getEntryPointCode(i, 0, kernel.writeRef(), diagnostics.writeRef());
 
 			ShaderKernel kernelData;
-			auto p = kernel->getBufferPointer();
-			kernelData.code = static_cast<const uint32_t*>(kernel->getBufferPointer());
 			kernelData.codeSize = kernel->getBufferSize();
 
-			compiledData.AddKernel(entryPoints[i], kernelData);
+			const auto codePtr = malloc(kernelData.codeSize);
+			memcpy(codePtr, kernel->getBufferPointer(), kernelData.codeSize);
 
+			kernelData.code = static_cast<const uint32_t*>(codePtr);
+			compiledData.AddKernel(entryPoints[i], kernelData);
 			PrintDiagnostics(diagnostics);
 		}
 

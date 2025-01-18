@@ -14,7 +14,7 @@ namespace Pudu {
 	public:
 		virtual DescriptorSetLayoutsData* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
 		virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
-		VkShaderModule GetModule() { return m_module; }
+		virtual VkShaderModule GetModule() { return m_module; }
 		DescriptorBinding* GetBindingByName(const char* name);
 		virtual void SetName(const char* name) = 0;
 		virtual const char* GetName() = 0;
