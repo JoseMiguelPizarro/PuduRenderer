@@ -79,7 +79,7 @@ namespace Pudu
         ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
         ->AddDepthStencilAttachment(depthRT, AttachmentUsage::ReadAndWrite, LoadOperation::Clear);
 
-        SPtr<Shader> grassShader = graphics->CreateShader("grass.slang", "Grass");
+        SPtr<Shader> grassShader = graphics->CreateShader("grass.shader.slang", "Grass");
         auto normalShader = graphics->CreateShader("normals.slang", "Normals");
         auto normalMaterial = graphics->Resources()->AllocateMaterial();
         normalMaterial->SetShader(normalShader);
