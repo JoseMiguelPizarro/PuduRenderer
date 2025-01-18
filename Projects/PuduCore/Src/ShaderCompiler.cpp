@@ -62,7 +62,6 @@ namespace Pudu {
 		if (diagnostics)
 		{
 			fprintf(stderr, "%s\n", static_cast<const char*>(diagnostics->getBufferPointer()));
-			throw std::runtime_error(static_cast<const char*>(diagnostics->getBufferPointer()));
 		}
 	}
 
