@@ -30,9 +30,14 @@ float4 fragmentMain(VSOut input)
 {
     Sampler2D tex = Data.colorTex;
 
-    float r = tex.Sample(input.TexCoord.xy).x;
-    float g = tex.Sample(input.TexCoord.xy + float2(0.005, 0.005)).y;
-    float b = tex.Sample(input.TexCoord.xy + float2(0.01, 0.01)).z;
+    float2 baseUV = input.TexCoord.xy;
+    float mask = length(baseUV - 0.5);
+    float vignette = smoothstep(0, .8, 1 - mask);
+    mask *= 1.5;
 
-    return float4(r, g, b, 0);
+    float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
+    float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005), mask)).y;
+    float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01), mask)).z;
+
+    return float4(r, g, b, 0) * vignette;
 }
