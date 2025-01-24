@@ -213,8 +213,8 @@ namespace Pudu
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		SPtr<RenderTexture> GetRenderTexture();
-		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureCreationSettings& creationData);
-		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureCreationSettings& creationSettings);
+		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);
+		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureLoadSettings& creationSettings);
 		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
 		void CreateVKTexture(Texture* texture);
 		void CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler);
@@ -241,10 +241,10 @@ namespace Pudu
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
-
+		SPtr<Texture> GetDefaultWhiteTexture();
 	private:
 		friend class GPUResourcesManager;
-		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureCreationSettings& creationData);
+		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
 		void InitVulkan();
 		void InitVMA();
 		void CreateVulkanInstance();
@@ -258,6 +258,7 @@ namespace Pudu
 		/// Setup and dispatch compute workload for the frame
 		/// </summary>
 		void SubmitComputeWork(RenderFrameData& frameData);
+		void InitializeDefaultTextures();
 
 		void InitDebugUtilsObjectName();
 
@@ -335,6 +336,9 @@ namespace Pudu
 		std::vector<const char*> GetInstanceExtensions();
 
 	private:
+
+		GPUResourceHandle<Texture> m_defaultWhiteTexture;
+
 		static PuduGraphics* s_instance;
 		PuduTime* m_time;
 

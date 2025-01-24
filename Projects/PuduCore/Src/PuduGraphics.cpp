@@ -68,6 +68,7 @@ namespace Pudu
 
 		InitWindow();
 		InitVulkan();
+		InitializeDefaultTextures();
 
 		m_initialized = true;
 	}
@@ -470,6 +471,35 @@ namespace Pudu
 		submitInfo.pCommandBufferInfos = commandSubmitInfos.data();
 
 		vkQueueSubmit2(m_computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	}
+
+	void PuduGraphics::InitializeDefaultTextures()
+	{
+		TextureCreationData textureCreationData;
+		textureCreationData.height = 2;
+		textureCreationData.width = 2;
+		textureCreationData.format = VK_FORMAT_R8G8B8A8_SRGB;
+		textureCreationData.depth = 1;
+		textureCreationData.layers = 1;
+		textureCreationData.bindless = true;
+		textureCreationData.name = "PuduWhite";
+		textureCreationData.flags = TextureFlags::Sample;
+
+		SamplerCreationData samplerCreationData{ true};
+
+		using b = std::byte;
+
+		std::byte data[] = {
+		b{255},b{255},b{255},b{255},
+		b{255},b{255},b{255},b{255},
+		b{255},b{255},b{255},b{255},
+		b{255},b{255},b{255},b{255}};
+
+		textureCreationData.pixels = data;
+		textureCreationData.dataSize = sizeof(data);
+		textureCreationData.samplerData = &samplerCreationData;
+
+		m_defaultWhiteTexture = CreateTexture(textureCreationData);
 	}
 
 	void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
@@ -1469,6 +1499,11 @@ namespace Pudu
 		CreateDescriptorSets(m_bindlessDescriptorPool, descriptorSet,setsCount, layouts);
 	}
 
+	SPtr<Texture> PuduGraphics::GetDefaultWhiteTexture()
+	{
+		return m_resources.GetTexture<Texture>(m_defaultWhiteTexture);
+	}
+
 	void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
 	{
 		vkDestroySemaphore(m_device, semaphore->vkHandle, m_allocatorPtr);
@@ -2396,14 +2431,14 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	SPtr<Texture2d> PuduGraphics::LoadTexture2D(fs::path filePath, TextureCreationSettings& settings)
+	SPtr<Texture2d> PuduGraphics::LoadTexture2D(fs::path filePath, TextureLoadSettings& settings)
 	{
 		settings.textureType = TextureType::Texture2D;
 
 		return std::dynamic_pointer_cast<Texture2d>(LoadAndCreateTexture(filePath, settings));
 	}
 
-	SPtr<TextureCube> PuduGraphics::LoadTextureCube(fs::path filePath, TextureCreationSettings& settings)
+	SPtr<TextureCube> PuduGraphics::LoadTextureCube(fs::path filePath, TextureLoadSettings& settings)
 	{
 		settings.textureType = TextureType::Texture_Cube;
 
@@ -2421,7 +2456,7 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureCreationSettings& settings)
+	SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureLoadSettings& settings)
 	{
 		bool isKTX = path.extension() == ".ktx";
 		void* pixelsData = nullptr;
@@ -2532,19 +2567,22 @@ namespace Pudu
 		const std::filesystem::path path = data.Material.BaseTexturePath;
 		if (data.Material.hasBaseTexture)
 		{
-			TextureCreationSettings settings{};
+			TextureLoadSettings settings{};
 			settings.bindless = true;
 			settings.name = "Albedo";
 			settings.samplerData.wrap = true;
 
 			material->SetProperty("material.baseColorTex", LoadTexture2D(path, settings));
+		}else
+		{
+			material->SetProperty("material.baseColorTex",GetDefaultWhiteTexture());
 		}
 
 		if (data.Material.hasNormalMap)
 		{
 			int texWidth, texHeight, texChannels;
 
-			TextureCreationSettings normalCreation;
+			TextureLoadSettings normalCreation;
 			normalCreation.bindless = true;
 			normalCreation.name = "Normal";
 			normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;

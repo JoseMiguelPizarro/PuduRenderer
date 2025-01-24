@@ -37,6 +37,7 @@ namespace Pudu
 		GPUResourceType::Type Type() { return GPUResourceType::Texture; }
 		virtual TextureType::Enum GetTextureType() { return TextureType::Texture2D; }
 
+
 		Texture() {
 			m_flags = PopulateFlags();
 		}

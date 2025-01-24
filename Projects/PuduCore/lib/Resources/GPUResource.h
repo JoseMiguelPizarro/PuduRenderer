@@ -2,6 +2,7 @@
 #include <concepts>
 #include <string>
 #include "PuduConstants.h"
+#include "PuduCore.h"
 
 namespace Pudu
 {

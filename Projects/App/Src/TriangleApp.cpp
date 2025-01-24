@@ -59,11 +59,11 @@ void TriangleApp::OnInit()
 
    // LoadGameboyModel();
 
-    TextureCreationSettings planeSettings{};
+    TextureLoadSettings planeSettings{};
     planeSettings.bindless = false;
     planeSettings.name = "Plane";
 
-    TextureCreationSettings cubemapSettings{};
+    TextureLoadSettings cubemapSettings{};
     cubemapSettings.bindless = false;
     cubemapSettings.name = "Cubemap";
     cubemapSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -95,6 +95,7 @@ void TriangleApp::OnInit()
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
         re->GetTransform().SetLocalScale({3, 3, 3});
+        re->GetTransform().SetLocalPosition({0, 1.5, 0});
         if (re != nullptr)
         {
             auto mat = re->GetModel()->Materials[0];

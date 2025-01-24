@@ -399,9 +399,9 @@ namespace Pudu
 
 
 	/// <summary>
-	/// Struct passed to create texture functions. 
+	/// Struct passed to load texture functions.
 	/// </summary>
-	struct TextureCreationSettings
+	struct TextureLoadSettings
 	{
 		const char* name = nullptr;
 		bool bindless;
