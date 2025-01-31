@@ -11,6 +11,8 @@ struct BindlessAttribute
 public struct Globals
 {
     public Sampler2D shadowMap;
+    public Sampler2D normalBuffer;
+    public Sampler2D depthBuffer;
     public ConstantBuffer<LightBuffer> lightingBuffer;
 }
 

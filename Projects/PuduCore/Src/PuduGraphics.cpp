@@ -1541,7 +1541,7 @@ namespace Pudu
 	{
 		for (auto& layoutData : layoutsData)
 		{
-			if (layoutData.SetNumber == K_BINDLESS_SET_INDEX) //
+			if (layoutData.bindless) //
 			{
 				out.emplace_back(CreateBindlessDescriptorSetLayout(layoutData));
 			}

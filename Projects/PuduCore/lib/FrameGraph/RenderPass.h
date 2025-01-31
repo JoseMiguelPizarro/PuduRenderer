@@ -118,7 +118,7 @@ namespace Pudu
 		RenderPass* AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
 		RenderPass* AddColorAttachment(RenderPassAttachment& attachment);
 		RenderPass* AddDepthStencilAttachment(RenderPassAttachment& attachment);
-		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage);
+		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage); 
 		RenderPass* SetName(const char* name);
 		RenderPass* SetCullMode(CullMode cullMode);
 		RenderPass* SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor, VkBlendOp colorOperation);

@@ -168,6 +168,8 @@ namespace Pudu
 
         m_globalPropertiesMaterial->SetShader(grassShader);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
     }
 
