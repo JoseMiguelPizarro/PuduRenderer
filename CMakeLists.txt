@@ -129,7 +129,9 @@ endmacro()
 
 # Add projects
 add_library(PuduCore STATIC
-        Projects/PuduCore/Src/Enums/ResourceUsage.h)
+        Projects/PuduCore/lib/Enums/ResourceUsage.h
+        Projects/PuduCore/Src/ResourceLayoutManager.cpp
+        Projects/PuduCore/lib/ResourceLayoutManager.h)
 SETUP_TARGET_PROPERTIES(PuduCore)
 
 set_target_properties(PuduCore PROPERTIES
