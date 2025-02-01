@@ -96,6 +96,17 @@ elseif(UNIX)
     )
 endif()
 
+function(SETUP_TARGET_PROPERTIES target_name)
+
+    set_target_properties(${target_name} PROPERTIES
+            CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testLib/${target_name}/${CMAKE_BUILD_TYPE}
+            CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testLib/${target_name}/${CMAKE_BUILD_TYPE}
+            CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${target_name}/${CMAKE_BUILD_TYPE}
+    )
+    message(STATUS  ${CMAKE_BINARY_DIR}/bin/${target_name}/${CMAKE_BUILD_TYPE})
+    target_include_directories(${target_name} PUBLIC ${INCLUDE_DIRS})
+    target_link_directories(${target_name} PRIVATE ${LIB_DIRS})
+endfunction()
 # Helper macros
 macro(add_target target_name target_type)
     if(${target_type} STREQUAL STATIC)
@@ -117,7 +128,10 @@ endmacro()
 
 
 # Add projects
-add_target(PuduCore STATIC)
+add_library(PuduCore STATIC
+        Projects/PuduCore/Src/Enums/ResourceUsage.h)
+SETUP_TARGET_PROPERTIES(PuduCore)
+
 set_target_properties(PuduCore PROPERTIES
     COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING"
 )

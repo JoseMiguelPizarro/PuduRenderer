@@ -1203,11 +1203,11 @@ namespace Pudu
 		LOG("FrameGraph: Allocating Resources End");
 	}
 
-	void FrameGraph::EnableRenderPass(char* renderPassName)
+	void FrameGraph::EnableRenderPass(const char* renderPassName) const
 	{
 		builder->GetNode(renderPassName)->enabled = true;
 	}
-	void FrameGraph::DisableRenderPass(char* renderPassName)
+	void FrameGraph::DisableRenderPass(const char* renderPassName) const
 	{
 		builder->GetNode(renderPassName)->enabled = false;
 	}
@@ -1305,7 +1305,7 @@ namespace Pudu
 
 		LOG("FrameGraph Compile End");
 	}
-	void FrameGraph::RenderFrame(RenderFrameData& renderData)
+	void FrameGraph::RenderFrame(RenderFrameData& renderData) const
 	{
 		auto commands = renderData.currentCommand;
 		auto gfx = renderData.graphics;

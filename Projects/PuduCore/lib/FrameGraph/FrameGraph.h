@@ -153,7 +153,7 @@ namespace Pudu {
 	public:
 		void Init(FrameGraphBuilder* builder);
 
-		void RenderFrame(RenderFrameData& renderData);
+		void RenderFrame(RenderFrameData& renderData) const;
 		/// <summary>
 		/// Load file from filePath and create frame graph nodes
 		/// </summary>
@@ -169,8 +169,8 @@ namespace Pudu {
 		void Reset();
 		void AllocateRequiredResources();
 		void AllocateResource(GPUResourceHandleBase handle);
-		void EnableRenderPass(char* renderPassName);
-		void DisableRenderPass(char* renderPassName);
+		void EnableRenderPass(const char* renderPassName) const;
+		void DisableRenderPass(const char* renderPassName) const;
 		void OnResize(PuduGraphics& gpu, uint32_t width, uint32_t height);
 		std::string ToString();
 
