@@ -309,7 +309,7 @@ namespace Pudu
 			}
 		}
 
-		PUDU_ERROR("Failed to find suitable memory type!");
+		LOG_ERROR("Failed to find suitable memory type!");
 	}
 
 	void PuduGraphics::DestroyBuffer(SPtr<GraphicsBuffer> buffer)
@@ -376,7 +376,7 @@ namespace Pudu
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		{
-			PUDU_ERROR("failed to acquire swap chain image!");
+			LOG_ERROR("failed to acquire swap chain image!");
 		}
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
@@ -812,7 +812,7 @@ namespace Pudu
 
 		if (deviceCount == 0)
 		{
-			PUDU_ERROR("Failed to find GPUs with Vulkan support!");
+			LOG_ERROR("Failed to find GPUs with Vulkan support!");
 		}
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -860,7 +860,7 @@ namespace Pudu
 
 		if (m_physicalDevice == VK_NULL_HANDLE)
 		{
-			PUDU_ERROR("Failed to find a suitable GPU!");
+			LOG_ERROR("Failed to find a suitable GPU!");
 		}
 	}
 
@@ -1122,7 +1122,7 @@ namespace Pudu
 
 		if (pfnSetDebugUtilsObjectNameEXT == nullptr)
 		{
-			PUDU_ERROR("Debug utils object function not found");
+			LOG_ERROR("Debug utils object function not found");
 		}
 	}
 
@@ -1369,7 +1369,7 @@ namespace Pudu
 
 		if (vkCreateDescriptorPool(m_device, &poolInfo, m_allocatorPtr, &m_bindlessDescriptorPool) != VK_SUCCESS)
 		{
-			PUDU_ERROR("Failed to create descriptor pool!");
+			LOG_ERROR("Failed to create descriptor pool!");
 		}
 	}
 
@@ -1885,7 +1885,7 @@ namespace Pudu
 			texture = m_resources.AllocateTextureCube();
 			break;
 		default:
-			//PUDU_ERROR("Texture Type not supported {}", creationData.textureType);
+			//LOG_ERROR("Texture Type not supported {}", creationData.textureType);
 			break;
 		}
 
@@ -2139,7 +2139,7 @@ namespace Pudu
 
 		if (vkCreateSampler(m_device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
 		{
-			PUDU_ERROR("failed to create texture sampler!");
+			LOG_ERROR("failed to create texture sampler!");
 		}
 	}
 
@@ -2634,7 +2634,7 @@ namespace Pudu
 			}
 		}
 
-		PUDU_ERROR("Failed to find supported format!");
+		LOG_ERROR("Failed to find supported format!");
 	}
 
 	GPUCommands PuduGraphics::BeginSingleTimeCommands()

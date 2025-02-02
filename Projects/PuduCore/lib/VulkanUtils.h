@@ -92,7 +92,7 @@ namespace Pudu {
 #ifndef VKCheck
 #define VKCheck(result, message) if(result != VK_SUCCESS)\
     {\
-    PUDU_ERROR(message);\
+    LOG_ERROR(message);\
     }
 #endif // !VKCheck
 

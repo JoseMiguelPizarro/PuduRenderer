@@ -1,5 +1,5 @@
 #pragma once
-#include <fmt/core.h>
+#include <format>
 
 
 static void Print(const char* text, ...) {
@@ -7,12 +7,23 @@ static void Print(const char* text, ...) {
 	printf("\n");
 }
 
-#define PUDU_ERROR(message, ...)\
-throw std::runtime_error(fmt::format("Error: {}", fmt::format( message, ##__VA_ARGS__)))
 
-#define LOG(message,...)\
-fmt::print(message,__VA_ARGS__);\
-fmt::print("\n")\
+template<typename... Args>
+void LOG_ERROR(const std::format_string<Args...> fmt, Args&&... args) {
+
+	auto formattedMessage = std::vformat(fmt.get(),  std::make_format_args(args...));
+
+	throw std::runtime_error(std::vformat("Error: {0}", std::make_format_args(formattedMessage)));
+}
+
+template<typename... Args>
+void LOG(const std::format_string<Args...> fmt, Args&&... args) {
+
+	auto formattedMessage = std::vformat(fmt.get(),  std::make_format_args(args...));
+
+	std::printf(formattedMessage.c_str());
+	std::printf("\n");
+}
 
 //#define LOG(message)\
 //Print(message.c_str())

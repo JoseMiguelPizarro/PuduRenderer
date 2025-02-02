@@ -1618,12 +1618,15 @@ namespace Pudu
 
                     const auto previousUsage = GetTextureUsage(outputResource.resource->Handle());
 
-                    commands->AddImageBarrier(texture->vkImageHandle,
-                                              previousUsage,
-                                              outputResource.resourceUsage,
-                                              0,
-                                              1,
-                                              TextureFormat::HasDepth(texture->format));
+                    commands->TransitionImageLayout(texture->vkImageHandle, texture->format,
+                                                        VkImageLayoutFromUsage(previousUsage),
+                                                        VkImageLayoutFromUsage(outputResource.resourceUsage));
+                    // commands->AddImageBarrier(texture->vkImageHandle,
+                    //                           previousUsage,
+                    //                           outputResource.resourceUsage,
+                    //                           0,
+                    //                           1,
+                    //                           TextureFormat::HasDepth(texture->format));
 
                     SetTextureUsage(outputResource.resource->Handle(), outputResource.resourceUsage);
                 }
