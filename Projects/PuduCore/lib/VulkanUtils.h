@@ -26,36 +26,7 @@ namespace Pudu {
         }
     }
 
-	static VkImageLayout VkImageLayoutFromUsage(ResourceState usage) {
-		if (usage & RESOURCE_STATE_COPY_SOURCE)
-			return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
-		if (usage & RESOURCE_STATE_COPY_DEST)
-			return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-
-		if (usage & RESOURCE_STATE_RENDER_TARGET)
-			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		if (usage & RESOURCE_STATE_DEPTH_WRITE)
-			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		if (usage & RESOURCE_STATE_DEPTH_READ)
-			return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
-		if (usage & RESOURCE_STATE_UNORDERED_ACCESS)
-			return VK_IMAGE_LAYOUT_GENERAL;
-
-		if (usage & (RESOURCE_STATE_SHADER_RESOURCE| RESOURCE_STATE_PIXEL_SHADER_RESOURCE))
-			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-		if (usage & RESOURCE_STATE_PRESENT)
-			return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		if (usage == RESOURCE_STATE_COMMON)
-			return VK_IMAGE_LAYOUT_GENERAL;
-
-		return VK_IMAGE_LAYOUT_UNDEFINED;
-	}
 
     // Determines pipeline stages involved for given accesses
     static VkPipelineStageFlags DeterminePipelineStageFlags(VkAccessFlags accessFlags, QueueType::Enum queueType) {

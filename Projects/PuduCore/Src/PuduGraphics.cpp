@@ -397,18 +397,20 @@ namespace Pudu
 		frameGraph->RenderFrame(frameData);
 
 		frameData.currentCommand->TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle,
-			frameData.activeRenderTarget->format,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			frameData.activeRenderTarget->format,VkImageLayoutFromUsage( frameGraph->GetTextureUsage(frameData.activeRenderTarget->Handle())),
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle,
 			m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex],
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle,
 			m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
+		//TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
+		frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
 
 		frame.CommandBuffer->EndCommands();
 		frame.ComputeCommandBuffer->EndCommands();

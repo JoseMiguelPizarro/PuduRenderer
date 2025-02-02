@@ -21,8 +21,8 @@ namespace Pudu
         m_clearValues[1] = {{depth, stencil}};
     }
 
-    void GPUCommands::AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel,
-                                      u32 mipCount, bool isDepth)
+    void GPUCommands::AddImageBarrier(VkImage image, ResourceUsage oldState, ResourceUsage newState, u32 baseMipLevel,
+                                      u32 mipCount, bool isDepth) const
     {
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         VkDependencyInfo dependencyInfo{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
@@ -274,7 +274,7 @@ namespace Pudu
 
         barrier.image = image;
 
-        if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
         {
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
