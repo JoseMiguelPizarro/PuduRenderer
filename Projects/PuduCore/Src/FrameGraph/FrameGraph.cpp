@@ -1643,6 +1643,10 @@ namespace Pudu
 
                     const auto previousUsage = GetTextureUsage(inputResource.resource->Handle());
 
+                    //We don't care about setting the correct layout since resource is going to be cleared and layout set during clearing
+                    if (inputResource.loadOperation == VK_ATTACHMENT_LOAD_OP_CLEAR)
+                        continue;
+
                     if (previousUsage != inputResource.resourceUsage)
                     {
                         commands->TransitionImageLayout(texture->vkImageHandle, texture->format,
