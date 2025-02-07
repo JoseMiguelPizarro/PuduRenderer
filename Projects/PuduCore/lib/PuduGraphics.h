@@ -242,6 +242,7 @@ namespace Pudu
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
 		SPtr<Texture> GetDefaultWhiteTexture();
+		SPtr<Mesh> GetDefaultQuad();
 	private:
 		friend class GPUResourcesManager;
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
@@ -258,6 +259,7 @@ namespace Pudu
 		/// Setup and dispatch compute workload for the frame
 		/// </summary>
 		void SubmitComputeWork(RenderFrameData& frameData);
+		void InitializeDefaultResources();
 		void InitializeDefaultTextures();
 
 		void InitDebugUtilsObjectName();
@@ -337,8 +339,12 @@ namespace Pudu
 
 	private:
 
+#pragma region DefaultResources
 		GPUResourceHandle<Texture> m_defaultWhiteTexture;
+		SPtr<Mesh> m_defaultQuad;
+		SPtr<Mesh> m_defaultPlane;
 
+#pragma endregion
 		static PuduGraphics* s_instance;
 		PuduTime* m_time;
 

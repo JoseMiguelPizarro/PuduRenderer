@@ -12,6 +12,8 @@ struct BindlessAttribute
 public struct GlobalsConstants
 {
     public float2 screenSize;
+    public float nearPlane;
+    public float farPlane;
 }
 
 public struct Globals
@@ -51,3 +53,13 @@ public float2 GetPixelScreenPosition(float4 PosCS)
 {
     return float2(PosCS.x/GLOBALS.constants.screenSize.x,PosCS.y/GLOBALS.constants.screenSize.y);
 };
+
+public float LinearizeDepth(float d)
+{
+    return LinearizeDepth(d, GLOBALS.constants.nearPlane, GLOBALS.constants.farPlane);
+};
+
+public float LinearizeDepth(float d,float zNear,float zFar)
+{
+    return zNear * zFar / (zFar + d * (zNear - zFar));
+}

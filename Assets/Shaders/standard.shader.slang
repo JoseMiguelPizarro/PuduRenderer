@@ -73,13 +73,12 @@ float4 fragmentMain(VSOut input)
     float d = 1. - saturate(distance(input.PosWS.xyz, viewPos) / 80.f);
 
     float3 normalColor = GLOBALS.normalBuffer.Sample(suv).xyz;
+    float depth = GLOBALS.depthBuffer.Sample(suv).x;
+    float depthColor = LinearizeDepth(GLOBALS.depthBuffer.Sample(suv).x,GLOBALS.constants.nearPlane,GLOBALS.constants.farPlane);
 
     col = lerp(float4(0.9, .4, 0.6, 0.), col, d);
    // col.rgb = normalColor;
 
-
-    col.rgb = float3(input.PosCS.x/GLOBALS.constants.screenSize.x, input.PosCS.y/GLOBALS.constants.screenSize.y,0.);
-    col.rgb = normalColor;
     col.a = 0.5;
     return col;
 }

@@ -1,5 +1,7 @@
 #include "Lib/DefaultVertexInput.hlsl"
 
+import PuduGraphics;
+
 struct PostProcessingData
 {
     Sampler2D colorTex;
@@ -38,6 +40,7 @@ float4 fragmentMain(VSOut input)
     float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
     float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005), mask)).y;
     float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01), mask)).z;
+    float d = LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r)/40.;
 
-    return float4(r, g, b, 0) * vignette;
+    return lerp( float4(r, g, b, 0),float4(.9,.75,.8,1.), d) * vignette;
 }

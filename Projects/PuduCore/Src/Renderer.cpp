@@ -97,6 +97,7 @@ namespace Pudu
 		renderData.frameGraph = &frameGraph;
 		renderData.graphics = graphics;
 		renderData.app = app;
+		renderData.camera = scene->camera;
 
 		OnRender(renderData);
 

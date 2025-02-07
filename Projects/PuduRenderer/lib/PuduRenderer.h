@@ -23,7 +23,7 @@ namespace Pudu
 
 	private:
 		void UpdateLightingBuffer(RenderFrameData& data) const;
-		void UpdateGlobalConstantsBuffer(PuduGraphics* graphics) const;
+		void UpdateGlobalConstantsBuffer(RenderFrameData& frame) const;
 		void InitLightingBuffer(PuduGraphics* graphics);
 		void InitConstantsBuffer(PuduGraphics* graphics);
 

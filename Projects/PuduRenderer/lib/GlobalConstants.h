@@ -4,4 +4,6 @@
 struct GlobalConstants
 {
       glm::vec2 screenSize;
+      float nearPlane;
+      float farPlane;
 };

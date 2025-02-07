@@ -69,14 +69,31 @@ void CatDiorama::OnInit()
     cubemapSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
-    auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
+    const auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
 
-    auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
-    auto axisModel = FileManager::LoadGltfScene("models/axis.gltf");
-    auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
+    const auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
+    const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf");
+    const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
 
-    auto catModel = FileManager::LoadGltfScene("models/Diorama_Cat/cat.gltf");
-    for (auto e : axisModel)
+    const auto catModel = FileManager::LoadGltfScene("models/Diorama_Cat/cat.gltf");
+
+
+    auto planeMaterial = Graphics.Resources()->AllocateMaterial();
+    planeMaterial->name ="PlaneMat";
+    planeMaterial->SetShader(standardShader);
+    planeMaterial->SetProperty("material.baseColorTex",Graphics.GetDefaultWhiteTexture());
+
+    auto planeModel = Graphics.CreateModel(Graphics.GetDefaultQuad(), planeMaterial);
+
+
+    auto planeName = std::string("Plane");
+    auto planeEntity = EntityManager::AllocateRenderEntity(planeName, planeModel);
+    planeEntity->GetTransform().SetLocalPosition({0, 0, 0});
+    planeEntity->GetTransform().SetLocalScale({100, 100, 100});
+
+    m_scene.AddEntity(planeEntity);
+
+    for (const auto& e : axisModel)
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
         re->GetTransform().SetLocalPosition({0, 0, 0});
@@ -91,19 +108,19 @@ void CatDiorama::OnInit()
         }
     }
 
-    for (auto e : catModel)
+    for (const auto& e : catModel)
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
         re->GetTransform().SetLocalScale({3, 3, 3});
         re->GetTransform().SetLocalPosition({0, 1.5, 0});
         if (re != nullptr)
         {
-            auto mat = re->GetModel()->Materials[0];
+            const auto mat = re->GetModel()->Materials[0];
             mat->SetShader(standardShader);
         }
     }
 
-    for (auto e : cube)
+    for (const auto& e : cube)
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
         re->GetTransform().SetLocalPosition({0, 5, 0});
@@ -113,7 +130,7 @@ void CatDiorama::OnInit()
 
         if (re != nullptr)
         {
-            auto mat = re->GetModel()->Materials[0];
+            const auto mat = re->GetModel()->Materials[0];
             mat->SetShader(transParentShader);
         }
     }

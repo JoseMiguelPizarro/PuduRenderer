@@ -68,7 +68,7 @@ namespace Pudu
 
 		InitWindow();
 		InitVulkan();
-		InitializeDefaultTextures();
+		InitializeDefaultResources();
 
 		m_initialized = true;
 	}
@@ -474,6 +474,23 @@ namespace Pudu
 		submitInfo.pCommandBufferInfos = commandSubmitInfos.data();
 
 		vkQueueSubmit2(m_computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	}
+
+	void PuduGraphics::InitializeDefaultResources()
+	{
+		MeshCreationData meshData;
+		meshData.Indices = {0,2,1,1,2,3};
+		meshData.Vertices = {
+		Vertex({-.5,0,-0.5},{1,1,1},{0,0},{0,1,0}),
+		Vertex({0.5,0,-0.5},{1,1,1},{1.,0},{0,1,0}),
+		Vertex({-.5,0,0.5},{1,1,1},{0,1},{0,1,0}),
+		Vertex({0.5,0,0.5},{1,1,1},{1,1},{0,1,0})};
+
+		meshData.Name = "DefaultQuad";
+
+		m_defaultQuad = CreateMesh(meshData);
+
+		InitializeDefaultTextures();
 	}
 
 	void PuduGraphics::InitializeDefaultTextures()
@@ -1505,6 +1522,11 @@ namespace Pudu
 	SPtr<Texture> PuduGraphics::GetDefaultWhiteTexture()
 	{
 		return m_resources.GetTexture<Texture>(m_defaultWhiteTexture);
+	}
+
+	SPtr<Mesh> PuduGraphics::GetDefaultQuad()
+	{
+		return m_defaultQuad;
 	}
 
 	void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)

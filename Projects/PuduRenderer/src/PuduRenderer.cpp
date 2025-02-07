@@ -66,6 +66,7 @@ namespace Pudu
             ->SetName("ForwardRenderPass")
             ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear, vec4(0.4, .4, 0.6, 0.))
             ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
             ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
 
@@ -149,6 +150,7 @@ namespace Pudu
         m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
         m_postProcessingRenderPass->name = "Postprocessing";
         m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
+        m_postProcessingRenderPass->AddColorAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
         m_imguiRenderPass = graphics->GetRenderPass<ImguiRenderPass>();
         m_imguiRenderPass->name = "ImGui";
@@ -162,7 +164,7 @@ namespace Pudu
         AddRenderPass(drawGrassRP.get());
         AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
-        //  AddRenderPass(overlayRP.get());
+        AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();
@@ -190,7 +192,7 @@ namespace Pudu
         data.descriptorSetOffset = isFirstFrame ? 0 : 2;
         isFirstFrame = false;
         UpdateLightingBuffer(data);
-        UpdateGlobalConstantsBuffer(data.graphics);
+        UpdateGlobalConstantsBuffer(data);
     }
 
     void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
@@ -205,10 +207,13 @@ namespace Pudu
         frame.lightingBuffer = m_lightingBuffer;
     }
 
-    void PuduRenderer::UpdateGlobalConstantsBuffer(PuduGraphics* graphics) const
+    void PuduRenderer::UpdateGlobalConstantsBuffer(RenderFrameData& frame) const
     {
         GlobalConstants globalConstants{};
+        auto graphics = frame.graphics;
         globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
+        globalConstants.farPlane = frame.camera->Projection.farPlane;
+        globalConstants.nearPlane = frame.camera->Projection.nearPlane;
 
         graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
     }
