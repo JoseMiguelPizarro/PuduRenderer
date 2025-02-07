@@ -24,21 +24,36 @@ namespace Pudu {
 		m_propertiesBlock.ApplyProperties({m_gpu,m_shader.get(),m_descriptorSets});
 	}
 
-	void Material::SetProperty(std::string name, SPtr<Pudu::Texture> texture)
+	void Material::SetProperty(const std::string& name, const glm::vec2 value)
+	{
+		m_propertiesBlock.SetProperty(name, value);
+	}
+
+	void Material::SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture)
 	{
 		m_propertiesBlock.SetProperty(name, texture);
 	}
 
-	void Material::SetProperty(std::string name, SPtr<GraphicsBuffer> buffer) {
+	void Material::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer) {
 		m_propertiesBlock.SetProperty(name, buffer);
 	}
 
-	void Material::SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray)
+	void Material::SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray)
 	{
 		m_propertiesBlock.SetProperty(name, textureArray);
 	}
 
-	void ShaderPropertiesBlock::SetProperty(std::string name, SPtr<Texture> texture)
+	void ShaderPropertiesBlock::SetProperty(const std::string& name, const glm::vec2 value)
+	{
+		PropertyUpdateRequest request;
+		request.name = name;
+		request.type = ShaderPropertyType::Vec2;
+		request.value = glm::vec4(value.x, value.y, 0.0f, 0.0f);
+
+		m_descriptorUpdateRequests.push_back(request);
+	}
+
+	void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture)
 	{
 		PropertyUpdateRequest updateRequest{};
 		updateRequest.texture = texture;
@@ -48,7 +63,7 @@ namespace Pudu {
 		m_descriptorUpdateRequests.push_back(updateRequest);
 	}
 
-	void ShaderPropertiesBlock::SetProperty(std::string name, SPtr<GraphicsBuffer> buffer)
+	void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)
 	{
 		PropertyUpdateRequest updateRequest{};
 		updateRequest.type = ShaderPropertyType::Buffer;
@@ -58,7 +73,7 @@ namespace Pudu {
 		m_descriptorUpdateRequests.push_back(updateRequest);
 	}
 
-	void ShaderPropertiesBlock::SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray)
+	void ShaderPropertiesBlock::SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray)
 	{
 		PropertyUpdateRequest updateRequest{};
 		updateRequest.type = ShaderPropertyType::TextureArray;
@@ -68,7 +83,7 @@ namespace Pudu {
 		m_descriptorUpdateRequests.push_back(updateRequest);
 	}
 
-	void ShaderPropertiesBlock::ApplyProperties(MaterialApplyPropertyGPUTarget target)
+	void ShaderPropertiesBlock::ApplyProperties(const MaterialApplyPropertyGPUTarget& target)
 	{
 		for (auto& request : m_descriptorUpdateRequests)
 		{
@@ -86,6 +101,9 @@ namespace Pudu {
 			}case ShaderPropertyType::TextureArray:
 				ApplyTextureArray(request, target);
 				break;
+			case ShaderPropertyType::Vec2:
+				ApplyVectorValue(request,target);
+				break;
 			default:
 				break;
 			}
@@ -93,7 +111,7 @@ namespace Pudu {
 
 		m_descriptorUpdateRequests.clear();
 	}
-	void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget target)
+	void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& target)
 	{
 		auto binding = target.shader->GetBindingByName(request.name.c_str());
 
@@ -119,7 +137,7 @@ namespace Pudu {
 
 		target.graphics->UpdateDescriptorSet(1, &imageWrite);
 	}
-	void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget target)
+	void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& target)
 	{
 		auto binding = target.shader->GetBindingByName(request.name.c_str());
 
@@ -145,7 +163,8 @@ namespace Pudu {
 
 	//	target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
 	}
-	void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings)
+
+	void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings)
 	{
 		auto binding = settings.shader->GetBindingByName(request.name.c_str());
 
@@ -190,6 +209,29 @@ namespace Pudu {
 
 		settings.graphics->UpdateDescriptorSet(currentWriteIndex, descriptorWrites);
 		//settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, descriptorWrites);
+	}
+
+	void ShaderPropertiesBlock::ApplyVectorValue(PropertyUpdateRequest& request,
+		const MaterialApplyPropertyGPUTarget& settings)
+	{
+		throw std::runtime_error("Unimplemented ApplyVectorValue");
+		auto binding = settings.shader->GetBindingByName(request.name.c_str());
+
+		if (binding == nullptr)
+		{
+			LOG("Trying to set non-existing parameter {} for shader {}", request.name, settings.shader->GetName());
+			return;
+		}
+
+		VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+		bufferWrite.descriptorCount = 1;
+		bufferWrite.dstBinding = binding->index;
+		bufferWrite.dstSet = settings.descriptorSets[binding->set];
+		// bufferWrite.pBufferInfo = &bufferInfo;
+
+		bufferWrite.descriptorType = binding->type;
+
+		// target.graphics->UpdateDescriptorSet(1, &bufferWrite);
 	}
 
 	Material::Material(PuduGraphics* graphics)

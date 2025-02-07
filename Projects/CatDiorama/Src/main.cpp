@@ -3,10 +3,10 @@
 
 #include <string>
 #include <iostream>
-#include "TriangleApp.h"
+#include "CatDiorama.h"
 
 int main() {
-	TriangleApp app;
+	CatDiorama app;
 
 	try {
 		app.Init();

@@ -1,12 +1,12 @@
 #include <fmt/core.h>
 
 #include <FileManager.h>
-#include "TriangleApp.h"
+#include "CatDiorama.h"
 #include "EntityManager.h"
 
 namespace fs = std::filesystem;
 
-void TriangleApp::OnRun()
+void CatDiorama::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
 
@@ -28,7 +28,7 @@ void TriangleApp::OnRun()
     m_camera.Transform.SetForward(forward, {0, 1, 0});
 }
 
-void TriangleApp::OnInit()
+void CatDiorama::OnInit()
 {
     m_camera = {};
     m_camera.Transform.SetForward(vec3(0, -.8, -1), vec3(0, 1, 0));
@@ -47,7 +47,7 @@ void TriangleApp::OnInit()
 
     m_puduRenderer.Init(&Graphics, this);
 
-    standardShader = Graphics.CreateShader("triangle.shader.slang", "standard");
+    standardShader = Graphics.CreateShader("standard.shader.slang", "standard");
 
     projection.nearPlane = 5;
     projection.farPlane = 50;
@@ -123,7 +123,7 @@ void TriangleApp::OnInit()
     m_scene.AddEntities(catModel);
 }
 
-void TriangleApp::DrawImGUI()
+void CatDiorama::DrawImGUI()
 {
     auto entities = m_scene.GetEntities();
     ImGui::Text(fmt::format("Time: {}", Time.Time()).c_str());
@@ -149,12 +149,12 @@ void TriangleApp::DrawImGUI()
     }
 }
 
-void TriangleApp::OnCleanup()
+void CatDiorama::OnCleanup()
 {
 
 }
 
-void TriangleApp::LoadGameboyModel()
+void CatDiorama::LoadGameboyModel()
 {
     auto gltfScene = FileManager::LoadGltfScene(GameboyModelPath);
 

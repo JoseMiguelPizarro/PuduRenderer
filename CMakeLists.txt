@@ -35,7 +35,7 @@ set(INCLUDE_DIRS
     lib/tiny_obj_loader
     Projects/PuduCore/lib
     Projects/PuduRenderer/lib
-	Projects/App/lib
+        Projects/CatDiorama/lib
 )
 include_directories(${INCLUDE_DIRS})
 
@@ -151,14 +151,14 @@ file(GLOB_RECURSE PuduRenderer_SOURCES Projects/PuduRenderer/**)
 target_sources(PuduRenderer PRIVATE ${PuduRenderer_SOURCES})
 target_link_libraries(PuduRenderer PRIVATE PuduCore ${LIBS})
 
-add_target(App EXECUTABLE)
-set_target_properties(App PROPERTIES
+add_target(CatDiorama EXECUTABLE)
+set_target_properties(CatDiorama PROPERTIES
     COMPILE_DEFINITIONS "HLSLPP_FEATURE_TRANSFORM"
 )
-file(GLOB_RECURSE App_SOURCES Projects/App/**)
-target_sources(App PRIVATE ${App_SOURCES})
+file(GLOB_RECURSE CatDiorama_SOURCES Projects/CatDiorama/**)
+target_sources(CatDiorama PRIVATE ${CatDiorama_SOURCES})
 
-target_link_libraries(App PUBLIC PuduRenderer PuduCore PUBLIC slang)
+target_link_libraries(CatDiorama PUBLIC PuduRenderer PuduCore PUBLIC slang)
 
 get_target_property(slangDLL slang SLANG_DLL)
 get_target_property(glslangDLL slang GLSLANG_DLL)
@@ -172,7 +172,7 @@ configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY
 
 message(STATUS "Copying asset files")
 add_custom_command(
-        TARGET App
+        TARGET CatDiorama
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/Assets"

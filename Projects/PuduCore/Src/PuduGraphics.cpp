@@ -271,13 +271,13 @@ namespace Pudu
 		return alloc;
 	}
 
-	void PuduGraphics::UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount,
+	void PuduGraphics::UpdateDescriptorSet(const uint16_t count, const VkWriteDescriptorSet* write, const uint16_t copyCount,
 		const VkCopyDescriptorSet* copy)
 	{
 		vkUpdateDescriptorSets(m_device, count, write, copyCount, copy);
 	}
 
-	void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size) {
+	void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, const void* data, const size_t size) {
 		memcpy(buffer->GetMappedData(), data, size);
 	}
 
@@ -286,7 +286,7 @@ namespace Pudu
 		return &m_bindlessResourcesToUpdate;
 	}
 
-	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	void PuduGraphics::CopyBuffer(const VkBuffer srcBuffer, const VkBuffer dstBuffer, const VkDeviceSize size)
 	{
 		auto commandBuffer = BeginSingleTimeCommands();
 
@@ -295,7 +295,7 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	uint32_t PuduGraphics::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+	uint32_t PuduGraphics::FindMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags properties) const
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
 		vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
@@ -310,9 +310,11 @@ namespace Pudu
 		}
 
 		LOG_ERROR("Failed to find suitable memory type!");
+
+		return -1;
 	}
 
-	void PuduGraphics::DestroyBuffer(SPtr<GraphicsBuffer> buffer)
+	void PuduGraphics::DestroyBuffer(const SPtr<GraphicsBuffer>& buffer) const
 	{
 		if (!buffer->IsDestroyed())
 		{
@@ -322,11 +324,10 @@ namespace Pudu
 		}
 	}
 
-	std::vector<const char*> PuduGraphics::GetInstanceExtensions()
+	std::vector<const char*> PuduGraphics::GetInstanceExtensions() const
 	{
 		uint32_t glfwExtensionsCount = 0;
-		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
+		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionsCount);
 

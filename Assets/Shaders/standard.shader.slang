@@ -61,7 +61,7 @@ float4 fragmentMain(VSOut input)
     uint id = UBO.materialId;
     Sampler2D tex = material.baseColorTex;
     float4 base_colour = tex.Sample(input.TexCoord.xy) * input.Color;
-    float2 suv = (input.PositionCS * 0.5 + 0.5).xy;
+    float2 suv = 0.5f * float2(input.PositionCS.x,-input.PositionCS.y) + 0.5f;
     // base_colour = input.Color;
 
     // Perspective Devide shadow to map 0-1
@@ -72,7 +72,10 @@ float4 fragmentMain(VSOut input)
     float3 viewPos = float3(UBO.view._14, UBO.view._24, UBO.view._34);
     float d = 1. - saturate(distance(input.PosWS.xyz, viewPos) / 80.f);
 
+    float3 normalColor = GLOBALS.normalBuffer.Sample(suv).xyz;
+
     col = lerp(float4(0.9, .4, 0.6, 0.), col, d);
+   // col.rgb = normalColor;
     col.a = 0.5;
     return col;
 }
