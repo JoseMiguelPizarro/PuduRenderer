@@ -4,7 +4,7 @@
 
 struct VSOut
 {
-    float4 PositionCS: SV_POSITION;
+    float4 PosCS: SV_POSITION;
     float4 PosWS:POSITION0;
     float4 PosOS:POSITION1;
     float4 Color: COLOR;

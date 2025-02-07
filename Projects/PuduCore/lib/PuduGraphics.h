@@ -135,7 +135,7 @@ namespace Pudu
 		Model CreateModel(std::shared_ptr<Mesh> mesh, SPtr<Material> material);
 		Model CreateModel(MeshCreationData const& data);
 		SPtr<Mesh> CreateMesh(MeshCreationData const& meshData);
-		void UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
+		void UpdateDescriptorSet(uint16_t count, const VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
 		void DestroyMesh(SPtr<Mesh> mesh);
 		void DestroyTexture(SPtr<Texture> texture);
 		void WaitIdle();
@@ -237,7 +237,7 @@ namespace Pudu
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
-		void UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size);
+		void UploadBufferData(GraphicsBuffer* buffer, const void* data, size_t size);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
@@ -330,10 +330,10 @@ namespace Pudu
 		VmaAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags properties,
 			VkBuffer& buffer, const char* name = nullptr);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		void DestroyBuffer(SPtr<GraphicsBuffer> buffer);
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+		void DestroyBuffer(const SPtr<GraphicsBuffer>& buffer) const;
 		void AdvanceFrame();
-		std::vector<const char*> GetInstanceExtensions();
+		std::vector<const char*> GetInstanceExtensions() const;
 
 	private:
 

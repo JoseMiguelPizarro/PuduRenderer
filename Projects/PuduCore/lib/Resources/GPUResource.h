@@ -30,14 +30,27 @@ namespace Pudu
 
 		bool IsValid() { return m_Index != k_INVALID_HANDLE; }
 
+
 		operator uint32_t& () { return m_Index; }
+
+		bool operator==(const GPUResourceHandleBase &other) const
+		{
+			return m_Index == other.m_Index;
+		};
 	};
 
+	struct GPUResourceHasher
+	{
+		size_t operator()(const GPUResourceHandleBase& k) const
+		{
+			return std::hash<uint32_t>()(k.m_Index);
+		}
+	};
 
 	class GPUResourceBase
 	{
 	public:
-		bool IsAllocated() { return m_allocated; }
+		bool IsAllocated() const { return m_allocated; }
 		std::string name;
 
 		void Create(PuduGraphics* gpu)

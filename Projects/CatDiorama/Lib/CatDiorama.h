@@ -15,7 +15,7 @@
 
 using namespace Pudu;
 
-class TriangleApp : public PuduApp
+class CatDiorama : public PuduApp
 {
 public:
 	void OnRun() override;

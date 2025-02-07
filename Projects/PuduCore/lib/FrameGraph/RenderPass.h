@@ -3,8 +3,8 @@
 #include "Resources/Resources.h"
 #include "DrawCall.h"
 #include "Pipeline.h"
-#include "glm/vec4.hpp"
 #include "GPUEnums.h"
+#include "Enums/ResourceUsage.h"
 
 namespace Pudu
 {
@@ -21,7 +21,8 @@ namespace Pudu
 		VkImageLayout layout;
 		VkImageLayout finalLayout;
 		GPUResourceType::Type type = GPUResourceType::Texture;
-		AttachmentUsage usage = AttachmentUsage::Write;
+		AttachmentAccessUsage usage = AttachmentAccessUsage::Write;
+		ResourceUsage resourceUsage;
 
 		RenderPassAttachment() = default;
 
@@ -31,8 +32,8 @@ namespace Pudu
 			VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 			VkClearValue clearValue = {},
 			VkImageLayout layout = {},
-			AttachmentUsage usage = AttachmentUsage::Write) :
-			resource(rt), loadOperation(loadOp), storeOp(storeOp), clearValue(clearValue), usage(usage), layout(layout) {};
+			AttachmentAccessUsage usage = AttachmentAccessUsage::Write) :
+			resource(rt), loadOperation(loadOp), storeOp(storeOp), clearValue(clearValue), layout(layout), usage(usage) {};
 	};
 
 	struct RenderPassAttachments
@@ -48,9 +49,9 @@ namespace Pudu
 
 		RenderPassAttachments& Reset();
 		RenderPassAttachments& AddColorAttachment(RenderPassAttachment attachment);
-		RenderPassAttachments& SetDepthStencilAttachment(RenderPassAttachment attachment);
+		RenderPassAttachments& SetDepthStencilAttachment(const RenderPassAttachment& attachment);
 		RenderPassAttachments& SetDepthStencilOperations(LoadOperation depth, LoadOperation stencil);
-		RenderPassAttachments& AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage = AttachmentUsage::Write);
+		RenderPassAttachments& AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentAccessUsage usage = AttachmentAccessUsage::Write);
 
 		VkFormat GetStencilFormat();
 
@@ -114,11 +115,11 @@ namespace Pudu
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
 		virtual void BeginRender(RenderFrameData& data);
 		virtual void EndRender(RenderFrameData& data);
-		RenderPass* AddColorAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, vec4 clearColor = vec4(0));
-		RenderPass* AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentUsage usage = AttachmentUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
+		RenderPass* AddColorAttachment(SPtr<RenderTexture> rt, AttachmentAccessUsage accessUsage = AttachmentAccessUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, vec4 clearColor = vec4(0));
+		RenderPass* AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentAccessUsage accessUsage = AttachmentAccessUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
 		RenderPass* AddColorAttachment(RenderPassAttachment& attachment);
 		RenderPass* AddDepthStencilAttachment(RenderPassAttachment& attachment);
-		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentUsage usage); 
+		RenderPass* AddBufferAttachment(SPtr<GraphicsBuffer> buffer, AttachmentAccessUsage usage);
 		RenderPass* SetName(const char* name);
 		RenderPass* SetCullMode(CullMode cullMode);
 		RenderPass* SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor, VkBlendOp colorOperation);

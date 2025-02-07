@@ -271,13 +271,13 @@ namespace Pudu
 		return alloc;
 	}
 
-	void PuduGraphics::UpdateDescriptorSet(uint16_t count, VkWriteDescriptorSet* write, uint16_t copyCount,
+	void PuduGraphics::UpdateDescriptorSet(const uint16_t count, const VkWriteDescriptorSet* write, const uint16_t copyCount,
 		const VkCopyDescriptorSet* copy)
 	{
 		vkUpdateDescriptorSets(m_device, count, write, copyCount, copy);
 	}
 
-	void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, void* data, size_t size) {
+	void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, const void* data, const size_t size) {
 		memcpy(buffer->GetMappedData(), data, size);
 	}
 
@@ -286,7 +286,7 @@ namespace Pudu
 		return &m_bindlessResourcesToUpdate;
 	}
 
-	void PuduGraphics::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	void PuduGraphics::CopyBuffer(const VkBuffer srcBuffer, const VkBuffer dstBuffer, const VkDeviceSize size)
 	{
 		auto commandBuffer = BeginSingleTimeCommands();
 
@@ -295,7 +295,7 @@ namespace Pudu
 		EndSingleTimeCommands(commandBuffer);
 	}
 
-	uint32_t PuduGraphics::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+	uint32_t PuduGraphics::FindMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags properties) const
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
 		vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
@@ -309,10 +309,12 @@ namespace Pudu
 			}
 		}
 
-		PUDU_ERROR("Failed to find suitable memory type!");
+		LOG_ERROR("Failed to find suitable memory type!");
+
+		return -1;
 	}
 
-	void PuduGraphics::DestroyBuffer(SPtr<GraphicsBuffer> buffer)
+	void PuduGraphics::DestroyBuffer(const SPtr<GraphicsBuffer>& buffer) const
 	{
 		if (!buffer->IsDestroyed())
 		{
@@ -322,11 +324,10 @@ namespace Pudu
 		}
 	}
 
-	std::vector<const char*> PuduGraphics::GetInstanceExtensions()
+	std::vector<const char*> PuduGraphics::GetInstanceExtensions() const
 	{
 		uint32_t glfwExtensionsCount = 0;
-		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
+		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionsCount);
 
@@ -376,7 +377,7 @@ namespace Pudu
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		{
-			PUDU_ERROR("failed to acquire swap chain image!");
+			LOG_ERROR("failed to acquire swap chain image!");
 		}
 
 		vkResetFences(m_device, 1, &frame.InFlightFence);
@@ -397,18 +398,20 @@ namespace Pudu
 		frameGraph->RenderFrame(frameData);
 
 		frameData.currentCommand->TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle,
-			frameData.activeRenderTarget->format,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			frameData.activeRenderTarget->format,VkImageLayoutFromUsage( frameGraph->GetTextureUsage(frameData.activeRenderTarget->Handle())),
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle,
 			m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex],
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
 		frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle,
 			m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
+		//TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
+		frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
 
 		frame.CommandBuffer->EndCommands();
 		frame.ComputeCommandBuffer->EndCommands();
@@ -810,7 +813,7 @@ namespace Pudu
 
 		if (deviceCount == 0)
 		{
-			PUDU_ERROR("Failed to find GPUs with Vulkan support!");
+			LOG_ERROR("Failed to find GPUs with Vulkan support!");
 		}
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -858,7 +861,7 @@ namespace Pudu
 
 		if (m_physicalDevice == VK_NULL_HANDLE)
 		{
-			PUDU_ERROR("Failed to find a suitable GPU!");
+			LOG_ERROR("Failed to find a suitable GPU!");
 		}
 	}
 
@@ -1120,7 +1123,7 @@ namespace Pudu
 
 		if (pfnSetDebugUtilsObjectNameEXT == nullptr)
 		{
-			PUDU_ERROR("Debug utils object function not found");
+			LOG_ERROR("Debug utils object function not found");
 		}
 	}
 
@@ -1367,7 +1370,7 @@ namespace Pudu
 
 		if (vkCreateDescriptorPool(m_device, &poolInfo, m_allocatorPtr, &m_bindlessDescriptorPool) != VK_SUCCESS)
 		{
-			PUDU_ERROR("Failed to create descriptor pool!");
+			LOG_ERROR("Failed to create descriptor pool!");
 		}
 	}
 
@@ -1883,7 +1886,7 @@ namespace Pudu
 			texture = m_resources.AllocateTextureCube();
 			break;
 		default:
-			//PUDU_ERROR("Texture Type not supported {}", creationData.textureType);
+			//LOG_ERROR("Texture Type not supported {}", creationData.textureType);
 			break;
 		}
 
@@ -2137,7 +2140,7 @@ namespace Pudu
 
 		if (vkCreateSampler(m_device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
 		{
-			PUDU_ERROR("failed to create texture sampler!");
+			LOG_ERROR("failed to create texture sampler!");
 		}
 	}
 
@@ -2632,7 +2635,7 @@ namespace Pudu
 			}
 		}
 
-		PUDU_ERROR("Failed to find supported format!");
+		LOG_ERROR("Failed to find supported format!");
 	}
 
 	GPUCommands PuduGraphics::BeginSingleTimeCommands()

@@ -9,6 +9,8 @@
 #include <Logger.h>
 #include "Shader.h"
 #include <DrawIndirectRenderPass.h>
+
+#include "GlobalConstants.h"
 #include "Lighting/LightBuffer.h"
 
 namespace Pudu
@@ -21,6 +23,7 @@ namespace Pudu
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
 
         InitLightingBuffer(graphics);
+        InitConstantsBuffer(graphics);
 
         auto depthRT = graphics->GetRenderTexture();
         depthRT->depth = 1;
@@ -52,32 +55,33 @@ namespace Pudu
 
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
         m_depthRenderPass->name = "DepthPrepassRenderPass";
-        m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Clear);
+        m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
 
         m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
         m_shadowMapRenderPass->name = "ShadowMapRenderPass";
-        m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT, AttachmentUsage::Write, LoadOperation::Clear);
+        m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
 
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
             ->SetName("ForwardRenderPass")
-            ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Clear,vec4(0.4, .4, 0.6, 0.))
-            ->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
-            ->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
+            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear, vec4(0.4, .4, 0.6, 0.))
+            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+
 
         auto transparentRP = graphics->GetRenderPass<ForwardRenderPass>();
         transparentRP->SetName("Transparent")
                      ->SetRenderLayer(1)
                      ->SetColorBlending(VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD)
-                     ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
-                     ->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load);
+                     ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+                     ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
         auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
         overlayRP
-        ->SetName("Overlay")
-        ->SetRenderLayer(2)
-        ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
-        ->AddDepthStencilAttachment(depthRT, AttachmentUsage::ReadAndWrite, LoadOperation::Clear);
+            ->SetName("Overlay")
+            ->SetRenderLayer(2)
+            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::ReadAndWrite, LoadOperation::Clear);
 
         SPtr<Shader> grassShader = graphics->CreateShader("grass.shader.slang", "Grass");
         auto normalShader = graphics->CreateShader("normals.slang", "Normals");
@@ -85,8 +89,8 @@ namespace Pudu
         normalMaterial->SetShader(normalShader);
         auto normalRP = graphics->GetRenderPass<ForwardRenderPass>();
         normalRP->SetName("Normal");
-        normalRP->AddColorAttachment(normalRT, AttachmentUsage::Write, LoadOperation::Clear);
-        normalRP->AddDepthStencilAttachment(depthRT, AttachmentUsage::Read, LoadOperation::Load);
+        normalRP->AddColorAttachment(normalRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
+        normalRP->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
         normalRP->SetReplacementMaterial(normalMaterial);
 
 
@@ -104,7 +108,7 @@ namespace Pudu
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
         computeRP->SetShader(compute);
-        computeRP->AddBufferAttachment(grassBuffer, AttachmentUsage::Write);
+        computeRP->AddBufferAttachment(grassBuffer, AttachmentAccessUsage::Write);
 
 
         uint32_t bladesStripe = 6;
@@ -137,18 +141,18 @@ namespace Pudu
                    ->SetDrawCount(indirectCommands.size())
                    ->SetIndirectBuffer(indirectBuffer)
                    ->SetCullMode(CullMode::None)
-                   ->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load)
-                   ->AddColorAttachment(shadowRT, AttachmentUsage::Read, LoadOperation::Load)
-                   ->AddDepthStencilAttachment(depthRT, AttachmentUsage::Write, LoadOperation::Load)
+                   ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+                   ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                   ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load)
                    ->SetName("Grass indirect");
 
         m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
         m_postProcessingRenderPass->name = "Postprocessing";
-        m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
+        m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         m_imguiRenderPass = graphics->GetRenderPass<ImguiRenderPass>();
         m_imguiRenderPass->name = "ImGui";
-        m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentUsage::Write, LoadOperation::Load);
+        m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
@@ -158,7 +162,7 @@ namespace Pudu
         AddRenderPass(drawGrassRP.get());
         AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
-      //  AddRenderPass(overlayRP.get());
+        //  AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();
@@ -167,10 +171,12 @@ namespace Pudu
         std::printf(frameGraph.ToString().c_str());
 
         m_globalPropertiesMaterial->SetShader(grassShader);
+
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
     }
 
     static bool isFirstFrame = true;
@@ -184,9 +190,10 @@ namespace Pudu
         data.descriptorSetOffset = isFirstFrame ? 0 : 2;
         isFirstFrame = false;
         UpdateLightingBuffer(data);
+        UpdateGlobalConstantsBuffer(data.graphics);
     }
 
-    void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame)
+    void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
     {
         LightBuffer lightBuffer{};
         lightBuffer.lightDirection = {-frame.scene->directionalLight->Direction(), 0.0f};
@@ -198,6 +205,14 @@ namespace Pudu
         frame.lightingBuffer = m_lightingBuffer;
     }
 
+    void PuduRenderer::UpdateGlobalConstantsBuffer(PuduGraphics* graphics) const
+    {
+        GlobalConstants globalConstants{};
+        globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
+
+        graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
+    }
+
     void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
     {
         m_lightingBuffer = graphics->CreateGraphicsBuffer(sizeof(LightBuffer), nullptr,
@@ -206,4 +221,12 @@ namespace Pudu
                                                           VMA_ALLOCATION_CREATE_MAPPED_BIT
                                                           , "LightingBuffer");
     }
+
+    void PuduRenderer::InitConstantsBuffer(PuduGraphics* graphics)
+    {
+        m_globalConstantsBuffer = graphics->CreateGraphicsBuffer(sizeof(GlobalConstants), nullptr,
+                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                                                                 | VMA_ALLOCATION_CREATE_MAPPED_BIT, "GlobalConstants");
+    };
 }

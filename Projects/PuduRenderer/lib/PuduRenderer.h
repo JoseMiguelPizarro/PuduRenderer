@@ -22,8 +22,10 @@ namespace Pudu
 		virtual void OnRender(RenderFrameData& data) override;
 
 	private:
-		void UpdateLightingBuffer(RenderFrameData& data);
+		void UpdateLightingBuffer(RenderFrameData& data) const;
+		void UpdateGlobalConstantsBuffer(PuduGraphics* graphics) const;
 		void InitLightingBuffer(PuduGraphics* graphics);
+		void InitConstantsBuffer(PuduGraphics* graphics);
 
 	private:
 		SPtr<RenderPass> m_depthRenderPass;
@@ -32,6 +34,7 @@ namespace Pudu
 		SPtr<RenderPass> m_postProcessingRenderPass;
 		SPtr<ImguiRenderPass> m_imguiRenderPass;
 		SPtr<GraphicsBuffer> m_lightingBuffer;
+		SPtr<GraphicsBuffer> m_globalConstantsBuffer;
 		SPtr<Material> m_globalPropertiesMaterial;
 	};
 }

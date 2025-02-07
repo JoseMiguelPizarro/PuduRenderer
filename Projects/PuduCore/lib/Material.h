@@ -15,6 +15,7 @@ namespace Pudu {
 	class ShaderPropertyType {
 	public:
 		enum Enum{
+			Vec2,
 			Texture,
 			Buffer,
 			TextureArray
@@ -23,6 +24,7 @@ namespace Pudu {
 
 	struct PropertyUpdateRequest {
 		std::string name;
+		glm::vec4 value;
 		SPtr<Texture> texture;
 		SPtr<GraphicsBuffer> buffer;
 		std::vector<SPtr<Texture>>* textureArray;
@@ -41,31 +43,34 @@ namespace Pudu {
 	class ShaderPropertiesBlock
 	{
 	public:
-		void SetProperty(std::string name, SPtr<Texture> texture);
-		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
-		void SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray);
-		void ApplyProperties(MaterialApplyPropertyGPUTarget target);
+		void SetProperty(const std::string& name, glm::vec2 value);
+		void SetProperty(const std::string& name, const SPtr<Texture>& texture);
+		void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
+		void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
+		void ApplyProperties(const MaterialApplyPropertyGPUTarget& target);
 
 	private:
 		std::vector<PropertyUpdateRequest> m_descriptorUpdateRequests;
 
-		void ApplyTexture(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings);
-		void ApplyBuffer(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings);
-		void ApplyTextureArray(PropertyUpdateRequest& request, MaterialApplyPropertyGPUTarget settings);
+		static void ApplyTexture(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
+		static void ApplyBuffer(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
+		static void ApplyTextureArray(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
+		static void ApplyVectorValue(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
 	};
 
-	class Material:public GPUResource<Material>
+	class Material final :public GPUResource<Material>
 	{
 	public:
-		Material(PuduGraphics* graphics);
+		explicit Material(PuduGraphics* graphics);
 		std::string Name;
 		void SetShader(SPtr<Shader> shader);
 		SPtr<Shader> GetShader(){return m_shader;}
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		void ApplyProperties();
-		void SetProperty(std::string name, SPtr<Pudu::Texture> texture);
-		void SetProperty(std::string name, SPtr<GraphicsBuffer> buffer);
-		void SetProperty(std::string name, std::vector<SPtr<Texture>>* textureArray);
+		void SetProperty(const std::string& name, glm::vec2 value);
+		void SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture);
+		void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
+		void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
 		VkDescriptorSet* GetDescriptorSets() {return m_descriptorSets;};
 
 	private:
@@ -73,7 +78,7 @@ namespace Pudu {
 		friend class RenderPass;
 		SPtr<Shader> m_shader;
 		ShaderPropertiesBlock m_propertiesBlock;
-		VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS];
+		VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
 
 	};
 }

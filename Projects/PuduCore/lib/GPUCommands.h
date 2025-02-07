@@ -7,6 +7,7 @@
 #include "Texture2D.h"
 #include "Resources/GPUResource.h"
 #include "Mesh.h"
+#include "Enums/ResourceUsage.h"
 
 using namespace glm;
 
@@ -32,8 +33,8 @@ namespace Pudu
 		void EndCommands();
 		void Clear(vec4 color);
 		void ClearDepthStencil(float depth, float stencil);
-		void AddImageBarrier(VkImage image, ResourceState oldState, ResourceState newState, u32 baseMipLevel,
-			u32 mipCount, bool isDepth);
+		void AddImageBarrier(VkImage image, ResourceUsage oldUsage, ResourceUsage newUsage, u32 baseMipLevel,
+			u32 mipCount, bool isDepth) const;
 		void AddMemoryBarrier(VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask,
 			VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask);
 		void SetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);

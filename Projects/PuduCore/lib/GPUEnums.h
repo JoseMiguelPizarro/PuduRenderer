@@ -10,7 +10,7 @@ namespace Pudu
 		Clear,
 	}; // enum Enum
 
-	enum AttachmentUsage {
+	enum AttachmentAccessUsage {
 		Read = 1,
 		Write = 2,
 		ReadAndWrite = 3,
@@ -62,7 +62,7 @@ namespace Pudu
 		return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	}
 
-	static VkAttachmentStoreOp ToVk(AttachmentUsage usage) {
+	static VkAttachmentStoreOp ToVk(AttachmentAccessUsage usage) {
 		switch (usage)
 		{
 		case Pudu::ReadAndWrite:

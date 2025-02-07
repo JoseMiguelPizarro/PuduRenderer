@@ -84,7 +84,7 @@ namespace Pudu {
 
 		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, GetAssetPath(assetPath).string().c_str()))
 		{
-			PUDU_ERROR("{} {}", warn, err);
+			LOG_ERROR("{} {}", warn, err);
 		}
 		for (auto& shape : shapes)
 		{
@@ -208,7 +208,7 @@ namespace Pudu {
 		if (auto error = asset.error() != fastgltf::Error::None)
 		{
 			Print(std::to_string(error).c_str());
-			PUDU_ERROR("Invalid gltf asset");
+			LOG_ERROR("Invalid gltf asset");
 		}
 
 		return asset;
