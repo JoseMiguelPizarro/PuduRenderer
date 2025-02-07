@@ -19,7 +19,7 @@ VSOut vertexMain(VertexInput input)
         float4(0, 0, 0, 1)
     };
 
-    output.PositionCS = mul(UBO.proj, mul(UBO.view, mul(UBO.model, float4(input.Position, 1.0))));
+    output.PosCS = mul(UBO.proj, mul(UBO.view, mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);

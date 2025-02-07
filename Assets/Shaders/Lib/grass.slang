@@ -11,7 +11,7 @@ struct GrassData
 
 struct GrassVertexOutput
 {
-    float4 positionCS : SV_Position;
+    float4 PosCS : SV_Position;
     float4 posWS : POSITION;
     float4 color : COLOR;
     float4 shadowCoords : TEXCOORD;

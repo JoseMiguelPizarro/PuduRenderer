@@ -68,7 +68,7 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
 
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.shadowCoords = GetShadowCoord(GLOBALS.lightingBuffer.shadowMatrix, GLOBALS.lightingBuffer.lightMatrix, float4(pos, 1));
-    output.positionCS = mul(UBO.proj, mul(UBO.view, float4(pos, 1)));
+    output.PosCS = mul(UBO.proj, mul(UBO.view, float4(pos, 1)));
 
     output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind));
 

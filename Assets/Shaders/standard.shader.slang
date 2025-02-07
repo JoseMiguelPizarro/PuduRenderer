@@ -39,7 +39,7 @@ float4 GetLighting(float3 normal, float3 lightDirection)
 VSOut vertexMain(VertexInput input)
 {
     VSOut output = (VSOut)0.0;
-    output.PositionCS = mul(UBO.proj, mul(UBO.view, mul(UBO.model, float4(input.Position, 1.0))));
+    output.PosCS = mul(UBO.proj, mul(UBO.view, mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);
@@ -61,7 +61,7 @@ float4 fragmentMain(VSOut input)
     uint id = UBO.materialId;
     Sampler2D tex = material.baseColorTex;
     float4 base_colour = tex.Sample(input.TexCoord.xy) * input.Color;
-    float2 suv = 0.5f * float2(input.PositionCS.x,-input.PositionCS.y) + 0.5f;
+    float2 suv = GetPixelScreenPosition(input.PosCS);
     // base_colour = input.Color;
 
     // Perspective Devide shadow to map 0-1
@@ -76,6 +76,10 @@ float4 fragmentMain(VSOut input)
 
     col = lerp(float4(0.9, .4, 0.6, 0.), col, d);
    // col.rgb = normalColor;
+
+
+    col.rgb = float3(input.PosCS.x/GLOBALS.constants.screenSize.x, input.PosCS.y/GLOBALS.constants.screenSize.y,0.);
+    col.rgb = normalColor;
     col.a = 0.5;
     return col;
 }
