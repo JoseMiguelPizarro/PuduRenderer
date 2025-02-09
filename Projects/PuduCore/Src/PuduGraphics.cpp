@@ -1497,10 +1497,13 @@ namespace Pudu
 		return commands;
 	}
 
-	void PuduGraphics::CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount,
-		VkDescriptorSetLayout* layouts)
+	void PuduGraphics::CreateDescriptorSets(const VkDescriptorPool pool, VkDescriptorSet* descriptorSet, const uint16_t setsCount,
+		const VkDescriptorSetLayout* layouts) const
 	{
 		LOG("Creating descriptor set");
+
+		if (setsCount == 0)
+			return;
 
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

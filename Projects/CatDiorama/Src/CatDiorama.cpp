@@ -15,10 +15,11 @@ void CatDiorama::OnRun()
 
     float speed = 0.15f;
     float phase = Time.Time() * speed;
+  //  phase = radians(270.f);
 
     float x = cos(phase) * radius;
     float z = sin(phase) * radius;
-    float y = sin(glm::radians(30.f)) * radius;
+    float y = sin(glm::radians(10.f)) * radius;
 
     vec3 pos = vec3(x, y, z);
     m_camera.Transform.SetLocalPosition(pos);
@@ -70,6 +71,7 @@ void CatDiorama::OnInit()
 
     m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
     const auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
+    const auto waterShader = Graphics.CreateShader("water.shader.slang", "water");
 
     const auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf");
@@ -80,8 +82,7 @@ void CatDiorama::OnInit()
 
     auto planeMaterial = Graphics.Resources()->AllocateMaterial();
     planeMaterial->name ="PlaneMat";
-    planeMaterial->SetShader(standardShader);
-    planeMaterial->SetProperty("material.baseColorTex",Graphics.GetDefaultWhiteTexture());
+    planeMaterial->SetShader(waterShader);
 
     auto planeModel = Graphics.CreateModel(Graphics.GetDefaultQuad(), planeMaterial);
 
@@ -90,6 +91,7 @@ void CatDiorama::OnInit()
     auto planeEntity = EntityManager::AllocateRenderEntity(planeName, planeModel);
     planeEntity->GetTransform().SetLocalPosition({0, 0, 0});
     planeEntity->GetTransform().SetLocalScale({100, 100, 100});
+    planeEntity->GetRenderSettings().layer = 1;
 
     m_scene.AddEntity(planeEntity);
 
@@ -112,7 +114,7 @@ void CatDiorama::OnInit()
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
         re->GetTransform().SetLocalScale({3, 3, 3});
-        re->GetTransform().SetLocalPosition({0, 1.5, 0});
+        re->GetTransform().SetLocalPosition({0, 1, 0});
         if (re != nullptr)
         {
             const auto mat = re->GetModel()->Materials[0];

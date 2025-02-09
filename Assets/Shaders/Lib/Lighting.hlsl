@@ -3,7 +3,9 @@
 public struct LightBuffer
 {
     public float4 lightDirection;
+//Shadow view matrix
     public float4x4 lightMatrix;
+//Shadow projection matrix
     public float4x4 shadowMatrix;
 };
 

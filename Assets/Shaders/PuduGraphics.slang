@@ -14,6 +14,7 @@ public struct GlobalsConstants
     public float2 screenSize;
     public float nearPlane;
     public float farPlane;
+    public float3 cameraPosWS;
 }
 
 public struct Globals

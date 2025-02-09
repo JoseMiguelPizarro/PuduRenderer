@@ -66,7 +66,6 @@ namespace Pudu
             ->SetName("ForwardRenderPass")
             ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear, vec4(0.4, .4, 0.6, 0.))
             ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
             ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
 
@@ -75,7 +74,9 @@ namespace Pudu
                      ->SetRenderLayer(1)
                      ->SetColorBlending(VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD)
                      ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-                     ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+                     ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(normalRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                    ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
         overlayRP
@@ -161,9 +162,9 @@ namespace Pudu
         AddRenderPass(m_shadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
-        AddRenderPass(drawGrassRP.get());
+        // AddRenderPass(drawGrassRP.get());
         AddRenderPass(transparentRP.get());
-        AddRenderPass(m_postProcessingRenderPass.get());
+       // AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
@@ -214,6 +215,7 @@ namespace Pudu
         globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
         globalConstants.farPlane = frame.camera->Projection.farPlane;
         globalConstants.nearPlane = frame.camera->Projection.nearPlane;
+        globalConstants.cameraPosWS = frame.camera->Transform.GetLocalPosition();
 
         graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
     }

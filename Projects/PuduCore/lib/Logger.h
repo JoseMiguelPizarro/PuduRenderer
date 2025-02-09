@@ -13,7 +13,8 @@ void LOG_ERROR(const std::format_string<Args...> fmt, Args&&... args) {
 
 	auto formattedMessage = std::vformat(fmt.get(),  std::make_format_args(args...));
 
-	throw std::runtime_error(std::vformat("Error: {0}", std::make_format_args(formattedMessage)));
+	throw std::runtime_error(std::vformat("Error 👉👈: {0} \n", std::make_format_args(formattedMessage)));
+	std::abort();
 }
 
 template<typename... Args>
