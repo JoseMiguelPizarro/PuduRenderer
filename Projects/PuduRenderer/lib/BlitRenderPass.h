@@ -11,11 +11,11 @@ namespace Pudu
     class BlitRenderPass:public RenderPass {
     public:
         void Render(RenderFrameData& frameData) override;
-        void SetTargets(const SPtr<Texture>& src, const SPtr<Texture>& dst);
+        void SetBlitTargets(const SPtr<RenderTexture>& src, const SPtr<RenderTexture>& dst);
 
     private:
-        SPtr<Texture> m_src;
-        SPtr<Texture> m_dst;
+        SPtr<RenderTexture> m_src;
+        SPtr<RenderTexture> m_dst;
     };
 }
 

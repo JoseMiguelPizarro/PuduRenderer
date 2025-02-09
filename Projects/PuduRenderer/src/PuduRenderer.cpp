@@ -32,6 +32,15 @@ namespace Pudu
         depthRT->height = graphics->WindowHeight;
         depthRT->format = VK_FORMAT_D32_SFLOAT;
         depthRT->name = "DepthPrepassTexture";
+        depthRT->SetUsage(DEPTH_WRITE);
+
+        auto depthCopyRT = graphics->GetRenderTexture();
+        depthCopyRT->depth = 1;
+        depthCopyRT->width = graphics->WindowWidth;
+        depthCopyRT->height = graphics->WindowHeight;
+        depthCopyRT->format = VK_FORMAT_D32_SFLOAT;
+        depthCopyRT->name = "DepthPrepassTexture";
+        depthCopyRT->SetUsage(SHADER_RESOURCE);
 
         auto shadowRT = graphics->GetRenderTexture();
         shadowRT->depth = 1;
@@ -46,6 +55,7 @@ namespace Pudu
         colorRT->height = graphics->WindowHeight;
         colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
         colorRT->name = "ForwardColor";
+        colorRT->SetUsage(ResourceUsage::RENDER_TARGET);
 
         auto normalRT = graphics->GetRenderTexture();
         normalRT->depth = 1;
@@ -85,7 +95,8 @@ namespace Pudu
                      ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
                      ->AddColorAttachment(normalRT, AttachmentAccessUsage::Read, LoadOperation::Load)
                      ->AddColorAttachment(colorCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-                    ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+                     ->AddColorAttachment(depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
         overlayRP
@@ -122,7 +133,10 @@ namespace Pudu
         computeRP->AddBufferAttachment(grassBuffer, AttachmentAccessUsage::Write);
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
-        forwardColorCopyRP->SetTargets(colorRT, colorCopyRT);
+        forwardColorCopyRP->SetBlitTargets(colorRT, colorCopyRT);
+
+        auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
+        depthCopyRP->SetBlitTargets(depthRT, depthCopyRT);
 
         uint32_t bladesStripe = 6;
         std::array<VkDrawIndirectCommand, grassCount> indirectCommands;
@@ -174,7 +188,8 @@ namespace Pudu
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(forwardColorCopyRP.get());
-    //    AddRenderPass(drawGrassRP.get());
+        AddRenderPass(depthCopyRP.get());
+        //    AddRenderPass(drawGrassRP.get());
         AddRenderPass(transparentRP.get());
         // AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
@@ -189,7 +204,7 @@ namespace Pudu
 
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthCopyRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", colorCopyRT);

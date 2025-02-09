@@ -15,11 +15,11 @@ void CatDiorama::OnRun()
 
     float speed = 0.15f;
     float phase = Time.Time() * speed;
-    // phase = radians(270.f);
+    phase = radians(270.f);
 
     float x = cos(phase) * radius;
     float z = sin(phase) * radius;
-    float y = sin(glm::radians(10.f) + phase*0.2 ) * radius;
+    float y = sin(glm::radians(30.f)) * radius;
 
     vec3 pos = vec3(x, y, z);
     m_camera.Transform.SetLocalPosition(pos);
@@ -91,7 +91,7 @@ void CatDiorama::OnInit()
     const auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
     const auto waterShader = Graphics.CreateShader("water.shader.slang", "water");
 
-    const auto cube = FileManager::LoadGltfScene("models/sphere.gltf");
+    const auto sphereModel = FileManager::LoadGltfScene("models/sphere.gltf");
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf");
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
 
@@ -142,7 +142,7 @@ void CatDiorama::OnInit()
         }
     }
 
-    for (const auto& e : cube)
+    for (const auto& e : sphereModel)
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
         re->GetTransform().SetLocalPosition({0, 5, 0});
@@ -158,7 +158,7 @@ void CatDiorama::OnInit()
     }
 
     m_scene.AddEntities(axisModel);
-    //m_scene.AddEntities(cube);
+    m_scene.AddEntities(sphereModel);
     m_scene.AddEntities(catModel);
 }
 

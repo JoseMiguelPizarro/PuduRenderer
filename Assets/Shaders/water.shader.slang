@@ -39,16 +39,18 @@ float4 fragmentMain(VSOut input)
 {
     var time = GLOBALS.constants.time;
     float2 screenUv = GetPixelScreenPosition(input.PosCS);
-    float3 normal =material.normalTex.Sample(input.PosWS.xz ).xyz;
-    float3 n2 = DecodeNormal(material.normalTex.Sample(input.PosWS.xz*0.3 + time*0.06).xy).xyz;
+    float3 normal =material.normalTex.Sample(input.PosWS.xz*0.7 + time*0.03).xyz;
+    float3 n2 = material.normalTex.Sample(input.PosWS.xz*0.2 + time*0.06).xyz;
 
-    var vbitangent = float3(0,0,1);
-    var vtangent = float3(1,0,0);
+    normal = lerp(normal,float3(0,0,1),0.9);
+
+    var vbitangent = float3(1,0,0);
+    var vtangent = float3(0,0,1);
     var vnormal = float3(0,1,0);
 
     normal = normalize(normal);
-  //normal = normalize(TangentToWorld(normal, vtangent,vbitangent,vnormal));
-    normal = float3(0,1,0);
+    normal = normalize(TangentToWorld(normal, vtangent,vbitangent,vnormal));
+  //  normal = float3(0,1,0);
     float3 viewDir = normalize(input.viewDir);
 
     float3 rayDir = normalize(reflect(viewDir, normal));
@@ -98,6 +100,6 @@ float4 fragmentMain(VSOut input)
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
 
     c = (float3(0.3,.5,0.8) + c*0.5)*(shadow*0.5);
- //   c = normal;
+    //c = normal;
     return float4(c,1.);
 }

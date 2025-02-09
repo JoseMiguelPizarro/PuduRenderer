@@ -78,9 +78,5 @@ public float3 DecodeNormal(float2 n)
 
 public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
 {
-    return float3(
-        v.x*t.x + v.x*bt.x + v.x*n.x,
-        v.y*t.y + v.x*bt.y + v.x*n.y,
-        v.z*t.z + v.z*bt.z + v.z*n.z
-        );
+    return v.x*t + v.y*bt + v.z*n;
 }
