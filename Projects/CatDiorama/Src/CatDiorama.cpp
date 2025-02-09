@@ -15,7 +15,7 @@ void CatDiorama::OnRun()
 
     float speed = 0.15f;
     float phase = Time.Time() * speed;
-  //  phase = radians(270.f);
+    //phase = radians(270.f);
 
     float x = cos(phase) * radius;
     float z = sin(phase) * radius;
@@ -69,7 +69,17 @@ void CatDiorama::OnInit()
     cubemapSettings.name = "Cubemap";
     cubemapSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
 
+    SamplerCreationData samplerCreationData{};
+    samplerCreationData.wrap = true;
+
+    TextureLoadSettings waterNormalTexSettings{};
+    waterNormalTexSettings.bindless = false;
+    waterNormalTexSettings.name = "WaterNormal";
+    waterNormalTexSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
+    waterNormalTexSettings.samplerData = samplerCreationData;
+
     m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
+    const auto waternormalTex = Graphics.LoadTexture2D("textures/water_normal.png",waterNormalTexSettings);
     const auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
     const auto waterShader = Graphics.CreateShader("water.shader.slang", "water");
 
@@ -83,6 +93,7 @@ void CatDiorama::OnInit()
     auto planeMaterial = Graphics.Resources()->AllocateMaterial();
     planeMaterial->name ="PlaneMat";
     planeMaterial->SetShader(waterShader);
+    planeMaterial->SetProperty("material.normalTex",waternormalTex);
 
     auto planeModel = Graphics.CreateModel(Graphics.GetDefaultQuad(), planeMaterial);
 

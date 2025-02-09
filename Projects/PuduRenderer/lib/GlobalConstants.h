@@ -7,4 +7,5 @@ struct GlobalConstants
       float nearPlane;
       float farPlane;
       glm::vec3 cameraPosWS;
+      float time;
 };

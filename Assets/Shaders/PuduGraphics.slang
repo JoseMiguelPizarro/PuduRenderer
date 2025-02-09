@@ -15,6 +15,7 @@ public struct GlobalsConstants
     public float nearPlane;
     public float farPlane;
     public float3 cameraPosWS;
+    public float time;
 }
 
 public struct Globals
@@ -22,6 +23,7 @@ public struct Globals
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
+    public Sampler2D colorBuffer;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
 }
@@ -63,4 +65,21 @@ public float LinearizeDepth(float d)
 public float LinearizeDepth(float d,float zNear,float zFar)
 {
     return zNear * zFar / (zFar + d * (zNear - zFar));
+}
+
+public float3 DecodeNormal(float2 n)
+{
+    n = n*2. - 1.;
+    var z = sqrt(1. - n.x*n.x - n.y*n.y);
+
+    return normalize(float3(n.x,n.y,z));
+}
+
+public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
+{
+    return float3(
+        v.x*t.x + v.x*bt.x + v.x*n.x,
+        v.y*t.y + v.x*bt.y + v.x*n.y,
+        v.z*t.z + v.z*bt.z + v.z*n.z
+        );
 }
