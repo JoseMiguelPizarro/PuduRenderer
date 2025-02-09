@@ -15,11 +15,11 @@ void CatDiorama::OnRun()
 
     float speed = 0.15f;
     float phase = Time.Time() * speed;
-    phase = radians(270.f);
+    // phase = radians(270.f);
 
     float x = cos(phase) * radius;
     float z = sin(phase) * radius;
-    float y = sin(glm::radians(10.f)) * radius;
+    float y = sin(glm::radians(10.f) + phase*0.2 ) * radius;
 
     vec3 pos = vec3(x, y, z);
     m_camera.Transform.SetLocalPosition(pos);

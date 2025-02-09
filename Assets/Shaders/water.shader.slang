@@ -68,6 +68,8 @@ float4 fragmentMain(VSOut input)
 
         float4 posProjected = mul(UBO.proj,mul(UBO.view, float4(rayPos.xyz,1.)));
         float rayDepth = posProjected.z/posProjected.w;
+
+        //Convert raypos to ScreenSpace uvs. Perspective divide transform the position to NDC space
         float2 posUv = 0.5 + 0.5 * (posProjected.xy / posProjected.w).xy;
 
         if(posUv.x<0 ||posUv.x>1 ||posUv.y <0 || posUv.y>1)
