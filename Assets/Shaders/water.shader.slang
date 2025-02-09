@@ -7,6 +7,7 @@ import PuduGraphics;
 struct WaterMaterial
 {
     Sampler2D normalTex;
+    Sampler2D skyTex;
 }
 
 
@@ -30,7 +31,7 @@ VSOut vertexMain(VertexInput input, uint vertexId: SV_VertexID)
 
 static const float maxDist = 30;
 static const float step = 0.1;
-static const float thickness = 0.001;
+static const float thickness = 0.00001;
 
 [shader("fragment")]
 float4 fragmentMain(VSOut input)
@@ -38,17 +39,16 @@ float4 fragmentMain(VSOut input)
 {
     var time = GLOBALS.constants.time;
     float2 screenUv = GetPixelScreenPosition(input.PosCS);
-    float3 normal = DecodeNormal(material.normalTex.Sample(input.PosWS.xz + time * 0.03).xy).xyz;
+    float3 normal =material.normalTex.Sample(input.PosWS.xz ).xyz;
     float3 n2 = DecodeNormal(material.normalTex.Sample(input.PosWS.xz*0.3 + time*0.06).xy).xyz;
 
-    var vbitangent = float3(1,0,0);
-    var vtangent = float3(0,0,1);
+    var vbitangent = float3(0,0,1);
+    var vtangent = float3(1,0,0);
     var vnormal = float3(0,1,0);
 
-    normal = normalize(lerp(normal,n2,.5));
+    normal = normalize(normal);
+  //normal = normalize(TangentToWorld(normal, vtangent,vbitangent,vnormal));
     normal = float3(0,1,0);
-   // normal = normalize(TangentToWorld(normal, vtangent,vbitangent,vnormal));
-    //float3 normal = float3(0,1,0);
     float3 viewDir = normalize(input.viewDir);
 
     float3 rayDir = normalize(reflect(viewDir, normal));
@@ -72,6 +72,7 @@ float4 fragmentMain(VSOut input)
 
         if(posUv.x<0 ||posUv.x>1 ||posUv.y <0 || posUv.y>1)
         {
+            traversedDistance = maxDist;
             break;
         }
 
@@ -80,15 +81,21 @@ float4 fragmentMain(VSOut input)
         if((rayDepth - pixelDepth) > thickness)
         {
             c = GLOBALS.colorBuffer.Sample(posUv).xyz;
-            hitDepth = pixelDepth;
             break;
         }
 
         traversedDistance+=step;
     }
 
+    if(traversedDistance>=maxDist)
+    {
+      //  c = material.skyTex.Sample(float2(screenUv.x, 1 - screenUv.y)).xyz;
+    }
+
+
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
 
     c = (float3(0.3,.5,0.8) + c*0.5)*(shadow*0.5);
+ //   c = normal;
     return float4(c,1.);
 }

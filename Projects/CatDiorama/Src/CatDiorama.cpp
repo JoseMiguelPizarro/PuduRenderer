@@ -15,7 +15,7 @@ void CatDiorama::OnRun()
 
     float speed = 0.15f;
     float phase = Time.Time() * speed;
-    //phase = radians(270.f);
+    phase = radians(270.f);
 
     float x = cos(phase) * radius;
     float z = sin(phase) * radius;
@@ -78,6 +78,14 @@ void CatDiorama::OnInit()
     waterNormalTexSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
     waterNormalTexSettings.samplerData = samplerCreationData;
 
+    TextureLoadSettings skyTexSettings{};
+    skyTexSettings.bindless = false;
+    skyTexSettings.name = "Sky";
+    skyTexSettings.format = VK_FORMAT_R8G8B8A8_SRGB;
+    skyTexSettings.samplerData = samplerCreationData;
+
+    const auto skyTexture = Graphics.LoadTexture2D("textures/sky.jpg",skyTexSettings);
+
     m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
     const auto waternormalTex = Graphics.LoadTexture2D("textures/water_normal.png",waterNormalTexSettings);
     const auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
@@ -94,6 +102,7 @@ void CatDiorama::OnInit()
     planeMaterial->name ="PlaneMat";
     planeMaterial->SetShader(waterShader);
     planeMaterial->SetProperty("material.normalTex",waternormalTex);
+    planeMaterial->SetProperty("material.skyTex",skyTexture);
 
     auto planeModel = Graphics.CreateModel(Graphics.GetDefaultQuad(), planeMaterial);
 
