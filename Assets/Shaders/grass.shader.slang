@@ -19,8 +19,8 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
 {
     GrassVertexOutput output = {};
     var grass = Data.GrassPos[id];
-    var randomPos = random2(grass.pos) * .2;
-    var pos = float3(grass.pos.x + randomPos.x, 0, grass.pos.y + randomPos.y);
+    var randomPos = random3(id);
+    var pos = grass.pos.xyz;
 
     var stripeId = vertexId / 6;
     var triangleId = vertexId / 3 % 2;
@@ -50,13 +50,14 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
         float4(0, 0, 0, 1)
     };
 
-    float2 size = { .2, .5 };
+    float2 size = { .1, 0.13 + randomPos.x*0.02 };
     vertexPos *= float3(size.x, size.y / 6, 1);
     vertexPos = mul(billBoard, float4(vertexPos, 1)).xyz;
 
     var vgradient = vertexPos.y / size.y;
-    float windIntensity = 0.1 + randomPos.y;
-    float2 wind = cnoise(pos * .3 + UBO.time * .6) * windIntensity + pow(cnoise(pos * 0.1 + UBO.time * 2) * windIntensity * 2, 3);
+    float windIntensity = 0.01 + randomPos.y*0.05;
+    float speed = 0.2;
+    float2 wind = cnoise(pos * .8 + UBO.time * .6 * speed) * windIntensity + pow(cnoise(pos * 0.5 + UBO.time * 2 * speed)  * 2, 3)* windIntensity;
     wind *= vgradient;
 
     float3 vertex = { vertexPos.x + wind.x, vertexPos.y, wind.y + vertexPos.z };
@@ -64,13 +65,13 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
     float grassLength = length(vertexPos);
     float newLength = length(vertex);
     float ratio = grassLength / newLength;
-    pos += vertex * ratio;
+    pos += vertex;
 
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.shadowCoords = GetShadowCoord(GLOBALS.lightingBuffer.shadowMatrix, GLOBALS.lightingBuffer.lightMatrix, float4(pos, 1));
     output.PosCS = mul(UBO.proj, mul(UBO.view, float4(pos, 1)));
 
-    output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind));
+    output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind)*5.);
 
     return output;
 }

@@ -28,7 +28,6 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "VulkanUtils.h"
-#include "PuduApp.h"
 #include "Pipeline.h"
 #include "Lighting/LightBuffer.h"
 #include "Texture.h"
@@ -36,11 +35,9 @@
 #include "TextureCube.h"
 
 #include <ktx.h>
-#include <ktxvulkan.h>
 #include "FileManager.h"
 #include "RenderFrameData.h"
 #include <vk_mem_alloc.h>
-
 
 namespace Pudu
 {

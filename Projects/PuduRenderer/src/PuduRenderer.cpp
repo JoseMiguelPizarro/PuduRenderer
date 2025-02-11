@@ -11,8 +11,12 @@
 #include "Shader.h"
 #include <DrawIndirectRenderPass.h>
 
+
 #include "GlobalConstants.h"
 #include "Lighting/LightBuffer.h"
+#include "FileManager.h"
+
+
 
 namespace Pudu
 {
@@ -122,10 +126,13 @@ namespace Pudu
         computeRP.get()->SetName("Grass Compute");
         auto compute = graphics->CreateComputeShader("testCompute.compute.slang", "Test Compute");
 
-        const uint32_t instances = 1000000;
+
+        auto grassPointCloud = FileManager::LoadPointCloud("models/Diorama_Cat/CatDiorama_Grass.xyz");
+        const uint32_t instances = grassPointCloud.size();
         auto groupSize = ceil(sqrt(instances / (32 * 32)));
         computeRP->SetGroupSize(groupSize, groupSize, 1);
-        auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec2) * instances, nullptr,
+
+        auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
@@ -138,10 +145,10 @@ namespace Pudu
         auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         depthCopyRP->SetBlitTargets(depthRT, depthCopyRT);
 
-        uint32_t bladesStripe = 6;
-        std::array<VkDrawIndirectCommand, grassCount> indirectCommands;
+        std::array<VkDrawIndirectCommand, grassCount> indirectCommands{};
         for (size_t i = 0; i < grassCount; i++)
         {
+            const uint32_t bladesStripe = 6;
             auto indirectData = &indirectCommands[i];
             indirectData->firstInstance = 0;
             indirectData->firstVertex = 0;
@@ -182,16 +189,16 @@ namespace Pudu
         m_imguiRenderPass->name = "ImGui";
         m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
-        AddRenderPass(computeRP.get());
+        //AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
+        AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());
         AddRenderPass(depthCopyRP.get());
-        //    AddRenderPass(drawGrassRP.get());
         AddRenderPass(transparentRP.get());
-        // AddRenderPass(m_postProcessingRenderPass.get());
+        AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
