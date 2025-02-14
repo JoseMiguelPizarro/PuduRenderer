@@ -129,15 +129,22 @@ void CatDiorama::OnInit()
         }
     }
 
+
+
     for (const auto& e : catModel)
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-        re->GetTransform().SetLocalScale({1, 1, 1});
-        re->GetTransform().SetLocalPosition({0, 0, 0});
         if (re != nullptr)
         {
-            const auto mat = re->GetModel()->Materials[0];
-            mat->SetShader(standardShader);
+            if (re->GetName() == "WATER")
+            {
+                const auto mat = re->GetModel()->Materials[0];
+                mat->SetShader(waterShader);
+            }else
+            {
+                const auto mat = re->GetModel()->Materials[0];
+                mat->SetShader(standardShader);
+            }
         }
     }
 

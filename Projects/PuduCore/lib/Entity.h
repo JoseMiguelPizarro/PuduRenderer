@@ -25,6 +25,7 @@ namespace Pudu {
 		EntitySPtr GetParent();
 		EntitySPtr GetRoot() const;
 		std::vector<EntitySPtr> GetChildren();
+		EntitySPtr GetChildByName(std::string_view const& name);
 		size_t ChildCount();
 		virtual void AttatchToScene(Scene& scene);
 

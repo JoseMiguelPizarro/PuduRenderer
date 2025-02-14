@@ -50,12 +50,12 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
         float4(0, 0, 0, 1)
     };
 
-    float2 size = { .1, 0.13 + randomPos.x*0.02 };
+    float2 size = float2(.1, (0.13 + randomPos.x*0.02)) * grass.pos.w;
     vertexPos *= float3(size.x, size.y / 6, 1);
     vertexPos = mul(billBoard, float4(vertexPos, 1)).xyz;
 
     var vgradient = vertexPos.y / size.y;
-    float windIntensity = 0.01 + randomPos.y*0.05;
+    float windIntensity = 0.01 + randomPos.y*0.02;
     float speed = 0.2;
     float2 wind = cnoise(pos * .8 + UBO.time * .6 * speed) * windIntensity + pow(cnoise(pos * 0.5 + UBO.time * 2 * speed)  * 2, 3)* windIntensity;
     wind *= vgradient;

@@ -312,7 +312,8 @@ namespace Pudu {
 			if (shouldUpdateTransforms)
 			{
 				for (auto child : node.children) {
-					entities[child]->SetParent(entity);
+					if (child<entities.size())
+						entities[child]->SetParent(entity);
 				}
 			}
 		}
@@ -340,9 +341,9 @@ namespace Pudu {
 		std::string line;
 		while (std::getline(file, line)) {
 			std::istringstream iss(line);
-			float x, y, z;
-			if (iss >> x >> y >> z) {
-				pointCloud.push_back(glm::vec4(x, y, z,0));  // Store the point in the list
+			float x, y, z, w;
+			if (iss >> x >> y >> z >> w) {
+				pointCloud.push_back(glm::vec4(x, y, z,w));  // Store the point in the list
 			}
 		}
 
