@@ -5,6 +5,9 @@
 
 namespace fs = std::filesystem;
 
+
+bool showAxis;
+
 void CatDiorama::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
@@ -13,7 +16,7 @@ void CatDiorama::OnRun()
     float radius = 15 - sin(phase)*10;
     float pich = 45;
 
-
+    return;
 
     // phase = radians(270.f);
 
@@ -129,8 +132,6 @@ void CatDiorama::OnInit()
         }
     }
 
-
-
     for (const auto& e : catModel)
     {
         RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
@@ -163,7 +164,7 @@ void CatDiorama::OnInit()
         }
     }
 
-  //  m_scene.AddEntities(axisModel);
+    m_scene.AddEntities(axisModel);
  //   m_scene.AddEntities(sphereModel);
     m_scene.AddEntities(catModel);
 }
@@ -193,6 +194,9 @@ void CatDiorama::DrawImGUI()
 
         ImGui::EndTable();
     }
+
+
+    ImGuiUtils::DrawTransform(m_camera.Transform);
 }
 
 void CatDiorama::OnCleanup()
