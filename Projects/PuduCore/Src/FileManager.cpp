@@ -21,6 +21,7 @@
 #include <fastgltf/util.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 
+
 namespace fs = std::filesystem;
 namespace fg = fastgltf;
 
@@ -271,8 +272,9 @@ namespace Pudu {
 		auto meshCreationData = GetGltfMeshCreationData(path, asset);
 
 		std::vector<EntitySPtr> entities;
+		std::unordered_map<fastgltf::Node*, EntitySPtr> parentEntitiesByNode;
 
-		for (auto node : asset->nodes) {
+		for (auto& node : asset->nodes) {
 			LOG("{}", node.name);
 
 			auto name = std::string(node.name);
@@ -295,7 +297,7 @@ namespace Pudu {
 			else {
 				entity = EntityManager::AllocateEntity(name);
 
-				shouldUpdateTransforms = true;
+				parentEntitiesByNode[&node] = entity;
 			}
 
 			entities.push_back(entity);
@@ -308,13 +310,14 @@ namespace Pudu {
 			t.SetRotation(r);
 			t.SetLocalPosition(vec3(translation[0], translation[1], translation[2]));
 			t.SetLocalScale(vec3(scale[0], scale[1], scale[2]));
+		}
 
-			if (shouldUpdateTransforms)
+
+		for (auto& [node, parentEntity] : parentEntitiesByNode)
+		{
+			for (auto c : node->children)
 			{
-				for (auto child : node.children) {
-					if (child<entities.size())
-						entities[child]->SetParent(entity);
-				}
+				entities[c]->SetParent(parentEntity);
 			}
 		}
 
