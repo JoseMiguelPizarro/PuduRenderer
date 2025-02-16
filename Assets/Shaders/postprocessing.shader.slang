@@ -34,13 +34,17 @@ float4 fragmentMain(VSOut input)
 
     float2 baseUV = input.TexCoord.xy;
     float mask = length(baseUV - 0.5);
-    float vignette = smoothstep(0, .8, 1 - mask);
+    float vignette =saturate( smoothstep(0, .8, 1 - mask));
     mask *= 1.5;
+    mask = saturate(mask);
 
+    float chromatic = 1.;
+    float depth =LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r);
+    mask *= saturate((1-depth));
     float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
-    float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005), mask)).y;
-    float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01), mask)).z;
-    float d = LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r)/40.;
+    float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)).y;
+    float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01)*chromatic, mask)).z;
+    float d =  saturate(1. - exp(-depth/30));
 
-    return lerp( float4(r, g, b, 0),float4(.9,.75,.8,1.), d) * vignette;
+    return lerp( float4(r, g, b, 0),float4(.1,.35,.5,1.), d) * vignette;
 }

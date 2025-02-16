@@ -2,24 +2,19 @@
 
 #pragma once
 #define NOMINMAX
-#include <fstream>
+#include <complex.h>
+#include <complex.h>
 #include <filesystem>
 #include <vector>
 
-#include <fastgltf/core.hpp>
-#include <fastgltf/types.hpp>
-#include <fastgltf/tools.hpp>
-
-#include "Mesh.h"
+#include "BlitRenderPass.h"
+#include "BlitRenderPass.h"
 #include "MeshCreationData.h"
 #include "RenderEntity.h"
 
 namespace fs = std::filesystem;
-namespace fg = fastgltf;
 
 namespace Pudu {
-	typedef fastgltf::Expected<fastgltf::Asset> GltfAsset;
-
 	static const fs::path ASSETS_FOLDER_PATH = fs::path("Assets");
 	class FileManager
 	{
@@ -44,12 +39,7 @@ namespace Pudu {
 
 		static std::vector<char> LoadShader(fs::path const& path);
 
-	private:
-		/// <summary>
-		/// Here is where mesh data gets extracted (Postion, UV, Normals, etc)
-		/// </summary>
-		static std::vector<MeshCreationData> GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset);
-		static GltfAsset LoadGltfAsset(fs::path const& path);
+		static std::vector<glm::vec4> LoadPointCloud(fs::path const& path);
 	};
 
 }

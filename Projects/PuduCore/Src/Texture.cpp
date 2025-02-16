@@ -24,6 +24,16 @@ namespace Pudu
         gfx->CreateVKTextureSampler(samplerData, Sampler.vkHandle);
     }
 
+    void RenderTexture::SetUsage(const ResourceUsage usage)
+    {
+        m_usage = usage;
+    }
+
+    ResourceUsage RenderTexture::GetUsage() const
+    {
+        return m_usage;
+    }
+
     bool Texture::IsDestroyed()
     {
         return m_disposed;

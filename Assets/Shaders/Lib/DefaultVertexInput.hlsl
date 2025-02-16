@@ -7,6 +7,7 @@ struct VSOut
     float4 PosCS: SV_POSITION;
     float4 PosWS:POSITION0;
     float4 PosOS:POSITION1;
+    float3 viewDir:POSITION2;
     float4 Color: COLOR;
     float4 TexCoord:TEXCOORD;
     float4 Normal:NORMAL;

@@ -2,12 +2,8 @@
 #include "FileManager.h"
 
 #include <filesystem>
-#include <fmt/core.h>
 
-#include <fastgltf/core.hpp>
-#include <fastgltf/types.hpp>
-#include <fastgltf/tools.hpp>
-#include <fastgltf/glm_element_traits.hpp>
+
 
 #include "Logger.h"
 #include "PuduGraphics.h"
@@ -19,10 +15,19 @@
 #include <MaterialCreationData.h>
 #include <EntityManager.h>
 
+#include <fastgltf/core.hpp>
+#include <fastgltf/types.hpp>
+#include <fastgltf/tools.hpp>
+#include <fastgltf/util.hpp>
+#include <fastgltf/glm_element_traits.hpp>
 
 namespace fs = std::filesystem;
+namespace fg = fastgltf;
+
 
 namespace Pudu {
+
+
 	std::vector<char> FileManager::ReadFile(std::filesystem::path const& fileName)
 	{
 		std::ifstream file(fileName.generic_string(), std::ios::ate | std::ios::binary); //ate: at the end lmao
@@ -119,75 +124,16 @@ namespace Pudu {
 		return data;
 	}
 
-	std::vector<MeshCreationData> FileManager::LoadModelGltf(fs::path const& path)
-	{
-		auto asset = LoadGltfAsset(path);
+	fs::path GetPathFromTextureIndex(fg::Expected<fastgltf::Asset>& asset, uint16_t index, fs::path const& path) {
 
-		return GetGltfMeshCreationData(path, asset);
-	}
-	std::vector<EntitySPtr> FileManager::LoadGltfScene(fs::path const& path)
-	{
-		auto asset = LoadGltfAsset(path);
-
-		auto meshCreationData = GetGltfMeshCreationData(path, asset);
-
-		std::vector<EntitySPtr> entities;
-
-		for (auto node : asset->nodes) {
-			LOG("{}", node.name);
-
-			auto name = std::string(node.name);
-			auto meshIndex = node.meshIndex;
-
-			EntitySPtr entity;
-			bool shouldUpdateTransforms = false;
-			//Node is a Model
-			if (meshIndex.has_value())
-			{
-				const auto& meshData = meshCreationData[meshIndex.value()];
-				auto model = PuduGraphics::Instance()->CreateModel(meshData);
-
-				auto renderEntity = EntityManager::AllocateRenderEntity(name, model);
-				auto [layer] = renderEntity->GetRenderSettings();
-				layer = 0;
-				entity = renderEntity;
-			}
-			//Node is a transform
-			else {
-				entity = EntityManager::AllocateEntity(name);
-
-				shouldUpdateTransforms = true;
-			}
-
-			entities.push_back(entity);
-
-			//Set node transform
-			auto [translation, rotation, scale] = std::get<fg::TRS>(node.transform);
-			auto r = glm::quat(rotation[3], rotation[0], rotation[1], rotation[2]);
-
-			Transform& t = entity->GetTransform();
-			t.SetRotation(r);
-			t.SetLocalPosition(vec3(translation[0], translation[1], translation[2]));
-			t.SetLocalScale(vec3(scale[0], scale[1], scale[2]));
-
-			if (shouldUpdateTransforms)
-			{
-				for (auto child : node.children) {
-					entities[child]->SetParent(entity);
-				}
-			}
-		}
-
-		return entities;
+		auto baseTextSource = asset->images[index].data;
+		auto uri = std::get_if<fastgltf::sources::URI>(&baseTextSource);
+		auto baseTexturePath = fs::path(uri->uri.path());
+		LOG("Base texture path {}", baseTexturePath.string());
+		return path.parent_path().relative_path() / baseTexturePath;
 	}
 
-	std::vector<char> FileManager::LoadShader(fs::path const& path)
-	{
-		auto compiledShaderPath = path.parent_path() / "Compiled" / path.filename().concat(".spv");
-		return ReadAssetFile(compiledShaderPath);
-	}
-
-	GltfAsset FileManager::LoadGltfAsset(fs::path const& path)
+	fg::Expected<fastgltf::Asset> LoadGltfAsset(fs::path const& path)
 	{
 		auto pathAssetFolder = FileManager::GetAssetPath(path.string());
 
@@ -203,7 +149,7 @@ namespace Pudu {
 
 		auto gltfFile = fastgltf::MappedGltfFile::FromPath(pathAssetFolder);
 
-		GltfAsset asset = parser.loadGltf(gltfFile.get(), pathAssetFolder.parent_path(), gltfOptions);
+		fg::Expected<fastgltf::Asset> asset = parser.loadGltf(gltfFile.get(), pathAssetFolder.parent_path(), gltfOptions);
 
 		if (auto error = asset.error() != fastgltf::Error::None)
 		{
@@ -214,16 +160,7 @@ namespace Pudu {
 		return asset;
 	}
 
-	fs::path GetPathFromTextureIndex(GltfAsset& asset, uint16_t index, fs::path const& path) {
-
-		auto baseTextSource = asset->images[index].data;
-		auto uri = std::get_if<fastgltf::sources::URI>(&baseTextSource);
-		auto baseTexturePath = fs::path(uri->uri.path());
-		LOG("Base texture path {}", baseTexturePath.string());
-		return path.parent_path().relative_path() / baseTexturePath;
-	}
-
-	std::vector<MeshCreationData> FileManager::GetGltfMeshCreationData(fs::path const& path, GltfAsset& gltfAsset)
+	std::vector<MeshCreationData> GetGltfMeshCreationData(fs::path const& path, fg::Expected<fastgltf::Asset>& gltfAsset)
 	{
 		std::vector<MeshCreationData> creationData;
 
@@ -319,5 +256,105 @@ namespace Pudu {
 
 		return creationData;
 	}
+
+	std::vector<MeshCreationData> FileManager::LoadModelGltf(fs::path const& path)
+	{
+		auto asset = LoadGltfAsset(path);
+
+		return GetGltfMeshCreationData(path, asset);
+	}
+
+	std::vector<EntitySPtr> FileManager::LoadGltfScene(fs::path const& path)
+	{
+		auto asset = LoadGltfAsset(path);
+
+		auto meshCreationData = GetGltfMeshCreationData(path, asset);
+
+		std::vector<EntitySPtr> entities;
+
+		for (auto node : asset->nodes) {
+			LOG("{}", node.name);
+
+			auto name = std::string(node.name);
+			auto meshIndex = node.meshIndex;
+
+			EntitySPtr entity;
+			bool shouldUpdateTransforms = false;
+			//Node is a Model
+			if (meshIndex.has_value())
+			{
+				const auto& meshData = meshCreationData[meshIndex.value()];
+				auto model = PuduGraphics::Instance()->CreateModel(meshData);
+
+				auto renderEntity = EntityManager::AllocateRenderEntity(name, model);
+				auto [layer] = renderEntity->GetRenderSettings();
+				layer = 0;
+				entity = renderEntity;
+			}
+			//Node is a transform
+			else {
+				entity = EntityManager::AllocateEntity(name);
+
+				shouldUpdateTransforms = true;
+			}
+
+			entities.push_back(entity);
+
+			//Set node transform
+			auto [translation, rotation, scale] = std::get<fg::TRS>(node.transform);
+			auto r = glm::quat(rotation[3], rotation[0], rotation[1], rotation[2]);
+
+			Transform& t = entity->GetTransform();
+			t.SetRotation(r);
+			t.SetLocalPosition(vec3(translation[0], translation[1], translation[2]));
+			t.SetLocalScale(vec3(scale[0], scale[1], scale[2]));
+
+			if (shouldUpdateTransforms)
+			{
+				for (auto child : node.children) {
+					if (child<entities.size())
+						entities[child]->SetParent(entity);
+				}
+			}
+		}
+
+		return entities;
+	}
+
+	std::vector<char> FileManager::LoadShader(fs::path const& path)
+	{
+		auto compiledShaderPath = path.parent_path() / "Compiled" / path.filename().concat(".spv");
+		return ReadAssetFile(compiledShaderPath);
+	}
+
+	std::vector<glm::vec4> FileManager::LoadPointCloud(fs::path const& path)
+	{
+		auto assetPath = GetAssetPath(path);
+		std::vector<glm::vec4> pointCloud;  // List to store the points
+		std::ifstream file(assetPath);   // Open the file
+
+		if (!file.is_open()) {
+			LOG_ERROR("Failed to open file {}", path.string().c_str());
+			return pointCloud;
+		}
+
+		std::string line;
+		while (std::getline(file, line)) {
+			std::istringstream iss(line);
+			float x, y, z, w;
+			if (iss >> x >> y >> z >> w) {
+				pointCloud.push_back(glm::vec4(x, y, z,w));  // Store the point in the list
+			}
+		}
+
+		file.close();  // Close the file
+		return pointCloud;
+	}
+
+
+
+
+
+
 }
 

@@ -1,6 +1,6 @@
 struct Grass
 {
-    float2 pos;
+    float4 pos;
 }
 
 struct GrassData

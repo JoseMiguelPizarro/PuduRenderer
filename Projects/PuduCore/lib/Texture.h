@@ -4,6 +4,7 @@
 #include <vma/vk_mem_alloc.h>
 #include "Resources/Resources.h"
 #include "TextureSampler.h"
+#include "Enums/ResourceUsage.h"
 
 namespace Pudu
 {
@@ -57,7 +58,11 @@ namespace Pudu
 
 	class RenderTexture : public Texture
 	{
+		public:
+		void SetUsage(ResourceUsage usage);
+		ResourceUsage GetUsage() const;
 	protected:
 		TextureFlags::Enum PopulateFlags() override { return TextureFlags::RenderTarget; };
+		ResourceUsage m_usage = ResourceUsage::UNDEFINED;
 	};
 }

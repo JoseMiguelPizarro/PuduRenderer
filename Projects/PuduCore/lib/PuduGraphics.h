@@ -239,7 +239,7 @@ namespace Pudu
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
 		void UploadBufferData(GraphicsBuffer* buffer, const void* data, size_t size);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
-		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
+		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
 		SPtr<Texture> GetDefaultWhiteTexture();
 		SPtr<Mesh> GetDefaultQuad();

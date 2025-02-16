@@ -5,13 +5,18 @@
 #include "ForwardRenderPass.h"
 #include "DepthStencilRenderPass.h"
 #include "PostProcessingRenderPass.h"
+#include "BlitRenderPass.h"
 #include "ComputeRenderPass.h"
 #include <Logger.h>
 #include "Shader.h"
 #include <DrawIndirectRenderPass.h>
 
+
 #include "GlobalConstants.h"
 #include "Lighting/LightBuffer.h"
+#include "FileManager.h"
+
+
 
 namespace Pudu
 {
@@ -31,6 +36,15 @@ namespace Pudu
         depthRT->height = graphics->WindowHeight;
         depthRT->format = VK_FORMAT_D32_SFLOAT;
         depthRT->name = "DepthPrepassTexture";
+        depthRT->SetUsage(DEPTH_WRITE);
+
+        auto depthCopyRT = graphics->GetRenderTexture();
+        depthCopyRT->depth = 1;
+        depthCopyRT->width = graphics->WindowWidth;
+        depthCopyRT->height = graphics->WindowHeight;
+        depthCopyRT->format = VK_FORMAT_D32_SFLOAT;
+        depthCopyRT->name = "DepthPrepassTexture";
+        depthCopyRT->SetUsage(SHADER_RESOURCE);
 
         auto shadowRT = graphics->GetRenderTexture();
         shadowRT->depth = 1;
@@ -45,6 +59,7 @@ namespace Pudu
         colorRT->height = graphics->WindowHeight;
         colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
         colorRT->name = "ForwardColor";
+        colorRT->SetUsage(ResourceUsage::RENDER_TARGET);
 
         auto normalRT = graphics->GetRenderTexture();
         normalRT->depth = 1;
@@ -52,6 +67,13 @@ namespace Pudu
         normalRT->height = graphics->WindowHeight;
         normalRT->format = VK_FORMAT_R8G8B8A8_UNORM;
         normalRT->name = "ForwardNormal";
+
+        auto colorCopyRT = graphics->GetRenderTexture();
+        colorCopyRT->depth = 1;
+        colorCopyRT->width = graphics->WindowWidth;
+        colorCopyRT->height = graphics->WindowHeight;
+        colorCopyRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+        colorCopyRT->name = "ColorCopy";
 
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
         m_depthRenderPass->name = "DepthPrepassRenderPass";
@@ -66,7 +88,6 @@ namespace Pudu
             ->SetName("ForwardRenderPass")
             ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear, vec4(0.4, .4, 0.6, 0.))
             ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
             ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
 
@@ -75,7 +96,11 @@ namespace Pudu
                      ->SetRenderLayer(1)
                      ->SetColorBlending(VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD)
                      ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-                     ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+                     ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(normalRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(colorCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
         overlayRP
@@ -101,21 +126,29 @@ namespace Pudu
         computeRP.get()->SetName("Grass Compute");
         auto compute = graphics->CreateComputeShader("testCompute.compute.slang", "Test Compute");
 
-        const uint32_t instances = 1000000;
+
+        auto grassPointCloud = FileManager::LoadPointCloud("models/Diorama_Cat/CatDiorama_Grass.xyz");
+        const uint32_t instances = grassPointCloud.size();
         auto groupSize = ceil(sqrt(instances / (32 * 32)));
         computeRP->SetGroupSize(groupSize, groupSize, 1);
-        auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec2) * instances, nullptr,
+
+        auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
         computeRP->SetShader(compute);
         computeRP->AddBufferAttachment(grassBuffer, AttachmentAccessUsage::Write);
 
+        auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
+        forwardColorCopyRP->SetBlitTargets(colorRT, colorCopyRT);
 
-        uint32_t bladesStripe = 6;
-        std::array<VkDrawIndirectCommand, grassCount> indirectCommands;
+        auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
+        depthCopyRP->SetBlitTargets(depthRT, depthCopyRT);
+
+        std::array<VkDrawIndirectCommand, grassCount> indirectCommands{};
         for (size_t i = 0; i < grassCount; i++)
         {
+            const uint32_t bladesStripe = 6;
             auto indirectData = &indirectCommands[i];
             indirectData->firstInstance = 0;
             indirectData->firstVertex = 0;
@@ -156,12 +189,14 @@ namespace Pudu
         m_imguiRenderPass->name = "ImGui";
         m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
-        AddRenderPass(computeRP.get());
+        //AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(drawGrassRP.get());
+        AddRenderPass(forwardColorCopyRP.get());
+        AddRenderPass(depthCopyRP.get());
         AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
@@ -176,9 +211,10 @@ namespace Pudu
 
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthCopyRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", colorCopyRT);
     }
 
     static bool isFirstFrame = true;
@@ -214,6 +250,8 @@ namespace Pudu
         globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
         globalConstants.farPlane = frame.camera->Projection.farPlane;
         globalConstants.nearPlane = frame.camera->Projection.nearPlane;
+        globalConstants.cameraPosWS = frame.camera->Transform.GetLocalPosition();
+        globalConstants.time = frame.app->Time.Time();
 
         graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
     }

@@ -14,5 +14,5 @@ void computeMain(uint3 threadId: SV_DispatchThreadID)
     float size = sqrtDimension * 0.5;
 
     uint id = (uint)sqrtDimension * threadId.y + threadId.x;
-    Data.GrassPos[id] = { (float2(threadId.x, threadId.y) - float2(size, size)) * 0.2 };
+//     Data.GrassPos[id] = { (float2(threadId.x, threadId.y) - float2(size, size)) * 0.2 };
 }

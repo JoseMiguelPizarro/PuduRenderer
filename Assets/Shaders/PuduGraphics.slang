@@ -14,6 +14,8 @@ public struct GlobalsConstants
     public float2 screenSize;
     public float nearPlane;
     public float farPlane;
+    public float3 cameraPosWS;
+    public float time;
 }
 
 public struct Globals
@@ -21,6 +23,7 @@ public struct Globals
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
+    public Sampler2D colorBuffer;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
 }
@@ -49,6 +52,7 @@ public Sampler2D GetGlobalTexture(uint id)
     return GLOBALS_BINDLESS.textures[NonUniformResourceIndex(id)];
 }
 
+//This should only be called during the fragment shader. in fragment shader SV_Position is effectively the screen pixel coordinates
 public float2 GetPixelScreenPosition(float4 PosCS)
 {
     return float2(PosCS.x/GLOBALS.constants.screenSize.x,PosCS.y/GLOBALS.constants.screenSize.y);
@@ -62,4 +66,17 @@ public float LinearizeDepth(float d)
 public float LinearizeDepth(float d,float zNear,float zFar)
 {
     return zNear * zFar / (zFar + d * (zNear - zFar));
+}
+
+public float3 DecodeNormal(float2 n)
+{
+    n = n*2. - 1.;
+    var z = sqrt(1. - n.x*n.x - n.y*n.y);
+
+    return normalize(float3(n.x,n.y,z));
+}
+
+public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
+{
+    return v.x*t + v.y*bt + v.z*n;
 }

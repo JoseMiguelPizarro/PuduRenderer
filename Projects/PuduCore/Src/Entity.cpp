@@ -40,6 +40,17 @@ namespace Pudu {
 	{
 		return m_children;
 	}
+
+	EntitySPtr Entity::GetChildByName(std::string_view const& name)
+	{
+		for (auto& child : m_children)
+		{
+			if (child->GetName() == name)
+				return child;
+		}
+		return nullptr;
+	}
+
 	size_t Entity::ChildCount()
 	{
 		return m_children.size();
