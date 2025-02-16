@@ -11,7 +11,9 @@ struct VSOut
     float4 Color: COLOR;
     float4 TexCoord:TEXCOORD;
     float4 Normal:NORMAL;
+    float4 Tangent:TANGENT;
     float4 ShadowCoords:TEXCOORD1;
+
 };
 
 struct VertexInput
@@ -20,6 +22,7 @@ struct VertexInput
     float3 Color: COLOR;
     float2 TexCoord: TEXCOORD;
     float3 Normal: NORMAL;
+    float3 Tangent:TANGENT;
 };
 
 #endif

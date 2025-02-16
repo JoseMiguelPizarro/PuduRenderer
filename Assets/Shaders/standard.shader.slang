@@ -44,12 +44,11 @@ VSOut vertexMain(VertexInput input)
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal, 0.);
+    output.Tangent = float4(input.Tangent,0.);
     output.PosOS = float4(input.Position, 0.);
 
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.ShadowCoords = GetShadowCoord(lightingBuffer.shadowMatrix, lightingBuffer.lightMatrix, output.PosWS);
-    // mul(biasMat, mul(lightingBuffer.shadowMatrix, mul(lightingBuffer.lightMatrix, mul(UBO.model, float4(input.Position, 1.0)))));
-    //  output.ShadowCoords = mul(float4(input.Position, 1.0), mul(ubo.model, mul(lightingBuffer.lightMatrix, mul(lightingBuffer.shadowMatrix, biasMat))));
 
     return output;
 }
@@ -62,9 +61,7 @@ float4 fragmentMain(VSOut input)
     Sampler2D tex = material.baseColorTex;
     float4 base_colour = tex.Sample(input.TexCoord.xy) * input.Color;
     float2 suv = GetPixelScreenPosition(input.PosCS);
-    // base_colour = input.Color;
 
-    // Perspective Devide shadow to map 0-1
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
     float4 col = pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), GLOBALS.lightingBuffer.lightDirection.xyz);
     col = lerp(col, float4(0.2, 0.2, 0.3, 1.0), 1 - shadow);
@@ -77,7 +74,6 @@ float4 fragmentMain(VSOut input)
     float depthColor = LinearizeDepth(GLOBALS.depthBuffer.Sample(suv).x,GLOBALS.constants.nearPlane,GLOBALS.constants.farPlane);
 
     col = lerp(float4(0.9, .4, 0.6, 0.), col, d);
-   // col.rgb = normalColor;
 
     col.a = 0.5;
     return col;
