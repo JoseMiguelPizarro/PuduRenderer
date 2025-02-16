@@ -11,14 +11,12 @@ bool showAxis;
 void CatDiorama::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
+    return;
     float speed = 0.15f;
     float phase = Time.Time() * speed;
     float radius = 15 - sin(phase)*10;
     float pich = 45;
 
-    return;
-
-    // phase = radians(270.f);
 
     float x = cos(-phase) * radius;
     float z = sin(-phase) * radius;
@@ -35,8 +33,8 @@ void CatDiorama::OnRun()
 void CatDiorama::OnInit()
 {
     m_camera = {};
-    m_camera.Transform.SetForward(vec3(0, -.8, -1), vec3(0, 1, 0));
-    m_camera.Transform.SetLocalPosition({0, 14.0f, 20.0f});
+    m_camera.Transform.SetLocalPosition({0, 0, -8});
+    m_camera.Transform.SetLocalRotationEuler({8.,0,0});
     Projection projection;
 
     projection.Width = Graphics.WindowWidth;
@@ -86,8 +84,9 @@ void CatDiorama::OnInit()
     skyTexSettings.name = "Sky";
     skyTexSettings.format = VK_FORMAT_R8G8B8A8_SRGB;
     skyTexSettings.samplerData = samplerCreationData;
+    skyTexSettings.textureType = TextureType::Texture_Cube;
 
-    const auto skyTexture = Graphics.LoadTexture2D("textures/sky.jpg",skyTexSettings);
+    const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx",skyTexSettings);
 
     m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
     const auto waternormalTex = Graphics.LoadTexture2D("textures/water_normal.png",waterNormalTexSettings);
@@ -100,6 +99,8 @@ void CatDiorama::OnInit()
 
     const auto catModel = FileManager::LoadGltfScene("models/Diorama_Cat/CatDiorama.gltf");
 
+    const auto skyboxModel = FileManager::LoadGltfScene("models/skybox.gltf");
+    auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
 
     auto planeMaterial = Graphics.Resources()->AllocateMaterial();
     planeMaterial->name ="PlaneMat";
@@ -115,7 +116,6 @@ void CatDiorama::OnInit()
     planeEntity->GetTransform().SetLocalScale({3, 3, 3});
     planeEntity->GetRenderSettings().layer = 1;
 
- //   m_scene.AddEntity(planeEntity);
 
     for (const auto& e : axisModel)
     {
@@ -141,6 +141,8 @@ void CatDiorama::OnInit()
             {
                 const auto mat = re->GetModel()->Materials[0];
                 mat->SetShader(waterShader);
+                mat->SetProperty("material.normalTex", waternormalTex);
+                mat->SetProperty("material.skyTex", skyTexture);
             }else
             {
                 const auto mat = re->GetModel()->Materials[0];
@@ -163,8 +165,22 @@ void CatDiorama::OnInit()
             mat->SetShader(transParentShader);
         }
     }
+    for (const auto& e : skyboxModel)
+    {
+        RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
+        re->GetTransform().SetLocalPosition({0, 5, 0});
+        re->GetTransform().SetLocalScale({60, 60, 60});
 
-    m_scene.AddEntities(axisModel);
+        if (re != nullptr)
+        {
+            const auto mat = re->GetModel()->Materials[0];
+            mat->SetShader(skyboxShader);
+            mat->SetProperty("material.skyboxTex", skyTexture);
+        }
+    }
+
+   // m_scene.AddEntities(axisModel);
+    m_scene.AddEntities(skyboxModel);
  //   m_scene.AddEntities(sphereModel);
     m_scene.AddEntities(catModel);
 }
@@ -195,8 +211,15 @@ void CatDiorama::DrawImGUI()
         ImGui::EndTable();
     }
 
-
+    ImGui::Text("Camera");
     ImGuiUtils::DrawTransform(m_camera.Transform);
+
+    ImGui::Text("Light");
+    vec3 forward = directionalLight.GetTransform().GetForward();
+   if ( ImGui::InputFloat3("Light Direction",&forward[0]))
+   {
+       directionalLight.GetTransform().SetForward(normalize(forward), {0,1,0});
+   }
 }
 
 void CatDiorama::OnCleanup()

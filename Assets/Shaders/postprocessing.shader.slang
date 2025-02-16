@@ -44,7 +44,9 @@ float4 fragmentMain(VSOut input)
     float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
     float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)).y;
     float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01)*chromatic, mask)).z;
-    float d =  saturate(1. - exp(-depth/30));
+    float d =  saturate(1. - exp(-depth/40));
+
+    return float4(r,g,b,0) * vignette;
 
     return lerp( float4(r, g, b, 0),float4(.1,.35,.5,1.), d) * vignette;
 }

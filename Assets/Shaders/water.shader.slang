@@ -7,7 +7,7 @@ import PuduGraphics;
 struct WaterMaterial
 {
     Sampler2D normalTex;
-    Sampler2D skyTex;
+    SamplerCube skyTex;
 }
 
 
@@ -31,26 +31,30 @@ VSOut vertexMain(VertexInput input, uint vertexId: SV_VertexID)
 
 static const float maxDist = 30;
 static const float step = 0.1;
-static const float thickness = 0.00001;
+static const float thickness = 0.001;
 
 [shader("fragment")]
 float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
-    var time = GLOBALS.constants.time;
+    var time = GLOBALS.constants.time*.5;
     float2 screenUv = GetPixelScreenPosition(input.PosCS);
     float3 normal =material.normalTex.Sample(input.PosWS.xz*0.7 + time*0.03).xyz;
     float3 n2 = material.normalTex.Sample(input.PosWS.xz*0.2 + time*0.06).xyz;
 
-    normal = lerp(normal,float3(0,0,1),0.9);
+    normal = lerp(normal,n2,0.5);
 
-    var vbitangent = float3(1,0,0);
-    var vtangent = float3(0,0,1);
+    normal = normalize(lerp(normal,float3(0,1,0),0.95));
+
+    var vtangent = float3(1,0,0);
+    var vbitangent = float3(0,0,1);
     var vnormal = float3(0,1,0);
+
 
     normal = normalize(normal);
     normal = normalize(TangentToWorld(normal, vtangent,vbitangent,vnormal));
   //  normal = float3(0,1,0);
+
     float3 viewDir = normalize(input.viewDir);
 
     float3 rayDir = normalize(reflect(viewDir, normal));
@@ -93,9 +97,8 @@ float4 fragmentMain(VSOut input)
 
     if(traversedDistance>=maxDist)
     {
-      //  c = material.skyTex.Sample(float2(screenUv.x, 1 - screenUv.y)).xyz;
+      c = material.skyTex.Sample(rayDir).xyz;
     }
-
 
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
 
