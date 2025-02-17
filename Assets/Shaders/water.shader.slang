@@ -102,7 +102,8 @@ float4 fragmentMain(VSOut input)
 
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
 
-    c = (float3(0.3,.5,0.8) + c*0.5)*(shadow*0.5);
+    c = (c)*(shadow);
+
     //c = normal;
     return float4(c,1.);
 }
