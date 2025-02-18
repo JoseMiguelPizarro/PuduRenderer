@@ -265,7 +265,7 @@ namespace Pudu {
 		return GetGltfMeshCreationData(path, asset);
 	}
 
-	std::vector<EntitySPtr> FileManager::LoadGltfScene(fs::path const& path)
+	EntitySPtr FileManager::LoadGltfScene(fs::path const& path)
 	{
 		auto asset = LoadGltfAsset(path);
 
@@ -321,7 +321,7 @@ namespace Pudu {
 			}
 		}
 
-		return entities;
+		return entities[0];
 	}
 
 	std::vector<char> FileManager::LoadShader(fs::path const& path)

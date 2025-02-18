@@ -3,7 +3,7 @@
 #include "ImGuiUtils.h"
 
 namespace Pudu {
-	void Scene::AddEntity(EntitySPtr entity)
+	void Scene::AddEntity(const EntitySPtr& entity)
 	{
 		m_entities.push_back(entity);
 		if (entity != sceneRoot && entity->GetParent() == nullptr)
@@ -12,6 +12,11 @@ namespace Pudu {
 		}
 
 		entity->AttatchToScene(*this);
+
+		for (const auto& child : entity->GetChildren())
+		{
+			AddEntity(child);
+		}
 	}
 	void Scene::AddEntities(std::vector<EntitySPtr> entities)
 	{

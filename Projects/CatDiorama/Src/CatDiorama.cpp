@@ -97,9 +97,9 @@ void CatDiorama::OnInit()
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf");
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
 
-    const auto catModel = FileManager::LoadGltfScene("models/Diorama_Cat/CatDiorama.gltf");
+    const auto catScene = FileManager::LoadGltfScene("models/Diorama_Cat/CatDiorama.gltf");
 
-    const auto skyboxModel = FileManager::LoadGltfScene("models/skybox.gltf");
+    const auto skyboxModel =std::dynamic_pointer_cast<RenderEntity>( FileManager::LoadGltfScene("models/skybox.gltf"));
     auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
 
     auto planeMaterial = Graphics.Resources()->AllocateMaterial();
@@ -109,7 +109,7 @@ void CatDiorama::OnInit()
     planeMaterial->SetProperty("material.skyTex",skyTexture);
 
     auto planeModel = Graphics.CreateModel(Graphics.GetDefaultQuad(), planeMaterial);
-    
+
     auto planeName = std::string("Plane");
     auto planeEntity = EntityManager::AllocateRenderEntity(planeName, planeModel);
     planeEntity->GetTransform().SetLocalPosition({0, 0, 0});
@@ -117,72 +117,61 @@ void CatDiorama::OnInit()
     planeEntity->GetRenderSettings().layer = 1;
 
 
-    for (const auto& e : axisModel)
-    {
-        RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-        re->GetTransform().SetLocalPosition({0, 0, 0});
-        //re->GetTransform().SetLocalScale({ 3,3,3 });
-        auto& [layer] = re->GetRenderSettings();
-        layer = 2;
 
-        if (re != nullptr)
-        {
-            auto mat = re->GetModel()->Materials[0];
-            mat->SetShader(overlayShader);
-        }
-    }
+    // for (const auto& e : axisModel)
+    // {
+    //     RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
+    //     re->GetTransform().SetLocalPosition({0, 0, 0});
+    //     //re->GetTransform().SetLocalScale({ 3,3,3 });
+    //     auto& [layer] = re->GetRenderSettings();
+    //     layer = 2;
+    //
+    //     if (re != nullptr)
+    //     {
+    //         auto mat = re->GetModel()->Materials[0];
+    //         mat->SetShader(overlayShader);
+    //     }
+    // }
 
-    for (const auto& e : catModel)
-    {
-        RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-        if (re != nullptr)
-        {
-            if (re->GetName() == "WATER")
-            {
-                const auto mat = re->GetModel()->Materials[0];
-                mat->SetShader(waterShader);
-                mat->SetProperty("material.normalTex", waternormalTex);
-                mat->SetProperty("material.skyTex", skyTexture);
-            }else
-            {
-                const auto mat = re->GetModel()->Materials[0];
-                mat->SetShader(standardShader);
-            }
-        }
-    }
+    auto waterModel = std::dynamic_pointer_cast<RenderEntity>( catScene->GetChildByName("WATER"));
+    auto catModel = std::dynamic_pointer_cast<RenderEntity>( catScene->GetChildByName("CAT"));
+    auto groundModel = std::dynamic_pointer_cast<RenderEntity>( catScene->GetChildByName("TERRAIN"));
 
-    for (const auto& e : sphereModel)
-    {
-        RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-        re->GetTransform().SetLocalPosition({0, 5, 0});
-        re->GetTransform().SetLocalScale({3, 3, 3});
-        auto& [layer] = re->GetRenderSettings();
-        layer = 1;
 
-        if (re != nullptr)
-        {
-            const auto mat = re->GetModel()->Materials[0];
-            mat->SetShader(transParentShader);
-        }
-    }
-    for (const auto& e : skyboxModel)
-    {
-        RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-        re->GetTransform().SetLocalPosition({0, 5, 0});
-        re->GetTransform().SetLocalScale({60, 60, 60});
+    catModel->GetModel()->Materials[0]->SetShader(standardShader);
+    groundModel->GetModel()->Materials[0]->SetShader(standardShader);
 
-        if (re != nullptr)
-        {
-            const auto mat = re->GetModel()->Materials[0];
-            mat->SetShader(skyboxShader);
-            mat->SetProperty("material.skyboxTex", skyTexture);
-        }
-    }
+    auto waterMaterial = waterModel->GetModel()->Materials[0];
+    waterMaterial->SetShader(waterShader);
+    waterMaterial->SetProperty("material.normalTex",waternormalTex);
+    waterMaterial->SetProperty("material.skyTex",skyTexture);
+
+
+    // for (const auto& e : sphereModel)
+    // {
+    //     RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
+    //     re->GetTransform().SetLocalPosition({0, 5, 0});
+    //     re->GetTransform().SetLocalScale({3, 3, 3});
+    //     auto& [layer] = re->GetRenderSettings();
+    //     layer = 1;
+    //
+    //     if (re != nullptr)
+    //     {
+    //         const auto mat = re->GetModel()->Materials[0];
+    //         mat->SetShader(transParentShader);
+    //     }
+    // }
+
+    skyboxModel->GetTransform().SetLocalPosition({0, 5, 0});
+    skyboxModel->GetTransform().SetLocalScale({60, 60, 60});
+    const auto mat = skyboxModel->GetModel()->Materials[0];
+    mat->SetShader(skyboxShader);
+    mat->SetProperty("material.skyboxTex", skyTexture);
 
    // m_scene.AddEntities(axisModel);
-    m_scene.AddEntities(skyboxModel);
+    m_scene.AddEntity(skyboxModel);
+    m_scene.AddEntity(catScene);
  //   m_scene.AddEntities(sphereModel);
-    m_scene.AddEntities(catModel);
 }
 
 void CatDiorama::DrawImGUI()
@@ -225,21 +214,4 @@ void CatDiorama::DrawImGUI()
 void CatDiorama::OnCleanup()
 {
 
-}
-
-void CatDiorama::LoadGameboyModel()
-{
-    auto gltfScene = FileManager::LoadGltfScene(GameboyModelPath);
-
-    for (auto& e : gltfScene)
-    {
-        RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-
-        if (re != nullptr)
-        {
-            re->GetModel()->Materials[0]->SetShader(standardShader);
-        }
-    }
-
-    m_scene.AddEntities(gltfScene);
 }

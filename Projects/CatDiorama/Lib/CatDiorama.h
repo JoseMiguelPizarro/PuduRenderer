@@ -26,17 +26,12 @@ public:
 private:
 	void OnCleanup() override;
 
-	void LoadGameboyModel();
-
-	std::filesystem::path GameboyModelPath = "models/gameboy/gameboy.gltf";
-
 	std::filesystem::path frameGraphPath = "FrameGraphs/Standard.sg";
 
 	std::filesystem::path planeTexturePath = "models/floor/Grass.png";
 	std::filesystem::path planeModelPath = "models/floor/floor.obj";
 	fs::path cubeMapPath = "textures/cubemap_yokohama_rgba.ktx";
 
-	std::vector<RenderEntitySPtr> GameboyEntities;
 
 	Scene m_scene;
 	Camera m_camera;

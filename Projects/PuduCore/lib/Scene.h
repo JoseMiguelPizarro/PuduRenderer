@@ -17,7 +17,7 @@ namespace Pudu {
 	public:
 		Camera* camera = nullptr;
 
-		void AddEntity(EntitySPtr entity);
+		void AddEntity(const EntitySPtr& entity);
 		void AddEntities(std::vector<EntitySPtr> entities);
 		void RemoveEntity(EntitySPtr entity);
 		void RemoveRenderEntity(RenderEntitySPtr renderEntity);
