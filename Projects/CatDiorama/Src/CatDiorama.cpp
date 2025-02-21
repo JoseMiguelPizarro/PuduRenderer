@@ -133,9 +133,9 @@ void CatDiorama::OnInit()
     //     }
     // }
 
-    auto waterModel = std::dynamic_pointer_cast<RenderEntity>( catScene->GetChildByName("WATER"));
-    auto catModel = std::dynamic_pointer_cast<RenderEntity>( catScene->GetChildByName("CAT"));
-    auto groundModel = std::dynamic_pointer_cast<RenderEntity>( catScene->GetChildByName("TERRAIN"));
+    auto waterModel =catScene->GetChildByName<RenderEntity>("WATER");
+    auto catModel =  catScene->GetChildByName<RenderEntity>("CAT");
+    auto groundModel =catScene->GetChildByName<RenderEntity>("TERRAIN");
 
 
     catModel->GetModel()->Materials[0]->SetShader(standardShader);

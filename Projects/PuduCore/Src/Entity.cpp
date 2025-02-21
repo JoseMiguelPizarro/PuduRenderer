@@ -51,6 +51,7 @@ namespace Pudu {
 		return nullptr;
 	}
 
+
 	size_t Entity::ChildCount()
 	{
 		return m_children.size();
