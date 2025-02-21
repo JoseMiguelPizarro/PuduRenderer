@@ -8,6 +8,7 @@ struct WaterMaterial
 {
     Sampler2D normalTex;
     SamplerCube skyTex;
+    float intensity;
 }
 
 

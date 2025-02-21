@@ -10,8 +10,8 @@ using namespace slang;
 namespace Pudu {
 
 	struct ShaderKernel {
-		const uint32_t* code;
-		size_t codeSize;
+		const u32* code;
+		size codeSize;
 	};
 
 	struct ShaderCompilation {
@@ -19,24 +19,25 @@ namespace Pudu {
 		DescriptorSetLayoutsData descriptorsData;
 		ShaderKernel* GetKernel(const char* name) { return &m_kernelsByName[name]; }
 		void AddKernel(const char* name, ShaderKernel& kernel);
+		std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges;}
 
 	private:
+		friend class DescriptorsBuilder;
 		std::unordered_map<std::string, ShaderKernel> m_kernelsByName;
+		std::vector<VkPushConstantRange> m_pushConstantRanges;
 	};
-
 
 	struct ShaderObjectLayoutBuilder
 	{
 		std::vector<VkDescriptorSetLayoutBinding> m_bindings;
-		uint32_t m_bindingIndex = 0;
+		u32 m_bindingIndex = 0;
 		void addBindingsForParameterBlock(
 			slang::TypeLayoutReflection* typeLayout, DescriptorSetLayoutsData& layoutsData);
 		void addBindingsFrom(
 			slang::TypeLayoutReflection* typeLayout,
-			uint32_t descriptorCount);
+			u32 descriptorCount);
 
 		Slang::ComPtr<IGlobalSession> m_globalSession;
-
 	};
 
 

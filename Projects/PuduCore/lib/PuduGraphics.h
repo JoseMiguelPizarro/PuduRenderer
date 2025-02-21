@@ -45,7 +45,7 @@
 #include "Resources/CommandPool.h"
 #include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
-#include "ShaderCompiler.h"
+#include "ShaderCompilation/ShaderCompiler.h"
 
 namespace Pudu
 {

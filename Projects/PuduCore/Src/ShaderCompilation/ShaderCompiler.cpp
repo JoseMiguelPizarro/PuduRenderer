@@ -1,9 +1,11 @@
 
 #include <vulkan/vulkan_core.h>
-#include "ShaderCompiler.h"
+#include "ShaderCompilation/ShaderCompiler.h"
 #include "FileManager.h"
 #include <iostream>
 #include <boolinq.h>
+
+#include "Logger.h"
 
 using namespace boolinq;
 
@@ -100,6 +102,8 @@ namespace Pudu {
 
 		slang::ProgramLayout* layout = program->getLayout();
 
+
+
 		Slang::ComPtr<IComponentType> linkedProgram;
 		program->link(linkedProgram.writeRef(), diagnostics.writeRef());
 
@@ -183,20 +187,28 @@ namespace Pudu {
 	void ShaderObjectLayoutBuilder::addBindingsForParameterBlock(slang::TypeLayoutReflection* typeLayout, DescriptorSetLayoutsData& layoutsData)
 	{
 		auto fieldCount = typeLayout->getFieldCount();
-		uint16_t setsCount = 0;
-		for (size_t i = 0; i < fieldCount; i++)
+		u16 setsCount = 0;
+		for (size i = 0; i < fieldCount; i++)
 		{
 			auto field = typeLayout->getFieldByIndex(i);
+			auto fieldLayout = field->getTypeLayout()->getElementTypeLayout();
+
+			size descriptorSet = field->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
+
+			slang::BindingType type = fieldLayout->getDescriptorSetDescriptorRangeType(descriptorSet,0);
+			if (type == slang::BindingType::PushConstant)
+			{
+				LOG("Push constants! {} set {} binding {}", field->getName(), descriptorSet, 0);
+			}
 
 			if (field->getType()->getKind() == TypeReflection::Kind::ConstantBuffer)
 			{
+				LOG("Constant buffer layout not supported {}", field->getName());
 				//We'll only process parameterblocks
 				continue;
 			}
 
-			auto fieldLayout = field->getTypeLayout()->getElementTypeLayout();
 
-			size_t descriptorSet = field->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
 
 			auto propertiesCount = fieldLayout->getFieldCount();
 
@@ -243,6 +255,8 @@ namespace Pudu {
 				binding.name = std::format("{}.{}", field->getName(), property->getName());
 
 				layoutsData.bindingsData.push_back(binding);
+
+
 
 				VkDescriptorSetLayoutBinding layoutBinding = {};
 				layoutBinding.binding = binding.index;
