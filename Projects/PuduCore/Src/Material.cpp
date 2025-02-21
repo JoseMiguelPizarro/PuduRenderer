@@ -24,6 +24,11 @@ namespace Pudu {
 		m_propertiesBlock.ApplyProperties({m_gpu,m_shader.get(),m_descriptorSets});
 	}
 
+	void Material::SetProperty(const std::string_view& name, const float value)
+	{
+		m_propertiesBlock.SetProperty(name, value);
+	}
+
 	void Material::SetProperty(const std::string& name, const glm::vec2 value)
 	{
 		m_propertiesBlock.SetProperty(name, value);
@@ -41,6 +46,16 @@ namespace Pudu {
 	void Material::SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray)
 	{
 		m_propertiesBlock.SetProperty(name, textureArray);
+	}
+
+	void ShaderPropertiesBlock::SetProperty(const std::string_view& name, float value)
+	{
+		PropertyUpdateRequest request;
+		request.name = name;
+		request.type = ShaderPropertyType::Float;
+		request.value = glm::vec4(value);
+
+		m_descriptorUpdateRequests.push_back(request);
 	}
 
 	void ShaderPropertiesBlock::SetProperty(const std::string& name, const glm::vec2 value)
@@ -104,6 +119,8 @@ namespace Pudu {
 			case ShaderPropertyType::Vec2:
 				ApplyVectorValue(request,target);
 				break;
+				case ShaderPropertyType::Float:
+					ApplyFloatValue(request,target);
 			default:
 				break;
 			}

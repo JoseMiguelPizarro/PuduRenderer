@@ -112,7 +112,7 @@ namespace Pudu {
 		//Global
 		printf("Global scope \n");
 		auto globalTypeLayout = layout->getGlobalParamsTypeLayout();
-
+		layout->getGlobalParamsVarLayout();
 		ShaderCompilation compiledData;
 
 		ShaderObjectLayoutBuilder layoutBuilder;
@@ -188,14 +188,19 @@ namespace Pudu {
 	{
 		auto fieldCount = typeLayout->getFieldCount();
 		u16 setsCount = 0;
+
+
 		for (size i = 0; i < fieldCount; i++)
 		{
 			auto field = typeLayout->getFieldByIndex(i);
 			auto fieldLayout = field->getTypeLayout()->getElementTypeLayout();
 
+
+			LOG("Shader field: {} category: {}", field->getName(), (u32)fieldLayout->getParameterCategory());
+
 			size descriptorSet = field->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
 
-			slang::BindingType type = fieldLayout->getDescriptorSetDescriptorRangeType(descriptorSet,0);
+			slang::BindingType type = fieldLayout->getBindingRangeType(0);
 			if (type == slang::BindingType::PushConstant)
 			{
 				LOG("Push constants! {} set {} binding {}", field->getName(), descriptorSet, 0);
@@ -207,8 +212,6 @@ namespace Pudu {
 				//We'll only process parameterblocks
 				continue;
 			}
-
-
 
 			auto propertiesCount = fieldLayout->getFieldCount();
 
@@ -256,6 +259,7 @@ namespace Pudu {
 
 				layoutsData.bindingsData.push_back(binding);
 
+				LOG("Shader property: {}", property->getName());
 
 
 				VkDescriptorSetLayoutBinding layoutBinding = {};

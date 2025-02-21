@@ -18,7 +18,8 @@ namespace Pudu {
 			Vec2,
 			Texture,
 			Buffer,
-			TextureArray
+			TextureArray,
+			Float
 		};
 	};
 
@@ -43,6 +44,7 @@ namespace Pudu {
 	class ShaderPropertiesBlock
 	{
 	public:
+		void SetProperty(const std::string_view& name, float value);
 		void SetProperty(const std::string& name, glm::vec2 value);
 		void SetProperty(const std::string& name, const SPtr<Texture>& texture);
 		void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
@@ -67,6 +69,7 @@ namespace Pudu {
 		SPtr<Shader> GetShader(){return m_shader;}
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		void ApplyProperties();
+		void SetProperty(const std::string_view& name, float value);
 		void SetProperty(const std::string& name, glm::vec2 value);
 		void SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture);
 		void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);

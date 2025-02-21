@@ -145,7 +145,7 @@ void CatDiorama::OnInit()
     waterMaterial->SetShader(waterShader);
     waterMaterial->SetProperty("material.normalTex",waternormalTex);
     waterMaterial->SetProperty("material.skyTex",skyTexture);
-
+    waterMaterial->SetProperty("material.intensity", 1.0f);
 
     // for (const auto& e : sphereModel)
     // {

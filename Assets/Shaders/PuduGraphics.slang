@@ -39,7 +39,9 @@ public ParameterBlock<Globals> GLOBALS;
 public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]
-public ConstantBuffer<UniformBufferObject> UBO;
+public UniformBufferObject UBO;
+
+
 
 #define PERSHADERBIND 2
 #define BIND(id) [[vk::binding(id, PERSHADERBIND)]]
