@@ -120,7 +120,8 @@ namespace Pudu {
 				ApplyVectorValue(request,target);
 				break;
 				case ShaderPropertyType::Float:
-					ApplyFloatValue(request,target);
+				ApplyFloatValue(request,target);
+				break;
 			default:
 				break;
 			}
@@ -249,6 +250,12 @@ namespace Pudu {
 		bufferWrite.descriptorType = binding->type;
 
 		// target.graphics->UpdateDescriptorSet(1, &bufferWrite);
+	}
+
+	void ShaderPropertiesBlock::ApplyFloatValue(const PropertyUpdateRequest& value,
+		const MaterialApplyPropertyGPUTarget& target)
+	{
+
 	}
 
 	Material::Material(PuduGraphics* graphics)

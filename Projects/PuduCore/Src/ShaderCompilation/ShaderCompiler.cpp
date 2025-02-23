@@ -26,6 +26,11 @@ namespace Pudu {
 		m_kernelsByName[name] = kernel;
 	}
 
+	ShaderObjectLayoutBuilder::CumulativeOffset ShaderObjectLayoutBuilder::CalculateCumulativeOffset(
+		slang::VariableLayoutReflection* variableLayout, slang::ParameterCategory layoutUnit, AccessPath accessPath)
+	{
+	}
+
 	void ShaderCompiler::Init()
 	{
 		createGlobalSession(m_globalSession.writeRef());
@@ -111,13 +116,12 @@ namespace Pudu {
 
 		//Global
 		printf("Global scope \n");
-		auto globalTypeLayout = layout->getGlobalParamsTypeLayout();
-		layout->getGlobalParamsVarLayout();
 		ShaderCompilation compiledData;
 
 		ShaderObjectLayoutBuilder layoutBuilder;
 		layoutBuilder.m_globalSession = m_globalSession;
-		layoutBuilder.addBindingsForParameterBlock(globalTypeLayout, compiledData.descriptorsData);
+		layoutBuilder.ParseShaderProgramLayout(layout, compiledData.descriptorsData);
+
 
 
 		PrintDiagnostics(diagnostics);
@@ -184,7 +188,9 @@ namespace Pudu {
 		}
 	}
 
-	void ShaderObjectLayoutBuilder::addBindingsForParameterBlock(slang::TypeLayoutReflection* typeLayout, DescriptorSetLayoutsData& layoutsData)
+
+
+	void ShaderObjectLayoutBuilder::AddBindingsForParameterBlock(slang::TypeLayoutReflection* typeLayout, DescriptorSetLayoutsData& layoutsData)
 	{
 		auto fieldCount = typeLayout->getFieldCount();
 		u16 setsCount = 0;
@@ -194,6 +200,9 @@ namespace Pudu {
 		{
 			auto field = typeLayout->getFieldByIndex(i);
 			auto fieldLayout = field->getTypeLayout()->getElementTypeLayout();
+
+			auto containerLayout = field->getTypeLayout()->getContainerVarLayout();
+			containerLayout->getTypeLayout()
 
 
 			LOG("Shader field: {} category: {}", field->getName(), (u32)fieldLayout->getParameterCategory());
@@ -285,6 +294,22 @@ namespace Pudu {
 		}
 
 		layoutsData.setsCount = setsCount;
+	}
+
+	void ShaderObjectLayoutBuilder::ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
+		DescriptorSetLayoutsData& layoutsData)
+	{
+		auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
+
+		AccessPath rootOffsets;
+		rootOffsets.valid = true;
+
+		ParseScope(globalVarLayout, rootOffsets);
+	}
+
+	void ShaderObjectLayoutBuilder::ParseScope(slang::VariableLayoutReflection* scopeVarLayout, AccessPath& accessPath)
+	{
+		ExtendedAccessPath(accessPath, scopeVarLayout);
 	}
 }
 
