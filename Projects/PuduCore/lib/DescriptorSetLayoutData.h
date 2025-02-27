@@ -9,9 +9,9 @@ namespace Pudu {
 	struct DescriptorBinding
 	{
 		VkDescriptorType type;
-		uint16_t index = 0;
-		uint16_t count = 0;
-		uint16_t set = 0;
+		u16 index = 0;
+		u16 count = 0;
+		u16 set = 0;
 
 		std::string name;
 	}; // struct DescriptorBinding
@@ -22,15 +22,15 @@ namespace Pudu {
 		VkDescriptorSetLayout vkHandle;
 		VkDescriptorSetLayoutBinding* vkBinding = nullptr;
 		DescriptorBinding* bindings = nullptr;
-		uint8_t* indexToBinding = nullptr; // Mapping between binding point and binding data.
-		uint16_t bindingsCount = 0;
-		uint16_t setIndex = 0;
-		uint8_t bindless = 0;
+		u8* indexToBinding = nullptr; // Mapping between binding point and binding data.
+		u16 bindingsCount = 0;
+		u16 setIndex = 0;
+		u8 bindless = 0;
 	}; // struct DesciptorSetLayoutVulkan
 
 	struct DescriptorSetLayoutData {
 		std::string name;
-		uint32_t SetNumber;
+		u32 SetNumber;
 		VkDescriptorSetLayoutCreateInfo CreateInfo;
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;
 		bool bindless;
@@ -38,7 +38,7 @@ namespace Pudu {
 
 	struct DescriptorSetLayoutsData {
 		std::vector<DescriptorSetLayoutData> layoutData;
-		uint16_t setsCount;
+		u16 setsCount;
 		std::vector<DescriptorBinding> bindingsData;
 	};
 }
