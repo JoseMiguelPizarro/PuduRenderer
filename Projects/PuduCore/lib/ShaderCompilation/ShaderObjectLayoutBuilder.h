@@ -51,6 +51,12 @@ namespace Pudu {
     };
 
 
+    struct Offset
+    {
+        u16 value = 0;
+        u16 space = 0;
+    };
+
     struct ShaderLayoutBuilderContext
     {
         AccessPath* accessPath = nullptr;
@@ -64,6 +70,7 @@ namespace Pudu {
         void AddBindingsForParameterBlock(
             slang::TypeLayoutReflection* typeLayout, DescriptorSetLayoutsData& layoutsData);
         void ParseShaderProgramLayout(slang::ProgramLayout* programLayout,ShaderCompilationObject& outCompilationObject);
+        void ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection, ShaderLayoutBuilderContext& context);
         void ParseVariableLayout(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext& context);
         void ParseVariableOffsets(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext& context);
         void ParseScope(slang::VariableLayoutReflection* scopeVarLayout,ShaderLayoutBuilderContext& context);
@@ -75,6 +82,7 @@ namespace Pudu {
         slang::VariableLayoutReflection* variableLayout,
         slang::ParameterCategory layoutUnit,
         AccessPath accessPath);
+        void ParseTypeKind(TypeLayoutReflection* typeLayoutReflection, ShaderLayoutBuilderContext& context);
 
         Slang::ComPtr<IGlobalSession> m_globalSession;
     };

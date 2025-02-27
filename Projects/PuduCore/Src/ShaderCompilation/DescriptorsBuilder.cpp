@@ -300,7 +300,7 @@ return VK_DESCRIPTOR_TYPE_##TO
         return SLANG_OK;
     }
 
-    void GetProgramsDescriptorSets(slang::ProgramLayout* programLayout, ShaderCompilation& outShaderCompilation)
+    void GetProgramsDescriptorSets(slang::ProgramLayout* programLayout, ShaderCompilationObject& outShaderCompilation)
     {
         PipelineLayoutBuilder pipelineLayoutBuilder;
         DescriptorSetLayoutBuilder descriptorSetLayoutBuilder;

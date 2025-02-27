@@ -5,9 +5,6 @@
 #include "ShaderCompilation/ShaderCompilationObject.h"
 
 namespace Pudu{
-
-class ShaderCompilationObject {
-
     struct ShaderKernel {
         const u32* code;
         size codeSize;
@@ -21,6 +18,7 @@ class ShaderCompilationObject {
         DescriptorSetLayout descriptorSetLayout;
     };
 
+class ShaderCompilationObject {
     public:
         DescriptorSetLayoutsData descriptorsData;
         ShaderKernel* GetKernel(const char* name) { return &m_kernelsByName[name]; }
