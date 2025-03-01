@@ -104,7 +104,7 @@ namespace Pudu {
 		PrintDiagnostics(diagnostics);
 
 		//Global
-		printf("Global scope \n");
+		LOG("Global scope : {}", path);
 		ShaderCompilationObject compiledData;
 		ShaderObjectLayoutBuilder layoutBuilder;
 		layoutBuilder.m_globalSession = m_globalSession;

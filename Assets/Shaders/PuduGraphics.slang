@@ -20,6 +20,7 @@ public struct GlobalsConstants
 
 public struct Globals
 {
+    public float myFancyValue;
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
@@ -33,6 +34,13 @@ public struct GlobalsBindless
     public Sampler2D textures[];
 }
 
+public struct Test
+{
+    float val;
+    Texture2D testTexture;
+    Texture2D testTexture2;
+}
+public ParameterBlock<Test> TEST;
 public ParameterBlock<Globals> GLOBALS;
 
 [Bindless(true)]
