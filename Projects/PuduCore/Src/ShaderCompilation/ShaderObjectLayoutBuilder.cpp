@@ -252,47 +252,47 @@ namespace Pudu
         AccessPath accessPath)
     {
         CumulativeOffset result;
-        switch (layoutUnit)
-        {
-        // #### Layout Units That Don't Require Special Handling
+        // switch (layoutUnit)
+        // {
+        // // #### Layout Units That Don't Require Special Handling
+        // //
+        // default:
+        //     for (auto node = accessPath.leaf; node != nullptr; node = node->parent)
+        //     {
+        //         result.value += node->variableLayout->getOffset(layoutUnit);
+        //     }
+        //     break;
         //
-        default:
-            for (auto node = accessPath.leaf; node != nullptr; node = node->parent)
-            {
-                result.value += node->variableLayout->getOffset(layoutUnit);
-            }
-            break;
-
-        // #### Bytes
+        // // #### Bytes
+        // //
+        // case slang::ParameterCategory::Uniform:
+        //     for (auto node = accessPath.leaf; node != accessPath.deepestConstantBufer;
+        //          node = node->parent)
+        //     {
+        //         result.value += node->variableLayout->getOffset(layoutUnit);
+        //     }
+        //     break;
         //
-        case slang::ParameterCategory::Uniform:
-            for (auto node = accessPath.leaf; node != accessPath.deepestConstantBufer;
-                 node = node->parent)
-            {
-                result.value += node->variableLayout->getOffset(layoutUnit);
-            }
-            break;
-
-        // #### Layout Units That Care About Spaces
-        //
-        case slang::ParameterCategory::ConstantBuffer:
-        case slang::ParameterCategory::ShaderResource:
-        case slang::ParameterCategory::UnorderedAccess:
-        case slang::ParameterCategory::SamplerState:
-        case slang::ParameterCategory::DescriptorTableSlot:
-            for (auto node = accessPath.leaf; node != accessPath.deepestParameterBlock;
-                 node = node->parent)
-            {
-                result.value += node->variableLayout->getOffset(layoutUnit);
-                result.space += node->variableLayout->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-            }
-            for (auto node = accessPath.deepestParameterBlock; node != nullptr; node = node->parent)
-            {
-                result.space += node->variableLayout->getOffset(
-                    SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-            }
-            break;
-        }
+        // // #### Layout Units That Care About Spaces
+        // //
+        // case slang::ParameterCategory::ConstantBuffer:
+        // case slang::ParameterCategory::ShaderResource:
+        // case slang::ParameterCategory::UnorderedAccess:
+        // case slang::ParameterCategory::SamplerState:
+        // case slang::ParameterCategory::DescriptorTableSlot:
+        //     for (auto node = accessPath.leaf; node != accessPath.deepestParameterBlock;
+        //          node = node->parent)
+        //     {
+        //         result.value += node->variableLayout->getOffset(layoutUnit);
+        //         result.space += node->variableLayout->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
+        //     }
+        //     for (auto node = accessPath.deepestParameterBlock; node != nullptr; node = node->parent)
+        //     {
+        //         result.space += node->variableLayout->getOffset(
+        //             SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
+        //     }
+        //     break;
+        // }
 
         return result;
     }
@@ -344,11 +344,20 @@ namespace Pudu
                 }
 
                 accessPath.rootBufferInfo = context->PushConstantBufferInfo();
+
+
+                Binding offsets;
                 if (kind == TypeReflection::Kind::ParameterBlock )
                 {
                     context->setIndex++;
                     accessPath.setIndex = context->setIndex;
-
+                    accessPath.cumulativeOffset = &offsets;
+                }
+                else
+                {
+                    //PUSH DESCRIPTOR SET FOR BUFFER
+                    accessPath.cumulativeOffset->index++;
+                    LOG_I(m_indentation,"Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
                 }
 
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
@@ -364,8 +373,10 @@ namespace Pudu
                 auto element = typeLayoutReflection->getElementVarLayout();
 
                 auto offset = CalculateCumulativeOffset(element, SubElementRegisterSpace, accessPath);
-                LOG_I(m_indentation, "{} Set: {} Index: {}", element->getName() ? element->getName() : "", accessPath.setIndex,
-                      typeLayoutReflection->getBindingRangeCount());
+                accessPath.cumulativeOffset->index++;
+
+                LOG_I(m_indentation, "{} Set: {} Binding: {}", element->getName() ? element->getName() : "", accessPath.setIndex,
+                      accessPath.cumulativeOffset->index);
                 auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
                 LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
                 ParseVariableOffsets(typeLayoutReflection->getElementVarLayout(), context, accessPath);
@@ -382,7 +393,7 @@ namespace Pudu
                 LOG_I(m_indentation, "Container: {}",KIND_NAMES.at(container->getType()->getKind()));
 
                 auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
-                LOG_I(m_indentation, "Size: {} Binding: {}", accessPath.setIndex, typeLayoutReflection->getBindingRangeCount());
+                LOG_I(m_indentation, "Size: {} Binding: {}", accessPath.setIndex,accessPath.cumulativeOffset->index);
                 LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
             }
             break;
@@ -427,14 +438,14 @@ namespace Pudu
             case SubElementRegisterSpace:
                 {
                     auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
-                    LOG_I(m_indentation, " Set: {} value: {}", accessPath.setIndex, value);
+                    LOG_I(m_indentation, " Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
                 }
                 break;
             case Uniform:
                 {
                     auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
-                    LOG_I(m_indentation, "Size:{} Set: {} value: {}", varLayout->getTypeLayout()->getSize(), accessPath.setIndex,
-                          value);
+                    LOG_I(m_indentation, "Size:{} Set: {} Binding: {}", varLayout->getTypeLayout()->getSize(), accessPath.setIndex,
+                          accessPath.cumulativeOffset->index);
 
                     accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
                     LOG_I(m_indentation, "ConstantBufferSize {}", accessPath.rootBufferInfo->size);
@@ -447,8 +458,7 @@ namespace Pudu
             case slang::ParameterCategory::DescriptorTableSlot:
                 {
                     auto offset = CalculateCumulativeOffset(varLayout, category, accessPath);
-                    auto bufferSize = varLayout->getTypeLayout()->getSize(category);
-                    LOG_I(m_indentation, "set: {} value: {}", accessPath.setIndex, varLayout->getBindingIndex());
+                    LOG_I(m_indentation, "set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
                 }
                 break;
             default: break;
@@ -465,9 +475,10 @@ namespace Pudu
         ExtendedAccessPath scopeOffsets(accessPath, scopeVarLayout);
 
         TypeLayoutReflection* scopeTypeLayout = scopeVarLayout->getTypeLayout();
-        ConstantBufferInfo rootConstantBufferInfo;
 
-        scopeOffsets.rootBufferInfo = &rootConstantBufferInfo;
+        scopeOffsets.rootBufferInfo = context->PushConstantBufferInfo();
+        Binding cumulativeOffset;
+        scopeOffsets.cumulativeOffset = &cumulativeOffset;
 
         switch (auto scopeKind = scopeTypeLayout->getKind())
         {

@@ -25,6 +25,11 @@ namespace Pudu
         AccessPathNode* parent = nullptr;
     };
 
+    struct Binding
+    {
+        size index = -1;
+    };
+
     struct AccessPath
     {
         AccessPath() = default;
@@ -35,7 +40,7 @@ namespace Pudu
         AccessPathNode* leaf = nullptr;
         ConstantBufferInfo* rootBufferInfo;
         size_t setIndex = -1;
-
+        Binding* cumulativeOffset;
 
         void Print() const;
     };
