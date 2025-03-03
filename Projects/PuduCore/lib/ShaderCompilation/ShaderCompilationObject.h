@@ -12,10 +12,11 @@ namespace Pudu{
 
     struct ConstantBufferInfo
     {
-        size offset;
-        size stride;
-        size size;
+        size offset = 0;
+        size stride = 0;
+        size size = 0;
         DescriptorSetLayout descriptorSetLayout;
+        void PushElement(size_t size);
     };
 
 class ShaderCompilationObject {

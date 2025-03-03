@@ -2,7 +2,12 @@
 // Created by Hojaverde on 2/23/2025.
 //
 
+#include <slang/slang.h>
 #include "ShaderCompilation/ShaderObjectLayoutBuilder.h"
+
+#undef  VK_USE_PLATFORM_WIN32_KHR
+#include "vulkan/vk_enum_string_helper.h"
+#define VK_USE_PLATFORM_WIN32_KHR
 
 #include <boolinq.h>
 #include <map>
@@ -12,6 +17,43 @@
 
 namespace Pudu
 {
+    static std::map<slang::TypeReflection::Kind, const char*> KIND_NAMES = {
+        {slang::TypeReflection::Kind::None, "None"},
+        {slang::TypeReflection::Kind::Struct, "Struct"},
+        {slang::TypeReflection::Kind::Array, "Array"},
+        {slang::TypeReflection::Kind::Matrix, "Matrix"},
+        {slang::TypeReflection::Kind::Vector, "Vector"},
+        {slang::TypeReflection::Kind::Scalar, "Scalar"},
+        {slang::TypeReflection::Kind::ConstantBuffer, "ConstantBuffer"},
+        {slang::TypeReflection::Kind::TextureBuffer, "TextureBuffer"},
+        {slang::TypeReflection::Kind::ShaderStorageBuffer, "ShaderStorageBuffer"},
+        {slang::TypeReflection::Kind::SamplerState, "SamplerState"},
+        {slang::TypeReflection::Kind::Resource, "Resource"},
+        {slang::TypeReflection::Kind::ParameterBlock, "ParameterBlock"},
+        {slang::TypeReflection::Kind::GenericTypeParameter, "GenericTypeParameter"},
+        {slang::TypeReflection::Kind::Interface, "Interface"}
+    };
+
+
+    static std::map<slang::ParameterCategory, const char*> PARAMETER_CATEGORY_NAMES = {
+        {slang::ParameterCategory::None, "None"},
+        {slang::ParameterCategory::Uniform, "Uniform"},
+        {slang::ParameterCategory::ShaderResource, "ShaderResource"},
+        {slang::ParameterCategory::UnorderedAccess, "UnorderedAccess"},
+        {slang::ParameterCategory::VaryingInput, "VaryingInput"},
+        {slang::ParameterCategory::VaryingOutput, "VaryingOutput"},
+        {slang::ParameterCategory::SamplerState, "SamplerState"},
+        {slang::ParameterCategory::Mixed, "Mixed"},
+        {slang::ParameterCategory::SpecializationConstant, "SpecializationConstant"},
+        {slang::ParameterCategory::PushConstantBuffer, "PushConstantBuffer"},
+        {slang::ParameterCategory::DescriptorTableSlot, "DescriptorTableSlot"},
+        {slang::ParameterCategory::RegisterSpace, "RegisterSpace"},
+        {slang::ParameterCategory::ConstantBuffer, "ConstantBuffer"},
+        {slang::ParameterCategory::GenericResource, "GenericResource"},
+        {slang::ParameterCategory::ExistentialObjectParam, "ExistentialObjectParam"},
+        {slang::ParameterCategory::SubElementRegisterSpace, "SubElementRegisterSpace"}
+    };
+
     VkDescriptorType ToVk(slang::BindingType slangBindingType)
     {
         switch (slangBindingType)
@@ -57,7 +99,9 @@ namespace Pudu
             std::string path;
             while (currentNode)
             {
-                const char* name = currentNode->variableLayout->getName() ? currentNode->variableLayout->getName() : "Unnamed";
+                const char* name = currentNode->variableLayout->getName()
+                                       ? currentNode->variableLayout->getName()
+                                       : "Unnamed";
                 path = name + (path.empty() ? "" : "->" + path);
                 currentNode = currentNode->parent;
             }
@@ -67,6 +111,12 @@ namespace Pudu
         {
             LOG("No leaf node exists in the AccessPath.");
         }
+    }
+
+    ConstantBufferInfo* ShaderLayoutBuilderContext::PushConstantBufferInfo()
+    {
+        m_constantBuffers.resize(m_constantBuffers.size() + 1);
+        return &m_constantBuffers.back();
     }
 
     void ShaderObjectLayoutBuilder::AddBindingsForParameterBlock(slang::TypeLayoutReflection* typeLayout,
@@ -192,10 +242,9 @@ namespace Pudu
         rootOffsets.valid = true;
 
         ShaderLayoutBuilderContext context;
-        context.accessPath = &rootOffsets;
         context.shaderCompilationObject = &outCompilationObject;
 
-        ParseScope(globalVarLayout, context);
+        ParseScope(globalVarLayout, &context, rootOffsets);
     }
 
     CumulativeOffset calculateCumulativeOffset(
@@ -258,46 +307,8 @@ namespace Pudu
     }
 
 
-    static std::map<slang::TypeReflection::Kind, const char*> KIND_NAMES = {
-        {slang::TypeReflection::Kind::None, "None"},
-        {slang::TypeReflection::Kind::Struct, "Struct"},
-        {slang::TypeReflection::Kind::Array, "Array"},
-        {slang::TypeReflection::Kind::Matrix, "Matrix"},
-        {slang::TypeReflection::Kind::Vector, "Vector"},
-        {slang::TypeReflection::Kind::Scalar, "Scalar"},
-        {slang::TypeReflection::Kind::ConstantBuffer, "ConstantBuffer"},
-        {slang::TypeReflection::Kind::TextureBuffer, "TextureBuffer"},
-        {slang::TypeReflection::Kind::ShaderStorageBuffer, "ShaderStorageBuffer"},
-        {slang::TypeReflection::Kind::SamplerState, "SamplerState"},
-        {slang::TypeReflection::Kind::Resource, "Resource"},
-        {slang::TypeReflection::Kind::ParameterBlock, "ParameterBlock"},
-        {slang::TypeReflection::Kind::GenericTypeParameter, "GenericTypeParameter"},
-        {slang::TypeReflection::Kind::Interface, "Interface"}
-    };
-
-
-    static std::map<slang::ParameterCategory, const char*> PARAMETER_CATEGORY_NAMES = {
-        {slang::ParameterCategory::None, "None"},
-        {slang::ParameterCategory::Uniform, "Uniform"},
-        {slang::ParameterCategory::ShaderResource, "ShaderResource"},
-        {slang::ParameterCategory::UnorderedAccess, "UnorderedAccess"},
-        {slang::ParameterCategory::VaryingInput, "VaryingInput"},
-        {slang::ParameterCategory::VaryingOutput, "VaryingOutput"},
-        {slang::ParameterCategory::SamplerState, "SamplerState"},
-        {slang::ParameterCategory::Mixed, "Mixed"},
-        {slang::ParameterCategory::SpecializationConstant, "SpecializationConstant"},
-        {slang::ParameterCategory::PushConstantBuffer, "PushConstantBuffer"},
-        {slang::ParameterCategory::DescriptorTableSlot, "DescriptorTableSlot"},
-        {slang::ParameterCategory::RegisterSpace, "RegisterSpace"},
-        {slang::ParameterCategory::ConstantBuffer, "ConstantBuffer"},
-        {slang::ParameterCategory::GenericResource, "GenericResource"},
-        {slang::ParameterCategory::ExistentialObjectParam, "ExistentialObjectParam"},
-        {slang::ParameterCategory::SubElementRegisterSpace, "SubElementRegisterSpace"}
-    };
-
-
     void ShaderObjectLayoutBuilder::ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection,
-                                                            ShaderLayoutBuilderContext context)
+                                                            ShaderLayoutBuilderContext* context, AccessPath accessPath)
     {
         m_indentation++;
         auto kind = typeLayoutReflection->getKind();
@@ -311,7 +322,7 @@ namespace Pudu
                 for (size_t i = 0; i < fieldCount; i++)
                 {
                     auto field = typeLayoutReflection->getFieldByIndex(i);
-                    ParseVariableLayout(field, context);
+                    ParseVariableLayout(field, context, accessPath);
                 }
             }
             break;
@@ -324,7 +335,7 @@ namespace Pudu
                 auto containerVarLayout = typeLayoutReflection->getContainerVarLayout();
                 auto elementVarLayout = typeLayoutReflection->getElementVarLayout();
 
-                AccessPath innerOffsets = *context.accessPath;
+                AccessPath innerOffsets = accessPath;
                 innerOffsets.deepestConstantBufer = innerOffsets.leaf;
                 if (containerVarLayout->getTypeLayout()->getSize(
                     slang::ParameterCategory::SubElementRegisterSpace) != 0)
@@ -332,83 +343,112 @@ namespace Pudu
                     innerOffsets.deepestParameterBlock = innerOffsets.leaf;
                 }
 
+                accessPath.rootBufferInfo = context->PushConstantBufferInfo();
+                if (kind == TypeReflection::Kind::ParameterBlock )
+                {
+                    context->setIndex++;
+                    accessPath.setIndex = context->setIndex;
+
+                }
+
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
-                context.accessPath = &innerOffsets;
-                ParseVariableOffsets(containerVarLayout, context);
-                ParseVariableTypeLayout(elementVarLayout->getTypeLayout(), context);
+                ParseVariableOffsets(containerVarLayout, context, accessPath);
+                ParseVariableTypeLayout(elementVarLayout->getTypeLayout(), context, accessPath);
             }
             break;
+
+            ///Here we should push a binding
         case TypeReflection::Kind::Resource:
             {
-                auto element = typeLayoutReflection->getElementVarLayout();
-             //   ExtendedAccessPath accessPath(*context.accessPath, element);
 
-                auto offset = CalculateCumulativeOffset(element, SubElementRegisterSpace, *context.accessPath);
-                LOG_I(m_indentation, "{} Set: {} Index: {}", element->getName() ? element->getName() : "", offset.space,
-                      typeLayoutReflection->getElementVarLayout()->getBindingIndex());
-                ParseVariableOffsets(typeLayoutReflection->getElementVarLayout(), context);
+                auto element = typeLayoutReflection->getElementVarLayout();
+
+                auto offset = CalculateCumulativeOffset(element, SubElementRegisterSpace, accessPath);
+                LOG_I(m_indentation, "{} Set: {} Index: {}", element->getName() ? element->getName() : "", accessPath.setIndex,
+                      typeLayoutReflection->getBindingRangeCount());
+                auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
+                LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
+                ParseVariableOffsets(typeLayoutReflection->getElementVarLayout(), context, accessPath);
             }
             break;
+            //Here we should push a binding
+        case TypeReflection::Kind::Scalar:
+        case TypeReflection::Kind::Vector:
+        case TypeReflection::Kind::Matrix:
+            {
+                DescriptorBinding binding;
+
+                auto container = typeLayoutReflection->getContainerVarLayout();
+                LOG_I(m_indentation, "Container: {}",KIND_NAMES.at(container->getType()->getKind()));
+
+                auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
+                LOG_I(m_indentation, "Size: {} Binding: {}", accessPath.setIndex, typeLayoutReflection->getBindingRangeCount());
+                LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
+            }
+            break;
+            case TypeReflection::Kind::Array:
+                {
+                  LOG_I(m_indentation, "Array ElementCount: {} Size:", typeLayoutReflection->getElementCount(), typeLayoutReflection->getSize());
+                }
+            break;
+
         default: break;
         }
         m_indentation--;
     }
 
     void ShaderObjectLayoutBuilder::ParseVariableLayout(VariableLayoutReflection* varLayout,
-                                                        ShaderLayoutBuilderContext context)
+                                                        ShaderLayoutBuilderContext* context, AccessPath accessPath)
     {
         m_indentation++;
-        auto offset = CalculateCumulativeOffset(varLayout, SubElementRegisterSpace, *context.accessPath);
-        LOG_I(m_indentation, "Parsing Variable Layout: {} set:{} bind: {}", varLayout->getName(),
-              offset.space,
-              offset.value);
 
-        ExtendedAccessPath varPath(*context.accessPath, varLayout);
-        context.accessPath = &varPath;
+        ExtendedAccessPath varPath(accessPath, varLayout);
 
-        ParseVariableOffsets(varLayout, context);
+        ParseVariableOffsets(varLayout, context, static_cast<AccessPath>(varPath));
 
-        ParseVariableTypeLayout(varLayout->getTypeLayout(), context);
+        ParseVariableTypeLayout(varLayout->getTypeLayout(), context, static_cast<AccessPath>(varPath));
         m_indentation--;
     }
 
     void ShaderObjectLayoutBuilder::ParseVariableOffsets(VariableLayoutReflection* varLayout,
-                                                         ShaderLayoutBuilderContext context)
+                                                         ShaderLayoutBuilderContext* context, AccessPath accessPath)
     {
         m_indentation++;
         size usedLayoutUnitsCount = varLayout->getCategoryCount();
-        context.accessPath->Print();
+        accessPath.Print();
 
         for (size_t i = 0; i < usedLayoutUnitsCount; i++)
         {
             auto category = varLayout->getCategoryByIndex(i);
             LOG_I(m_indentation, "Unit type: {}", PARAMETER_CATEGORY_NAMES.at(category));
 
-            size descriptorSet = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-            LOG_I(m_indentation, "Set: {}", descriptorSet);
-            switch (const auto varLayoutUnit = varLayout->getCategoryByIndex(i))
+            switch (category)
             {
             case SubElementRegisterSpace:
                 {
-                    auto [value, space] = CalculateCumulativeOffset(varLayout, varLayoutUnit, *context.accessPath);
-                    LOG_I(m_indentation, " Set: {} value: {}", space, value);
+                    auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
+                    LOG_I(m_indentation, " Set: {} value: {}", accessPath.setIndex, value);
+                }
+                break;
+            case Uniform:
+                {
+                    auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
+                    LOG_I(m_indentation, "Size:{} Set: {} value: {}", varLayout->getTypeLayout()->getSize(), accessPath.setIndex,
+                          value);
+
+                    accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
+                    LOG_I(m_indentation, "ConstantBufferSize {}", accessPath.rootBufferInfo->size);
                 }
                 break;
             case ConstantBuffer:
-            case Uniform:
+            case slang::ParameterCategory::ShaderResource:
+            case slang::ParameterCategory::UnorderedAccess:
+            case slang::ParameterCategory::SamplerState:
+            case slang::ParameterCategory::DescriptorTableSlot:
                 {
-                    auto offset = CalculateCumulativeOffset(varLayout, varLayoutUnit, *context.accessPath);
-                    auto bufferSize = varLayout->getTypeLayout()->getSize(varLayoutUnit);
-                    LOG_I(m_indentation, "Buffer: {} size {} set: {} value: {}",
-                          varLayout->getName() ? varLayout->getName() : "", bufferSize, offset.space, offset.value);
-                }
-                break;
-            case DescriptorTableSlot:
-                {
-                    auto offset = CalculateCumulativeOffset(varLayout, varLayoutUnit, *context.accessPath);
-                    LOG_I(m_indentation, "set: {} value: {}",
-                          varLayout->getName() ? varLayout->getName() : "", varLayout->getTypeLayout()->getSize(),
-                          offset.space, offset.value);
+                    auto offset = CalculateCumulativeOffset(varLayout, category, accessPath);
+                    auto bufferSize = varLayout->getTypeLayout()->getSize(category);
+                    LOG_I(m_indentation, "set: {} value: {}", accessPath.setIndex, varLayout->getBindingIndex());
                 }
                 break;
             default: break;
@@ -419,17 +459,17 @@ namespace Pudu
 
 
     void ShaderObjectLayoutBuilder::ParseScope(slang::VariableLayoutReflection* scopeVarLayout,
-                                               ShaderLayoutBuilderContext context)
+                                               ShaderLayoutBuilderContext* context, AccessPath accessPath)
     {
         m_indentation++;
-        ExtendedAccessPath scopeOffsets(*context.accessPath, scopeVarLayout);
-        context.accessPath = &scopeOffsets;
+        ExtendedAccessPath scopeOffsets(accessPath, scopeVarLayout);
 
         TypeLayoutReflection* scopeTypeLayout = scopeVarLayout->getTypeLayout();
+        ConstantBufferInfo rootConstantBufferInfo;
 
-        auto scopeKind = scopeTypeLayout->getKind();
+        scopeOffsets.rootBufferInfo = &rootConstantBufferInfo;
 
-        switch (scopeKind)
+        switch (auto scopeKind = scopeTypeLayout->getKind())
         {
         case TypeReflection::Kind::Struct:
             {
@@ -437,7 +477,7 @@ namespace Pudu
                 for (u16 i = 0; i < paramCount; i++)
                 {
                     auto param = scopeTypeLayout->getFieldByIndex(i);
-                    ParseVariableLayout(param, context);
+                    ParseVariableLayout(param, context, static_cast<AccessPath>(scopeOffsets));
                 }
             }
             break;
@@ -445,16 +485,18 @@ namespace Pudu
         case TypeReflection::Kind::ConstantBuffer:
             {
                 //Constant buffer detected to add
+                LOG_I(m_indentation, "Parsing Constant Buffer");
                 auto containerLayout = scopeTypeLayout->getContainerVarLayout();
-                ParseVariableOffsets(containerLayout, context);
-                ParseScope(scopeTypeLayout->getElementVarLayout(), context);
+                ParseVariableOffsets(containerLayout, context, static_cast<AccessPath>(scopeOffsets));
+                ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
                 ConstantBufferInfo constantBufferInfo;
             }
             break;
 
         case TypeReflection::Kind::ParameterBlock:
-            ParseVariableOffsets(scopeTypeLayout->getElementVarLayout(), context);
-            ParseScope(scopeTypeLayout->getElementVarLayout(), context);
+            LOG_I(m_indentation, "Parsing ParameterBlock");
+            ParseVariableOffsets(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
+            ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
             break;
         default:
             break;

@@ -39,6 +39,11 @@ public struct Test
     float val;
     Texture2D testTexture;
     Texture2D testTexture2;
+    float2 val2;
+    float floatArray[10];
+    ParameterBlock<Globals> myGlobals;
+    Texture2D textureArray[];
+
 }
 public ParameterBlock<Test> TEST;
 public ParameterBlock<Globals> GLOBALS;
