@@ -28,6 +28,12 @@ namespace Pudu
     struct Binding
     {
         size index = -1;
+
+        size PushIndex()
+        {
+            index++;
+            return index;
+        }
     };
 
     struct AccessPath

@@ -338,7 +338,7 @@ namespace Pudu
                 AccessPath innerOffsets = accessPath;
                 innerOffsets.deepestConstantBufer = innerOffsets.leaf;
                 if (containerVarLayout->getTypeLayout()->getSize(
-                    slang::ParameterCategory::SubElementRegisterSpace) != 0)
+                    SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE) != 0)
                 {
                     innerOffsets.deepestParameterBlock = innerOffsets.leaf;
                 }
@@ -356,7 +356,7 @@ namespace Pudu
                 else
                 {
                     //PUSH DESCRIPTOR SET FOR BUFFER
-                    accessPath.cumulativeOffset->index++;
+                    accessPath.cumulativeOffset->PushIndex();
                     LOG_I(m_indentation,"Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
                 }
 
@@ -373,7 +373,7 @@ namespace Pudu
                 auto element = typeLayoutReflection->getElementVarLayout();
 
                 auto offset = CalculateCumulativeOffset(element, SubElementRegisterSpace, accessPath);
-                accessPath.cumulativeOffset->index++;
+                accessPath.cumulativeOffset->PushIndex();
 
                 LOG_I(m_indentation, "{} Set: {} Binding: {}", element->getName() ? element->getName() : "", accessPath.setIndex,
                       accessPath.cumulativeOffset->index);
@@ -437,8 +437,6 @@ namespace Pudu
             {
             case SubElementRegisterSpace:
                 {
-                    auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
-                    LOG_I(m_indentation, " Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
                 }
                 break;
             case Uniform:
@@ -457,8 +455,7 @@ namespace Pudu
             case slang::ParameterCategory::SamplerState:
             case slang::ParameterCategory::DescriptorTableSlot:
                 {
-                    auto offset = CalculateCumulativeOffset(varLayout, category, accessPath);
-                    LOG_I(m_indentation, "set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
+                //    LOG_I(m_indentation, "set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
                 }
                 break;
             default: break;
@@ -498,7 +495,6 @@ namespace Pudu
                 //Constant buffer detected to add
                 LOG_I(m_indentation, "Parsing Constant Buffer");
                 auto containerLayout = scopeTypeLayout->getContainerVarLayout();
-                ParseVariableOffsets(containerLayout, context, static_cast<AccessPath>(scopeOffsets));
                 ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
                 ConstantBufferInfo constantBufferInfo;
             }
@@ -506,7 +502,6 @@ namespace Pudu
 
         case TypeReflection::Kind::ParameterBlock:
             LOG_I(m_indentation, "Parsing ParameterBlock");
-            ParseVariableOffsets(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
             ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
             break;
         default:
