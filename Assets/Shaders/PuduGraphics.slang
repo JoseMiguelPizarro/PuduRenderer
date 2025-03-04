@@ -45,6 +45,14 @@ public struct Test
     Texture2D textureArray[];
 
 }
+
+public struct Test2
+{
+    Texture2D textureA;
+    Texture2D textureB;
+    }
+
+public ParameterBlock<Test2> TEST2;
 public ParameterBlock<Test> TEST;
 public ParameterBlock<Globals> GLOBALS;
 
@@ -53,7 +61,6 @@ public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]
 public UniformBufferObject UBO;
-
 
 
 #define PERSHADERBIND 2

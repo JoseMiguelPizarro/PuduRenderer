@@ -352,6 +352,23 @@ namespace Pudu
                     context->setIndex++;
                     accessPath.setIndex = context->setIndex;
                     accessPath.cumulativeOffset = &offsets;
+
+                    VariableLayoutReflection* container = typeLayoutReflection->getContainerVarLayout();
+
+                    auto firstCategory = container->getCategoryByIndex(0);
+                    auto categoryCount = container->getCategoryCount();
+
+                    for (size_t i = 0; i < categoryCount; i++)
+                    {
+                        auto category = container->getCategoryByIndex(i);
+                        LOG_I(m_indentation, "ParameterBlockCategory: {}", PARAMETER_CATEGORY_NAMES.at(category));
+                    }
+
+                    LOG_I(m_indentation, "First category: {}", PARAMETER_CATEGORY_NAMES.at(firstCategory));
+                    if (firstCategory == slang::ParameterCategory::DescriptorTableSlot)
+                    {
+                        accessPath.cumulativeOffset->PushIndex();
+                    }
                 }
                 else
                 {
@@ -443,7 +460,7 @@ namespace Pudu
                 {
                     auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
                     LOG_I(m_indentation, "Size:{} Set: {} Binding: {}", varLayout->getTypeLayout()->getSize(), accessPath.setIndex,
-                          accessPath.cumulativeOffset->index);
+                          0);
 
                     accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
                     LOG_I(m_indentation, "ConstantBufferSize {}", accessPath.rootBufferInfo->size);
