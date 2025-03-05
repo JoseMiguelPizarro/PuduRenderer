@@ -119,6 +119,16 @@ namespace Pudu
         return &m_constantBuffers.back();
     }
 
+    std::vector<ConstantBufferInfo>* ShaderLayoutBuilderContext::GetConstantBufferInfos()
+    {
+        return &m_constantBuffers;
+    }
+
+    void ShaderLayoutBuilderContext::PushBinding(const DescriptorBinding& binding) const
+    {
+        shaderCompilationObject->descriptorsData.bindingsData.push_back(binding);
+    }
+
     void ShaderObjectLayoutBuilder::AddBindingsForParameterBlock(slang::TypeLayoutReflection* typeLayout,
                                                                  DescriptorSetLayoutsData& layoutsData)
     {
@@ -245,6 +255,19 @@ namespace Pudu
         context.shaderCompilationObject = &outCompilationObject;
 
         ParseScope(globalVarLayout, &context, rootOffsets);
+
+
+        std::vector<ConstantBufferInfo> buffersToAllocate;
+        for (ConstantBufferInfo buffer : context.GetConstantBufferInfos())
+        {
+            if (buffer.size > 0)
+            {
+                buffersToAllocate.push_back(buffer);
+            }
+        }
+
+        outCompilationObject.descriptorsData.setsCount = context.setIndex;
+        outCompilationObject.SetBuffersToAllocate(buffersToAllocate);
     }
 
     CumulativeOffset calculateCumulativeOffset(
@@ -375,10 +398,15 @@ namespace Pudu
                     //PUSH DESCRIPTOR SET FOR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
                     LOG_I(m_indentation,"Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
+                    DescriptorBinding binding;
+                    binding.set = accessPath.setIndex;
+                    binding.index = accessPath.cumulativeOffset->index;
+                    binding.count = 1;
+                    binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    binding.name = "UniformBuffer";
                 }
 
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
-                ParseVariableOffsets(containerVarLayout, context, accessPath);
                 ParseVariableTypeLayout(elementVarLayout->getTypeLayout(), context, accessPath);
             }
             break;
@@ -396,7 +424,15 @@ namespace Pudu
                       accessPath.cumulativeOffset->index);
                 auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
                 LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
-                ParseVariableOffsets(typeLayoutReflection->getElementVarLayout(), context, accessPath);
+
+
+                DescriptorBinding binding;
+                binding.type = ToVk(typeLayoutReflection->getBindingRangeType(0));
+                binding.index = accessPath.cumulativeOffset->index;
+                binding.set = accessPath.setIndex;
+                binding.count = 1;
+                binding.name = element->getName();
+                context->PushBinding(binding);
             }
             break;
             //Here we should push a binding
@@ -410,12 +446,13 @@ namespace Pudu
                 LOG_I(m_indentation, "Container: {}",KIND_NAMES.at(container->getType()->getKind()));
 
                 auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
-                LOG_I(m_indentation, "Size: {} Binding: {}", accessPath.setIndex,accessPath.cumulativeOffset->index);
+                LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex,accessPath.cumulativeOffset->index);
                 LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
             }
             break;
             case TypeReflection::Kind::Array:
                 {
+                    //TODO: How to handle array of resources?
                   LOG_I(m_indentation, "Array ElementCount: {} Size:", typeLayoutReflection->getElementCount(), typeLayoutReflection->getSize());
                 }
             break;

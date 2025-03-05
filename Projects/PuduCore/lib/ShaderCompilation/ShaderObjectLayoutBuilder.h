@@ -83,6 +83,9 @@ namespace Pudu
         ShaderCompilationObject* shaderCompilationObject = nullptr;
         size_t constantBufferSize = 0;
         ConstantBufferInfo* PushConstantBufferInfo();
+        std::vector<ConstantBufferInfo>* GetConstantBufferInfos();
+
+        void PushBinding(const DescriptorBinding& binding) const;
 
     private:
         std::vector<ConstantBufferInfo> m_constantBuffers;

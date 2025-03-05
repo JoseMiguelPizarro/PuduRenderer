@@ -26,6 +26,7 @@ class ShaderCompilationObject {
         void AddKernel(const char* name, ShaderKernel& kernel);
         std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges;}
         std::vector<ConstantBufferInfo>* GetConstantBuffers(){ return &m_constantBuffers;}
+        void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) {m_constantBuffers = buffers;}
 
     private:
         friend class DescriptorsBuilder;
