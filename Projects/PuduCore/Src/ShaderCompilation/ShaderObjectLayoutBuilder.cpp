@@ -241,34 +241,7 @@ namespace Pudu
         layoutsData.setsCount = setsCount;
     }
 
-    void ShaderObjectLayoutBuilder::ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
-                                                             ShaderCompilationObject& outCompilationObject)
-    {
-        m_indentation = 0;
 
-        auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
-
-        AccessPath rootOffsets;
-        rootOffsets.valid = true;
-
-        ShaderLayoutBuilderContext context;
-        context.shaderCompilationObject = &outCompilationObject;
-
-        ParseScope(globalVarLayout, &context, rootOffsets);
-
-
-        std::vector<ConstantBufferInfo> buffersToAllocate;
-        for (ConstantBufferInfo buffer : context.GetConstantBufferInfos())
-        {
-            if (buffer.size > 0)
-            {
-                buffersToAllocate.push_back(buffer);
-            }
-        }
-
-        outCompilationObject.descriptorsData.setsCount = context.setIndex;
-        outCompilationObject.SetBuffersToAllocate(buffersToAllocate);
-    }
 
     CumulativeOffset calculateCumulativeOffset(
         slang::ParameterCategory layoutUnit,
@@ -391,6 +364,16 @@ namespace Pudu
                     if (firstCategory == slang::ParameterCategory::DescriptorTableSlot)
                     {
                         accessPath.cumulativeOffset->PushIndex();
+                    }
+
+                    auto bindless = container->getVariable()->findUserAttributeByName(m_globalSession, "Bindless");
+                    bool isBindless = false;
+
+                    if (bindless)
+                    {
+                        int v;
+                        bindless->getArgumentValueInt(0, &v);
+                        isBindless = bindless;
                     }
                 }
                 else
@@ -562,5 +545,33 @@ namespace Pudu
             break;
         }
         m_indentation--;
+    }
+
+    void ShaderObjectLayoutBuilder::ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
+                                                             ShaderCompilationObject& outCompilationObject)
+    {
+        m_indentation = 0;
+
+        auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
+
+        AccessPath rootOffsets;
+        rootOffsets.valid = true;
+
+        ShaderLayoutBuilderContext context;
+        context.shaderCompilationObject = &outCompilationObject;
+
+        ParseScope(globalVarLayout, &context, rootOffsets);
+
+        std::vector<ConstantBufferInfo> buffersToAllocate;
+        for (ConstantBufferInfo buffer : context.GetConstantBufferInfos())
+        {
+            if (buffer.size > 0)
+            {
+                buffersToAllocate.push_back(buffer);
+            }
+        }
+
+        outCompilationObject.descriptorsData.setsCount = context.setIndex;
+        outCompilationObject.SetBuffersToAllocate(buffersToAllocate);
     }
 } // Pudu
