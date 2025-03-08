@@ -33,25 +33,6 @@ public struct GlobalsBindless
     public Sampler2D textures[];
 }
 
-public struct Test
-{
-    float val;
-    Texture2D testTexture;
-    Texture2D testTexture2;
-    float2 val2;
-    float floatArray[10];
-    ParameterBlock<Globals> myGlobals;
-    Texture2D textureArray[];
-
-}
-
-public struct Test2
-{
-    Texture2D textureA;
-    Texture2D textureB;
-    }
-
-
 public ParameterBlock<Globals> GLOBALS;
 
 [Bindless(true)]

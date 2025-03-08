@@ -250,7 +250,7 @@ namespace Pudu
                         binding.index = accessPath.cumulativeOffset->index;
                         binding.setNumber = accessPath.setIndex;
                         binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                        binding.name = "CBuffer";
+                        binding.name = accessPath.leaf->variableLayout->getName();
 
                         accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
                         accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
@@ -264,15 +264,17 @@ namespace Pudu
                     accessPath.cumulativeOffset->PushIndex();
                     LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex,
                           accessPath.cumulativeOffset->index);
+
                     DescriptorBinding binding;
                     binding.setNumber = accessPath.setIndex;
                     binding.index = accessPath.cumulativeOffset->index;
                     binding.count = 1;
                     binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    binding.name = typeLayoutReflection->getName();
+                    binding.name = accessPath.leaf->variableLayout->getName();
 
                     accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
                     accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
+                    context->PushBinding(binding);
                 }
 
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
@@ -477,6 +479,9 @@ namespace Pudu
 
         for (auto& binding : outCompilationObject.descriptorsData.bindingsData)
         {
+            ASSERT(binding.setNumber < outCompilationObject.descriptorsData.layoutData.size(),
+                "Binding set out of bounds name: {} set: {}",
+                binding.name, binding.setNumber);
             auto& layout = outCompilationObject.descriptorsData.layoutData[binding.setNumber];
 
             layout.Bindings.push_back(binding.ToVKDescriptorSetLayoutBinding());
