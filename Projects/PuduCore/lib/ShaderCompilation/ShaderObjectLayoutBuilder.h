@@ -11,12 +11,6 @@ namespace Pudu
 {
     using namespace slang;
 
-    struct CumulativeOffset
-    {
-        u32 value = 0;
-        u32 space = 0;
-    };
-
     // ### Access Paths
 
     struct AccessPathNode
@@ -41,12 +35,12 @@ namespace Pudu
         AccessPath() = default;
 
         bool valid = false;
-        AccessPathNode* deepestConstantBufer = nullptr;
-        AccessPathNode* deepestParameterBlock = nullptr;
         AccessPathNode* leaf = nullptr;
         ConstantBufferInfo* rootBufferInfo;
+        DescriptorSetLayoutInfo* descriptorSetLayout = nullptr;
         size_t setIndex = -1;
         Binding* cumulativeOffset;
+
 
         void Print() const;
     };
@@ -79,38 +73,35 @@ namespace Pudu
 
     struct ShaderLayoutBuilderContext
     {
-        size_t setIndex = -1;
+
         ShaderCompilationObject* shaderCompilationObject = nullptr;
         size_t constantBufferSize = 0;
         ConstantBufferInfo* PushConstantBufferInfo();
+        ConstantBufferInfo* PushPushConstantsBufferInfo();
+        std::vector<ConstantBufferInfo>& GetPushConstants();
         std::vector<ConstantBufferInfo>* GetConstantBufferInfos();
 
+        size PushSetIndex() { return ++m_setIndex; }
+        size getSetIndex() const { return m_setIndex; }
         void PushBinding(const DescriptorBinding& binding) const;
 
     private:
+        size_t m_setIndex = -1;
         std::vector<ConstantBufferInfo> m_constantBuffers;
+        std::vector<ConstantBufferInfo> m_pushConstants;
     };
 
     struct ShaderObjectLayoutBuilder
     {
         std::vector<VkDescriptorSetLayoutBinding> m_bindings;
         u32 m_bindingIndex = 0;
-        void AddBindingsForParameterBlock(
-            slang::TypeLayoutReflection* typeLayout, DescriptorSetLayoutsData& layoutsData);
+
         void ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
                                       ShaderCompilationObject& outCompilationObject);
         void ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection, ShaderLayoutBuilderContext* context,AccessPath accessPath);
         void ParseVariableLayout(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context, AccessPath accessPath);
         void ParseVariableOffsets(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context, AccessPath accessPath);
         void ParseScope(slang::VariableLayoutReflection* scopeVarLayout, ShaderLayoutBuilderContext* context, AccessPath accessPath);
-        void addBindingsFrom(
-            slang::TypeLayoutReflection* typeLayout,
-            u32 descriptorCount);
-
-        static CumulativeOffset CalculateCumulativeOffset(
-            slang::VariableLayoutReflection* variableLayout,
-            slang::ParameterCategory layoutUnit,
-            AccessPath accessPath);
 
         Slang::ComPtr<IGlobalSession> m_globalSession;
 

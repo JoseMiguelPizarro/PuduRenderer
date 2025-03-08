@@ -2,6 +2,9 @@
 // Created by Hojaverde on 2/23/2025.
 //
 
+
+#include <algorithm>
+#include <ranges>
 #include <slang/slang.h>
 #include "ShaderCompilation/ShaderObjectLayoutBuilder.h"
 
@@ -12,6 +15,7 @@
 #include <boolinq.h>
 #include <map>
 #include <fastgltf/types.hpp>
+
 
 #include "Logger.h"
 
@@ -34,6 +38,31 @@ namespace Pudu
         {slang::TypeReflection::Kind::Interface, "Interface"}
     };
 
+    static std::map<slang::BindingType, const char*> BINDING_NAMES = {
+        {
+            BindingType::Unknown, "Unknown"
+        },
+        {BindingType::Sampler, "Sampler"},
+        {BindingType::Texture, "Texture"},
+        {BindingType::ConstantBuffer, "ConstantBuffer"},
+        {BindingType::ParameterBlock, "ParameterBlock"},
+        {BindingType::TypedBuffer, "TypedBuffer"},
+        {BindingType::RawBuffer, "RawBuffer"},
+        {BindingType::CombinedTextureSampler, "CombinedTextureSampler"},
+        {BindingType::InputRenderTarget, "InputRenderTarget"},
+        {BindingType::InlineUniformData, "InlineUniformData"},
+        {BindingType::RayTracingAccelerationStructure, "RayTracingAccelerationStructure"},
+        {BindingType::VaryingInput, "VaryingInput"},
+        {BindingType::VaryingOutput, "VaryingOutput"},
+        {BindingType::ExistentialValue, "ExistentialValue"},
+        {BindingType::PushConstant, "PushConstant"},
+        {BindingType::MutableFlag, "MutableFlag"},
+        {BindingType::MutableTexture, "MutableTexture"},
+        {BindingType::MutableTypedBuffer, "MutableTypedBuffer"},
+        {BindingType::MutableRawBuffer, "MutableRawBuffer"},
+        {BindingType::BaseMask, "BaseMask"},
+        {BindingType::ExtMask, "ExtMask"}
+    };
 
     static std::map<slang::ParameterCategory, const char*> PARAMETER_CATEGORY_NAMES = {
         {slang::ParameterCategory::None, "None"},
@@ -58,9 +87,8 @@ namespace Pudu
     {
         switch (slangBindingType)
         {
-        case slang::BindingType::PushConstant:
         default:
-            std::fprintf(stderr, "Assertion failed: %s %d\n", "Unsupported binding type!", slangBindingType);
+            std::fprintf(stderr, "Assertion failed: %s %s\n", "Unsupported binding type!", BINDING_NAMES.at(slangBindingType));
         //std::abort();
             return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
@@ -101,7 +129,7 @@ namespace Pudu
             {
                 const char* name = currentNode->variableLayout->getName()
                                        ? currentNode->variableLayout->getName()
-                                       : "Unnamed";
+                                       : "Root";
                 path = name + (path.empty() ? "" : "->" + path);
                 currentNode = currentNode->parent;
             }
@@ -119,6 +147,17 @@ namespace Pudu
         return &m_constantBuffers.back();
     }
 
+    ConstantBufferInfo* ShaderLayoutBuilderContext::PushPushConstantsBufferInfo()
+    {
+        m_pushConstants.resize(m_pushConstants.size() + 1);
+        return &m_pushConstants.back();
+    }
+
+    std::vector<ConstantBufferInfo>& ShaderLayoutBuilderContext::GetPushConstants()
+    {
+        return m_pushConstants;
+    }
+
     std::vector<ConstantBufferInfo>* ShaderLayoutBuilderContext::GetConstantBufferInfos()
     {
         return &m_constantBuffers;
@@ -127,179 +166,6 @@ namespace Pudu
     void ShaderLayoutBuilderContext::PushBinding(const DescriptorBinding& binding) const
     {
         shaderCompilationObject->descriptorsData.bindingsData.push_back(binding);
-    }
-
-    void ShaderObjectLayoutBuilder::AddBindingsForParameterBlock(slang::TypeLayoutReflection* typeLayout,
-                                                                 DescriptorSetLayoutsData& layoutsData)
-    {
-        auto fieldCount = typeLayout->getFieldCount();
-        u16 setsCount = 0;
-
-
-        for (size i = 0; i < fieldCount; i++)
-        {
-            auto field = typeLayout->getFieldByIndex(i);
-            auto fieldLayout = field->getTypeLayout()->getElementTypeLayout();
-
-            auto containerLayout = field->getTypeLayout()->getContainerVarLayout();
-
-
-            LOG_I(m_indentation, "Shader field: {} category: {}", field->getName(),
-                  (u32)fieldLayout->getParameterCategory());
-
-            size descriptorSet = field->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-
-            slang::BindingType type = fieldLayout->getBindingRangeType(0);
-            if (type == slang::BindingType::PushConstant)
-            {
-                LOG_I(m_indentation, "Push constants! {} set {} binding {}", field->getName(), descriptorSet, 0);
-            }
-
-            if (field->getType()->getKind() == TypeReflection::Kind::ConstantBuffer)
-            {
-                LOG_I(m_indentation, "Constant buffer layout not supported {}", field->getName());
-                //We'll only process parameterblocks
-                continue;
-            }
-
-            auto propertiesCount = fieldLayout->getFieldCount();
-
-            std::vector<DescriptorSetLayoutData*> layoutsPtr;
-
-            for (size_t i = 0; i < layoutsData.layoutData.size(); i++)
-            {
-                layoutsPtr.push_back(&layoutsData.layoutData[i]);
-            }
-
-            DescriptorSetLayoutData layoutData{};
-
-
-            bool layoutExists = boolinq::from(layoutsPtr).any([descriptorSet](const DescriptorSetLayoutData* l)
-            {
-                return l->SetNumber == descriptorSet;
-            });
-
-            auto bindless = field->getVariable()->findUserAttributeByName(m_globalSession, "Bindless");
-            bool isBindless = false;
-
-            if (bindless)
-            {
-                int v;
-                bindless->getArgumentValueInt(0, &v);
-                isBindless = bindless;
-            }
-
-            for (size_t j = 0; j < propertiesCount; j++)
-            {
-                auto property = fieldLayout->getFieldByIndex(j);
-
-                uint16_t bindingCount = 1;
-
-                if (property->getType()->getKind() == TypeReflection::Kind::Array)
-                {
-                    bindingCount = property->getTypeLayout()->getElementCount();
-                }
-
-                DescriptorBinding binding;
-
-                auto descriptorType = ToVk(property->getTypeLayout()->getBindingRangeType(0));
-                binding.set = static_cast<uint16_t>(descriptorSet);
-                binding.index = property->getBindingIndex();
-                binding.type = descriptorType;
-                binding.count = bindingCount;
-                binding.name = std::format("{}.{}", field->getName(), property->getName());
-
-                layoutsData.bindingsData.push_back(binding);
-
-                LOG_I(m_indentation, "Shader property: {}", property->getName());
-
-
-                VkDescriptorSetLayoutBinding layoutBinding = {};
-                layoutBinding.binding = binding.index;
-                layoutBinding.descriptorType = descriptorType;
-                layoutBinding.descriptorCount = bindingCount;
-                layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT |
-                    VK_SHADER_STAGE_COMPUTE_BIT; //TODO: Hack, but in all stages for now
-                layoutBinding.pImmutableSamplers = nullptr;
-                layoutData.Bindings.push_back(layoutBinding);
-            }
-            if (!layoutExists)
-            {
-                layoutData.SetNumber = descriptorSet;
-                layoutData.CreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                layoutData.CreateInfo.bindingCount = layoutData.Bindings.size();
-                //We might have issues here if the binding count doesn't consider the ones in vertex/fragment
-                layoutData.CreateInfo.pBindings = layoutData.Bindings.data();
-                layoutData.name = field->getName();
-                layoutData.bindless = isBindless;
-                layoutsData.layoutData.push_back(layoutData);
-
-                setsCount++;
-            }
-        }
-
-        layoutsData.setsCount = setsCount;
-    }
-
-
-
-    CumulativeOffset calculateCumulativeOffset(
-        slang::ParameterCategory layoutUnit,
-        AccessPath accessPath)
-    {
-        CumulativeOffset result;
-        // switch (layoutUnit)
-        // {
-        // // #### Layout Units That Don't Require Special Handling
-        // //
-        // default:
-        //     for (auto node = accessPath.leaf; node != nullptr; node = node->parent)
-        //     {
-        //         result.value += node->variableLayout->getOffset(layoutUnit);
-        //     }
-        //     break;
-        //
-        // // #### Bytes
-        // //
-        // case slang::ParameterCategory::Uniform:
-        //     for (auto node = accessPath.leaf; node != accessPath.deepestConstantBufer;
-        //          node = node->parent)
-        //     {
-        //         result.value += node->variableLayout->getOffset(layoutUnit);
-        //     }
-        //     break;
-        //
-        // // #### Layout Units That Care About Spaces
-        // //
-        // case slang::ParameterCategory::ConstantBuffer:
-        // case slang::ParameterCategory::ShaderResource:
-        // case slang::ParameterCategory::UnorderedAccess:
-        // case slang::ParameterCategory::SamplerState:
-        // case slang::ParameterCategory::DescriptorTableSlot:
-        //     for (auto node = accessPath.leaf; node != accessPath.deepestParameterBlock;
-        //          node = node->parent)
-        //     {
-        //         result.value += node->variableLayout->getOffset(layoutUnit);
-        //         result.space += node->variableLayout->getOffset(SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-        //     }
-        //     for (auto node = accessPath.deepestParameterBlock; node != nullptr; node = node->parent)
-        //     {
-        //         result.space += node->variableLayout->getOffset(
-        //             SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE);
-        //     }
-        //     break;
-        // }
-
-        return result;
-    }
-
-    CumulativeOffset ShaderObjectLayoutBuilder::CalculateCumulativeOffset(
-        slang::VariableLayoutReflection* variableLayout, slang::ParameterCategory layoutUnit, AccessPath accessPath)
-    {
-        CumulativeOffset result = calculateCumulativeOffset(layoutUnit, accessPath);
-        result.value += variableLayout->getOffset(layoutUnit);
-        result.space += variableLayout->getBindingSpace(layoutUnit);
-        return result;
     }
 
 
@@ -332,24 +198,38 @@ namespace Pudu
                 auto elementVarLayout = typeLayoutReflection->getElementVarLayout();
 
                 AccessPath innerOffsets = accessPath;
-                innerOffsets.deepestConstantBufer = innerOffsets.leaf;
-                if (containerVarLayout->getTypeLayout()->getSize(
-                    SLANG_PARAMETER_CATEGORY_SUB_ELEMENT_REGISTER_SPACE) != 0)
-                {
-                    innerOffsets.deepestParameterBlock = innerOffsets.leaf;
-                }
-
                 accessPath.rootBufferInfo = context->PushConstantBufferInfo();
+                accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
-
+                //Binding stack
                 Binding offsets;
-                if (kind == TypeReflection::Kind::ParameterBlock )
+                if (kind == TypeReflection::Kind::ParameterBlock)
                 {
-                    context->setIndex++;
-                    accessPath.setIndex = context->setIndex;
-                    accessPath.cumulativeOffset = &offsets;
-
                     VariableLayoutReflection* container = typeLayoutReflection->getContainerVarLayout();
+
+                    context->PushSetIndex();
+
+                    //Create New DescriptorSet
+                    {
+                        DescriptorSetLayoutInfo descriptorSetLayoutData;
+                        descriptorSetLayoutData.SetNumber = context->getSetIndex();
+                        descriptorSetLayoutData.name =accessPath.leaf->variableLayout->getName();
+                        descriptorSetLayoutData.CreateInfo.pBindings = descriptorSetLayoutData.Bindings.data();
+                        descriptorSetLayoutData.CreateInfo.flags = 0;
+
+                        if (auto bindlessAttribute = container->getVariable()->findUserAttributeByName(
+                            m_globalSession, "Bindless"))
+                        {
+                            int v;
+                            descriptorSetLayoutData.bindless = bindlessAttribute->getArgumentValueInt(0, &v);
+                        }
+
+                        context->shaderCompilationObject->descriptorsData.setsCount++;
+                        context->shaderCompilationObject->descriptorsData.layoutData.push_back(descriptorSetLayoutData);
+                    }
+
+                    accessPath.setIndex = context->getSetIndex();
+                    accessPath.cumulativeOffset = &offsets;
 
                     auto firstCategory = container->getCategoryByIndex(0);
                     auto categoryCount = container->getCategoryCount();
@@ -363,30 +243,36 @@ namespace Pudu
                     LOG_I(m_indentation, "First category: {}", PARAMETER_CATEGORY_NAMES.at(firstCategory));
                     if (firstCategory == slang::ParameterCategory::DescriptorTableSlot)
                     {
+                        //Implicitly allocated uniform buffer
                         accessPath.cumulativeOffset->PushIndex();
-                    }
+                        DescriptorBinding binding;
+                        binding.count = 1;
+                        binding.index = accessPath.cumulativeOffset->index;
+                        binding.setNumber = accessPath.setIndex;
+                        binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        binding.name = "CBuffer";
 
-                    auto bindless = container->getVariable()->findUserAttributeByName(m_globalSession, "Bindless");
-                    bool isBindless = false;
+                        accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
+                        accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
 
-                    if (bindless)
-                    {
-                        int v;
-                        bindless->getArgumentValueInt(0, &v);
-                        isBindless = bindless;
+                        context->PushBinding(binding);
                     }
                 }
                 else
                 {
                     //PUSH DESCRIPTOR SET FOR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
-                    LOG_I(m_indentation,"Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
+                    LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex,
+                          accessPath.cumulativeOffset->index);
                     DescriptorBinding binding;
-                    binding.set = accessPath.setIndex;
+                    binding.setNumber = accessPath.setIndex;
                     binding.index = accessPath.cumulativeOffset->index;
                     binding.count = 1;
                     binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    binding.name = "UniformBuffer";
+                    binding.name = typeLayoutReflection->getName();
+
+                    accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
+                    accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
                 }
 
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
@@ -394,31 +280,29 @@ namespace Pudu
             }
             break;
 
-            ///Here we should push a binding
+        ///Here we should push a binding
         case TypeReflection::Kind::Resource:
             {
-
                 auto element = typeLayoutReflection->getElementVarLayout();
 
-                auto offset = CalculateCumulativeOffset(element, SubElementRegisterSpace, accessPath);
                 accessPath.cumulativeOffset->PushIndex();
 
-                LOG_I(m_indentation, "{} Set: {} Binding: {}", element->getName() ? element->getName() : "", accessPath.setIndex,
+                LOG_I(m_indentation, "{} Set: {} Binding: {}", element->getName() ? element->getName() : "",
+                      accessPath.setIndex,
                       accessPath.cumulativeOffset->index);
                 auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
                 LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
 
-
                 DescriptorBinding binding;
                 binding.type = ToVk(typeLayoutReflection->getBindingRangeType(0));
                 binding.index = accessPath.cumulativeOffset->index;
-                binding.set = accessPath.setIndex;
+                binding.setNumber = accessPath.setIndex;
                 binding.count = 1;
-                binding.name = element->getName();
+                binding.name = typeLayoutReflection->getName();
                 context->PushBinding(binding);
             }
             break;
-            //Here we should push a binding
+        //Here we should push a binding
         case TypeReflection::Kind::Scalar:
         case TypeReflection::Kind::Vector:
         case TypeReflection::Kind::Matrix:
@@ -426,18 +310,23 @@ namespace Pudu
                 DescriptorBinding binding;
 
                 auto container = typeLayoutReflection->getContainerVarLayout();
-                LOG_I(m_indentation, "Container: {}",KIND_NAMES.at(container->getType()->getKind()));
+                LOG_I(m_indentation, "Container: {}", KIND_NAMES.at(container->getType()->getKind()));
 
-                auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
-                LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex,accessPath.cumulativeOffset->index);
-                LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
+                LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
             }
             break;
-            case TypeReflection::Kind::Array:
+        case TypeReflection::Kind::Array:
+            {
+                //TODO: How to handle array of resources?
+                auto arrayKind = accessPath.leaf->variableLayout->getType()->getElementType()->getKind();
+                LOG_I(m_indentation, "Array Kind {} ElementCount: {} Size {} :",KIND_NAMES.at(arrayKind) , typeLayoutReflection->getElementCount(),
+                      typeLayoutReflection->getSize());
+
+                if (arrayKind == TypeReflection::Kind::Resource)
                 {
-                    //TODO: How to handle array of resources?
-                  LOG_I(m_indentation, "Array ElementCount: {} Size:", typeLayoutReflection->getElementCount(), typeLayoutReflection->getSize());
+                    ParseVariableTypeLayout(typeLayoutReflection->unwrapArray(), context, accessPath);
                 }
+            }
             break;
 
         default: break;
@@ -472,16 +361,21 @@ namespace Pudu
 
             switch (category)
             {
-            case SubElementRegisterSpace:
+            case PushConstantBuffer:
                 {
+                    accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
+                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+                    accessPath.setIndex = 0;
+                    accessPath.rootBufferInfo->bindingIndex = 0;
+                    accessPath.rootBufferInfo->setNumber = 0;
+                    accessPath.rootBufferInfo->name = varLayout->getName();
                 }
                 break;
             case Uniform:
                 {
-                    auto [value, space] = CalculateCumulativeOffset(varLayout, category, accessPath);
-                    LOG_I(m_indentation, "Size:{} Set: {} Binding: {}", varLayout->getTypeLayout()->getSize(), accessPath.setIndex,
+                    LOG_I(m_indentation, "Size:{} Set: {} Binding: {}", varLayout->getTypeLayout()->getSize(),
+                          accessPath.setIndex,
                           0);
-
                     accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
                     LOG_I(m_indentation, "ConstantBufferSize {}", accessPath.rootBufferInfo->size);
                 }
@@ -492,7 +386,7 @@ namespace Pudu
             case slang::ParameterCategory::SamplerState:
             case slang::ParameterCategory::DescriptorTableSlot:
                 {
-                //    LOG_I(m_indentation, "set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
+                    //    LOG_I(m_indentation, "set: {} Binding: {}", accessPath.m_setIndex, accessPath.cumulativeOffset->index);
                 }
                 break;
             default: break;
@@ -500,7 +394,6 @@ namespace Pudu
         }
         m_indentation--;
     }
-
 
     void ShaderObjectLayoutBuilder::ParseScope(slang::VariableLayoutReflection* scopeVarLayout,
                                                ShaderLayoutBuilderContext* context, AccessPath accessPath)
@@ -511,6 +404,9 @@ namespace Pudu
         TypeLayoutReflection* scopeTypeLayout = scopeVarLayout->getTypeLayout();
 
         scopeOffsets.rootBufferInfo = context->PushConstantBufferInfo();
+        scopeOffsets.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+
+
         Binding cumulativeOffset;
         scopeOffsets.cumulativeOffset = &cumulativeOffset;
 
@@ -526,7 +422,6 @@ namespace Pudu
                 }
             }
             break;
-
         case TypeReflection::Kind::ConstantBuffer:
             {
                 //Constant buffer detected to add
@@ -536,7 +431,6 @@ namespace Pudu
                 ConstantBufferInfo constantBufferInfo;
             }
             break;
-
         case TypeReflection::Kind::ParameterBlock:
             LOG_I(m_indentation, "Parsing ParameterBlock");
             ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
@@ -563,15 +457,39 @@ namespace Pudu
         ParseScope(globalVarLayout, &context, rootOffsets);
 
         std::vector<ConstantBufferInfo> buffersToAllocate;
-        for (ConstantBufferInfo buffer : context.GetConstantBufferInfos())
+        std::vector<DescriptorSetLayoutInfo> descriptorSetsToAllocate;
+
+        auto& constantBuffers = *context.GetConstantBufferInfos();
+
+        for (auto& cbuffer : constantBuffers)
         {
-            if (buffer.size > 0)
+            if (cbuffer.size > 0)
             {
-                buffersToAllocate.push_back(buffer);
+                buffersToAllocate.push_back(cbuffer);
             }
         }
 
-        outCompilationObject.descriptorsData.setsCount = context.setIndex;
+        outCompilationObject.descriptorsData.setsCount = context.getSetIndex() + 1;
+
+
+        outCompilationObject.SetPushConstants(context.GetPushConstants());
         outCompilationObject.SetBuffersToAllocate(buffersToAllocate);
+
+        for (auto& binding : outCompilationObject.descriptorsData.bindingsData)
+        {
+            auto& layout = outCompilationObject.descriptorsData.layoutData[binding.setNumber];
+
+            layout.Bindings.push_back(binding.ToVKDescriptorSetLayoutBinding());
+        }
+
+        //Setup layout create info
+        for (auto& layout : outCompilationObject.descriptorsData.layoutData)
+        {
+            layout.CreateInfo.bindingCount = layout.Bindings.size();
+            layout.CreateInfo.pBindings = layout.Bindings.data();
+            layout.CreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            layout.CreateInfo.pNext = nullptr;
+            layout.CreateInfo.flags = 0;
+        }
     }
 } // Pudu

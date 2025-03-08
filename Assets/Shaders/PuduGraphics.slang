@@ -20,7 +20,6 @@ public struct GlobalsConstants
 
 public struct Globals
 {
-    public float myFancyValue;
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
@@ -52,8 +51,7 @@ public struct Test2
     Texture2D textureB;
     }
 
-public ParameterBlock<Test2> TEST2;
-public ParameterBlock<Test> TEST;
+
 public ParameterBlock<Globals> GLOBALS;
 
 [Bindless(true)]
@@ -61,7 +59,6 @@ public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]
 public UniformBufferObject UBO;
-
 
 #define PERSHADERBIND 2
 #define BIND(id) [[vk::binding(id, PERSHADERBIND)]]

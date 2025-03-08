@@ -9,11 +9,25 @@ namespace Pudu
     void ConstantBufferInfo::PushElement(Pudu::size elementSize)
     {
         constexpr f32 padding = 16.f;
-        this->size += static_cast<Pudu::size> (ceil(elementSize / padding)*padding);
+        this->size += static_cast<Pudu::size>(ceil(elementSize / padding) * padding);
     }
 
-    void ShaderCompilationObject::AddKernel(const char* name, ShaderKernel& kernel) {
+    void ShaderCompilationObject::AddKernel(const char* name, ShaderKernel& kernel)
+    {
         m_kernelsByName[name] = kernel;
     }
-}
 
+    void ShaderCompilationObject::SetPushConstants(const std::vector<ConstantBufferInfo>& buffers)
+    {
+        m_pushConstants = buffers;
+
+        for (const auto& buffer : m_pushConstants)
+        {
+            VkPushConstantRange pushConstant = {};
+            pushConstant.offset = buffer.offset;
+            pushConstant.size = buffer.size;
+            pushConstant.stageFlags = buffer.shaderStages;
+            m_pushConstantRanges.push_back(pushConstant);
+        }
+    }
+}

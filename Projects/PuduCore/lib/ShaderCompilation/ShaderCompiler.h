@@ -10,7 +10,7 @@ namespace Pudu {
 	class ShaderCompiler {
 	public:
 		void Init();
-		ShaderCompilationObject Compile(const char* path, std::vector<const char*> entryPoints, bool compute = false);
+		ShaderCompilationObject Compile(const char* path, std::vector<const char*> entryPoints, bool compute = false) const;
 
 	private:
 		Slang::ComPtr<ISession> m_session;

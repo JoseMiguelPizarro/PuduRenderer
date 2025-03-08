@@ -13,7 +13,6 @@ namespace Pudu
 				return binding;
 			}
 		}
-
 		return nullptr;
 	}
 }

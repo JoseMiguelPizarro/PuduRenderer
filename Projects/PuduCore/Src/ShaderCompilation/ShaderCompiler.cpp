@@ -3,23 +3,8 @@
 #include "ShaderCompilation/ShaderObjectLayoutBuilder.h"
 #include "ShaderCompilation/ShaderCompiler.h"
 #include "FileManager.h"
-#include <iostream>
-#include <boolinq.h>
 
 #include "Logger.h"
-
-using namespace boolinq;
-
-
-void PrintVariable(VariableReflection* variable) {
-	printf("%s", variable->getName());
-
-}
-
-void PrintType(TypeReflection* type) {
-	printf(type->getName());
-
-}
 
 namespace Pudu {
 	void ShaderCompiler::Init()
@@ -63,7 +48,7 @@ namespace Pudu {
 		}
 	}
 
-	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, std::vector<const char*> entryPoints, bool compute)
+	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, std::vector<const char*> entryPoints, bool compute) const
 	{
 		Slang::ComPtr<IBlob> diagnostics;
 		IModule* baseModule = m_session->loadModule("PuduGraphics.slang");
@@ -130,19 +115,5 @@ namespace Pudu {
 
 		return compiledData;
 	}
-
-
-
-	void Tab(uint32_t count) {
-		for (size_t i = 0; i < count; i++)
-		{
-			printf("%s", "\t");
-		}
-	}
-
-
-
 }
-
-
 

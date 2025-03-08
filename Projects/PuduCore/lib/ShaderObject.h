@@ -2,7 +2,7 @@
 
 #include "Texture.h"
 #include "Resources/GPUResource.h"
-#include "DescriptorSetLayoutData.h"
+#include "DescriptorSetLayoutInfo.h"
 
 namespace Pudu {
 
@@ -12,7 +12,7 @@ namespace Pudu {
 	class IShaderObject
 	{
 	public:
-		virtual DescriptorSetLayoutsData* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
+		virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
 		virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
 		virtual VkShaderModule GetModule() { return m_module; }
 		DescriptorBinding* GetBindingByName(const char* name);
@@ -38,7 +38,7 @@ namespace Pudu {
 		};
 
 		VkShaderModule m_module;
-		DescriptorSetLayoutsData m_descriptorLayoutsData;
+		DescriptorSetLayoutsCollection m_descriptorLayoutsData;
 		std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
 		std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
 		std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;

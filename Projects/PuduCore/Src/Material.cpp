@@ -147,7 +147,7 @@ namespace Pudu {
 		VkWriteDescriptorSet imageWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		imageWrite.descriptorCount = 1;
 		imageWrite.dstBinding = binding->index;
-		imageWrite.dstSet = target.descriptorSets[binding->set];
+		imageWrite.dstSet = target.descriptorSets[binding->setNumber];
 		imageWrite.pImageInfo = &imageInfo;
 		imageWrite.descriptorType = binding->type;
 
@@ -173,7 +173,7 @@ namespace Pudu {
 		VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		bufferWrite.descriptorCount = 1;
 		bufferWrite.dstBinding = binding->index;
-		bufferWrite.dstSet = target.descriptorSets[binding->set];
+		bufferWrite.dstSet = target.descriptorSets[binding->setNumber];
 		bufferWrite.pBufferInfo = &bufferInfo;
 		bufferWrite.descriptorType = binding->type;
 
@@ -208,7 +208,7 @@ namespace Pudu {
 			descriptorWrite.descriptorCount = 1;
 			descriptorWrite.dstArrayElement = texture->Handle();
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite.dstSet = settings.descriptorSets[binding->set];
+			descriptorWrite.dstSet = settings.descriptorSets[binding->setNumber];
 
 			descriptorWrite.dstBinding = binding->index;
 
@@ -222,7 +222,7 @@ namespace Pudu {
 			descriptorWrite.pImageInfo = &descriptorImageInfo;
 
 			currentWriteIndex++;
-			setIndex = binding->set;
+			setIndex = binding->setNumber;
 		}
 
 		settings.graphics->UpdateDescriptorSet(currentWriteIndex, descriptorWrites);
@@ -244,7 +244,7 @@ namespace Pudu {
 		VkWriteDescriptorSet bufferWrite = { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
 		bufferWrite.descriptorCount = 1;
 		bufferWrite.dstBinding = binding->index;
-		bufferWrite.dstSet = settings.descriptorSets[binding->set];
+		bufferWrite.dstSet = settings.descriptorSets[binding->setNumber];
 		// bufferWrite.pBufferInfo = &bufferInfo;
 
 		bufferWrite.descriptorType = binding->type;

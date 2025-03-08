@@ -1,8 +1,9 @@
 #pragma once
 #include <unordered_map>
 
-#include "DescriptorSetLayoutData.h"
+#include "DescriptorSetLayoutInfo.h"
 #include "ShaderCompilation/ShaderCompilationObject.h"
+#include "Resources/ConstantBufferInfo.h"
 
 namespace Pudu{
     struct ShaderKernel {
@@ -10,29 +11,25 @@ namespace Pudu{
         size codeSize;
     };
 
-    struct ConstantBufferInfo
-    {
-        size offset = 0;
-        size stride = 0;
-        size size = 0;
-        DescriptorSetLayout descriptorSetLayout;
-        void PushElement(size_t size);
-    };
-
 class ShaderCompilationObject {
     public:
-        DescriptorSetLayoutsData descriptorsData;
+        DescriptorSetLayoutsCollection descriptorsData;
         ShaderKernel* GetKernel(const char* name) { return &m_kernelsByName[name]; }
         void AddKernel(const char* name, ShaderKernel& kernel);
         std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges;}
         std::vector<ConstantBufferInfo>* GetConstantBuffers(){ return &m_constantBuffers;}
+        std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo(){ return &m_pushConstants;}
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) {m_constantBuffers = buffers;}
+        void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
+
+
 
     private:
-        friend class DescriptorsBuilder;
+        friend class ShaderObjectLayoutBuilder;
         std::unordered_map<std::string, ShaderKernel> m_kernelsByName;
         std::vector<VkPushConstantRange> m_pushConstantRanges;
         std::vector<ConstantBufferInfo> m_constantBuffers;
+        std::vector<ConstantBufferInfo> m_pushConstants;
 };
 }
 

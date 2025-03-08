@@ -1389,16 +1389,21 @@ namespace Pudu
 	}
 
 	//A descriptor set layout is the template of the resources that are needed for a given render pipeline
-	GPUResourceHandle<DescriptorSetLayout> PuduGraphics::CreateBindlessDescriptorSetLayout(DescriptorSetLayoutData& creationData)
+	GPUResourceHandle<DescriptorSetLayout> PuduGraphics::CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData)
 	{
+		ASSERT(!creationData.Bindings.empty(),"Trying to create descriptorsetlayout with 0 bindings name: {}",creationData.name.c_str());
+
 		LOG("CreateDescriptorSetLayout");
 		VkDescriptorBindingFlags bindlessFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT |
 			VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
 
-		std::array<VkDescriptorBindingFlags, 4> bindingFlags;
+		std::vector<VkDescriptorBindingFlags> bindingFlags;
+		bindingFlags.resize(creationData.Bindings.size());
 
-		bindingFlags[0] = bindlessFlags;
-		bindingFlags[1] = bindlessFlags;
+		for (uint32_t i = 0; i < creationData.Bindings.size(); ++i)
+		{
+			bindingFlags[i] = bindlessFlags;
+		}
 
 		for (auto& binding : creationData.Bindings)
 		{
@@ -1431,7 +1436,7 @@ namespace Pudu
 		return descriptorSetLayout->Handle();
 	}
 
-	GPUResourceHandle<DescriptorSetLayout> PuduGraphics::CreateDescriptorSetLayout(DescriptorSetLayoutData& data)
+	GPUResourceHandle<DescriptorSetLayout> PuduGraphics::CreateDescriptorSetLayout(DescriptorSetLayoutInfo& data)
 	{
 		auto descriptorSetLayout = m_resources.AllocateDescriptorSetLayout();
 
@@ -1561,7 +1566,7 @@ namespace Pudu
 	/// </summary>
 	/// <param name="layoutData"></param>
 	/// <param name="out"></param>
-	void PuduGraphics::CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutsData,
+	void PuduGraphics::CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutsData,
 		std::vector<GPUResourceHandle<DescriptorSetLayout>>& out)
 	{
 		for (auto& layoutData : layoutsData)
@@ -2658,6 +2663,8 @@ namespace Pudu
 		}
 
 		LOG_ERROR("Failed to find supported format!");
+
+		return VK_FORMAT_UNDEFINED;
 	}
 
 	GPUCommands PuduGraphics::BeginSingleTimeCommands()

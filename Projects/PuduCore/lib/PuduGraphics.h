@@ -265,9 +265,9 @@ namespace Pudu
 		void InitDebugUtilsObjectName();
 
 		GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
-		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutData& creationData);
-		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutData& creationData);
-		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
+		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
+		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
+		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
 
 		void CreateBindlessDescriptorPool();
 		void CreateFrames();

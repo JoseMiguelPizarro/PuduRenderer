@@ -7,7 +7,7 @@
 using namespace boolinq;
 
 namespace Pudu {
-	void SPIRVParser::GetDescriptorSetLayout(const char* entryPoint, const void* spirvData, uint32_t size, DescriptorSetLayoutsData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(const char* entryPoint, const void* spirvData, uint32_t size, DescriptorSetLayoutsCollection& outDescriptorSetLayoutData)
 	{
 		SpvReflectShaderModule module{};
 		SpvReflectResult result = spvReflectCreateShaderModule2(SPV_REFLECT_MODULE_FLAG_NONE, size, spirvData, &module);
@@ -20,7 +20,7 @@ namespace Pudu {
 
 		for (size_t setIndex = 0; setIndex < sets.size(); ++setIndex)
 		{
-			std::vector<DescriptorSetLayoutData*> layoutsPtr;
+			std::vector<DescriptorSetLayoutInfo*> layoutsPtr;
 
 			for (size_t i = 0; i < outDescriptorSetLayoutData.layoutData.size(); i++)
 			{
@@ -28,14 +28,14 @@ namespace Pudu {
 			}
 
 			const SpvReflectDescriptorSet& reflSet = *(sets[setIndex]);
-			DescriptorSetLayoutData layout{};
+			DescriptorSetLayoutInfo layout{};
 
 			//Create a proxy list that holds pointers to the sets in outDescriptorSetLayoutData, so we can return the pointer in the query
 			auto storedLayout = from(layoutsPtr)
-				.where([reflSet](const DescriptorSetLayoutData* l) {return l->SetNumber == reflSet.set; })
+				.where([reflSet](const DescriptorSetLayoutInfo* l) {return l->SetNumber == reflSet.set; })
 				.firstOrDefault(&layout);
 
-			bool layoutExists = from(layoutsPtr).any([reflSet](const DescriptorSetLayoutData* l) { return l->SetNumber == reflSet.set; });
+			bool layoutExists = from(layoutsPtr).any([reflSet](const DescriptorSetLayoutInfo* l) { return l->SetNumber == reflSet.set; });
 
 
 			for (uint32_t bindingIndex = 0; bindingIndex < reflSet.binding_count; ++bindingIndex) {
@@ -76,7 +76,7 @@ namespace Pudu {
 
 					DescriptorBinding binding;
 					binding.name = refl_binding.name;
-					binding.set = refl_binding.set;
+					binding.setNumber = refl_binding.set;
 					binding.index = refl_binding.binding;
 					binding.type = layoutBinding.descriptorType;
 
@@ -98,12 +98,12 @@ namespace Pudu {
 		spvReflectDestroyShaderModule(&module);
 	}
 
-	bool SortBySetNumber(DescriptorSetLayoutData a, DescriptorSetLayoutData b)
+	bool SortBySetNumber(DescriptorSetLayoutInfo a, DescriptorSetLayoutInfo b)
 	{
 		return a.SetNumber < b.SetNumber;
 	}
 
-	void SPIRVParser::GetDescriptorSetLayout(Shader* creationData, DescriptorSetLayoutsData& outDescriptorSetLayoutData)
+	void SPIRVParser::GetDescriptorSetLayout(Shader* creationData, DescriptorSetLayoutsCollection& outDescriptorSetLayoutData)
 	{
 		if (creationData->GetVertexDataSize()> 0)
 		{

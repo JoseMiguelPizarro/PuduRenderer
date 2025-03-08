@@ -3,19 +3,35 @@
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include "Resources/GPUResource.h"
-
+#include "Resources/ConstantBufferInfo.h"
 namespace Pudu {
 
+	//Represents a binding
 	struct DescriptorBinding
 	{
 		VkDescriptorType type;
 		u16 index = 0;
 		u16 count = 0;
-		u16 set = 0;
+		u16 setNumber = 0;
 
 		std::string name;
+		ConstantBufferInfo cbInfo;
+
+		VkDescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding() const
+		{
+			VkDescriptorSetLayoutBinding binding;
+			binding.binding = index;
+			binding.descriptorType = type;
+			binding.descriptorCount = count;
+			binding.stageFlags =VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT |
+					VK_SHADER_STAGE_COMPUTE_BIT; //TODO: Hack, but in all stages for now
+			binding.pImmutableSamplers = nullptr;
+
+			return binding;
+		}
 	}; // struct DescriptorBinding
 
+	//Represents an allocated descriptor set layout
 	struct DescriptorSetLayout :GPUResource<DescriptorSetLayout>
 	{
 		std::string name;
@@ -28,7 +44,8 @@ namespace Pudu {
 		u8 bindless = 0;
 	}; // struct DesciptorSetLayoutVulkan
 
-	struct DescriptorSetLayoutData {
+//Info used to create a DescriptorSetLayout
+	struct DescriptorSetLayoutInfo {
 		std::string name;
 		u32 SetNumber;
 		VkDescriptorSetLayoutCreateInfo CreateInfo;
@@ -36,8 +53,9 @@ namespace Pudu {
 		bool bindless;
 	};
 
-	struct DescriptorSetLayoutsData {
-		std::vector<DescriptorSetLayoutData> layoutData;
+	//Collection of Descriptor layout info and their bindings
+	struct DescriptorSetLayoutsCollection {
+		std::vector<DescriptorSetLayoutInfo> layoutData;
 		u16 setsCount;
 		std::vector<DescriptorBinding> bindingsData;
 	};
