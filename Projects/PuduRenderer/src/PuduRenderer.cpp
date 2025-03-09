@@ -133,7 +133,7 @@ namespace Pudu
         computeRP->SetGroupSize(groupSize, groupSize, 1);
 
         auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
-                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
         computeRP->SetShader(compute);
@@ -158,7 +158,7 @@ namespace Pudu
 
         auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(),
                                                              indirectCommands.data(),
-                                                             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                                             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
         auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
@@ -192,14 +192,14 @@ namespace Pudu
         //AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-        AddRenderPass(normalRP.get());
+      //  AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(drawGrassRP.get());
-        AddRenderPass(forwardColorCopyRP.get());
-        AddRenderPass(depthCopyRP.get());
-        AddRenderPass(transparentRP.get());
-        AddRenderPass(m_postProcessingRenderPass.get());
-        AddRenderPass(overlayRP.get());
+        // AddRenderPass(forwardColorCopyRP.get());
+        // AddRenderPass(depthCopyRP.get());
+        // AddRenderPass(transparentRP.get());
+        // AddRenderPass(m_postProcessingRenderPass.get());
+        // AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();
@@ -225,7 +225,7 @@ namespace Pudu
 
         m_globalPropertiesMaterial->ApplyProperties();
 
-        data.descriptorSetOffset = isFirstFrame ? 0 : 2;
+        data.descriptorSetOffset = 0;
         isFirstFrame = false;
         UpdateLightingBuffer(data);
         UpdateGlobalConstantsBuffer(data);

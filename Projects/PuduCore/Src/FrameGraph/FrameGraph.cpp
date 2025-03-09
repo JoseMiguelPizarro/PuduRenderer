@@ -1662,11 +1662,11 @@ namespace Pudu
             renderData.height = height;
 
             renderPass->PreRender(renderData);
-            renderPass->BeginRender(renderData);
             renderPass->SetupRender(renderData);
+            renderPass->BeginRender(renderData);
             renderPass->Render(renderData);
-            renderPass->AfterRender(renderData);
             renderPass->EndRender(renderData);
+            renderPass->AfterRender(renderData);
             //TODO: IMPLEMENT MARKERS
         }
     }
