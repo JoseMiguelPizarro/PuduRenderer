@@ -16,6 +16,8 @@ public struct GlobalsConstants
     public float farPlane;
     public float3 cameraPosWS;
     public float time;
+    public float4x4 proj;
+    public float4x4 view;
 }
 
 public struct Globals
@@ -79,4 +81,13 @@ public float3 DecodeNormal(float2 n)
 public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
 {
     return v.x*t + v.y*n + v.z*bt;
+}
+
+public float4x4 GetViewMatrix(){
+    return GLOBALS.constants.view;
+    }
+
+public float4x4 GetProjectionMatrix()
+{
+    return GLOBALS.constants.proj;
 }

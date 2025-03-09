@@ -8,4 +8,6 @@ struct GlobalConstants
       float farPlane;
       glm::vec3 cameraPosWS;
       float time;
+      mat4 viewMatrix;
+      mat4 projectionMatrix;
 };

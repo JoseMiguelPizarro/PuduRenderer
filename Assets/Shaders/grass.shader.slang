@@ -39,9 +39,11 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
         vertexPos = float3(a * (1 - triangleId) + b * triangleId, a * triangleId + b * (1 - triangleId) + stripeId, 0);
     }
 
-    float3 forward = float3(UBO.view[0][2], UBO.view[1][2], UBO.view[2][2]);
-    float3 right = float3(UBO.view[0][0], UBO.view[1][0], UBO.view[2][0]);
-    float3 up = float3(UBO.view[0][1], UBO.view[1][1], UBO.view[2][1]);
+    var viewMatrix = GetViewMatrix();
+    var projMatrix = GetProjectionMatrix();
+    float3 forward = float3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
+    float3 right = float3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+    float3 up = float3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
 
     float4x4 billBoard = {
         float4(right, 0),
@@ -69,7 +71,7 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
 
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.shadowCoords = GetShadowCoord(GLOBALS.lightingBuffer.shadowMatrix, GLOBALS.lightingBuffer.lightMatrix, float4(pos, 1));
-    output.PosCS = mul(UBO.proj, mul(UBO.view, float4(pos, 1)));
+    output.PosCS = mul(projMatrix, mul(viewMatrix, float4(pos, 1)));
 
     output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind)*5.);
 
@@ -81,7 +83,8 @@ float4 fragmentMain(GrassVertexOutput input)
     : SV_Target
 {
     float4 col = input.color;
-    float3 viewPos = float3(UBO.view._14, UBO.view._24, UBO.view._34);
+    var viewMatrix = GetViewMatrix();
+    float3 viewPos = float3(viewMatrix._14, viewMatrix._24, viewMatrix._34);
     float d = 1. - saturate(distance(input.posWS.xyz, viewPos) / 80.f);
     float shadow = saturate(FilterPCF(input.shadowCoords / input.shadowCoords.w, GLOBALS.shadowMap) + 0.5);
 

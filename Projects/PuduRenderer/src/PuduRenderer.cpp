@@ -252,6 +252,8 @@ namespace Pudu
         globalConstants.nearPlane = frame.camera->Projection.nearPlane;
         globalConstants.cameraPosWS = frame.camera->Transform.GetLocalPosition();
         globalConstants.time = frame.app->Time.Time();
+        globalConstants.viewMatrix = frame.camera->GetViewMatrix();
+        globalConstants.projectionMatrix = frame.camera->Projection.GetProjectionMatrix();
 
         graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
     }

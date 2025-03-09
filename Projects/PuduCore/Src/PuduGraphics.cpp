@@ -2261,8 +2261,6 @@ namespace Pudu
 		UniformBufferObject ubo{};
 
 		ubo.modelMatrix = drawCall.TransformMatrix;
-		ubo.viewMatrix = cam->GetViewMatrix();
-		ubo.ProjectionMatrix = cam->Projection.GetProjectionMatrix();
 
 		if (drawCall.GetRenderMaterial()->m_shader->HasFragmentData())
 		{

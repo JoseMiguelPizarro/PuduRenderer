@@ -4,8 +4,6 @@ using namespace glm;
 
 struct UniformBufferObject {
 	mat4 modelMatrix;
-	mat4 viewMatrix;
-	mat4 ProjectionMatrix;
 	uint32_t materialId;
 	float time;
 };

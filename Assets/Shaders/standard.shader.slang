@@ -39,7 +39,7 @@ float4 GetLighting(float3 normal, float3 lightDirection)
 VSOut vertexMain(VertexInput input)
 {
     VSOut output = (VSOut)0.0;
-    output.PosCS = mul(UBO.proj, mul(UBO.view, mul(UBO.model, float4(input.Position, 1.0))));
+    output.PosCS = mul(GetProjectionMatrix(), mul(GetViewMatrix(), mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);
@@ -66,7 +66,8 @@ float4 fragmentMain(VSOut input)
     float4 col = pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), GLOBALS.lightingBuffer.lightDirection.xyz);
     col = lerp(col, float4(0.2, 0.2, 0.3, 1.0), 1 - shadow);
 
-    float3 viewPos = float3(UBO.view._14, UBO.view._24, UBO.view._34);
+    var viewMatrix = GetViewMatrix();
+    float3 viewPos = float3(viewMatrix._14, viewMatrix._24, viewMatrix._34);
     float d = 1. - saturate(distance(input.PosWS.xyz, viewPos) / 80.f);
 
     float3 normalColor = GLOBALS.normalBuffer.Sample(suv).xyz;

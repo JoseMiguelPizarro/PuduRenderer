@@ -8,8 +8,6 @@ namespace Pudu
 		auto pipeline = GetPipeline({ .renderPass = this, .shader = m_material->GetShader().get(),.renderer = frameData.renderer, });
 
 		UniformBufferObject ubo;
-		ubo.ProjectionMatrix = frameData.camera->Projection.GetProjectionMatrix();
-		ubo.viewMatrix = frameData.camera->GetViewMatrix();
 		ubo.time = frameData.graphics->GetTime()->Time();
 		commands->PushConstants(pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(UniformBufferObject), &ubo);
 
