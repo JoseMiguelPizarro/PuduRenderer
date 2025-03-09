@@ -40,6 +40,7 @@ namespace Pudu
         DescriptorSetLayoutInfo* descriptorSetLayout = nullptr;
         size_t setIndex = -1;
         Binding* cumulativeOffset;
+        bool isPushConstant = false;
 
 
         void Print() const;

@@ -88,7 +88,8 @@ namespace Pudu
         switch (slangBindingType)
         {
         default:
-            std::fprintf(stderr, "Assertion failed: %s %s\n", "Unsupported binding type!", BINDING_NAMES.at(slangBindingType));
+            std::fprintf(stderr, "Assertion failed: %s %s\n", "Unsupported binding type!",
+                         BINDING_NAMES.at(slangBindingType));
         //std::abort();
             return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
@@ -199,7 +200,8 @@ namespace Pudu
 
                 AccessPath innerOffsets = accessPath;
                 accessPath.rootBufferInfo = context->PushConstantBufferInfo();
-                accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+                accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+                    VK_SHADER_STAGE_COMPUTE_BIT;
 
                 //Binding stack
                 Binding offsets;
@@ -213,7 +215,7 @@ namespace Pudu
                     {
                         DescriptorSetLayoutInfo descriptorSetLayoutData;
                         descriptorSetLayoutData.SetNumber = context->getSetIndex();
-                        descriptorSetLayoutData.name =accessPath.leaf->variableLayout->getName();
+                        descriptorSetLayoutData.name = accessPath.leaf->variableLayout->getName();
                         descriptorSetLayoutData.CreateInfo.pBindings = descriptorSetLayoutData.Bindings.data();
                         descriptorSetLayoutData.CreateInfo.flags = 0;
 
@@ -258,7 +260,7 @@ namespace Pudu
                         context->PushBinding(binding);
                     }
                 }
-                else
+                else if(!accessPath.isPushConstant)
                 {
                     //PUSH DESCRIPTOR SET FOR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
@@ -321,7 +323,8 @@ namespace Pudu
             {
                 //TODO: How to handle array of resources?
                 auto arrayKind = accessPath.leaf->variableLayout->getType()->getElementType()->getKind();
-                LOG_I(m_indentation, "Array Kind {} ElementCount: {} Size {} :",KIND_NAMES.at(arrayKind) , typeLayoutReflection->getElementCount(),
+                LOG_I(m_indentation, "Array Kind {} ElementCount: {} Size {} :", KIND_NAMES.at(arrayKind),
+                      typeLayoutReflection->getElementCount(),
                       typeLayoutReflection->getSize());
 
                 if (arrayKind == TypeReflection::Kind::Resource)
@@ -345,7 +348,6 @@ namespace Pudu
 
         ParseVariableOffsets(varLayout, context, static_cast<AccessPath>(varPath));
 
-        ParseVariableTypeLayout(varLayout->getTypeLayout(), context, static_cast<AccessPath>(varPath));
         m_indentation--;
     }
 
@@ -366,11 +368,15 @@ namespace Pudu
             case PushConstantBuffer:
                 {
                     accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
-                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+                        | VK_SHADER_STAGE_COMPUTE_BIT;
                     accessPath.setIndex = 0;
+                    accessPath.cumulativeOffset->PushIndex();
                     accessPath.rootBufferInfo->bindingIndex = 0;
                     accessPath.rootBufferInfo->setNumber = 0;
                     accessPath.rootBufferInfo->name = varLayout->getName();
+
+                    accessPath.isPushConstant = true;
                 }
                 break;
             case Uniform:
@@ -394,6 +400,9 @@ namespace Pudu
             default: break;
             }
         }
+
+        ParseVariableTypeLayout(varLayout->getTypeLayout(), context, static_cast<AccessPath>(accessPath));
+
         m_indentation--;
     }
 
@@ -406,7 +415,8 @@ namespace Pudu
         TypeLayoutReflection* scopeTypeLayout = scopeVarLayout->getTypeLayout();
 
         scopeOffsets.rootBufferInfo = context->PushConstantBufferInfo();
-        scopeOffsets.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+        scopeOffsets.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+            VK_SHADER_STAGE_COMPUTE_BIT;
 
 
         Binding cumulativeOffset;
@@ -480,8 +490,8 @@ namespace Pudu
         for (auto& binding : outCompilationObject.descriptorsData.bindingsData)
         {
             ASSERT(binding.setNumber < outCompilationObject.descriptorsData.layoutData.size(),
-                "Binding set out of bounds name: {} set: {}",
-                binding.name, binding.setNumber);
+                   "Binding set out of bounds name: {} set: {}",
+                   binding.name, binding.setNumber);
             auto& layout = outCompilationObject.descriptorsData.layoutData[binding.setNumber];
 
             layout.Bindings.push_back(binding.ToVKDescriptorSetLayoutBinding());

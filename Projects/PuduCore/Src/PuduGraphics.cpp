@@ -841,6 +841,9 @@ namespace Pudu
 				//For now just pick the first suitable device, later we can pick the most fancy one
 				VkPhysicalDeviceProperties2 deviceProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
 				VkPhysicalDeviceFeatures2 deviceFeatures{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+
+				deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
+
 				VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
 				indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
@@ -929,6 +932,7 @@ namespace Pudu
 		deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 		deviceFeatures.features.samplerAnisotropy = VK_TRUE;
 		deviceFeatures.features.multiDrawIndirect = VK_TRUE;
+		deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
 
 		VkPhysicalDeviceSynchronization2Features syncFeatures{};
 		syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
@@ -2792,7 +2796,6 @@ namespace Pudu
 	{
 		VkPhysicalDeviceProperties2 deviceProperties{};
 		deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-
 
 		void* currentPNext = nullptr;
 
