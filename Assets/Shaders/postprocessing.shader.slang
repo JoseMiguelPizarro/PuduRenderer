@@ -40,7 +40,7 @@ float4 fragmentMain(VSOut input)
 
     float chromatic = 1.;
     float depth =LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r);
-    mask *= saturate((1-depth));
+  //  mask *= saturate((1-depth));
     float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
     float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)).y;
     float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01)*chromatic, mask)).z;

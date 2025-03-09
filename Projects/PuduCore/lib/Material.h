@@ -58,6 +58,7 @@ namespace Pudu {
 		static void ApplyBuffer(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
 		static void ApplyTextureArray(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
 		static void ApplyVectorValue(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
+		static void ApplyFloatValue(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
 	};
 
 	class Material final :public GPUResource<Material>

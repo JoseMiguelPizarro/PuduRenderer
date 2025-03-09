@@ -251,6 +251,11 @@ namespace Pudu {
 		// target.graphics->UpdateDescriptorSet(1, &bufferWrite);
 	}
 
+	void ShaderPropertiesBlock::ApplyFloatValue(PropertyUpdateRequest& request,
+		const MaterialApplyPropertyGPUTarget& settings)
+	{
+	}
+
 	Material::Material(PuduGraphics* graphics)
 	{
 		this->Create(graphics);

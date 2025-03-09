@@ -8,8 +8,6 @@ struct WaterMaterial
 {
     Sampler2D normalTex;
     SamplerCube skyTex;
-    float intensity = 1.;
-    float2 value2  = float2(0,0);
 }
 
 
@@ -104,8 +102,7 @@ float4 fragmentMain(VSOut input)
 
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
 
-    c = (c)*(shadow) * material.intensity;
+    c = (c)*(shadow) * .85;
 
-    //c = normal;
     return float4(c,1.);
 }
