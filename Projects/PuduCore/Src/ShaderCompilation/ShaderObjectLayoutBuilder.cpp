@@ -227,7 +227,8 @@ namespace Pudu
                         }
 
                         context->shaderCompilationObject->descriptorsData.setsCount++;
-                        context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(descriptorSetLayoutInfo);
+                        context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
+                            descriptorSetLayoutInfo);
                     }
 
                     accessPath.setIndex = context->getSetIndex();
@@ -252,7 +253,7 @@ namespace Pudu
                         binding.index = accessPath.cumulativeOffset->index;
                         binding.setNumber = accessPath.setIndex;
                         binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                        binding.name = accessPath.leaf->variableLayout->getName();
+                        binding.name = "_CBuffer";
 
                         accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
                         accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
@@ -260,7 +261,7 @@ namespace Pudu
                         context->PushBinding(binding);
                     }
                 }
-                else if(!accessPath.isPushConstant)
+                else if (!accessPath.isPushConstant)
                 {
                     //PUSH DESCRIPTOR SET FOR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
@@ -302,7 +303,7 @@ namespace Pudu
                 binding.index = accessPath.cumulativeOffset->index;
                 binding.setNumber = accessPath.setIndex;
                 binding.count = 1;
-                binding.name = typeLayoutReflection->getName();
+                binding.name = accessPath.leaf->variableLayout->getName();
                 context->PushBinding(binding);
             }
             break;
@@ -500,7 +501,8 @@ namespace Pudu
         //Setup layout create info
         for (auto& layout : outCompilationObject.descriptorsData.setLayoutInfos)
         {
-            ASSERT(layout.Bindings.size() <=16, "Maximum binding count exceded for layout: {} bindings count: {}",layout.name, layout.Bindings.size() );
+            ASSERT(layout.Bindings.size() <= 16, "Maximum binding count exceded for layout: {} bindings count: {}",
+                   layout.name, layout.Bindings.size());
             layout.CreateInfo.bindingCount = layout.Bindings.size();
             layout.CreateInfo.pBindings = layout.Bindings.data();
             layout.CreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

@@ -11,15 +11,22 @@ namespace Pudu
 {
     DescriptorBinding* DescriptorSetLayoutsCollection::GetBindingByName(const char* name)
     {
-        const auto v = (std::ranges::find_if(bindingsData, [&name](const DescriptorBinding& binding)
+        for (auto& binding : bindingsData)
         {
-            return !strcmp(name, binding.name.c_str());
-        }));
+            if (strcmp(binding.name.c_str(), name) == 0)
+                return &binding;
+        }
+        // const auto v = (std::ranges::find_if(bindingsData, [&name](const DescriptorBinding& binding)
+        // {
+        //     return !strcmp(name, binding.name.c_str());
+        // }));
+        //
+        // if (v == bindingsData.end())
+        //     return nullptr;
+        //
+        // return v.operator->();
 
-        if (v == bindingsData.end())
-            return nullptr;
-
-        return v.operator->();
+        return nullptr;
     }
 
     std::vector<SPtr<DescriptorSetLayout>>* DescriptorSetLayoutsCollection::GetDescriptorSetLayouts()
