@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
 
-#include "DescriptorSetLayoutInfo.h"
+#include "DescriptorSetLayoutCollection.h"
 #include "ShaderCompilation/ShaderCompilationObject.h"
 #include "Resources/ConstantBufferInfo.h"
 

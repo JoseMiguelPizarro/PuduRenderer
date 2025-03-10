@@ -34,6 +34,7 @@ namespace Pudu
 		SPtr<GraphicsBuffer> m_lightingBuffer;
 		SPtr<GraphicsBuffer> m_globalConstantsBuffer;
 		SPtr<Material> m_globalPropertiesMaterial;
+		SPtr<DescriptorSetLayoutsCollection> m_globalDescriptorSetLayouts;
 	};
 }
 

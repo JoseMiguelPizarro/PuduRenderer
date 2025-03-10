@@ -48,7 +48,7 @@ namespace Pudu {
 		}
 	}
 
-	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, std::vector<const char*> entryPoints, bool compute) const
+	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, const std::vector<const char*>& entryPoints, bool compute) const
 	{
 		Slang::ComPtr<IBlob> diagnostics;
 		IModule* baseModule = m_session->loadModule("PuduGraphics.slang");
@@ -112,6 +112,41 @@ namespace Pudu {
 			compiledData.AddKernel(entryPoints[i], kernelData);
 			PrintDiagnostics(diagnostics);
 		}
+
+		return compiledData;
+	}
+
+	ShaderCompilationObject ShaderCompiler::CompileModule(const fs::path& path)
+	{
+		ASSERT(!path.empty(),"Cannot compile module. Path is empty");
+		Slang::ComPtr<IBlob> diagnostics;
+		IModule* module = m_session->loadModule(path.string().c_str(), diagnostics.writeRef());
+
+		PrintDiagnostics(diagnostics);
+
+		std::vector<IComponentType*> components = {};
+
+		components.push_back(module);
+
+		Slang::ComPtr<IComponentType> program;
+		m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(), diagnostics.writeRef());
+
+		PrintDiagnostics(diagnostics);
+
+		slang::ProgramLayout* layout = program->getLayout();
+
+		Slang::ComPtr<IComponentType> linkedProgram;
+		program->link(linkedProgram.writeRef(), diagnostics.writeRef());
+
+		PrintDiagnostics(diagnostics);
+		//Global
+		LOG("Global scope : {}", path.string().c_str());
+		ShaderCompilationObject compiledData;
+		ShaderObjectLayoutBuilder layoutBuilder;
+		layoutBuilder.m_globalSession = m_globalSession;
+		layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
+
+		PrintDiagnostics(diagnostics);
 
 		return compiledData;
 	}

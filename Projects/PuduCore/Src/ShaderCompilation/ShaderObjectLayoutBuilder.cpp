@@ -213,21 +213,21 @@ namespace Pudu
 
                     //Create New DescriptorSet
                     {
-                        DescriptorSetLayoutInfo descriptorSetLayoutData;
-                        descriptorSetLayoutData.SetNumber = context->getSetIndex();
-                        descriptorSetLayoutData.name = accessPath.leaf->variableLayout->getName();
-                        descriptorSetLayoutData.CreateInfo.pBindings = descriptorSetLayoutData.Bindings.data();
-                        descriptorSetLayoutData.CreateInfo.flags = 0;
+                        DescriptorSetLayoutInfo descriptorSetLayoutInfo;
+                        descriptorSetLayoutInfo.SetNumber = context->getSetIndex();
+                        descriptorSetLayoutInfo.name = accessPath.leaf->variableLayout->getName();
+                        descriptorSetLayoutInfo.CreateInfo.pBindings = descriptorSetLayoutInfo.Bindings.data();
+                        descriptorSetLayoutInfo.CreateInfo.flags = 0;
 
                         if (auto bindlessAttribute = container->getVariable()->findUserAttributeByName(
                             m_globalSession, "Bindless"))
                         {
                             int v;
-                            descriptorSetLayoutData.bindless = bindlessAttribute->getArgumentValueInt(0, &v);
+                            descriptorSetLayoutInfo.bindless = bindlessAttribute->getArgumentValueInt(0, &v);
                         }
 
                         context->shaderCompilationObject->descriptorsData.setsCount++;
-                        context->shaderCompilationObject->descriptorsData.layoutData.push_back(descriptorSetLayoutData);
+                        context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(descriptorSetLayoutInfo);
                     }
 
                     accessPath.setIndex = context->getSetIndex();
@@ -489,16 +489,16 @@ namespace Pudu
 
         for (auto& binding : outCompilationObject.descriptorsData.bindingsData)
         {
-            ASSERT(binding.setNumber < outCompilationObject.descriptorsData.layoutData.size(),
+            ASSERT(binding.setNumber < outCompilationObject.descriptorsData.setLayoutInfos.size(),
                    "Binding set out of bounds name: {} set: {}",
                    binding.name, binding.setNumber);
-            auto& layout = outCompilationObject.descriptorsData.layoutData[binding.setNumber];
+            auto& layout = outCompilationObject.descriptorsData.setLayoutInfos[binding.setNumber];
 
             layout.Bindings.push_back(binding.ToVKDescriptorSetLayoutBinding());
         }
 
         //Setup layout create info
-        for (auto& layout : outCompilationObject.descriptorsData.layoutData)
+        for (auto& layout : outCompilationObject.descriptorsData.setLayoutInfos)
         {
             ASSERT(layout.Bindings.size() <=16, "Maximum binding count exceded for layout: {} bindings count: {}",layout.name, layout.Bindings.size() );
             layout.CreateInfo.bindingCount = layout.Bindings.size();

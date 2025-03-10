@@ -52,11 +52,4 @@ namespace Pudu {
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;
 		bool bindless;
 	};
-
-	//Collection of Descriptor layout info and their bindings
-	struct DescriptorSetLayoutsCollection {
-		std::vector<DescriptorSetLayoutInfo> layoutData;
-		u16 setsCount;
-		std::vector<DescriptorBinding> bindingsData;
-	};
 }

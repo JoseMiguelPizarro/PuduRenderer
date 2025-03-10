@@ -209,7 +209,8 @@ namespace Pudu
 		void EndDrawFrame();
 		UniformBufferObject GetUniformBufferObject(Camera* cam, DrawCall& drawCall);
 		//SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
-		SPtr<Shader> CreateShader(fs::path shaderPath , const char* name);
+		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
+		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		SPtr<RenderTexture> GetRenderTexture();

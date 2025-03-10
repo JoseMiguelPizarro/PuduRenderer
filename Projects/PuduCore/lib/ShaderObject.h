@@ -3,46 +3,49 @@
 #include "Texture.h"
 #include "Resources/GPUResource.h"
 #include "DescriptorSetLayoutInfo.h"
+#include "IDescriptorProvider.h"
+#include "DescriptorSetLayoutCollection.h"
 
-namespace Pudu {
+namespace Pudu
+{
+    class Pipeline;
+    class RenderPass;
 
-	class Pipeline;
-	class RenderPass;
+    class IShaderObject : public IDescriptorProvider
+    {
+    public:
+        virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
+        virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
+        virtual VkShaderModule GetModule() { return m_module; }
+        DescriptorBinding* GetBindingByName(const char* name) override;
+        std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override { return &descriptorSetLayouts; };
+        virtual void SetName(const char* name) = 0;
+        virtual const char* GetName() = 0;
 
-	class IShaderObject
-	{
-	public:
-		virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
-		virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
-		virtual VkShaderModule GetModule() { return m_module; }
-		DescriptorBinding* GetBindingByName(const char* name);
-		virtual void SetName(const char* name) = 0;
-		virtual const char* GetName() = 0;
+        VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override { return m_VkDescriptorSetLayouts.data(); }
+        u32 GetActiveLayoutCount() const { return numActiveLayouts; }
 
-		VkDescriptorSetLayout* GetVkDescriptorSetLayouts(){return m_VkDescriptorSetLayouts.data();}
-		uint32_t GetActiveLayoutCount(){return numActiveLayouts;}
+    protected:
+        friend class PuduGraphics;
 
+        void SetDescriptorSetLayouts(const std::vector<SPtr<DescriptorSetLayout>>& layouts)
+        {
+            descriptorSetLayouts = layouts;
 
-	protected:
-		friend class PuduGraphics;
-		void SetDescriptorSetLayouts(std::vector<SPtr<DescriptorSetLayout>> layouts)
-		{
-			descriptorSetLayouts = layouts;
+            for (const auto& layout : descriptorSetLayouts)
+            {
+                m_VkDescriptorSetLayouts.push_back(layout->vkHandle);
+            }
 
-			for (const auto& layout: descriptorSetLayouts)
-			{
-				m_VkDescriptorSetLayouts.push_back(layout->vkHandle);
-			}
+            numActiveLayouts = descriptorSetLayouts.size();
+        }
 
-			numActiveLayouts = descriptorSetLayouts.size();
-		};
+        VkShaderModule m_module;
+        DescriptorSetLayoutsCollection m_descriptorLayoutsData;
+        std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
+        std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
+        std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
 
-		VkShaderModule m_module;
-		DescriptorSetLayoutsCollection m_descriptorLayoutsData;
-		std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
-		std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
-		std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
-
-		uint32_t numActiveLayouts;
-	};
+        uint32_t numActiveLayouts;
+    };
 }

@@ -4,6 +4,8 @@
 #include <vulkan/vulkan_core.h>
 #include <glm/fwd.hpp>
 #include <vector>
+
+#include "DescriptorSetLayoutCollection.h"
 #include "PuduCore.h"
 #include "DescriptorSetLayoutInfo.h"
 #include "GPUResource.h"

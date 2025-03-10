@@ -22,9 +22,9 @@ namespace Pudu {
 		{
 			std::vector<DescriptorSetLayoutInfo*> layoutsPtr;
 
-			for (size_t i = 0; i < outDescriptorSetLayoutData.layoutData.size(); i++)
+			for (size_t i = 0; i < outDescriptorSetLayoutData.setLayoutInfos.size(); i++)
 			{
-				layoutsPtr.push_back(&outDescriptorSetLayoutData.layoutData[i]);
+				layoutsPtr.push_back(&outDescriptorSetLayoutData.setLayoutInfos[i]);
 			}
 
 			const SpvReflectDescriptorSet& reflSet = *(sets[setIndex]);
@@ -90,11 +90,11 @@ namespace Pudu {
 				layout.CreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 				layout.CreateInfo.bindingCount = reflSet.binding_count; //We might have issues here if the binding count doesn't consider the ones in vertex/fragment
 				layout.CreateInfo.pBindings = layout.Bindings.data();
-				outDescriptorSetLayoutData.layoutData.push_back(layout);
+				outDescriptorSetLayoutData.setLayoutInfos.push_back(layout);
 			}
 		}
 
-		outDescriptorSetLayoutData.setsCount = outDescriptorSetLayoutData.layoutData.size();
+		outDescriptorSetLayoutData.setsCount = outDescriptorSetLayoutData.setLayoutInfos.size();
 		spvReflectDestroyShaderModule(&module);
 	}
 
@@ -115,6 +115,6 @@ namespace Pudu {
 			GetDescriptorSetLayout(creationData->GetFragmentEntryPoint(), creationData->GetFragmentData(), creationData->GetFragmentDataSize(), outDescriptorSetLayoutData);
 		}
 
-		std::sort(outDescriptorSetLayoutData.layoutData.begin(), outDescriptorSetLayoutData.layoutData.end(), SortBySetNumber);
+		std::sort(outDescriptorSetLayoutData.setLayoutInfos.begin(), outDescriptorSetLayoutData.setLayoutInfos.end(), SortBySetNumber);
 	}
 }

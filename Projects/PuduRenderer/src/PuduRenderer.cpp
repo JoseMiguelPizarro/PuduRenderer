@@ -26,6 +26,9 @@ namespace Pudu
         this->app = app;
 
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
+        //Load Globals
+        m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphics.slang"));
+        m_globalPropertiesMaterial->SetDescriptorProvider(m_globalDescriptorSetLayouts);
 
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
@@ -207,8 +210,6 @@ namespace Pudu
 
         std::printf(frameGraph.ToString().c_str());
 
-        m_globalPropertiesMaterial->SetShader(grassShader);
-
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthCopyRT);
@@ -222,10 +223,9 @@ namespace Pudu
     void PuduRenderer::OnRender(RenderFrameData& data)
     {
         data.globalPropertiesMaterial = m_globalPropertiesMaterial;
-
         m_globalPropertiesMaterial->ApplyProperties();
 
-        data.descriptorSetOffset = 0;
+        data.descriptorSetOffset = m_globalDescriptorSetLayouts->setsCount;
         isFirstFrame = false;
         UpdateLightingBuffer(data);
         UpdateGlobalConstantsBuffer(data);

@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "ShaderCompilationObject.h"
 #include "ShaderObject.h"
+#include "DescriptorSetLayoutCollection.h"
 
 namespace Pudu
 {

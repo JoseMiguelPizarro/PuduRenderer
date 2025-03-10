@@ -36,7 +36,7 @@ namespace Pudu {
 	struct MaterialApplyPropertyGPUTarget
 	{
 		PuduGraphics* graphics;
-		IShaderObject* shader;
+		IDescriptorProvider* descriptorProvider;
 		VkDescriptorSet* descriptorSets;
 		GPUCommands* commands;
 	};
@@ -67,6 +67,8 @@ namespace Pudu {
 		explicit Material(PuduGraphics* graphics);
 		std::string Name;
 		void SetShader(SPtr<Shader> shader);
+		void SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider);
+		void CreateDescriptorSets(const std::vector<SPtr<DescriptorSetLayout>>& layouts);
 		SPtr<Shader> GetShader(){return m_shader;}
 		ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
 		void ApplyProperties();
@@ -75,6 +77,7 @@ namespace Pudu {
 		void SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture);
 		void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
 		void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
+
 		VkDescriptorSet* GetDescriptorSets() {return m_descriptorSets;};
 
 	private:
@@ -82,6 +85,7 @@ namespace Pudu {
 		friend class RenderPass;
 		SPtr<Shader> m_shader;
 		ShaderPropertiesBlock m_propertiesBlock;
+		SPtr<IDescriptorProvider> m_descriptorProvider;
 		VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
 
 	};
