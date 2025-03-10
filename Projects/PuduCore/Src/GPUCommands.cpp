@@ -186,12 +186,11 @@ namespace Pudu
         vkCmdEndRendering(vkHandle);
     }
 
-    void GPUCommands::BindPipeline(Pipeline* pipeline)
+    void GPUCommands::BindPipeline(const Pipeline* pipeline)
     {
         vkCmdBindPipeline(vkHandle, pipeline->vkPipelineBindPoint, pipeline->vkHandle);
 
         // Cache pipeline
-        currentPipeline = pipeline;
 
         m_hasRecordedCommand = true;
     }

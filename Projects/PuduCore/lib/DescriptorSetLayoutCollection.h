@@ -11,11 +11,12 @@ namespace Pudu
     //Collection of Descriptor layout info and their bindings
     struct DescriptorSetLayoutsCollection : IDescriptorProvider
     {
-        DescriptorBinding* GetBindingByName(const char* name) override;
         u16 setsCount;
         std::vector<DescriptorSetLayoutInfo> setLayoutInfos;
         std::vector<DescriptorBinding> bindingsData;
 
+        //IDescriptorProvider
+        DescriptorBinding* GetBindingByName(const char* name) override;
         std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override;
         VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override;
 

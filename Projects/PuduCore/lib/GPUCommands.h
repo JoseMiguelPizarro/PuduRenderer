@@ -50,7 +50,7 @@ namespace Pudu
 
 		void BegingRenderPass(const VkRenderPassBeginInfo& renderInfo);
 		void EndRenderPass();
-		void BindPipeline(Pipeline* pipeline);
+		void BindPipeline(const Pipeline* pipeline);
 		void BindDescriptorSet(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount, uint32_t offset = 0);
 		void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);
 		void Blit(SPtr<Texture> source, SPtr<Texture> dst, VkImageLayout srcLayout, VkImageLayout dstLayout);
@@ -74,7 +74,6 @@ namespace Pudu
 
 		VkCommandBuffer vkHandle;
 		Framebuffer* currentFramebuffer;
-		Pipeline* currentPipeline;
 		bool HasRecordedCommand() { return m_hasRecordedCommand; }
 
 	private:

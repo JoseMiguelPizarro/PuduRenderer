@@ -49,6 +49,11 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, textureArray);
     }
 
+    size Material::GetDescriptorSetsCount() const
+    {
+        return m_descriptorProvider->GetDescriptorSetLayouts()->size();
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string_view& name, float value)
     {
         PropertyUpdateRequest request;
@@ -281,7 +286,8 @@ namespace Pudu
     {
         m_descriptorProvider = descriptorProvider;
 
-        m_gpu->CreateDescriptorSets(m_descriptorSets, m_descriptorProvider->GetDescriptorSetLayouts()->size(), m_descriptorProvider->GetVkDescriptorSetLayouts());
+        m_gpu->CreateDescriptorSets(m_descriptorSets, m_descriptorProvider->GetDescriptorSetLayouts()->size(),
+                                    m_descriptorProvider->GetVkDescriptorSetLayouts());
     }
 
     void Material::CreateDescriptorSets(const std::vector<SPtr<DescriptorSetLayout>>& layouts)

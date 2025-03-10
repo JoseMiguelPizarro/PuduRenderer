@@ -129,6 +129,8 @@ namespace Pudu
 		SPtr<Material> GetReplacementMaterial() const;
 		bool HasReplacementMaterial() const;
 
+		static void BindPipeline(const Pipeline* pipeline,RenderFrameData& frameData);
+
 
 		BlendState* GetBlendState();
 
@@ -148,7 +150,7 @@ namespace Pudu
 
 	protected:
 		void OnCreate(PuduGraphics* gpu) override;
-		void BindMaterialDescriptorSets(Pipeline* pipeline,SPtr<Material> material, RenderFrameData& frameData);
+		static void BindMaterialDescriptorSets(Pipeline* pipeline,SPtr<Material> material, RenderFrameData& frameData);
 		SPtr<Material> GetRenderMaterial(const RenderFrameData& frameData) const;
 
 	public:
