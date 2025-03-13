@@ -501,7 +501,7 @@ namespace Pudu
         //Setup layout create info
         for (auto& layout : outCompilationObject.descriptorsData.setLayoutInfos)
         {
-            ASSERT(layout.Bindings.size() <= 16, "Maximum binding count exceded for layout: {} bindings count: {}",
+        ASSERT(layout.Bindings.size() <= 16, "Maximum binding count exceded for layout: {} bindings count: {}",
                    layout.name, layout.Bindings.size());
             layout.CreateInfo.bindingCount = layout.Bindings.size();
             layout.CreateInfo.pBindings = layout.Bindings.data();

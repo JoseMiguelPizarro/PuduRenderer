@@ -28,6 +28,16 @@ void LOG(const std::format_string<Args...> fmt, Args&&... args) {
 }
 
 
+template<typename... Args>
+void LOG_WARNING(const std::format_string<Args...> fmt, Args&&... args) {
+
+	auto formattedMessage = std::vformat(fmt.get(),  std::make_format_args(args...));
+
+	std::printf(formattedMessage.c_str());
+	std::printf("\n");
+}
+
+
 // Assert function to validate expressions
 template <typename... Args>
 void ASSERT(bool condition, const std::format_string<Args...> fmt, Args&&... args)

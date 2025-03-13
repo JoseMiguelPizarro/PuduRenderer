@@ -7,15 +7,19 @@
 
 #include "GraphicsBuffer.h"
 #include "PuduCore.h"
+#include "ShaderCompilation/ShaderLayout.h"
 
 namespace Pudu
 {
     class ShaderCursor
     {
     public:
-        ShaderCursor Field(const char* name);
-        ShaderCursor Field(u32 index);
+        ShaderCursor(ShaderNode* layout): m_layout(layout) {}
+
+        ShaderCursor Field(const char* name) const;
+        ShaderCursor Field(u32 index) const;
         ShaderCursor Element(u32 index);
+
 
         void Write(const void* data, size_t size);
         void Write(SPtr<Texture> texture);
@@ -29,14 +33,13 @@ namespace Pudu
         void Write(mat4 value);
 
     private:
-    private:
         SPtr<GraphicsBuffer> m_buffer;
         std::byte* m_bufferData;
         size m_byteOffset;
-        VkDescriptorSet m_descriptorSet;
+        u32 m_setIndex;
         u32 m_bindingIndex;
         u32 m_bindingArrayIndex;
 
-        slang::TypeLayoutReflection m_typeLayout;
+        ShaderNode* m_layout;
     };
 }
