@@ -42,6 +42,7 @@ namespace Pudu
         size_t setIndex = -1;
         Binding* cumulativeOffset;
         bool isPushConstant = false;
+        ShaderNode* shaderNode;
 
 
         void Print() const;
@@ -75,13 +76,13 @@ namespace Pudu
 
     struct ShaderLayoutBuilderContext
     {
-
         ShaderCompilationObject* shaderCompilationObject = nullptr;
         size_t constantBufferSize = 0;
         ConstantBufferInfo* PushConstantBufferInfo();
         ConstantBufferInfo* PushPushConstantsBufferInfo();
         std::vector<ConstantBufferInfo>& GetPushConstants();
         std::vector<ConstantBufferInfo>* GetConstantBufferInfos();
+        ShaderNode* shaderLayout;
 
         size PushSetIndex() { return ++m_setIndex; }
         size getSetIndex() const { return m_setIndex; }
@@ -100,10 +101,16 @@ namespace Pudu
 
         void ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
                                       ShaderCompilationObject& outCompilationObject);
-        void ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection, ShaderLayoutBuilderContext* context,AccessPath accessPath);
-        void ParseVariableLayout(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context, AccessPath accessPath);
-        void ParseVariableOffsets(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context, AccessPath accessPath);
-        void ParseScope(slang::VariableLayoutReflection* scopeVarLayout, ShaderLayoutBuilderContext* context, AccessPath accessPath);
+
+    private:
+        void ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection, ShaderLayoutBuilderContext* context,
+                                     AccessPath accessPath);
+        void ParseVariableLayout(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context,
+                                 AccessPath accessPath);
+        void ParseVariableOffsets(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context,
+                                  AccessPath accessPath);
+        void ParseScope(slang::VariableLayoutReflection* scopeVarLayout, ShaderLayoutBuilderContext* context,
+                        AccessPath accessPath);
 
         Slang::ComPtr<IGlobalSession> m_globalSession;
 

@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "DescriptorSetLayoutCollection.h"
+#include "ShaderLayout.h"
 #include "ShaderCompilation/ShaderCompilationObject.h"
 #include "Resources/ConstantBufferInfo.h"
 
@@ -21,6 +22,7 @@ class ShaderCompilationObject {
         std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo(){ return &m_pushConstants;}
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) {m_constantBuffers = buffers;}
         void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
+        ShaderNode* GetShaderLayout();
 
 
 
@@ -30,6 +32,7 @@ class ShaderCompilationObject {
         std::vector<VkPushConstantRange> m_pushConstantRanges;
         std::vector<ConstantBufferInfo> m_constantBuffers;
         std::vector<ConstantBufferInfo> m_pushConstants;
+        ShaderNode m_shaderLayout;
 };
 }
 

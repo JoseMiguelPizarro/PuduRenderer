@@ -169,7 +169,6 @@ namespace Pudu
         shaderCompilationObject->descriptorsData.bindingsData.push_back(binding);
     }
 
-
     void ShaderObjectLayoutBuilder::ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection,
                                                             ShaderLayoutBuilderContext* context, AccessPath accessPath)
     {
@@ -258,7 +257,10 @@ namespace Pudu
                         accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
                         accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
 
+
+
                         context->PushBinding(binding);
+
                     }
                 }
                 else if (!accessPath.isPushConstant)

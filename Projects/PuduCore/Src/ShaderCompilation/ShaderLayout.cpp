@@ -35,10 +35,15 @@ namespace Pudu
         children.push_back(child);
     }
 
-    ShaderLayout::ShaderLayout()
+    ShaderNode* ShaderNode::AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type)
     {
-        m_root = ShaderNode("Root", 0, 0);
+        const auto shaderNode = ShaderNode(name, offset, size, type);
+
+        children.push_back(shaderNode);
+
+        return &children.back();
     }
+
 
 #pragma endregion ShaderNode
 }

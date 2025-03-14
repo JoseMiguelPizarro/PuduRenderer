@@ -5,6 +5,13 @@
 
 namespace Pudu
 {
+    enum ShaderNodeType
+    {
+        CBuffer,
+        Array,
+        Resource
+    };
+
     struct ShaderNode
     {
         std::string name;
@@ -14,25 +21,21 @@ namespace Pudu
         u32 bindingIndex;
         u32 setIndex;
 
+        ShaderNodeType type;
+
         ShaderNode() = default;
-        ShaderNode(const char* name, const u32 offset, const Size size) : name(name), offset(offset), size(size) {}
+
+        ShaderNode(const char* name, const u32 offset, const Size size, const ShaderNodeType type) : name(name),
+            offset(offset), size(size), type(type)
+        {
+        }
 
         ShaderNode* GetChildByName(const std::string& name);
-        ShaderNode* GetChildByIndex(const Size index);
+        ShaderNode* GetChildByIndex(Size index);
         void AppendChild(const ShaderNode& child);
-
+        ShaderNode* AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type);
 
     private:
         std::vector<ShaderNode> children;
-    };
-
-    class ShaderLayout
-    {
-    public:
-        ShaderNode* GetRoot() { return &m_root; };
-        ShaderLayout();
-
-    private:
-        ShaderNode m_root;
     };
 }
