@@ -37,11 +37,15 @@ namespace Pudu
 
     ShaderNode* ShaderNode::AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type)
     {
-        const auto shaderNode = ShaderNode(name, offset, size, type);
+        children.reserve(children.size() + 1);
 
-        children.push_back(shaderNode);
+        auto shaderNode = children.back();
+        shaderNode.name = name;
+        shaderNode.offset = offset;
+        shaderNode.size = size;
+        shaderNode.type = type;
 
-        return &children.back();
+        return &children[children.size() - 1];
     }
 
 

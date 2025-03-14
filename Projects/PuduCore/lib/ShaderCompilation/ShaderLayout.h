@@ -9,14 +9,17 @@ namespace Pudu
     {
         CBuffer,
         Array,
-        Resource
+        Resource,
+        Uniform,
+        Root
     };
 
     struct ShaderNode
     {
         std::string name;
-        u32 offset;
-        Size size;
+        u32 offset{};
+        Size size{};
+        Size elementCount;
 
         u32 bindingIndex;
         u32 setIndex;

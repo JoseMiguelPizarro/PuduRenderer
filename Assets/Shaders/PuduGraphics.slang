@@ -18,6 +18,9 @@ public struct GlobalsConstants
     public float time;
     public float4x4 proj;
     public float4x4 view;
+    public float[10] floatArray;
+    public Texture2D[5] textureArray5;
+    public Texture2D[] textureArray;
 }
 
 public struct Globals

@@ -43,6 +43,7 @@ namespace Pudu
         Binding* cumulativeOffset;
         bool isPushConstant = false;
         ShaderNode* shaderNode;
+        ShaderNode* rootBufferShaderNode;
 
 
         void Print() const;
@@ -98,6 +99,7 @@ namespace Pudu
     {
         std::vector<VkDescriptorSetLayoutBinding> m_bindings;
         u32 m_bindingIndex = 0;
+        Slang::ComPtr<IGlobalSession> m_globalSession;
 
         void ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
                                       ShaderCompilationObject& outCompilationObject);
@@ -112,7 +114,6 @@ namespace Pudu
         void ParseScope(slang::VariableLayoutReflection* scopeVarLayout, ShaderLayoutBuilderContext* context,
                         AccessPath accessPath);
 
-        Slang::ComPtr<IGlobalSession> m_globalSession;
 
     private:
         u32 m_indentation = 0;

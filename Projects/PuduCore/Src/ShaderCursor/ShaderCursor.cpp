@@ -15,6 +15,8 @@ namespace Pudu
 
         cursor.m_bindingIndex = node->bindingIndex;
         cursor.m_setIndex = node->setIndex;
+
+        return cursor;
     }
 
     ShaderCursor ShaderCursor::Field(u32 index) const

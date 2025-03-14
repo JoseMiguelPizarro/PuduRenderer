@@ -258,9 +258,14 @@ namespace Pudu
                         accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
 
 
+                        auto shaderNode = accessPath.shaderNode->AppendChild(
+                            binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
+
+                        shaderNode->setIndex = accessPath.setIndex;
+                        shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                        accessPath.rootBufferShaderNode = shaderNode;
 
                         context->PushBinding(binding);
-
                     }
                 }
                 else if (!accessPath.isPushConstant)
@@ -280,6 +285,13 @@ namespace Pudu
                     accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
                     accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
                     context->PushBinding(binding);
+
+                    auto shaderNode = accessPath.shaderNode->AppendChild(
+                        binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
+
+                    shaderNode->setIndex = accessPath.setIndex;
+                    shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                    accessPath.shaderNode = shaderNode;
                 }
 
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
@@ -307,6 +319,12 @@ namespace Pudu
                 binding.count = 1;
                 binding.name = accessPath.leaf->variableLayout->getName();
                 context->PushBinding(binding);
+
+                auto shaderNode = accessPath.shaderNode->AppendChild(binding.name.c_str(), 0, 0,
+                                                                     ShaderNodeType::Resource);
+                shaderNode->setIndex = accessPath.setIndex;
+                shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                accessPath.shaderNode = shaderNode;
             }
             break;
         //Here we should push a binding
@@ -320,6 +338,10 @@ namespace Pudu
                 LOG_I(m_indentation, "Container: {}", KIND_NAMES.at(container->getType()->getKind()));
 
                 LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
+
+                accessPath.rootBufferShaderNode->AppendChild(
+                    accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
+                    typeLayoutReflection->getStride(), ShaderNodeType::Uniform);
             }
             break;
         case TypeReflection::Kind::Array:
@@ -329,6 +351,15 @@ namespace Pudu
                 LOG_I(m_indentation, "Array Kind {} ElementCount: {} Size {} :", KIND_NAMES.at(arrayKind),
                       typeLayoutReflection->getElementCount(),
                       typeLayoutReflection->getSize());
+
+
+                auto node = accessPath.rootBufferShaderNode->AppendChild(
+                    accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
+                    typeLayoutReflection->getSize(),
+                    ShaderNodeType::Array);
+
+                node->elementCount = typeLayoutReflection->getElementCount();
+
 
                 if (arrayKind == TypeReflection::Kind::Resource)
                 {
@@ -384,20 +415,13 @@ namespace Pudu
                 break;
             case Uniform:
                 {
-                    LOG_I(m_indentation, "Size:{} Set: {} Binding: {}", varLayout->getTypeLayout()->getSize(),
+                    LOG_I(m_indentation, "Size:{} Set: {} Binding: {} ByteOffset {}",
+                          varLayout->getTypeLayout()->getSize(),
                           accessPath.setIndex,
-                          0);
+                          accessPath.cumulativeOffset->index,
+                          varLayout->getOffset());
                     accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
-                    LOG_I(m_indentation, "ConstantBufferSize {}", accessPath.rootBufferInfo->size);
-                }
-                break;
-            case ConstantBuffer:
-            case slang::ParameterCategory::ShaderResource:
-            case slang::ParameterCategory::UnorderedAccess:
-            case slang::ParameterCategory::SamplerState:
-            case slang::ParameterCategory::DescriptorTableSlot:
-                {
-                    //    LOG_I(m_indentation, "set: {} Binding: {}", accessPath.m_setIndex, accessPath.cumulativeOffset->index);
+                    LOG_I(m_indentation, "ConstantBufferSize {} ", accessPath.rootBufferInfo->size);
                 }
                 break;
             default: break;
@@ -462,9 +486,12 @@ namespace Pudu
         m_indentation = 0;
 
         auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
+        outCompilationObject.m_shaderLayout = ShaderNode("Root", 0, 0, ShaderNodeType::Root);
 
         AccessPath rootOffsets;
         rootOffsets.valid = true;
+        rootOffsets.shaderNode = &outCompilationObject.m_shaderLayout;
+
 
         ShaderLayoutBuilderContext context;
         context.shaderCompilationObject = &outCompilationObject;
@@ -486,7 +513,6 @@ namespace Pudu
 
         outCompilationObject.descriptorsData.setsCount = context.getSetIndex() + 1;
 
-
         outCompilationObject.SetPushConstants(context.GetPushConstants());
         outCompilationObject.SetBuffersToAllocate(buffersToAllocate);
 
@@ -503,7 +529,7 @@ namespace Pudu
         //Setup layout create info
         for (auto& layout : outCompilationObject.descriptorsData.setLayoutInfos)
         {
-        ASSERT(layout.Bindings.size() <= 16, "Maximum binding count exceded for layout: {} bindings count: {}",
+            ASSERT(layout.Bindings.size() <= 16, "Maximum binding count exceded for layout: {} bindings count: {}",
                    layout.name, layout.Bindings.size());
             layout.CreateInfo.bindingCount = layout.Bindings.size();
             layout.CreateInfo.pBindings = layout.Bindings.data();
