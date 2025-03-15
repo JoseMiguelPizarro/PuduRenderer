@@ -7,6 +7,12 @@
 namespace Pudu
 {
 #pragma region ShaderNode
+    ShaderNode* ShaderNode::GetChild(Size index)
+    {
+        ASSERT(index < childCount, "ShaderNode: Child index out of bounds!");
+        return &children[index];
+    }
+
     ShaderNode* ShaderNode::GetChildByName(const std::string& name)
     {
         for (Size i = 0; i < children.size(); i++)
@@ -32,13 +38,25 @@ namespace Pudu
         return &children[index];
     }
 
-    void ShaderNode::AppendChild(const ShaderNode& child)
+    ShaderNode* ShaderNode::GetChildByHandle(ShaderNodeHandle handle)
     {
-        children.push_back(child);
+        return GetChildByIndex(handle.index);
     }
 
-    ShaderNode* ShaderNode::AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type)
+    ShaderNode* ShaderNode::AppendChild(const ShaderNode& child)
     {
+        ASSERT(children.size() < MAX_CHILDREN, "Reached maximum number of children for shader node {}!", this->name);
+
+        children.push_back(child);
+
+        return &children.back();
+    }
+
+    ShaderNode* ShaderNode::AppendChild(const char* name, const u32 offset, const Size size,
+                                        const ShaderNodeType type)
+    {
+        ASSERT(children.size() < MAX_CHILDREN, "Reached maximum number of children for shader node {}!", this->name);
+
         children.resize(children.size() + 1);
 
         const auto shaderNode = &children[children.size() - 1];

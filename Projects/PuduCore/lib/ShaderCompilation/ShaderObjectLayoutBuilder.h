@@ -37,12 +37,12 @@ namespace Pudu
 
         bool valid = false;
         AccessPathNode* leaf = nullptr;
-        ConstantBufferInfo* rootBufferInfo;
+        ConstantBufferInfo* rootBufferInfo = nullptr;
         DescriptorSetLayoutInfo* descriptorSetLayout = nullptr;
         size_t setIndex = -1;
-        Binding* cumulativeOffset;
-        ShaderNode* shaderNode;
-        ShaderNode* rootBufferShaderNode;
+        Binding* cumulativeOffset = nullptr;
+        ShaderNode* shaderNode = nullptr;
+        ShaderNode* rootBufferShaderNode = nullptr;
 
         bool isPushConstant = false;
 
@@ -113,7 +113,6 @@ namespace Pudu
                                   AccessPath accessPath);
         void ParseScope(slang::VariableLayoutReflection* scopeVarLayout, ShaderLayoutBuilderContext* context,
                         AccessPath accessPath);
-
 
     private:
         u32 m_indentation = 0;

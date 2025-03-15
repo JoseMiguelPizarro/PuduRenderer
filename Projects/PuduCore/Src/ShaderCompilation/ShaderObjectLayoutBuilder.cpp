@@ -202,9 +202,6 @@ namespace Pudu
                 accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
                     VK_SHADER_STAGE_COMPUTE_BIT;
 
-                ASSERT(accessPath.rootBufferShaderNode != nullptr, "Null rootBufferShaderNode for {}",
-                       accessPath.leaf->variableLayout->getName());
-
 
                 /////////////
                 //Binding stack
@@ -270,7 +267,7 @@ namespace Pudu
                         accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
 
 
-                        if (accessPath.rootBufferShaderNode != nullptr)
+                        if (accessPath.rootBufferShaderNode == nullptr)
                         {
                             auto shaderNode = accessPath.shaderNode->AppendChild(
                                 binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
@@ -423,7 +420,7 @@ namespace Pudu
 
             switch (category)
             {
-            case PushConstantBuffer:
+            case slang::ParameterCategory::PushConstantBuffer:
                 {
                     accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
                     accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
@@ -440,7 +437,7 @@ namespace Pudu
                         varLayout->getName(), 0, 0, ShaderNodeType::PushConstant);
                 }
                 break;
-            case Uniform:
+            case slang::ParameterCategory::Uniform:
                 {
                     LOG_I(m_indentation, "Size:{} Set: {} Binding: {} ByteOffset {}",
                           varLayout->getTypeLayout()->getSize(),
