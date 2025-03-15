@@ -202,6 +202,11 @@ namespace Pudu
                 accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
                     VK_SHADER_STAGE_COMPUTE_BIT;
 
+                ASSERT(accessPath.rootBufferShaderNode != nullptr, "Null rootBufferShaderNode for {}",
+                       accessPath.leaf->variableLayout->getName());
+
+
+                /////////////
                 //Binding stack
                 Binding offsets;
                 if (kind == TypeReflection::Kind::ParameterBlock)
@@ -228,6 +233,13 @@ namespace Pudu
                         context->shaderCompilationObject->descriptorsData.setsCount++;
                         context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
                             descriptorSetLayoutInfo);
+
+                        auto shaderNode = accessPath.shaderNode->AppendChild(
+                            descriptorSetLayoutInfo.name.c_str(), 0, 0, ShaderNodeType::ParameterBlock);
+
+                        shaderNode->setIndex = descriptorSetLayoutInfo.SetNumber;
+
+                        accessPath.shaderNode = shaderNode;
                     }
 
                     accessPath.setIndex = context->getSetIndex();
@@ -258,12 +270,15 @@ namespace Pudu
                         accessPath.rootBufferInfo->setNumber = accessPath.setIndex;
 
 
-                        auto shaderNode = accessPath.shaderNode->AppendChild(
-                            binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
+                        if (accessPath.rootBufferShaderNode != nullptr)
+                        {
+                            auto shaderNode = accessPath.shaderNode->AppendChild(
+                                binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
 
-                        shaderNode->setIndex = accessPath.setIndex;
-                        shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
-                        accessPath.rootBufferShaderNode = shaderNode;
+                            shaderNode->setIndex = accessPath.setIndex;
+                            shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                            accessPath.rootBufferShaderNode = shaderNode;
+                        }
 
                         context->PushBinding(binding);
                     }
@@ -292,6 +307,7 @@ namespace Pudu
                     shaderNode->setIndex = accessPath.setIndex;
                     shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
                     accessPath.shaderNode = shaderNode;
+                    accessPath.rootBufferShaderNode = shaderNode;
                 }
 
                 ExtendedAccessPath elementOffsets(innerOffsets, elementVarLayout);
@@ -339,6 +355,9 @@ namespace Pudu
 
                 LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
 
+                ASSERT(accessPath.rootBufferShaderNode != nullptr, "Null rootBufferShaderNode for {}",
+                       accessPath.leaf->variableLayout->getName());
+
                 accessPath.rootBufferShaderNode->AppendChild(
                     accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
                     typeLayoutReflection->getStride(), ShaderNodeType::Uniform);
@@ -352,18 +371,23 @@ namespace Pudu
                       typeLayoutReflection->getElementCount(),
                       typeLayoutReflection->getSize());
 
-
-                auto node = accessPath.rootBufferShaderNode->AppendChild(
-                    accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
-                    typeLayoutReflection->getSize(),
-                    ShaderNodeType::Array);
-
-                node->elementCount = typeLayoutReflection->getElementCount();
-
-
                 if (arrayKind == TypeReflection::Kind::Resource)
                 {
+                    accessPath.shaderNode = accessPath.shaderNode->AppendChild(
+                        accessPath.leaf->variableLayout->getName(),
+                        accessPath.leaf->variableLayout->getOffset(),
+                        typeLayoutReflection->getSize(), ShaderNodeType::Array);
+
                     ParseVariableTypeLayout(typeLayoutReflection->unwrapArray(), context, accessPath);
+                }
+                else //Scalar, we should add it to the CBuffer
+                {
+                    auto node = accessPath.rootBufferShaderNode->AppendChild(
+                        accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
+                        typeLayoutReflection->getSize(),
+                        ShaderNodeType::Array);
+
+                    node->elementCount = typeLayoutReflection->getElementCount();
                 }
             }
             break;
@@ -411,6 +435,9 @@ namespace Pudu
                     accessPath.rootBufferInfo->name = varLayout->getName();
 
                     accessPath.isPushConstant = true;
+
+                    accessPath.rootBufferShaderNode = accessPath.shaderNode->AppendChild(
+                        varLayout->getName(), 0, 0, ShaderNodeType::PushConstant);
                 }
                 break;
             case Uniform:
@@ -420,7 +447,12 @@ namespace Pudu
                           accessPath.setIndex,
                           accessPath.cumulativeOffset->index,
                           varLayout->getOffset());
+
+                    ASSERT(accessPath.rootBufferShaderNode != nullptr, "Root buffer shader node null for {}",
+                           varLayout->getName());
                     accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
+                    accessPath.rootBufferShaderNode->size = accessPath.rootBufferInfo->size;
+
                     LOG_I(m_indentation, "ConstantBufferSize {} ", accessPath.rootBufferInfo->size);
                 }
                 break;
@@ -428,7 +460,12 @@ namespace Pudu
             }
         }
 
-        ParseVariableTypeLayout(varLayout->getTypeLayout(), context, static_cast<AccessPath>(accessPath));
+        const auto l = varLayout->getTypeLayout();
+
+        ASSERT(l != nullptr, "TypeLayout is null for {}", varLayout->getName());
+
+        ParseVariableTypeLayout(varLayout->getTypeLayout(), context, accessPath);
+
 
         m_indentation--;
     }
@@ -442,6 +479,8 @@ namespace Pudu
         TypeLayoutReflection* scopeTypeLayout = scopeVarLayout->getTypeLayout();
 
         scopeOffsets.rootBufferInfo = context->PushConstantBufferInfo();
+
+
         scopeOffsets.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
             VK_SHADER_STAGE_COMPUTE_BIT;
 
@@ -510,6 +549,8 @@ namespace Pudu
                 buffersToAllocate.push_back(cbuffer);
             }
         }
+
+        rootOffsets.shaderNode->Print();
 
         outCompilationObject.descriptorsData.setsCount = context.getSetIndex() + 1;
 

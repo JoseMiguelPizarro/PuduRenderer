@@ -41,10 +41,10 @@ namespace Pudu
         DescriptorSetLayoutInfo* descriptorSetLayout = nullptr;
         size_t setIndex = -1;
         Binding* cumulativeOffset;
-        bool isPushConstant = false;
         ShaderNode* shaderNode;
         ShaderNode* rootBufferShaderNode;
 
+        bool isPushConstant = false;
 
         void Print() const;
     };

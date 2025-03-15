@@ -7,11 +7,13 @@ namespace Pudu
 {
     enum ShaderNodeType
     {
+        Root,
         CBuffer,
         Array,
         Resource,
         Uniform,
-        Root
+        PushConstant,
+        ParameterBlock,
     };
 
     struct ShaderNode
@@ -37,6 +39,9 @@ namespace Pudu
         ShaderNode* GetChildByIndex(Size index);
         void AppendChild(const ShaderNode& child);
         ShaderNode* AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type);
+
+        void Print();
+        static void Print(ShaderNode* node, u32 indent);
 
     private:
         std::vector<ShaderNode> children;

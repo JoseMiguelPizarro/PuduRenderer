@@ -1,5 +1,7 @@
 #include "ShaderCompilation/ShaderLayout.h"
 
+#include <iostream>
+
 #include "Logger.h"
 
 namespace Pudu
@@ -37,17 +39,33 @@ namespace Pudu
 
     ShaderNode* ShaderNode::AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type)
     {
-        children.reserve(children.size() + 1);
+        children.resize(children.size() + 1);
 
-        auto shaderNode = children.back();
-        shaderNode.name = name;
-        shaderNode.offset = offset;
-        shaderNode.size = size;
-        shaderNode.type = type;
+        const auto shaderNode = &children[children.size() - 1];
+        shaderNode->name = name;
+        shaderNode->offset = offset;
+        shaderNode->size = size;
+        shaderNode->type = type;
 
-        return &children[children.size() - 1];
+        return shaderNode;
     }
 
+    void ShaderNode::Print()
+    {
+        Print(this, 0);
+    }
 
+    void ShaderNode::Print(ShaderNode* node, u32 indent)
+    {
+        if (node == nullptr)
+            return;
+
+        LOG_I(indent, "{}", node->name);
+
+        for (Size i = 0; i < node->children.size(); i++)
+        {
+            Print(&node->children[i], indent + 1);
+        }
+    }
 #pragma endregion ShaderNode
 }

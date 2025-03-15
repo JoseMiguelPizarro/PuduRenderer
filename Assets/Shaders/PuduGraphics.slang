@@ -25,6 +25,7 @@ public struct GlobalsConstants
 
 public struct Globals
 {
+    float myFloatValue;
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
