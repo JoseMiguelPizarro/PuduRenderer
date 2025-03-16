@@ -17,13 +17,16 @@ namespace Pudu
         virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
         virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
         virtual VkShaderModule GetModule() { return m_module; }
-        DescriptorBinding* GetBindingByName(const char* name) override;
-        std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override { return &descriptorSetLayouts; };
         virtual void SetName(const char* name) = 0;
         virtual const char* GetName() = 0;
-
-        VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override { return m_VkDescriptorSetLayouts.data(); }
         u32 GetActiveLayoutCount() const { return numActiveLayouts; }
+
+#pragma region DescriptorProvider
+        std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override { return &descriptorSetLayouts; };
+        DescriptorBinding* GetBindingByName(const char* name) override;
+        ShaderNode* GetShaderLayout() override;
+        VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override { return m_VkDescriptorSetLayouts.data(); }
+#pragma endregion
 
     protected:
         friend class PuduGraphics;
@@ -46,6 +49,6 @@ namespace Pudu
         std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
         std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
 
-        uint32_t numActiveLayouts;
+        u32 numActiveLayouts;
     };
 }

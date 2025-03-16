@@ -25,14 +25,12 @@ class ShaderCompilationObject {
         ShaderNode* GetShaderLayout();
 
 
-
     private:
         friend class ShaderObjectLayoutBuilder;
         std::unordered_map<std::string, ShaderKernel> m_kernelsByName;
         std::vector<VkPushConstantRange> m_pushConstantRanges;
         std::vector<ConstantBufferInfo> m_constantBuffers;
         std::vector<ConstantBufferInfo> m_pushConstants;
-        ShaderNode m_shaderLayout;
 };
 }
 

@@ -78,13 +78,66 @@ namespace Pudu
         if (node == nullptr)
             return;
 
-        LOG_I(indent * 2, "{} Type: {} [set:{} index:{}](size: {} offset: {})",
-              node->name,
-              SHADER_NODE_TYPE_NAMES.at(node->type),
-              node->setIndex,
-              node->bindingIndex,
-              node->size,
-              node->offset);
+        switch (node->type)
+        {
+        case Root:
+            LOG_I(indent * 2, "Root");
+            break;
+        case CBuffer:
+            {
+                LOG_I(indent * 2, "{} Type: {} Size: {} [set:{} index:{}]",
+                      node->name,
+                      SHADER_NODE_TYPE_NAMES.at(node->type),
+                      node->size,
+                      node->setIndex,
+                      node->bindingIndex);
+            }
+            break;
+        case Array:
+            {
+                LOG_I(indent * 2, "{} Type: {} count: {} [set:{} index:{}]",
+                      node->name,
+                      SHADER_NODE_TYPE_NAMES.at(node->type),
+                      node->elementCount,
+                      node->setIndex,
+                      node->bindingIndex);
+            }
+            break;
+        case Resource:
+            {
+                LOG_I(indent * 2, "{} Type: {} [set:{} index:{}]",
+                      node->name,
+                      SHADER_NODE_TYPE_NAMES.at(node->type),
+                      node->setIndex,
+                      node->bindingIndex);
+            }
+            break;
+        case Uniform:
+            {
+                LOG_I(indent * 2, "{} Type: {} (size: {} offset: {})",
+                      node->name,
+                      SHADER_NODE_TYPE_NAMES.at(node->type),
+                      node->size,
+                      node->offset);
+            }
+            break;
+        case PushConstant:
+            LOG_I(indent * 2, "{} Type: {} Size: {}",
+                  node->name,
+                  SHADER_NODE_TYPE_NAMES.at(node->type),
+                  node->size);
+            break;
+        case ParameterBlock:
+            LOG_I(indent * 2, "{} Type: {} [set:{}]", node->name, SHADER_NODE_TYPE_NAMES.at(node->type),
+                  node->setIndex);
+            break;
+        case Struct:
+            LOG_I(indent * 2,
+                  "{} Type: {} [set:{} index:{}]",
+                  node->name, SHADER_NODE_TYPE_NAMES.at(node->type),
+                  node->setIndex, node->bindingIndex);
+            break;
+        }
 
         for (Size i = 0; i < node->children.size(); i++)
         {

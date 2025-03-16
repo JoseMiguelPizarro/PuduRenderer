@@ -2,6 +2,7 @@
 
 #include "DescriptorSetLayoutInfo.h"
 #include "Logger.h"
+#include "ShaderCompilation/ShaderLayout.h"
 
 namespace Pudu
 {
@@ -21,7 +22,14 @@ namespace Pudu
             LOG_ERROR("Not implemented");
             return nullptr;
         };
+
         virtual VkDescriptorSetLayout* GetVkDescriptorSetLayouts()
+        {
+            LOG_ERROR("Not implemented");
+            return nullptr;
+        };
+
+        virtual ShaderNode* GetShaderLayout()
         {
             LOG_ERROR("Not implemented");
             return nullptr;

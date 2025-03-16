@@ -1,6 +1,7 @@
 #include "Material.h"
 #include "PuduGraphics.h"
 #include "PuduConstants.h"
+#include "ShaderCursor/ShaderCursor.h"
 
 namespace Pudu
 {
@@ -140,55 +141,18 @@ namespace Pudu
     void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request,
                                              const MaterialApplyPropertyGPUTarget& target)
     {
-        auto binding = target.descriptorProvider->GetBindingByName(request.name.c_str());
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
 
-        if (binding == nullptr)
-        {
-            LOG("Trying to set non-existing texture {} for descriptor provider", request.name);
-            return;
-        }
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageView = request.texture->vkImageViewHandle;
-        imageInfo.sampler = request.texture->Sampler.vkHandle;
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        VkWriteDescriptorSet imageWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-        imageWrite.descriptorCount = 1;
-        imageWrite.dstBinding = binding->index;
-        imageWrite.dstSet = target.descriptorSets[binding->setNumber];
-        imageWrite.pImageInfo = &imageInfo;
-        imageWrite.descriptorType = binding->type;
-
-        //target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &imageWrite);
-
-        target.graphics->UpdateDescriptorSet(1, &imageWrite);
+        shaderCursor.Field(request.name.c_str()).Write(request.texture);
     }
 
     void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request,
                                             const MaterialApplyPropertyGPUTarget& target)
     {
-        auto binding = target.descriptorProvider->GetBindingByName(request.name.c_str());
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
 
-        if (binding == nullptr)
-        {
-            LOG("Trying to set non-existing parameter {} for descriptor provider", request.name);
-            return;
-        }
+        shaderCursor.Field(request.name.c_str()).Write(request.buffer);
 
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = request.buffer->vkHandle;
-        bufferInfo.offset = 0;
-        bufferInfo.range = VK_WHOLE_SIZE;
-
-        VkWriteDescriptorSet bufferWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-        bufferWrite.descriptorCount = 1;
-        bufferWrite.dstBinding = binding->index;
-        bufferWrite.dstSet = target.descriptorSets[binding->setNumber];
-        bufferWrite.pBufferInfo = &bufferInfo;
-        bufferWrite.descriptorType = binding->type;
-
-        target.graphics->UpdateDescriptorSet(1, &bufferWrite);
 
         //	target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
     }

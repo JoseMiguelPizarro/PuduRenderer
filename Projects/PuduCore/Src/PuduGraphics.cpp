@@ -278,9 +278,9 @@ namespace Pudu
         vkUpdateDescriptorSets(m_device, count, write, copyCount, copy);
     }
 
-    void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, const void* data, const size_t size)
+    void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, const void* data, const Size size, const Size offset)
     {
-        memcpy(buffer->GetMappedData(), data, size);
+        memcpy(buffer->GetMappedData() + offset, data, size);
     }
 
     std::vector<ResourceUpdate>* PuduGraphics::GetBindlessResourcesToUpdate()

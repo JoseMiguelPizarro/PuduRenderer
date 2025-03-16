@@ -39,4 +39,9 @@ namespace Pudu
     {
         return m_vkSetLayouts.data();
     }
+
+    ShaderNode* DescriptorSetLayoutsCollection::GetShaderLayout()
+    {
+        return &m_shaderLayout;
+    }
 }

@@ -5,6 +5,7 @@
 
 #include "DescriptorSetLayoutInfo.h"
 #include "IDescriptorProvider.h"
+#include "ShaderCompilation/ShaderLayout.h"
 
 namespace Pudu
 {
@@ -19,11 +20,15 @@ namespace Pudu
         DescriptorBinding* GetBindingByName(const char* name) override;
         std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override;
         VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override;
+        ShaderNode* GetShaderLayout();
 
     private:
         friend class PuduGraphics;
+        friend class ShaderObjectLayoutBuilder;
+
         std::vector<SPtr<DescriptorSetLayout>> m_setLayouts;
         std::vector<VkDescriptorSetLayout> m_vkSetLayouts;
+        ShaderNode m_shaderLayout;
 
         bool m_descriptorSetLayoutsCreated = false;
     };

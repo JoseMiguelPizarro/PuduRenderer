@@ -3,6 +3,7 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 
+#include "DescriptorSetLayoutInfo.h"
 #include "../PuduCore.h"
 
 namespace Pudu
@@ -50,7 +51,7 @@ namespace Pudu
         ShaderNodeType type;
 
         Size childCount = 0;
-        VkDescriptorType bindingType;
+        DescriptorBinding binding;
 
         ShaderNode()
         {

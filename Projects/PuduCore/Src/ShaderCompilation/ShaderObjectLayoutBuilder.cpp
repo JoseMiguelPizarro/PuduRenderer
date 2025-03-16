@@ -119,7 +119,6 @@ namespace Pudu
         }
     }
 
-
     void AccessPath::Print() const
     {
         if (leaf)
@@ -186,6 +185,8 @@ namespace Pudu
                     auto shaderNode = accessPath.shaderNode->AppendChild(
                         accessPath.leaf->variableLayout->getName(), 0, 0,
                         ShaderNodeType::Struct);
+                    shaderNode->setIndex = accessPath.setIndex;
+                    shaderNode->bindingIndex = 0;
                     accessPath.shaderNode = shaderNode;
                 }
 
@@ -281,6 +282,7 @@ namespace Pudu
                             auto shaderNode = accessPath.shaderNode->AppendChild(
                                 binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
 
+                            shaderNode->binding = binding;
                             shaderNode->setIndex = accessPath.setIndex;
                             shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
                             accessPath.rootBufferShaderNode = shaderNode;
@@ -310,6 +312,7 @@ namespace Pudu
 
                     shaderNode->setIndex = accessPath.setIndex;
                     shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                    shaderNode->binding = binding;
                     accessPath.shaderNode = shaderNode;
                     accessPath.rootBufferShaderNode = shaderNode;
                 }
@@ -343,7 +346,7 @@ namespace Pudu
                                                                      ShaderNodeType::Resource);
                 shaderNode->setIndex = accessPath.setIndex;
                 shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
-                shaderNode->bindingType = ToVk(typeLayoutReflection->getBindingRangeType(0));
+                shaderNode->binding = binding;
                 accessPath.shaderNode = shaderNode;
             }
             break;
@@ -359,9 +362,12 @@ namespace Pudu
 
                 LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
 
-                accessPath.shaderNode->AppendChild(
+                auto node = accessPath.shaderNode->AppendChild(
                     accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
                     typeLayoutReflection->getStride(), ShaderNodeType::Uniform);
+
+                node->setIndex = accessPath.setIndex;
+                node->bindingIndex = accessPath.cumulativeOffset->index;
             }
             break;
         case TypeReflection::Kind::Array:
@@ -376,18 +382,6 @@ namespace Pudu
                 {
                     accessPath.cumulativeOffset->PushIndex();
 
-                    accessPath.shaderNode = accessPath.shaderNode->AppendChild(
-                        accessPath.leaf->variableLayout->getName(),
-                        accessPath.leaf->variableLayout->getOffset(),
-                        typeLayoutReflection->getSize(), ShaderNodeType::Array);
-
-                    accessPath.shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
-                    accessPath.shaderNode->setIndex = accessPath.setIndex;
-
-                    accessPath.shaderNode->elementCount = typeLayoutReflection->getElementCount();
-                    accessPath.shaderNode->bindingType = ToVk(
-                        typeLayoutReflection->unwrapArray()->getBindingRangeType(0));
-
                     DescriptorBinding binding;
                     binding.type = ToVk(typeLayoutReflection->getBindingRangeType(0));
                     binding.index = accessPath.cumulativeOffset->index;
@@ -396,15 +390,28 @@ namespace Pudu
                     binding.name = accessPath.leaf->variableLayout->getName();
                     context->PushBinding(binding);
 
+                    auto shaderNode = accessPath.shaderNode->AppendChild(
+                        accessPath.leaf->variableLayout->getName(),
+                        accessPath.leaf->variableLayout->getOffset(),
+                        typeLayoutReflection->getSize(), ShaderNodeType::Array);
+
+                    shaderNode->setIndex = accessPath.setIndex;
+                    shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                    shaderNode->elementCount = typeLayoutReflection->getElementCount();
+                    shaderNode->binding = binding;
+
+                    accessPath.shaderNode = shaderNode;
                     // ParseVariableTypeLayout(typeLayoutReflection->unwrapArray(), context, accessPath);
                 }
                 else //Scalar, we should add it to the CBuffer
                 {
-                    auto node = accessPath.shaderNode->AppendChild(
+                    auto node = accessPath.rootBufferShaderNode->AppendChild(
                         accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
-                        typeLayoutReflection->getSize(),
+                        typeLayoutReflection->unwrapArray()->getStride(),
                         ShaderNodeType::Array);
 
+                    node->setIndex = accessPath.setIndex;
+                    node->bindingIndex = accessPath.cumulativeOffset->index;
                     node->elementCount = typeLayoutReflection->getElementCount();
                 }
             }
@@ -553,12 +560,11 @@ namespace Pudu
         m_indentation = 0;
 
         auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
-        outCompilationObject.m_shaderLayout = ShaderNode("Root", 0, 0, ShaderNodeType::Root);
+        outCompilationObject.descriptorsData.m_shaderLayout = ShaderNode("Root", 0, 0, ShaderNodeType::Root);
 
         AccessPath rootOffsets;
         rootOffsets.valid = true;
-        rootOffsets.shaderNode = &outCompilationObject.m_shaderLayout;
-
+        rootOffsets.shaderNode = &outCompilationObject.descriptorsData.m_shaderLayout;
 
         ShaderLayoutBuilderContext context;
         context.shaderCompilationObject = &outCompilationObject;

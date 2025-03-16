@@ -238,7 +238,7 @@ namespace Pudu
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
-		void UploadBufferData(GraphicsBuffer* buffer, const void* data, size_t size);
+		void UploadBufferData(GraphicsBuffer* buffer, const void* data, Size size, Size offset = 0);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);

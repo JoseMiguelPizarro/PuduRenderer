@@ -15,4 +15,9 @@ namespace Pudu
 		}
 		return nullptr;
 	}
+
+	ShaderNode* IShaderObject::GetShaderLayout()
+	{
+		return m_descriptorLayoutsData.GetShaderLayout();
+	}
 }
