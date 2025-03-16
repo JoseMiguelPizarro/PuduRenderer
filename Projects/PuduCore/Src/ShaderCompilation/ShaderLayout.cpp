@@ -78,7 +78,13 @@ namespace Pudu
         if (node == nullptr)
             return;
 
-        LOG_I(indent, "{}", node->name);
+        LOG_I(indent * 2, "{} Type: {} [set:{} index:{}](size: {} offset: {})",
+              node->name,
+              SHADER_NODE_TYPE_NAMES.at(node->type),
+              node->setIndex,
+              node->bindingIndex,
+              node->size,
+              node->offset);
 
         for (Size i = 0; i < node->children.size(); i++)
         {

@@ -6,10 +6,11 @@
 
 namespace Pudu
 {
-    void ConstantBufferInfo::PushElement(Pudu::size elementSize)
+    constexpr f32 padding = 16.f;
+
+    void ConstantBufferInfo::PushElement(Size elementSize)
     {
-        constexpr f32 padding = 16.f;
-        this->size += static_cast<Pudu::size>(ceil(elementSize / padding) * padding);
+        this->size += static_cast<Size>(ceil(elementSize / padding) * padding);
     }
 
     void ShaderCompilationObject::AddKernel(const char* name, ShaderKernel& kernel)

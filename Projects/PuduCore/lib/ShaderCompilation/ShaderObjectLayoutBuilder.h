@@ -45,6 +45,7 @@ namespace Pudu
         ShaderNode* rootBufferShaderNode = nullptr;
 
         bool isPushConstant = false;
+        bool isContainerStructDefinition = false;
 
         void Print() const;
     };

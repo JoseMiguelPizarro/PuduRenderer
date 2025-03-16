@@ -6,15 +6,15 @@ namespace Pudu
     {
 struct ConstantBufferInfo
     {
-        size setNumber = -1;
-        size bindingIndex = -1;
+        Size setNumber = -1;
+        Size bindingIndex = -1;
         VkShaderStageFlags shaderStages;
 
-        size offset = 0;
-        size stride = 0;
-        size size = 0;
+        Size offset = 0;
+        Size stride = 0;
+        Size size = 0;
 
         std::string name;
-        void PushElement(size_t size);
+        void PushElement(Size size);
     };
 };

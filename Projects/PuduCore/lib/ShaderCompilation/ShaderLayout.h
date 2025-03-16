@@ -1,5 +1,7 @@
 #pragma once
+#include <map>
 #include <string>
+#include <vulkan/vulkan_core.h>
 
 #include "../PuduCore.h"
 
@@ -14,6 +16,18 @@ namespace Pudu
         Uniform,
         PushConstant,
         ParameterBlock,
+        Struct,
+    };
+
+    static std::map<ShaderNodeType, const char*> SHADER_NODE_TYPE_NAMES = {
+        {Root, "Root"},
+        {CBuffer, "CBuffer"},
+        {Array, "Array"},
+        {Resource, "Resource"},
+        {Uniform, "Uniform"},
+        {PushConstant, "PushConstant"},
+        {ParameterBlock, "ParameterBlock"},
+        {Struct, "Struct"}
     };
 
     struct ShaderNodeHandle
@@ -36,6 +50,7 @@ namespace Pudu
         ShaderNodeType type;
 
         Size childCount = 0;
+        VkDescriptorType bindingType;
 
         ShaderNode()
         {
