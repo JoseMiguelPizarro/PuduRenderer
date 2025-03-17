@@ -7,6 +7,15 @@
 namespace Pudu
 {
 #pragma region ShaderNode
+    bool ShaderNode::GetScope(std::string& scopeOut) const
+    {
+        if (scope.empty())
+            return false;
+
+        scopeOut = scope;
+        return true;
+    }
+
     ShaderNode* ShaderNode::GetChild(Size index)
     {
         ASSERT(index < childCount, "ShaderNode: Child index out of bounds!");

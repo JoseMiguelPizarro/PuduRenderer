@@ -237,6 +237,16 @@ namespace Pudu
                             descriptorSetLayoutInfo.bindless = bindlessAttribute->getArgumentValueInt(0, &v);
                         }
 
+                        std::string scope;
+                        if (auto scopeAttribute = container->getVariable()->findUserAttributeByName(
+                            m_globalSession, "Scope"))
+                        {
+                            Size stringSize = 0;
+                            scope = scopeAttribute->getArgumentValueString(0, &stringSize);
+                        }
+
+                        descriptorSetLayoutInfo.scope = scope;
+
                         context->shaderCompilationObject->descriptorsData.setsCount++;
                         context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
                             descriptorSetLayoutInfo);
@@ -244,6 +254,7 @@ namespace Pudu
                         auto shaderNode = accessPath.shaderNode->AppendChild(
                             descriptorSetLayoutInfo.name.c_str(), 0, 0, ShaderNodeType::ParameterBlock);
 
+                        shaderNode->scope = scope;
                         shaderNode->setIndex = descriptorSetLayoutInfo.SetNumber;
 
                         accessPath.shaderNode = shaderNode;

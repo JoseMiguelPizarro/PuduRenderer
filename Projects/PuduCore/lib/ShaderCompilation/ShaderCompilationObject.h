@@ -6,21 +6,24 @@
 #include "ShaderCompilation/ShaderCompilationObject.h"
 #include "Resources/ConstantBufferInfo.h"
 
-namespace Pudu{
-    struct ShaderKernel {
+namespace Pudu
+{
+    struct ShaderKernel
+    {
         const u32* code;
         size codeSize;
     };
 
-class ShaderCompilationObject {
+    class ShaderCompilationObject
+    {
     public:
         DescriptorSetLayoutsCollection descriptorsData;
         ShaderKernel* GetKernel(const char* name) { return &m_kernelsByName[name]; }
         void AddKernel(const char* name, ShaderKernel& kernel);
-        std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges;}
-        std::vector<ConstantBufferInfo>* GetConstantBuffers(){ return &m_constantBuffers;}
-        std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo(){ return &m_pushConstants;}
-        void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) {m_constantBuffers = buffers;}
+        std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges; }
+        std::vector<ConstantBufferInfo>* GetConstantBuffers() { return &m_constantBuffers; }
+        std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo() { return &m_pushConstants; }
+        void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) { m_constantBuffers = buffers; }
         void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
 
     private:
@@ -29,8 +32,5 @@ class ShaderCompilationObject {
         std::vector<VkPushConstantRange> m_pushConstantRanges;
         std::vector<ConstantBufferInfo> m_constantBuffers;
         std::vector<ConstantBufferInfo> m_pushConstants;
-};
+    };
 }
-
-
-

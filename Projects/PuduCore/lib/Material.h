@@ -88,6 +88,9 @@ namespace Pudu {
 		ShaderPropertiesBlock m_propertiesBlock;
 		SPtr<IDescriptorProvider> m_descriptorProvider;
 		VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
+		bool m_resourcesAllocated = false;
+
+		void AllocateDescriptorSetsResources(const SPtr<IDescriptorProvider>& descriptorProvider);
 
 	};
 }

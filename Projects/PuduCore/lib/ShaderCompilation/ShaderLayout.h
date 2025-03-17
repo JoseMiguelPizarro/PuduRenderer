@@ -20,6 +20,8 @@ namespace Pudu
         Struct,
     };
 
+
+
     static std::map<ShaderNodeType, const char*> SHADER_NODE_TYPE_NAMES = {
         {Root, "Root"},
         {CBuffer, "CBuffer"},
@@ -52,6 +54,7 @@ namespace Pudu
 
         Size childCount = 0;
         DescriptorBinding binding;
+        std::string scope;
 
         ShaderNode()
         {
@@ -64,6 +67,7 @@ namespace Pudu
             children.reserve(MAX_CHILDREN);
         }
 
+        bool GetScope(std::string& scopeOut) const;
         ShaderNode* GetChild(Size index);
         ShaderNode* GetChildByName(const std::string& name);
         ShaderNode* GetChildByIndex(Size index);

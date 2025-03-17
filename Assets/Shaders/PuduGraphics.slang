@@ -39,9 +39,10 @@ public struct GlobalsBindless
     public Sampler2D textures[];
 }
 
+[Scope("Global"]
 public ParameterBlock<Globals> GLOBALS;
 
-[Bindless(true)]
+[Bindless(true), Scope("Global")]
 public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]

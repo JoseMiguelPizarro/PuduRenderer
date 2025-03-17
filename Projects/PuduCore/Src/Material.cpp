@@ -55,6 +55,18 @@ namespace Pudu
         return m_descriptorProvider->GetDescriptorSetLayouts()->size();
     }
 
+    void Material::AllocateDescriptorSetsResources(const SPtr<IDescriptorProvider>& descriptorProvider)
+    {
+        if (m_resourcesAllocated)
+        {
+            LOG_WARNING("Trying to allocate descriptor sets resources while already allocated");
+            return;
+        }
+
+        descriptorProvider->Get
+
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string_view& name, float value)
     {
         PropertyUpdateRequest request;

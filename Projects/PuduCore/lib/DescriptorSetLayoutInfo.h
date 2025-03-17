@@ -50,6 +50,7 @@ namespace Pudu {
 		u32 SetNumber;
 		VkDescriptorSetLayoutCreateInfo CreateInfo;
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;
+		std::string scope;
 		bool bindless;
 	};
 }

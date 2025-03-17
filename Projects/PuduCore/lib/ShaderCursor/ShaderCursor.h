@@ -44,7 +44,7 @@ namespace Pudu
 
     private:
         SPtr<GraphicsBuffer> m_buffer;
-        std::byte* m_bufferData;
+        byte* m_bufferData;
         Size m_byteOffset;
         Size m_byteSize;
         u32 m_setIndex;
