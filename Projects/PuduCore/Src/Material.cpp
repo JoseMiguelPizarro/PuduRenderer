@@ -152,8 +152,6 @@ namespace Pudu
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
 
         shaderCursor.Field(request.name.c_str()).Write(request.buffer);
-
-
         //	target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
     }
 

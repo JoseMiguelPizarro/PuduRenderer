@@ -22,8 +22,6 @@ class ShaderCompilationObject {
         std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo(){ return &m_pushConstants;}
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) {m_constantBuffers = buffers;}
         void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
-        ShaderNode* GetShaderLayout();
-
 
     private:
         friend class ShaderObjectLayoutBuilder;

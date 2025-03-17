@@ -280,7 +280,7 @@ namespace Pudu
 
     void PuduGraphics::UploadBufferData(GraphicsBuffer* buffer, const void* data, const Size size, const Size offset)
     {
-        memcpy(buffer->GetMappedData() + offset, data, size);
+        memcpy(static_cast<byte*>(buffer->GetMappedData()) + offset, data, size);
     }
 
     std::vector<ResourceUpdate>* PuduGraphics::GetBindlessResourcesToUpdate()

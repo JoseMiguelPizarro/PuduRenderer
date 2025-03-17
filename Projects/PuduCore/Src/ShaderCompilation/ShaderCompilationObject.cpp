@@ -31,9 +31,4 @@ namespace Pudu
             m_pushConstantRanges.push_back(pushConstant);
         }
     }
-
-    ShaderNode* ShaderCompilationObject::GetShaderLayout()
-    {
-        return &m_shaderLayout;
-    }
 }

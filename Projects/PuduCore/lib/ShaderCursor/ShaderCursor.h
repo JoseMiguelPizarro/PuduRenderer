@@ -56,6 +56,6 @@ namespace Pudu
 
         ShaderNode* m_layout;
 
-        constexpr char ELEMENT_PATH_DELIMITER = '.';
+        const char ELEMENT_PATH_DELIMITER = '.';
     };
 }

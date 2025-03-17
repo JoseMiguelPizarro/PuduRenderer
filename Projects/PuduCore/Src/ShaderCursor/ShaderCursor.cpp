@@ -17,7 +17,6 @@ namespace Pudu
         cursor.m_setIndex = node->setIndex;
         cursor.m_bindingIndex = node->bindingIndex;
         cursor.m_byteSize = node->size;
-        cursor.m_binding = node->binding;
     }
 
     ShaderCursor ShaderCursor::Field(const char* name) const
@@ -115,6 +114,7 @@ namespace Pudu
 
     void ShaderCursor::Write(f32 value)
     {
+
     }
 
     void ShaderCursor::Write(u32 value)
