@@ -8,6 +8,11 @@ struct BindlessAttribute
     bool value;
 };
 
+[__AttributeUsage(_AttributeTargets.Var)]
+struct ScopeAttribute
+{
+    string value;
+};
 
 public struct GlobalsConstants
 {
@@ -39,7 +44,7 @@ public struct GlobalsBindless
     public Sampler2D textures[];
 }
 
-[Scope("Global"]
+[Scope("Global")]
 public ParameterBlock<Globals> GLOBALS;
 
 [Bindless(true), Scope("Global")]

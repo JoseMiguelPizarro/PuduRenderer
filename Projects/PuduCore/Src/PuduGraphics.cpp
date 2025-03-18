@@ -1536,8 +1536,8 @@ namespace Pudu
         LOG("Creating descriptor set end");
     }
 
-    void PuduGraphics::CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount,
-                                            VkDescriptorSetLayout* layouts)
+    void PuduGraphics::CreateDescriptorSets(VkDescriptorSet* descriptorSet, const u16 setsCount,
+                                            const VkDescriptorSetLayout* layouts) const
     {
         CreateDescriptorSets(m_bindlessDescriptorPool, descriptorSet, setsCount, layouts);
     }

@@ -50,6 +50,15 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, textureArray);
     }
 
+    SPtr<Material> Material::SetScope(const char* scope)
+    {
+        ASSERT(m_descriptorProvider == nullptr, "Material scope should be set before setting descriptor provider");
+
+        m_scope = scope;
+
+        return SPtr<Material>(this);
+    }
+
     size Material::GetDescriptorSetsCount() const
     {
         return m_descriptorProvider->GetDescriptorSetLayouts()->size();
@@ -63,16 +72,21 @@ namespace Pudu
             return;
         }
 
-        descriptorProvider->Get
+        auto allocationInfo = ShaderNodeResourcesAllocationInfo{
+            descriptorProvider->GetShaderLayout(), m_gpu, m_scope.c_str()
+        };
 
+        m_propertiesBlock.AllocateGPUResourcesFromShaderNode(allocationInfo);
+
+        m_resourcesAllocated = true;
     }
 
     void ShaderPropertiesBlock::SetProperty(const std::string_view& name, float value)
     {
         PropertyUpdateRequest request;
-        request.name = name;
-        request.type = ShaderPropertyType::Float;
-        request.value = glm::vec4(value);
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Float;
+        request.property.value = glm::vec4(value);
 
         m_descriptorUpdateRequests.push_back(request);
     }
@@ -80,9 +94,9 @@ namespace Pudu
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const glm::vec2 value)
     {
         PropertyUpdateRequest request;
-        request.name = name;
-        request.type = ShaderPropertyType::Vec2;
-        request.value = glm::vec4(value.x, value.y, 0.0f, 0.0f);
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Vec2;
+        request.property.value = glm::vec4(value.x, value.y, 0.0f, 0.0f);
 
         m_descriptorUpdateRequests.push_back(request);
     }
@@ -90,9 +104,9 @@ namespace Pudu
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture)
     {
         PropertyUpdateRequest updateRequest{};
-        updateRequest.texture = texture;
-        updateRequest.name = name;
-        updateRequest.type = ShaderPropertyType::Texture;
+        updateRequest.property.texture = texture;
+        updateRequest.property.name = name;
+        updateRequest.property.type = ShaderPropertyType::Texture;
 
         m_descriptorUpdateRequests.push_back(updateRequest);
     }
@@ -100,9 +114,9 @@ namespace Pudu
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)
     {
         PropertyUpdateRequest updateRequest{};
-        updateRequest.type = ShaderPropertyType::Buffer;
-        updateRequest.name = name;
-        updateRequest.buffer = buffer;
+        updateRequest.property.type = ShaderPropertyType::Buffer;
+        updateRequest.property.name = name;
+        updateRequest.property.buffer = buffer;
 
         m_descriptorUpdateRequests.push_back(updateRequest);
     }
@@ -110,9 +124,9 @@ namespace Pudu
     void ShaderPropertiesBlock::SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray)
     {
         PropertyUpdateRequest updateRequest{};
-        updateRequest.type = ShaderPropertyType::TextureArray;
-        updateRequest.name = name;
-        updateRequest.textureArray = textureArray;
+        updateRequest.property.type = ShaderPropertyType::TextureArray;
+        updateRequest.property.name = name;
+        updateRequest.property.textureArray = textureArray;
 
         m_descriptorUpdateRequests.push_back(updateRequest);
     }
@@ -121,7 +135,7 @@ namespace Pudu
     {
         for (auto& request : m_descriptorUpdateRequests)
         {
-            switch (request.type)
+            switch (request.property.type)
             {
             case ShaderPropertyType::Texture:
                 {
@@ -150,12 +164,20 @@ namespace Pudu
         m_descriptorUpdateRequests.clear();
     }
 
+    std::vector<SPtr<GPUResourceBase>>* ShaderPropertiesBlock::GetAllocatedResources()
+    {
+        return &m_allocatedResources;
+    }
+
     void ShaderPropertiesBlock::ApplyTexture(PropertyUpdateRequest& request,
                                              const MaterialApplyPropertyGPUTarget& target)
     {
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
 
-        shaderCursor.Field(request.name.c_str()).Write(request.texture);
+        auto field = shaderCursor.Field(request.property.name.c_str());
+        field.Write(request.property.texture);
+
+        BindPropertyToShaderNode(field.GetNode(), request.property);
     }
 
     void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request,
@@ -163,25 +185,33 @@ namespace Pudu
     {
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
 
-        shaderCursor.Field(request.name.c_str()).Write(request.buffer);
-        //	target.commands->PushDescriptorSets(GetBindingPoint(target.pipeline), target.pipeline->vkPipelineLayoutHandle, binding->set, 1, &bufferWrite);
+        auto field = shaderCursor.Field(request.property.name.c_str());
+
+        BindPropertyToShaderNode(field.GetNode(), request.property);
     }
 
     void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request,
-                                                  const MaterialApplyPropertyGPUTarget& settings)
+                                                  const MaterialApplyPropertyGPUTarget& target)
     {
-        auto binding = settings.descriptorProvider->GetBindingByName(request.name.c_str());
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
+        auto field = shaderCursor.Field(request.property.name.c_str());
+
+        LOG_ERROR("ApplyTextureArray NOT IMPLEMENTED");
+
+        //TODO: HANDLE TEXTURE ARRAY LOGIC
+
+        auto binding = target.descriptorProvider->GetBindingByName(request.property.name.c_str());
 
         if (binding == nullptr)
         {
-            LOG("Trying to set non-existing parameter {} for descriptor provider", request.name);
+            LOG("Trying to set non-existing parameter {} for descriptor provider", request.property.name);
             return;
         }
 
         static VkWriteDescriptorSet descriptorWrites[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
         static VkDescriptorImageInfo imageInfos[PuduGraphics::k_MAX_BINDLESS_RESOURCES];
 
-        auto textureArray = request.textureArray;
+        auto textureArray = request.property.textureArray;
         uint32_t currentWriteIndex = 0;
 
         for (const auto& texture : *textureArray)
@@ -192,7 +222,7 @@ namespace Pudu
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.dstArrayElement = texture->Handle();
             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.dstSet = settings.descriptorSets[binding->setNumber];
+            descriptorWrite.dstSet = target.descriptorSets[binding->setNumber];
 
             descriptorWrite.dstBinding = binding->index;
 
@@ -208,36 +238,80 @@ namespace Pudu
             currentWriteIndex++;
         }
 
-        settings.graphics->UpdateDescriptorSet(currentWriteIndex, descriptorWrites);
+        target.graphics->UpdateDescriptorSet(currentWriteIndex, descriptorWrites);
         //settings.commands->PushDescriptorSets(GetBindingPoint(settings.pipeline), settings.pipeline->vkPipelineLayoutHandle, setIndex, currentWriteIndex, descriptorWrites);
     }
 
-    void ShaderPropertiesBlock::ApplyVectorValue(PropertyUpdateRequest& request,
-                                                 const MaterialApplyPropertyGPUTarget& settings)
+    void ShaderPropertiesBlock::ApplyVectorValue(const PropertyUpdateRequest& request,
+                                                 const MaterialApplyPropertyGPUTarget& target)
     {
-        throw std::runtime_error("Unimplemented ApplyVectorValue");
-        auto binding = settings.descriptorProvider->GetBindingByName(request.name.c_str());
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
+        auto field = shaderCursor.Field(request.property.name.c_str());
 
-        if (binding == nullptr)
-        {
-            LOG("Trying to set non-existing parameter {} for descriptor provider", request.name);
-            return;
-        }
+        auto shaderNode = field.GetNode();
 
-        VkWriteDescriptorSet bufferWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-        bufferWrite.descriptorCount = 1;
-        bufferWrite.dstBinding = binding->index;
-        bufferWrite.dstSet = settings.descriptorSets[binding->setNumber];
-        // bufferWrite.pBufferInfo = &bufferInfo;
+        //Fetch float value associated buffer
+        auto cBufferProperty = FetchShaderNodeProperty(shaderNode->parentContainer);
 
-        bufferWrite.descriptorType = binding->type;
+        field.Write(cBufferProperty->buffer, &request.property.value, shaderNode->offset, shaderNode->size);
 
-        // target.graphics->UpdateDescriptorSet(1, &bufferWrite);
+        BindPropertyToShaderNode(field.GetNode(), request.property);
     }
 
-    void ShaderPropertiesBlock::ApplyFloatValue(const PropertyUpdateRequest& value,
+    void ShaderPropertiesBlock::ApplyFloatValue(const PropertyUpdateRequest& request,
                                                 const MaterialApplyPropertyGPUTarget& target)
     {
+        //For alignment purposes we are treating everything as a vector hehe 🙈
+        ApplyVectorValue(request, target);
+    }
+
+    void ShaderPropertiesBlock::AllocateGPUResourcesFromShaderNode(ShaderNodeResourcesAllocationInfo& allocationInfo)
+    {
+        auto node = allocationInfo.rootNode;
+
+        ASSERT(node != nullptr, "Shader node can't be null!");
+
+        if (node->type == ShaderNodeType::CBuffer)
+        {
+            if (node->scope == allocationInfo.scope)
+            {
+                auto cbuffer =
+                    allocationInfo.graphics->CreateGraphicsBuffer(node->size, nullptr,
+                                                                  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                                  node->name.c_str());
+
+                m_allocatedResources.push_back(cbuffer);
+
+
+                ShaderProperty shaderProperty{};
+                shaderProperty.type = ShaderPropertyType::Buffer;
+                shaderProperty.name = node->name;
+                shaderProperty.buffer = cbuffer;
+
+                SetProperty(shaderProperty.name, shaderProperty.buffer);
+            }
+        }
+
+        for (Size i = 0; i < node->childCount; i++)
+        {
+            const auto childNode = node->GetChildByIndex(i);
+
+            auto allocInfo = ShaderNodeResourcesAllocationInfo(
+                childNode, allocationInfo.graphics, allocationInfo.scope);
+
+            AllocateGPUResourcesFromShaderNode(allocInfo);
+        }
+    }
+
+    void ShaderPropertiesBlock::BindPropertyToShaderNode(ShaderNode* node, const ShaderProperty& property)
+    {
+        m_propertiesByShaderNodeMap[node] = property;
+    }
+
+    ShaderProperty* ShaderPropertiesBlock::FetchShaderNodeProperty(const ShaderNode* node)
+    {
+        return &m_propertiesByShaderNodeMap.at(node);
     }
 
     Material::Material(PuduGraphics* graphics)
@@ -245,7 +319,7 @@ namespace Pudu
         this->Create(graphics);
     }
 
-    void Material::SetShader(SPtr<Shader> shader)
+    void Material::SetShader(const SPtr<Shader>& shader)
     {
         m_shader = shader;
         const auto layouts = shader->GetVkDescriptorSetLayouts();
@@ -258,19 +332,27 @@ namespace Pudu
 
     void Material::SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider)
     {
+        ASSERT(m_descriptorProvider == nullptr, "Descriptor provider already set");
+
+
         m_descriptorProvider = descriptorProvider;
 
-        m_gpu->CreateDescriptorSets(m_descriptorSets, m_descriptorProvider->GetDescriptorSetLayouts()->size(),
-                                    m_descriptorProvider->GetVkDescriptorSetLayouts());
-    }
+        std::vector<VkDescriptorSetLayout> descriptorSetsToCreate;
+        descriptorSetsToCreate.reserve(m_descriptorProvider->GetDescriptorSetLayouts()->size());
 
-    void Material::CreateDescriptorSets(const std::vector<SPtr<DescriptorSetLayout>>& layouts)
-    {
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts(layouts.size());
-        for (uint32_t i = 0; i < layouts.size(); i++)
+        for (const auto& layout : *m_descriptorProvider->GetDescriptorSetLayouts())
         {
-            descriptorSetLayouts[i] = layouts[i]->vkHandle;
+            if (layout->scope == m_scope)
+            {
+                descriptorSetsToCreate.push_back(layout->vkHandle);
+            }
         }
-        m_gpu->CreateDescriptorSets(m_descriptorSets, layouts.size(), descriptorSetLayouts.data());
+
+        m_gpu->CreateDescriptorSets(m_descriptorSets, descriptorSetsToCreate.size(),
+                                    descriptorSetsToCreate.data());
+
+        auto allocationInfo = ShaderNodeResourcesAllocationInfo(descriptorProvider->GetShaderLayout(), m_gpu,
+                                                                m_scope.c_str());
+        m_propertiesBlock.AllocateGPUResourcesFromShaderNode(allocationInfo);
     }
 }

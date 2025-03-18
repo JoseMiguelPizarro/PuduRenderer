@@ -72,6 +72,11 @@ namespace Pudu
         return cursor;
     }
 
+    ShaderNode* ShaderCursor::GetNode() const
+    {
+        return m_layout;
+    }
+
 
     void ShaderCursor::Write(const SPtr<Texture>& texture)
     {
@@ -131,6 +136,7 @@ namespace Pudu
 
     void ShaderCursor::Write(vec4 value)
     {
+
     }
 
     void ShaderCursor::Write(mat2 value)

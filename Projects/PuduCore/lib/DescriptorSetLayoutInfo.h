@@ -35,6 +35,7 @@ namespace Pudu {
 	struct DescriptorSetLayout :GPUResource<DescriptorSetLayout>
 	{
 		std::string name;
+		std::string scope;
 		VkDescriptorSetLayout vkHandle;
 		VkDescriptorSetLayoutBinding* vkBinding = nullptr;
 		DescriptorBinding* bindings = nullptr;

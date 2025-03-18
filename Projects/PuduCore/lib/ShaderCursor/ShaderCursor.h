@@ -27,6 +27,7 @@ namespace Pudu
         ShaderCursor Field(const char* name) const;
         ShaderCursor Field(u32 index) const;
         ShaderCursor Element(u32 index) const;
+        ShaderNode* GetNode() const;
 
         bool IsValid();
 

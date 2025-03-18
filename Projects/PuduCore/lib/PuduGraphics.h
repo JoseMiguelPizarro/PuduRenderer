@@ -241,7 +241,7 @@ namespace Pudu
 		void UploadBufferData(GraphicsBuffer* buffer, const void* data, Size size, Size offset = 0);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
-		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
+		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		SPtr<Texture> GetDefaultWhiteTexture();
 		SPtr<Mesh> GetDefaultQuad();
 	private:

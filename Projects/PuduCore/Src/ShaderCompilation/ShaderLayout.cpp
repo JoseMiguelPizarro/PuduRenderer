@@ -74,6 +74,15 @@ namespace Pudu
         shaderNode->size = size;
         shaderNode->type = type;
 
+        if (this->type == ShaderNodeType::CBuffer)
+        {
+            shaderNode->parentContainer = this;
+        }
+        else
+        {
+            shaderNode->parentContainer = this->parentContainer;
+        }
+
         return shaderNode;
     }
 
