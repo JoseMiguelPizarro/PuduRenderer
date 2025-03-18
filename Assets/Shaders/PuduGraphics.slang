@@ -44,7 +44,7 @@ public struct GlobalsBindless
     public Sampler2D textures[];
 }
 
-[Scope("Global")]
+[Scope("Global"), Bindless(true)]
 public ParameterBlock<Globals> GLOBALS;
 
 [Bindless(true), Scope("Global")]

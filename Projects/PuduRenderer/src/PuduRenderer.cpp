@@ -17,7 +17,6 @@
 #include "FileManager.h"
 
 
-
 namespace Pudu
 {
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -27,9 +26,12 @@ namespace Pudu
 
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
         //Load Globals
-        m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphics.slang"));
-        m_globalPropertiesMaterial->SetScope("Global");
-        m_globalPropertiesMaterial->SetDescriptorProvider(m_globalDescriptorSetLayouts);
+        m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(
+            graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphics.slang"));
+        m_globalPropertiesMaterial
+            ->SetScope("Global")
+            ->SetDescriptorProvider(m_globalDescriptorSetLayouts);
+
 
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
@@ -137,7 +139,8 @@ namespace Pudu
         computeRP->SetGroupSize(groupSize, groupSize, 1);
 
         auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
-                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
         computeRP->SetShader(compute);
@@ -162,7 +165,8 @@ namespace Pudu
 
         auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(),
                                                              indirectCommands.data(),
-                                                             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
+                                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
         auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
@@ -196,7 +200,7 @@ namespace Pudu
         //AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-      //  AddRenderPass(normalRP.get());
+        //  AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(drawGrassRP.get());
         // AddRenderPass(forwardColorCopyRP.get());

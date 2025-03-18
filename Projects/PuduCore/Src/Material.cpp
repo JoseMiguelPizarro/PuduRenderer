@@ -50,13 +50,13 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, textureArray);
     }
 
-    SPtr<Material> Material::SetScope(const char* scope)
+    Material* Material::SetScope(const char* scope)
     {
         ASSERT(m_descriptorProvider == nullptr, "Material scope should be set before setting descriptor provider");
 
         m_scope = scope;
 
-        return SPtr<Material>(this);
+        return this;
     }
 
     size Material::GetDescriptorSetsCount() const

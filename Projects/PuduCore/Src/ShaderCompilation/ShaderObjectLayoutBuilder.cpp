@@ -230,16 +230,16 @@ namespace Pudu
                         descriptorSetLayoutInfo.CreateInfo.pBindings = descriptorSetLayoutInfo.Bindings.data();
                         descriptorSetLayoutInfo.CreateInfo.flags = 0;
 
-                        if (auto bindlessAttribute = container->getVariable()->findUserAttributeByName(
-                            m_globalSession, "Bindless"))
+
+                        if (auto bindlessAttribute = container->getType()->findUserAttributeByName(
+                            "Bindless"))
                         {
                             int v;
                             descriptorSetLayoutInfo.bindless = bindlessAttribute->getArgumentValueInt(0, &v);
                         }
 
                         std::string scope;
-                        if (auto scopeAttribute = container->getVariable()->findUserAttributeByName(
-                            m_globalSession, "Scope"))
+                        if (auto scopeAttribute = container->getType()->findUserAttributeByName("Scope"))
                         {
                             Size stringSize = 0;
                             scope = scopeAttribute->getArgumentValueString(0, &stringSize);

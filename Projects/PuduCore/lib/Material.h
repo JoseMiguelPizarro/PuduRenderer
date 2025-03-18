@@ -105,7 +105,7 @@ namespace Pudu
         void SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
-        SPtr<Material> SetScope(const char* scope);
+        Material* SetScope(const char* scope);
         Size GetDescriptorSetsCount() const;
 
         VkDescriptorSet* GetDescriptorSets() { return m_descriptorSets; };

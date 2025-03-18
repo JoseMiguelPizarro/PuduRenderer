@@ -1473,6 +1473,7 @@ namespace Pudu
                 "failed to create descriptor set layout!");
 
         descriptorSetLayout->vkHandle = layout;
+        descriptorSetLayout->scope = data.scope;
 
         return descriptorSetLayout->Handle();
     }
