@@ -231,21 +231,23 @@ namespace Pudu
                         descriptorSetLayoutInfo.CreateInfo.flags = 0;
 
 
-                        if (auto bindlessAttribute = container->getType()->findUserAttributeByName(
+                        auto reflectedVar = accessPath.leaf->variableLayout->getVariable();
+                        if (auto bindlessAttribute = reflectedVar->findUserAttributeByName(m_globalSession,
                             "Bindless"))
                         {
-                            int v;
-                            descriptorSetLayoutInfo.bindless = bindlessAttribute->getArgumentValueInt(0, &v);
+                            descriptorSetLayoutInfo.bindless = true;
                         }
 
-                        std::string scope;
-                        if (auto scopeAttribute = container->getType()->findUserAttributeByName("Scope"))
+                        descriptorSetLayoutInfo.scope = "";
+                        auto scope = std::string("");
+                        if (auto scopeAttribute = reflectedVar->findUserAttributeByName(m_globalSession, "Scope"))
                         {
                             Size stringSize = 0;
                             scope = scopeAttribute->getArgumentValueString(0, &stringSize);
+                            if (stringSize > 0)
+                                descriptorSetLayoutInfo.scope = scope.substr(1, stringSize - 2);
+                            //Hack since Slang API doen'st return the real string but the whole code
                         }
-
-                        descriptorSetLayoutInfo.scope = scope;
 
                         context->shaderCompilationObject->descriptorsData.setsCount++;
                         context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
@@ -439,6 +441,10 @@ namespace Pudu
         m_indentation++;
 
         ExtendedAccessPath varPath(accessPath, varLayout);
+
+
+        auto attribCount = varLayout->getVariable()->getUserAttributeCount();
+        LOG_I(m_indentation, "{} Attribcount {}", varLayout->getName(), attribCount);
 
         // auto shaderNode = accessPath.shaderNode->AppendChild(varLayout->getName(), 0, 0,
         //                                                      ShaderNodeType::Struct);

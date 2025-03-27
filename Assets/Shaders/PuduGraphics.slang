@@ -5,7 +5,6 @@ module PuduGraphics;
 [__AttributeUsage(_AttributeTargets.Var)]
 struct BindlessAttribute
 {
-    bool value;
 };
 
 [__AttributeUsage(_AttributeTargets.Var)]
@@ -44,10 +43,10 @@ public struct GlobalsBindless
     public Sampler2D textures[];
 }
 
-[Scope("Global"), Bindless(true)]
+[Scope("Global")]
 public ParameterBlock<Globals> GLOBALS;
 
-[Bindless(true), Scope("Global")]
+[Bindless, Scope("Global")]
 public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]

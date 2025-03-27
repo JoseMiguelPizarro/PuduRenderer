@@ -38,6 +38,13 @@ namespace Pudu
             node = node->GetChildByName(token);
         }
 
+        if (node == nullptr)
+        {
+            auto cursor = ShaderCursor(m_layout, m_target);
+            cursor.m_isValid = false;
+            return cursor;
+        }
+
         auto cursor = ShaderCursor(node, m_target);
 
         SetupCursor(cursor, node);
@@ -77,6 +84,10 @@ namespace Pudu
         return m_layout;
     }
 
+    bool ShaderCursor::IsValid()
+    {
+        return m_isValid;
+    }
 
     void ShaderCursor::Write(const SPtr<Texture>& texture)
     {
@@ -119,7 +130,6 @@ namespace Pudu
 
     void ShaderCursor::Write(f32 value)
     {
-
     }
 
     void ShaderCursor::Write(u32 value)
@@ -136,7 +146,6 @@ namespace Pudu
 
     void ShaderCursor::Write(vec4 value)
     {
-
     }
 
     void ShaderCursor::Write(mat2 value)

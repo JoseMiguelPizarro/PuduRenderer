@@ -175,9 +175,16 @@ namespace Pudu
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
 
         auto field = shaderCursor.Field(request.property.name.c_str());
-        field.Write(request.property.texture);
 
-        BindPropertyToShaderNode(field.GetNode(), request.property);
+        if (field.IsValid())
+        {
+            field.Write(request.property.texture);
+            BindPropertyToShaderNode(field.GetNode(), request.property);
+        }
+        else
+        {
+            LOG_WARNING("Texture {} not found", request.property.name.c_str());
+        }
     }
 
     void ShaderPropertiesBlock::ApplyBuffer(PropertyUpdateRequest& request,
@@ -187,7 +194,10 @@ namespace Pudu
 
         auto field = shaderCursor.Field(request.property.name.c_str());
 
-        BindPropertyToShaderNode(field.GetNode(), request.property);
+        if (field.IsValid())
+            BindPropertyToShaderNode(field.GetNode(), request.property);
+        else
+            LOG_WARNING("Buffer {} not found", request.property.name.c_str());
     }
 
     void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request,
@@ -248,14 +258,21 @@ namespace Pudu
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
         auto field = shaderCursor.Field(request.property.name.c_str());
 
-        auto shaderNode = field.GetNode();
+        if (field.IsValid())
+        {
+            auto shaderNode = field.GetNode();
 
-        //Fetch float value associated buffer
-        auto cBufferProperty = FetchShaderNodeProperty(shaderNode->parentContainer);
+            //Fetch float value associated buffer
+            auto cBufferProperty = FetchShaderNodeProperty(shaderNode->parentContainer);
 
-        field.Write(cBufferProperty->buffer, &request.property.value, shaderNode->offset, shaderNode->size);
+            field.Write(cBufferProperty->buffer, &request.property.value, shaderNode->offset, shaderNode->size);
 
-        BindPropertyToShaderNode(field.GetNode(), request.property);
+            BindPropertyToShaderNode(field.GetNode(), request.property);
+        }
+        else
+        {
+            LOG_WARNING("Shader property {} not found", request.property.name.c_str());
+        }
     }
 
     void ShaderPropertiesBlock::ApplyFloatValue(const PropertyUpdateRequest& request,
