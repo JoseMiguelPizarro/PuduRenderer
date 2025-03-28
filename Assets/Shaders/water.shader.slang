@@ -9,7 +9,6 @@ struct WaterMaterial
     Sampler2D normalTex;
     SamplerCube skyTex;
     float intensity = 1.;
-    float2 value2  = float2(0,0);
 }
 
 

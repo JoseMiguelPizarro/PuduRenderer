@@ -279,6 +279,11 @@ namespace Pudu
                 field.Write(cBufferProperty->buffer, &request.property.value, shaderNode->offset, shaderNode->size);
                 BindPropertyToShaderNode(field.GetNode(), request.property);
             }
+            else
+            {
+                LOG_WARNING("Trying to set vector {} value but parent cbuffer has not been bound",
+                            shaderNode->GetFullPath());
+            }
         }
         else
         {
@@ -311,13 +316,13 @@ namespace Pudu
 
                 m_allocatedResources.push_back(cbuffer);
 
-
                 ShaderProperty shaderProperty{};
                 shaderProperty.type = ShaderPropertyType::Buffer;
                 shaderProperty.name = node->GetFullPath();
                 shaderProperty.buffer = cbuffer;
 
                 SetProperty(shaderProperty.name, shaderProperty.buffer);
+                BindPropertyToShaderNode(node, shaderProperty);
             }
         }
 
@@ -357,12 +362,8 @@ namespace Pudu
     void Material::SetShader(const SPtr<Shader>& shader)
     {
         m_shader = shader;
-        const auto layouts = shader->GetVkDescriptorSetLayouts();
-        const auto layoutCount = shader->GetActiveLayoutCount();
 
-        m_gpu->CreateDescriptorSets(m_descriptorSets, layoutCount, layouts);
-
-        m_descriptorProvider = std::dynamic_pointer_cast<IDescriptorProvider>(shader);
+        SetDescriptorProvider(std::dynamic_pointer_cast<IDescriptorProvider>(shader));
     }
 
     void Material::SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider)
