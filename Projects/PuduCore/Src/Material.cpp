@@ -22,7 +22,13 @@ namespace Pudu
 
     void Material::ApplyProperties()
     {
-        m_propertiesBlock.ApplyProperties({m_gpu, m_descriptorProvider.get(), m_descriptorSets});
+        MaterialApplyPropertyGPUTarget target;
+        target.graphics = m_gpu;
+        target.descriptorProvider = m_descriptorProvider.get();
+        target.m_descriptorSetRemap = m_descriptorSetsIndexRemap;
+        target.m_descriptorSets = m_descriptorSets;
+
+        m_propertiesBlock.ApplyProperties(target);
     }
 
     void Material::SetProperty(const std::string_view& name, const float value)
@@ -79,6 +85,16 @@ namespace Pudu
         m_propertiesBlock.AllocateGPUResourcesFromShaderNode(allocationInfo);
 
         m_resourcesAllocated = true;
+    }
+
+    VkDescriptorSet MaterialApplyPropertyGPUTarget::GetDescriptorSet(const Size slotIndex) const
+    {
+        if (m_descriptorSetRemap == nullptr)
+        {
+            return m_descriptorSets[slotIndex];
+        }
+
+        return m_descriptorSets[m_descriptorSetRemap[slotIndex]];
     }
 
     void ShaderPropertiesBlock::SetProperty(const std::string_view& name, float value)
@@ -241,7 +257,7 @@ namespace Pudu
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.dstArrayElement = texture->Handle();
             descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.dstSet = target.descriptorSets[binding->setNumber];
+            descriptorWrite.dstSet = target.GetDescriptorSet(binding->setNumber);
 
             descriptorWrite.dstBinding = binding->index;
 
@@ -311,7 +327,9 @@ namespace Pudu
                 auto cbuffer =
                     allocationInfo.graphics->CreateGraphicsBuffer(node->size, nullptr,
                                                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                                  VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                                                                  |
+                                                                  VMA_ALLOCATION_CREATE_MAPPED_BIT,
                                                                   node->name.c_str());
 
                 m_allocatedResources.push_back(cbuffer);
@@ -370,19 +388,24 @@ namespace Pudu
     {
         ASSERT(m_descriptorProvider == nullptr, "Descriptor provider already set");
 
-
         m_descriptorProvider = descriptorProvider;
 
         std::vector<VkDescriptorSetLayout> descriptorSetsToCreate;
         descriptorSetsToCreate.reserve(m_descriptorProvider->GetDescriptorSetLayouts()->size());
 
-        for (const auto& layout : *m_descriptorProvider->GetDescriptorSetLayouts())
+        auto descriptorSetLayouts = m_descriptorProvider->GetDescriptorSetLayouts();
+
+        Size descriptorSetCount = 0;
+        for (const auto& layout : *descriptorSetLayouts)
         {
             if (layout->scope == m_scope)
             {
+                m_descriptorSetsIndexRemap[layout->setIndex] = descriptorSetCount++;
                 descriptorSetsToCreate.push_back(layout->vkHandle);
             }
         }
+
+        //TODO: STORE A SHADER ROOT NODE THAT PARENTS ALL THE CHILD SHADERNODES? Since set number is cached on the shaderNode itself, this will need recompute it each time or recache it
 
         m_gpu->CreateDescriptorSets(m_descriptorSets, descriptorSetsToCreate.size(),
                                     descriptorSetsToCreate.data());

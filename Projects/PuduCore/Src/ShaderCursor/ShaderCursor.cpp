@@ -100,7 +100,7 @@ namespace Pudu
         VkWriteDescriptorSet imageWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
         imageWrite.descriptorCount = 1;
         imageWrite.dstBinding = m_bindingIndex;
-        imageWrite.dstSet = m_target->descriptorSets[m_setIndex];
+        imageWrite.dstSet = m_target->GetDescriptorSet(m_setIndex);
         imageWrite.pImageInfo = &imageInfo;
         imageWrite.descriptorType = m_descriptorType;
 
@@ -117,7 +117,7 @@ namespace Pudu
         VkWriteDescriptorSet bufferWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
         bufferWrite.descriptorCount = 1;
         bufferWrite.dstBinding = m_bindingIndex;
-        bufferWrite.dstSet = m_target->descriptorSets[m_setIndex];
+        bufferWrite.dstSet = m_target->GetDescriptorSet(m_setIndex);
         bufferWrite.pBufferInfo = &bufferInfo;
         bufferWrite.descriptorType = m_descriptorType;
 

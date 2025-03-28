@@ -48,6 +48,7 @@ namespace Pudu
 
         u32 bindingIndex = 0;
         u32 setIndex = 0;
+        u32 setId = 0;
 
         ShaderNodeType type;
 

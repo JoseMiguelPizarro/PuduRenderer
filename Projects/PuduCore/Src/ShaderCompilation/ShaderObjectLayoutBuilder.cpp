@@ -237,7 +237,6 @@ namespace Pudu
                         descriptorSetLayoutInfo.CreateInfo.pBindings = descriptorSetLayoutInfo.Bindings.data();
                         descriptorSetLayoutInfo.CreateInfo.flags = 0;
 
-
                         auto reflectedVar = accessPath.leaf->variableLayout->getVariable();
                         if (auto bindlessAttribute = reflectedVar->findUserAttributeByName(m_globalSession,
                             "Bindless"))

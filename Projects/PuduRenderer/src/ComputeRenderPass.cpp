@@ -42,7 +42,13 @@ namespace Pudu
 			m_shader->SetBuffer(attachment.buffer->name.c_str(), attachment.buffer);
 		}
 
-		m_shader->GetPropertiesBlock()->ApplyProperties({ frameData.graphics, m_shader.get(), pipeline->vkDescriptorSets,computeCommands.get() });
+
+		MaterialApplyPropertyGPUTarget gpuTarget;
+		gpuTarget.graphics = frameData.graphics;
+		gpuTarget.commands = computeCommands.get();
+		gpuTarget.m_descriptorSets = pipeline->vkDescriptorSets;
+		gpuTarget.descriptorProvider = m_shader.get();
+		m_shader->GetPropertiesBlock()->ApplyProperties(gpuTarget);
 
 		computeCommands->BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle, pipeline->vkDescriptorSets, pipeline->numDescriptorSets);
 

@@ -48,8 +48,15 @@ namespace Pudu
     {
         PuduGraphics* graphics;
         IDescriptorProvider* descriptorProvider;
-        VkDescriptorSet* descriptorSets;
         GPUCommands* commands;
+
+        VkDescriptorSet GetDescriptorSet(Size slotIndex) const;
+
+        VkDescriptorSet* m_descriptorSets;
+        Size* m_descriptorSetRemap = nullptr;
+    private:
+        friend class Material;
+        friend class Shader;
     };
 
     struct ShaderNodeResourcesAllocationInfo
@@ -117,6 +124,7 @@ namespace Pudu
         ShaderPropertiesBlock m_propertiesBlock;
         SPtr<IDescriptorProvider> m_descriptorProvider;
         VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
+        Size m_descriptorSetsIndexRemap[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
         bool m_resourcesAllocated = false;
         std::string m_scope;
 
