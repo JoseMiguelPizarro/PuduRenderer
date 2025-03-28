@@ -18,7 +18,7 @@ float4 fragmentMain(VSOut input)
 
     float3 coord = input.Normal.xyz;
     // float4 col = cubeMap.Sample(coord);
-    Sampler2D tex = GetGlobalTexture(id);
+  //Sampler2D tex = GetGlobalTexture(id);
 
     float4 baseColor = testText.Sample(coord) + saturate(tex.Sample(input.TexCoord.xy)) * 0.001;
     // col.xyz = float3(input.Color);

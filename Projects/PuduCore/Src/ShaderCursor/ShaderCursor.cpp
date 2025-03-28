@@ -17,6 +17,7 @@ namespace Pudu
         cursor.m_setIndex = node->setIndex;
         cursor.m_bindingIndex = node->bindingIndex;
         cursor.m_byteSize = node->size;
+        cursor.m_descriptorType = node->binding.type;
     }
 
     ShaderCursor ShaderCursor::Field(const char* name) const

@@ -28,7 +28,7 @@ namespace Pudu
 
         std::vector<SPtr<DescriptorSetLayout>> m_setLayouts;
         std::vector<VkDescriptorSetLayout> m_vkSetLayouts;
-        ShaderNode m_shaderLayout;
+        SPtr<ShaderNode> m_shaderLayout;
 
         bool m_descriptorSetLayoutsCreated = false;
     };

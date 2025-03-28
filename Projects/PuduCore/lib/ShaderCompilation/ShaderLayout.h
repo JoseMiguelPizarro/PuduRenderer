@@ -37,28 +37,35 @@ namespace Pudu
     };
 
     constexpr Size MAX_CHILDREN = 64;
+    static const char* ROOT_NAME = "Root";
 
     struct ShaderNode
     {
         std::string name;
-        u32 offset{};
-        Size size{};
-        Size elementCount;
+        u32 offset = 0;
+        Size size = 0;
+        Size elementCount = 0;
 
-        u32 bindingIndex;
-        u32 setIndex;
+        u32 bindingIndex = 0;
+        u32 setIndex = 0;
 
         ShaderNodeType type;
 
         Size childCount = 0;
         DescriptorBinding binding;
         std::string scope;
-        ShaderNode* parentContainer;
+
+        //Pointer to the final container this shader node will part of. ie CBuffer->Struct->floatValue for floatValue its container is CBuffer while its parent is Struct
+        ShaderNode* parentContainer = nullptr;
+        ShaderNode* parent = nullptr;
+
 
         ShaderNode()
         {
             children.reserve(MAX_CHILDREN);
         };
+
+        std::string GetFullPath() const;
 
         ShaderNode(const char* name, const u32 offset, const Size size, const ShaderNodeType type) : name(name),
             offset(offset), size(size), type(type)
@@ -71,13 +78,12 @@ namespace Pudu
         ShaderNode* GetChildByName(const std::string& name);
         ShaderNode* GetChildByIndex(Size index);
         ShaderNode* GetChildByHandle(ShaderNodeHandle handle);
-        ShaderNode* AppendChild(const ShaderNode& child);
         ShaderNode* AppendChild(const char* name, const u32 offset, const Size size, const ShaderNodeType type);
 
         void Print();
         static void Print(ShaderNode* node, u32 indent);
 
     private:
-        std::vector<ShaderNode> children;
+        std::vector<SPtr<ShaderNode>> children;
     };
 }

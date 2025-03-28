@@ -42,6 +42,6 @@ namespace Pudu
 
     ShaderNode* DescriptorSetLayoutsCollection::GetShaderLayout()
     {
-        return &m_shaderLayout;
+        return m_shaderLayout.get();
     }
 }

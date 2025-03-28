@@ -7,6 +7,31 @@
 namespace Pudu
 {
 #pragma region ShaderNode
+    std::string ShaderNode::GetFullPath() const
+    {
+        const ShaderNode* rootNode = this;
+
+        std::vector<const ShaderNode*> path;
+        while (rootNode != nullptr && rootNode->name != ROOT_NAME)
+        {
+            path.push_back(rootNode);
+            rootNode = rootNode->parent;
+        }
+
+        std::string fullPath;
+
+        for (i32 i = path.size() - 1; i >= 0; --i)
+        {
+            fullPath.append(path[i]->name);
+            if (i != 0)
+            {
+                fullPath.append(".");
+            }
+        }
+
+        return fullPath;
+    }
+
     bool ShaderNode::GetScope(std::string& scopeOut) const
     {
         if (scope.empty())
@@ -19,16 +44,16 @@ namespace Pudu
     ShaderNode* ShaderNode::GetChild(Size index)
     {
         ASSERT(index < childCount, "ShaderNode: Child index out of bounds!");
-        return &children[index];
+        return children[index].get();
     }
 
     ShaderNode* ShaderNode::GetChildByName(const std::string& name)
     {
         for (Size i = 0; i < children.size(); i++)
         {
-            if (children[i].name == name)
+            if (children[i]->name == name)
             {
-                return &children[i];
+                return children[i].get();
             }
         }
 
@@ -44,7 +69,7 @@ namespace Pudu
             return nullptr;
         }
 
-        return &children[index];
+        return children[index].get();
     }
 
     ShaderNode* ShaderNode::GetChildByHandle(ShaderNodeHandle handle)
@@ -52,38 +77,33 @@ namespace Pudu
         return GetChildByIndex(handle.index);
     }
 
-    ShaderNode* ShaderNode::AppendChild(const ShaderNode& child)
-    {
-        ASSERT(children.size() < MAX_CHILDREN, "Reached maximum number of children for shader node {}!", this->name);
-
-        children.push_back(child);
-
-        return &children.back();
-    }
-
     ShaderNode* ShaderNode::AppendChild(const char* name, const u32 offset, const Size size,
                                         const ShaderNodeType type)
     {
         ASSERT(children.size() < MAX_CHILDREN, "Reached maximum number of children for shader node {}!", this->name);
 
-        children.resize(children.size() + 1);
+        ShaderNode shaderNode;
+        shaderNode.name = name;
+        shaderNode.offset = offset;
+        shaderNode.size = size;
+        shaderNode.type = type;
 
-        const auto shaderNode = &children[children.size() - 1];
-        shaderNode->name = name;
-        shaderNode->offset = offset;
-        shaderNode->size = size;
-        shaderNode->type = type;
+        shaderNode.parent = this;
 
         if (this->type == ShaderNodeType::CBuffer)
         {
-            shaderNode->parentContainer = this;
+            shaderNode.parentContainer = this;
         }
         else
         {
-            shaderNode->parentContainer = this->parentContainer;
+            shaderNode.parentContainer = this->parentContainer;
         }
 
-        return shaderNode;
+        childCount++;
+
+        children.push_back(std::make_shared<ShaderNode>(shaderNode));
+
+        return children.back().get();
     }
 
     void ShaderNode::Print()
@@ -159,7 +179,7 @@ namespace Pudu
 
         for (Size i = 0; i < node->children.size(); i++)
         {
-            Print(&node->children[i], indent + 1);
+            Print(node->children[i].get(), indent + 1);
         }
     }
 #pragma endregion ShaderNode

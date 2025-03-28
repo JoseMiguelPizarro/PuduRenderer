@@ -35,7 +35,7 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, value);
     }
 
-    void Material::SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture)
+    void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture)
     {
         m_propertiesBlock.SetProperty(name, texture);
     }
@@ -148,13 +148,19 @@ namespace Pudu
                     break;
                 }
             case ShaderPropertyType::TextureArray:
-                ApplyTextureArray(request, target);
+                {
+                    ApplyTextureArray(request, target);
+                }
                 break;
             case ShaderPropertyType::Vec2:
-                ApplyVectorValue(request, target);
+                {
+                    ApplyVectorValue(request, target);
+                }
                 break;
             case ShaderPropertyType::Float:
-                ApplyFloatValue(request, target);
+                {
+                    ApplyFloatValue(request, target);
+                }
                 break;
             default:
                 break;
@@ -195,7 +201,10 @@ namespace Pudu
         auto field = shaderCursor.Field(request.property.name.c_str());
 
         if (field.IsValid())
+        {
+            field.Write(request.property.buffer);
             BindPropertyToShaderNode(field.GetNode(), request.property);
+        }
         else
             LOG_WARNING("Buffer {} not found", request.property.name.c_str());
     }
@@ -265,9 +274,11 @@ namespace Pudu
             //Fetch float value associated buffer
             auto cBufferProperty = FetchShaderNodeProperty(shaderNode->parentContainer);
 
-            field.Write(cBufferProperty->buffer, &request.property.value, shaderNode->offset, shaderNode->size);
-
-            BindPropertyToShaderNode(field.GetNode(), request.property);
+            if (cBufferProperty != nullptr)
+            {
+                field.Write(cBufferProperty->buffer, &request.property.value, shaderNode->offset, shaderNode->size);
+                BindPropertyToShaderNode(field.GetNode(), request.property);
+            }
         }
         else
         {
@@ -303,7 +314,7 @@ namespace Pudu
 
                 ShaderProperty shaderProperty{};
                 shaderProperty.type = ShaderPropertyType::Buffer;
-                shaderProperty.name = node->name;
+                shaderProperty.name = node->GetFullPath();
                 shaderProperty.buffer = cbuffer;
 
                 SetProperty(shaderProperty.name, shaderProperty.buffer);
@@ -328,7 +339,14 @@ namespace Pudu
 
     ShaderProperty* ShaderPropertiesBlock::FetchShaderNodeProperty(const ShaderNode* node)
     {
-        return &m_propertiesByShaderNodeMap.at(node);
+        if (m_propertiesByShaderNodeMap.contains(node))
+        {
+            return &m_propertiesByShaderNodeMap[node];
+        }
+
+        LOG_WARNING("TRYING TO FETCH SHADER PROPERTY NOT PREVIOUSLY SET {}", node->GetFullPath());
+
+        return nullptr;
     }
 
     Material::Material(PuduGraphics* graphics)

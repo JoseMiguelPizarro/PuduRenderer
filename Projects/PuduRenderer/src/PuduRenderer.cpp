@@ -32,7 +32,6 @@ namespace Pudu
             ->SetScope("Global")
             ->SetDescriptorProvider(m_globalDescriptorSetLayouts);
 
-
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
 
@@ -197,17 +196,17 @@ namespace Pudu
         m_imguiRenderPass->name = "ImGui";
         m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
-        //AddRenderPass(computeRP.get());
+        AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-        //  AddRenderPass(normalRP.get());
+        AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(drawGrassRP.get());
-        // AddRenderPass(forwardColorCopyRP.get());
-        // AddRenderPass(depthCopyRP.get());
-        // AddRenderPass(transparentRP.get());
-        // AddRenderPass(m_postProcessingRenderPass.get());
-        // AddRenderPass(overlayRP.get());
+        AddRenderPass(forwardColorCopyRP.get());
+        AddRenderPass(depthCopyRP.get());
+        AddRenderPass(transparentRP.get());
+        AddRenderPass(m_postProcessingRenderPass.get());
+        AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();

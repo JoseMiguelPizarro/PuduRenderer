@@ -22,9 +22,6 @@ public struct GlobalsConstants
     public float time;
     public float4x4 proj;
     public float4x4 view;
-    public float[10] floatArray;
-    public Texture2D[5] textureArray5;
-    public Texture2D[] textureArray;
 }
 
 public struct Globals
@@ -38,16 +35,16 @@ public struct Globals
     public ConstantBuffer<GlobalsConstants> constants;
 }
 
-public struct GlobalsBindless
-{
-    public Sampler2D textures[];
-}
+// public struct GlobalsBindless
+// {
+//     public Sampler2D textures[];
+// }
 
 [Scope("Global")]
 public ParameterBlock<Globals> GLOBALS;
 
-[Bindless, Scope("Global")]
-public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
+// [Bindless, Scope("Global")]
+// public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
 
 [vk::push_constant]
 public UniformBufferObject UBO;
@@ -58,10 +55,10 @@ public UniformBufferObject UBO;
     [[vk::push_constant]] \
     ConstantBuffer<type>
 
-public Sampler2D GetGlobalTexture(uint id)
-{
-    return GLOBALS_BINDLESS.textures[NonUniformResourceIndex(id)];
-}
+// public Sampler2D GetGlobalTexture(uint id)
+// {
+//     return GLOBALS_BINDLESS.textures[NonUniformResourceIndex(id)];
+// }
 
 //This should only be called during the fragment shader. in fragment shader SV_Position is effectively the screen pixel coordinates
 public float2 GetPixelScreenPosition(float4 PosCS)

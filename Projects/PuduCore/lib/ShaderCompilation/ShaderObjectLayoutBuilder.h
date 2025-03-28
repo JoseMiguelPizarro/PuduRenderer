@@ -42,6 +42,7 @@ namespace Pudu
         size_t setIndex = -1;
         Binding* cumulativeOffset = nullptr;
         ShaderNode* shaderNode = nullptr;
+        //Shader node that points to the current deepest buffer
         ShaderNode* rootBufferShaderNode = nullptr;
 
 
@@ -80,18 +81,21 @@ namespace Pudu
     struct ShaderLayoutBuilderContext
     {
         ShaderCompilationObject* shaderCompilationObject = nullptr;
+        ShaderNode* shaderLayout = nullptr;
         size_t constantBufferSize = 0;
         ConstantBufferInfo* PushConstantBufferInfo();
         ConstantBufferInfo* PushPushConstantsBufferInfo();
         std::vector<ConstantBufferInfo>& GetPushConstants();
         std::vector<ConstantBufferInfo>* GetConstantBufferInfos();
-        ShaderNode* shaderLayout;
 
-        size PushSetIndex() { return ++m_setIndex; }
-        size getSetIndex() const { return m_setIndex; }
+        Size PushSetIndex() { return ++m_setIndex; }
+        Size getSetIndex() const { return m_setIndex; }
         void PushBinding(const DescriptorBinding& binding) const;
 
+        ShaderLayoutBuilderContext();
+
     private:
+        const Size MAX_BUFFERS_COUNT = 32;
         size_t m_setIndex = -1;
         std::vector<ConstantBufferInfo> m_constantBuffers;
         std::vector<ConstantBufferInfo> m_pushConstants;

@@ -88,8 +88,7 @@ namespace Pudu
         switch (slangBindingType)
         {
         default:
-            std::fprintf(stderr, "Assertion failed: %s %s\n", "Unsupported binding type!",
-                         BINDING_NAMES.at(slangBindingType));
+            ASSERT(false, "Invalid Binding Type");
         //std::abort();
             return VK_DESCRIPTOR_TYPE_MAX_ENUM;
 
@@ -141,14 +140,23 @@ namespace Pudu
         }
     }
 
+    ShaderLayoutBuilderContext::ShaderLayoutBuilderContext()
+    {
+        m_constantBuffers.reserve(MAX_BUFFERS_COUNT);
+        m_pushConstants.reserve(MAX_BUFFERS_COUNT);
+    }
+
     ConstantBufferInfo* ShaderLayoutBuilderContext::PushConstantBufferInfo()
     {
+        ASSERT(m_constantBuffers.size() < MAX_BUFFERS_COUNT, "MAX CONSTANT BUFFERS EXCEEDED {}", MAX_BUFFERS_COUNT);
         m_constantBuffers.resize(m_constantBuffers.size() + 1);
         return &m_constantBuffers.back();
     }
 
     ConstantBufferInfo* ShaderLayoutBuilderContext::PushPushConstantsBufferInfo()
     {
+        ASSERT(m_pushConstants.size() < MAX_BUFFERS_COUNT, "MAX PUSH CONSTANT BUFFERS EXCEEDED {}", MAX_BUFFERS_COUNT);
+
         m_pushConstants.resize(m_pushConstants.size() + 1);
         return &m_pushConstants.back();
     }
@@ -173,7 +181,6 @@ namespace Pudu
     {
         m_indentation++;
         auto kind = typeLayoutReflection->getKind();
-        LOG_I(m_indentation, "KIND: {}", KIND_NAMES.at(kind));
         switch (kind)
         {
         case TypeReflection::Kind::Struct:
@@ -245,8 +252,10 @@ namespace Pudu
                             Size stringSize = 0;
                             scope = scopeAttribute->getArgumentValueString(0, &stringSize);
                             if (stringSize > 0)
-                                descriptorSetLayoutInfo.scope = scope.substr(1, stringSize - 2);
+                                scope = scope.substr(1, stringSize - 2);
                             //Hack since Slang API doen'st return the real string but the whole code
+
+                            descriptorSetLayoutInfo.scope = scope;
                         }
 
                         context->shaderCompilationObject->descriptorsData.setsCount++;
@@ -266,25 +275,17 @@ namespace Pudu
                     accessPath.cumulativeOffset = &offsets;
 
                     auto firstCategory = container->getCategoryByIndex(0);
-                    auto categoryCount = container->getCategoryCount();
 
-                    for (size_t i = 0; i < categoryCount; i++)
-                    {
-                        auto category = container->getCategoryByIndex(i);
-                        LOG_I(m_indentation, "ParameterBlockCategory: {}", PARAMETER_CATEGORY_NAMES.at(category));
-                    }
-
-                    LOG_I(m_indentation, "First category: {}", PARAMETER_CATEGORY_NAMES.at(firstCategory));
                     if (firstCategory == slang::ParameterCategory::DescriptorTableSlot)
                     {
                         //Implicitly allocated uniform buffer
                         accessPath.cumulativeOffset->PushIndex();
                         DescriptorBinding binding;
+                        binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        binding.name = "_CBuffer";
                         binding.count = 1;
                         binding.index = accessPath.cumulativeOffset->index;
                         binding.setNumber = accessPath.setIndex;
-                        binding.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                        binding.name = "_CBuffer";
                         context->PushBinding(binding);
 
                         accessPath.rootBufferInfo->bindingIndex = accessPath.cumulativeOffset->index;
@@ -298,6 +299,9 @@ namespace Pudu
                             shaderNode->binding = binding;
                             shaderNode->setIndex = accessPath.setIndex;
                             shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
+                            shaderNode->name = "_CBuffer";
+                            shaderNode->scope = accessPath.shaderNode->scope;
+
                             accessPath.rootBufferShaderNode = shaderNode;
                         }
                     }
@@ -306,8 +310,6 @@ namespace Pudu
                 {
                     //PUSH DESCRIPTOR SET FOR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
-                    LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex,
-                          accessPath.cumulativeOffset->index);
 
                     DescriptorBinding binding;
                     binding.setNumber = accessPath.setIndex;
@@ -337,15 +339,7 @@ namespace Pudu
         ///Here we should push a binding
         case TypeReflection::Kind::Resource:
             {
-                auto element = typeLayoutReflection->getElementVarLayout();
-
                 accessPath.cumulativeOffset->PushIndex();
-
-                LOG_I(m_indentation, "{} Set: {} Binding: {}", element->getName() ? element->getName() : "",
-                      accessPath.setIndex,
-                      accessPath.cumulativeOffset->index);
-                auto descriptorType = string_VkDescriptorType(ToVk(typeLayoutReflection->getBindingRangeType(0)));
-                LOG_I(m_indentation, "Descriptor type: {}", descriptorType);
 
                 DescriptorBinding binding;
                 binding.type = ToVk(typeLayoutReflection->getBindingRangeType(0));
@@ -368,28 +362,19 @@ namespace Pudu
         case TypeReflection::Kind::Vector:
         case TypeReflection::Kind::Matrix:
             {
-                DescriptorBinding binding;
-
-                auto container = typeLayoutReflection->getContainerVarLayout();
-                LOG_I(m_indentation, "Container: {}", KIND_NAMES.at(container->getType()->getKind()));
-
-                LOG_I(m_indentation, "Set: {} Binding: {}", accessPath.setIndex, accessPath.cumulativeOffset->index);
-
                 auto node = accessPath.shaderNode->AppendChild(
                     accessPath.leaf->variableLayout->getName(), accessPath.leaf->variableLayout->getOffset(),
                     typeLayoutReflection->getStride(), ShaderNodeType::Uniform);
 
                 node->setIndex = accessPath.setIndex;
                 node->bindingIndex = accessPath.cumulativeOffset->index;
+                node->parentContainer = accessPath.rootBufferShaderNode;
             }
             break;
         case TypeReflection::Kind::Array:
             {
                 //TODO: How to handle array of resources?
                 auto arrayKind = accessPath.leaf->variableLayout->getType()->getElementType()->getKind();
-                LOG_I(m_indentation, "Array Kind {} ElementCount: {} Size {} :", KIND_NAMES.at(arrayKind),
-                      typeLayoutReflection->getElementCount(),
-                      typeLayoutReflection->getSize());
 
                 if (arrayKind == TypeReflection::Kind::Resource)
                 {
@@ -442,15 +427,6 @@ namespace Pudu
 
         ExtendedAccessPath varPath(accessPath, varLayout);
 
-
-        auto attribCount = varLayout->getVariable()->getUserAttributeCount();
-        LOG_I(m_indentation, "{} Attribcount {}", varLayout->getName(), attribCount);
-
-        // auto shaderNode = accessPath.shaderNode->AppendChild(varLayout->getName(), 0, 0,
-        //                                                      ShaderNodeType::Struct);
-        // accessPath.shaderNode = shaderNode;
-
-
         ParseVariableOffsets(varLayout, context, static_cast<AccessPath>(varPath));
 
         m_indentation--;
@@ -466,7 +442,6 @@ namespace Pudu
         for (size_t i = 0; i < usedLayoutUnitsCount; i++)
         {
             auto category = varLayout->getCategoryByIndex(i);
-            LOG_I(m_indentation, "Unit type: {}", PARAMETER_CATEGORY_NAMES.at(category));
 
             switch (category)
             {
@@ -493,19 +468,11 @@ namespace Pudu
                 break;
             case slang::ParameterCategory::Uniform:
                 {
-                    LOG_I(m_indentation, "Size:{} Set: {} Binding: {} ByteOffset {}",
-                          varLayout->getTypeLayout()->getSize(),
-                          accessPath.setIndex,
-                          accessPath.cumulativeOffset->index,
-                          varLayout->getOffset());
-
                     ASSERT(accessPath.rootBufferShaderNode != nullptr, "Root buffer shader node null for {}",
                            varLayout->getName());
 
                     accessPath.rootBufferInfo->PushElement(varLayout->getTypeLayout()->getSize());
                     accessPath.rootBufferShaderNode->size = accessPath.rootBufferInfo->size;
-
-                    LOG_I(m_indentation, "ConstantBufferSize {} ", accessPath.rootBufferInfo->size);
                 }
                 break;
             default: break;
@@ -554,15 +521,10 @@ namespace Pudu
             break;
         case TypeReflection::Kind::ConstantBuffer:
             {
-                //Constant buffer detected to add
-                LOG_I(m_indentation, "Parsing Constant Buffer");
-                auto containerLayout = scopeTypeLayout->getContainerVarLayout();
                 ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
-                ConstantBufferInfo constantBufferInfo;
             }
             break;
         case TypeReflection::Kind::ParameterBlock:
-            LOG_I(m_indentation, "Parsing ParameterBlock");
             ParseScope(scopeTypeLayout->getElementVarLayout(), context, static_cast<AccessPath>(scopeOffsets));
             break;
         default:
@@ -577,11 +539,15 @@ namespace Pudu
         m_indentation = 0;
 
         auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
-        outCompilationObject.descriptorsData.m_shaderLayout = ShaderNode("Root", 0, 0, ShaderNodeType::Root);
 
         AccessPath rootOffsets;
         rootOffsets.valid = true;
-        rootOffsets.shaderNode = &outCompilationObject.descriptorsData.m_shaderLayout;
+
+        SPtr<ShaderNode> rootNode = std::make_shared<ShaderNode>(ShaderNode(
+            ROOT_NAME, 0, 0, ShaderNodeType::Root));
+
+        rootOffsets.shaderNode = rootNode.get();
+        outCompilationObject.descriptorsData.m_shaderLayout = rootNode;
 
         ShaderLayoutBuilderContext context;
         context.shaderCompilationObject = &outCompilationObject;

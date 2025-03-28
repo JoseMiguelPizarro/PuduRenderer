@@ -9,7 +9,7 @@ namespace Pudu {
 	//Represents a binding
 	struct DescriptorBinding
 	{
-		VkDescriptorType type;
+		VkDescriptorType type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
 		u16 index = 0;
 		u16 count = 0;
 		u16 setNumber = 0;
@@ -52,6 +52,6 @@ namespace Pudu {
 		VkDescriptorSetLayoutCreateInfo CreateInfo;
 		std::vector<VkDescriptorSetLayoutBinding> Bindings;
 		std::string scope;
-		bool bindless;
+		bool bindless = false;
 	};
 }

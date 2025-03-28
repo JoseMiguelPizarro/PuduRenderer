@@ -4,20 +4,11 @@
 
 import PuduGraphics;
 
-struct Sampler2DHandle
-{
-    uint32_t handle;
-    Sampler2D Get()
-    {
-        return GLOBALS_BINDLESS.textures[handle];
-    }
-}
 
 struct StandardMaterial
 {
     Sampler2D baseColorTex;
     Sampler2D normalTex;
-    Sampler2DHandle testHandle;
 }
 
 ParameterBlock<StandardMaterial> material;

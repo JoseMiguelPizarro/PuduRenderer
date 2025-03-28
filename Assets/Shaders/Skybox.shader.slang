@@ -4,15 +4,6 @@
 
 import PuduGraphics;
 
-struct Sampler2DHandle
-{
-    uint32_t handle;
-    Sampler2D Get()
-    {
-        return GLOBALS_BINDLESS.textures[handle];
-    }
-}
-
 struct SkyboxMaterial
 {
     SamplerCube skyboxTex;
