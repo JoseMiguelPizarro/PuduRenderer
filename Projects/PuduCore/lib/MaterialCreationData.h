@@ -4,6 +4,7 @@
 
 struct MaterialCreationData
 {
+	std::string name;
 	bool hasBaseTexture = false;
 	bool hasNormalMap = false;
 	std::filesystem::path BaseTexturePath;

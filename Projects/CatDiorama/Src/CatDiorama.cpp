@@ -142,6 +142,7 @@ void CatDiorama::OnInit()
     groundModel->GetModel()->Materials[0]->SetShader(standardShader);
 
     auto waterMaterial = waterModel->GetModel()->Materials[0];
+    waterMaterial->name = "Water";
     waterMaterial->SetShader(waterShader);
     waterMaterial->SetProperty("material.normalTex",waternormalTex);
     waterMaterial->SetProperty("material.skyTex",skyTexture);
@@ -164,9 +165,10 @@ void CatDiorama::OnInit()
 
     skyboxModel->GetTransform().SetLocalPosition({0, 5, 0});
     skyboxModel->GetTransform().SetLocalScale({60, 60, 60});
-    const auto mat = skyboxModel->GetModel()->Materials[0];
-    mat->SetShader(skyboxShader);
-    mat->SetProperty("material.skyboxTex", skyTexture);
+    const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
+    skyboxMaterial->name = "Skybox";
+    skyboxMaterial->SetShader(skyboxShader);
+    skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
 
    // m_scene.AddEntities(axisModel);
     m_scene.AddEntity(skyboxModel);
@@ -199,6 +201,21 @@ void CatDiorama::DrawImGUI()
 
         ImGui::EndTable();
     }
+
+    if (ImGui::CollapsingHeader("Materials"))
+    {
+        auto materials = Graphics.Resources()->GetAllocatedMaterials()->GetAllResources();
+
+        for (Size row = 0; row < materials.size(); row++)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text(materials[row]->name.c_str());
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%d", materials[row]->Handle().Index());
+        }
+    }
+
 
     ImGui::Text("Camera");
     ImGuiUtils::DrawTransform(m_camera.Transform);

@@ -330,9 +330,9 @@ namespace Pudu
         if (pipeline->numActiveLayouts - frameData.descriptorSetOffset > 0)
         {
             frameData.currentCommand->BindDescriptorSet(pipeline->vkPipelineLayoutHandle,
-                                                        &material->GetDescriptorSets()[frameData.descriptorSetOffset],
-                                                        material->GetShader()->GetActiveLayoutCount() - frameData.
-                                                        descriptorSetOffset, frameData.descriptorSetOffset);
+                                                        material->GetDescriptorSets(),
+                                                        material->GetDescriptorSetsCount(),
+                                                        frameData.descriptorSetOffset);
         }
     }
 

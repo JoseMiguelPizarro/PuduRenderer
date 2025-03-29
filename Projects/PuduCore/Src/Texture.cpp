@@ -17,11 +17,18 @@ namespace Pudu
 
     void Texture::OnCreate(PuduGraphics* gfx)
     {
-        SamplerCreationData samplerData;
-        samplerData.wrap = false;
+        SamplerCreationData* samplerPtr =  static_cast<SamplerCreationData*>(samplerData);
+
+        SamplerCreationData sampler;
+        sampler.wrap = false;
+
+        if (samplerData == nullptr)
+        {
+            samplerPtr = &sampler;
+        }
 
         gfx->CreateVKTexture(this);
-        gfx->CreateVKTextureSampler(samplerData, Sampler.vkHandle);
+        gfx->CreateVKTextureSampler(*samplerPtr, Sampler.vkHandle);
     }
 
     void RenderTexture::SetUsage(const ResourceUsage usage)

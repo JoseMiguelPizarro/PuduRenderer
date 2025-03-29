@@ -29,6 +29,7 @@ namespace Pudu
 		bool bindless;
 		void* sourceData;
 		void* pixels;
+		void* samplerData;
 		uint32_t dataSize;
 
 		bool IsDestroyed();

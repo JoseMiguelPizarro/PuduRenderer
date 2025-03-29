@@ -31,7 +31,7 @@ namespace Pudu
     {
         std::string name;
         ShaderPropertyType::Enum type;
-        glm::vec4 value;
+        vec4 value;
         SPtr<Texture> texture;
         Size arrayIndex;
         SPtr<GraphicsBuffer> buffer;
@@ -53,6 +53,7 @@ namespace Pudu
         VkDescriptorSet GetDescriptorSet(Size slotIndex) const;
 
         VkDescriptorSet* m_descriptorSets;
+        //Remap absolute layout index to material allocated layout index
         Size* m_descriptorSetRemap = nullptr;
     private:
         friend class Material;
@@ -70,7 +71,7 @@ namespace Pudu
     {
     public:
         void SetProperty(const std::string_view& name, float value);
-        void SetProperty(const std::string& name, glm::vec2 value);
+        void SetProperty(const std::string& name, vec2 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
@@ -101,7 +102,6 @@ namespace Pudu
     {
     public:
         explicit Material(PuduGraphics* graphics);
-        std::string Name;
         void SetShader(const SPtr<Shader>& shader);
         void SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider);
         SPtr<Shader> GetShader() { return m_shader; }
@@ -109,7 +109,7 @@ namespace Pudu
         void ApplyProperties();
         void SetProperty(const std::string_view& name, float value);
         void SetProperty(const std::string& name, glm::vec2 value);
-        void SetProperty(const std::string& name, const SPtr<Pudu::Texture>& texture);
+        void SetProperty(const std::string& name, const SPtr<Texture>& texture);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         Material* SetScope(const char* scope);
@@ -125,6 +125,7 @@ namespace Pudu
         SPtr<IDescriptorProvider> m_descriptorProvider;
         VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
         Size m_descriptorSetsIndexRemap[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
+        Size m_descriptorSetCount = 0;
         bool m_resourcesAllocated = false;
         std::string m_scope;
 

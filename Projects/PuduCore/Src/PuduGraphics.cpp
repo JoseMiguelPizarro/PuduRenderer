@@ -1955,13 +1955,11 @@ namespace Pudu
         }
 
         texture->dataSize = dataSize;
+        SamplerCreationData* samplerData = creationData.samplerData;
+        samplerData->maxLOD = texture->mipLevels;
+        texture->samplerData = samplerData;
 
-        CreateVKTexture(texture.get());
-
-        SamplerCreationData* data = creationData.samplerData;
-        data->maxLOD = texture->mipLevels;
-        CreateVKTextureSampler(*data, texture->Sampler.vkHandle);
-
+        texture->Create(this);
 
         return texture->Handle();
     }
@@ -2630,6 +2628,7 @@ namespace Pudu
         auto mesh = CreateMesh(data);
 
         auto material = m_resources.AllocateMaterial();
+        material->name = data.Name;
         const std::filesystem::path path = data.Material.BaseTexturePath;
         if (data.Material.hasBaseTexture)
         {

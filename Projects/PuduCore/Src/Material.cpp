@@ -67,7 +67,7 @@ namespace Pudu
 
     size Material::GetDescriptorSetsCount() const
     {
-        return m_descriptorProvider->GetDescriptorSetLayouts()->size();
+        return m_descriptorSetCount;
     }
 
     void Material::AllocateDescriptorSetsResources(const SPtr<IDescriptorProvider>& descriptorProvider)
@@ -405,6 +405,7 @@ namespace Pudu
             }
         }
 
+        m_descriptorSetCount = descriptorSetCount;
         //TODO: STORE A SHADER ROOT NODE THAT PARENTS ALL THE CHILD SHADERNODES? Since set number is cached on the shaderNode itself, this will need recompute it each time or recache it
 
         m_gpu->CreateDescriptorSets(m_descriptorSets, descriptorSetsToCreate.size(),

@@ -25,6 +25,7 @@ namespace Pudu
         this->app = app;
 
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
+        m_globalPropertiesMaterial->name = "Global Properties Material";
         //Load Globals
         m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(
             graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphics.slang"));
@@ -196,17 +197,17 @@ namespace Pudu
         m_imguiRenderPass->name = "ImGui";
         m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
-        AddRenderPass(computeRP.get());
+      //  AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-        AddRenderPass(normalRP.get());
+        //AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());
         AddRenderPass(depthCopyRP.get());
-        AddRenderPass(transparentRP.get());
-        AddRenderPass(m_postProcessingRenderPass.get());
-        AddRenderPass(overlayRP.get());
+        //AddRenderPass(transparentRP.get());
+        //AddRenderPass(m_postProcessingRenderPass.get());
+        //AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();

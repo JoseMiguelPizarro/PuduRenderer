@@ -2,55 +2,58 @@
 
 namespace Pudu
 {
-	void DrawIndirectRenderPass::Render(RenderFrameData& frameData)
-	{
-		auto commands = frameData.currentCommand;
-		auto pipeline = GetPipeline({ .renderPass = this, .shader = m_material->GetShader().get(),.renderer = frameData.renderer, });
+    void DrawIndirectRenderPass::Render(RenderFrameData& frameData)
+    {
+        auto commands = frameData.currentCommand;
+        auto pipeline = GetPipeline({
+            .renderPass = this, .shader = m_material->GetShader().get(), .renderer = frameData.renderer,
+        });
 
-		UniformBufferObject ubo;
-		ubo.time = frameData.graphics->GetTime()->Time();
-		commands->PushConstants(pipeline->vkPipelineLayoutHandle, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(UniformBufferObject), &ubo);
+        UniformBufferObject ubo;
+        ubo.time = frameData.graphics->GetTime()->Time();
+        commands->PushConstants(pipeline->vkPipelineLayoutHandle,
+                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                sizeof(UniformBufferObject), &ubo);
 
-		if (frameData.descriptorSetOffset > 0)
-		{
-			auto globalMaterial = frameData.globalPropertiesMaterial;
-			commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, globalMaterial->GetDescriptorSets(),
-										frameData.descriptorSetOffset);
-		}
 
-		m_material->ApplyProperties();
-		commands->BindPipeline(pipeline);
+        BindPipeline(pipeline, frameData);
+        m_material->ApplyProperties();
 
-		BindMaterialDescriptorSets(pipeline,m_material,frameData);
+        BindMaterialDescriptorSets(pipeline, m_material, frameData);
 
-		commands->DrawIndirect(m_indirectBuffer.get(), m_offset, m_drawCount, m_stride);
-	}
-	DrawIndirectRenderPass* DrawIndirectRenderPass::SetIndirectBuffer(SPtr<GraphicsBuffer> buffer)
-	{
-		attachments.AddBufferAttachment(buffer);
+        commands->DrawIndirect(m_indirectBuffer.get(), m_offset, m_drawCount, m_stride);
+    }
 
-		m_indirectBuffer = buffer;
+    DrawIndirectRenderPass* DrawIndirectRenderPass::SetIndirectBuffer(SPtr<GraphicsBuffer> buffer)
+    {
+        attachments.AddBufferAttachment(buffer);
 
-		return this;
-	}
-	DrawIndirectRenderPass* DrawIndirectRenderPass::SetOffset(uint64_t offset)
-	{
-		m_offset = offset;
-		return this;
-	}
-	DrawIndirectRenderPass* DrawIndirectRenderPass::SeStride(uint32_t stride)
-	{
-		m_stride = stride;
-		return this;
-	}
-	DrawIndirectRenderPass* DrawIndirectRenderPass::SetDrawCount(uint32_t drawCount)
-	{
-		m_drawCount = drawCount;
-		return this;
-	}
-	DrawIndirectRenderPass* DrawIndirectRenderPass::SetMaterial(SPtr<Material> material)
-	{
-		m_material = material;
-		return this;
-	}
+        m_indirectBuffer = buffer;
+
+        return this;
+    }
+
+    DrawIndirectRenderPass* DrawIndirectRenderPass::SetOffset(uint64_t offset)
+    {
+        m_offset = offset;
+        return this;
+    }
+
+    DrawIndirectRenderPass* DrawIndirectRenderPass::SeStride(uint32_t stride)
+    {
+        m_stride = stride;
+        return this;
+    }
+
+    DrawIndirectRenderPass* DrawIndirectRenderPass::SetDrawCount(uint32_t drawCount)
+    {
+        m_drawCount = drawCount;
+        return this;
+    }
+
+    DrawIndirectRenderPass* DrawIndirectRenderPass::SetMaterial(SPtr<Material> material)
+    {
+        m_material = material;
+        return this;
+    }
 }

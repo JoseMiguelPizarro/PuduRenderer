@@ -92,6 +92,20 @@ namespace Pudu
 
     void ShaderCursor::Write(const SPtr<Texture>& texture)
     {
+        if (texture == nullptr)
+        {
+            LOG_WARNING("Trying to set null texture Write for {}", m_layout->name);
+            return;
+        }
+        if (!texture->IsAllocated())
+        {
+            LOG_WARNING(
+                "Trying to set texture [{}] not yet allocated Write for {} Please call Texture::Create() before assigning it to a shader",
+                texture->name, m_layout->name);
+            return;
+        }
+
+
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageView = texture->vkImageViewHandle;
         imageInfo.sampler = texture->Sampler.vkHandle;
