@@ -12,6 +12,7 @@ namespace Pudu
     {
         Root,
         CBuffer,
+        Buffer,
         Array,
         Resource,
         Uniform,

@@ -253,10 +253,13 @@ namespace Pudu
                             if (stringSize > 0)
                                 scope = scope.substr(1, stringSize - 2);
                             //Hack since Slang API doen'st return the real string but the whole code
-
-                            descriptorSetLayoutInfo.scope = scope;
+                        }
+                        else
+                        {
+                            scope = accessPath.shaderNode->scope;
                         }
 
+                        descriptorSetLayoutInfo.scope = scope;
                         context->shaderCompilationObject->descriptorsData.setsCount++;
                         context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
                             descriptorSetLayoutInfo);
@@ -305,7 +308,7 @@ namespace Pudu
                         }
                     }
                 }
-                else if (!accessPath.isPushConstant)
+                else if (!accessPath.isPushConstant) //This is a regular constant buffer
                 {
                     //PUSH DESCRIPTOR SET FOR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
@@ -322,7 +325,7 @@ namespace Pudu
                     context->PushBinding(binding);
 
                     auto shaderNode = accessPath.shaderNode->AppendChild(
-                        binding.name.c_str(), 0, 0, ShaderNodeType::CBuffer);
+                        binding.name.c_str(), 0, 0, ShaderNodeType::Buffer);
 
                     shaderNode->setIndex = accessPath.setIndex;
                     shaderNode->bindingIndex = accessPath.cumulativeOffset->index;

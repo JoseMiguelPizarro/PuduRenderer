@@ -320,6 +320,7 @@ namespace Pudu
 
         ASSERT(node != nullptr, "Shader node can't be null!");
 
+        //TODO: CHECK THAT THE BUFFER IS BOTH IN SCOPE AND THAT IS AN AUTOMATICALLY ADDED CBUFFER
         if (node->type == ShaderNodeType::CBuffer)
         {
             if (node->scope == allocationInfo.scope)
