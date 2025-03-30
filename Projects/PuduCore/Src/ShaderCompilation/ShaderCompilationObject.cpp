@@ -18,6 +18,11 @@ namespace Pudu
         m_kernelsByName[name] = kernel;
     }
 
+    PushConstantInfo* ShaderCompilationObject::GetPushConstantsInfo()
+    {
+        return &m_pushConstantsInfo;
+    }
+
     void ShaderCompilationObject::SetPushConstants(const std::vector<ConstantBufferInfo>& buffers)
     {
         m_pushConstants = buffers;

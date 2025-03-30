@@ -11,6 +11,7 @@ namespace Pudu
     enum ShaderNodeType
     {
         Root,
+        //THIS IS RESERVED FOR CBUFFER USUALLY AUTOMATICALLY ALLOCATED
         CBuffer,
         Buffer,
         Array,

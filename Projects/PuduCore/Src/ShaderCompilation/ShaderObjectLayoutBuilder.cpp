@@ -253,13 +253,10 @@ namespace Pudu
                             if (stringSize > 0)
                                 scope = scope.substr(1, stringSize - 2);
                             //Hack since Slang API doen'st return the real string but the whole code
-                        }
-                        else
-                        {
-                            scope = accessPath.shaderNode->scope;
+
+                            descriptorSetLayoutInfo.scope = scope;
                         }
 
-                        descriptorSetLayoutInfo.scope = scope;
                         context->shaderCompilationObject->descriptorsData.setsCount++;
                         context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
                             descriptorSetLayoutInfo);
@@ -308,9 +305,9 @@ namespace Pudu
                         }
                     }
                 }
-                else if (!accessPath.isPushConstant) //This is a regular constant buffer
+                else if (!accessPath.isPushConstant)
                 {
-                    //PUSH DESCRIPTOR SET FOR BUFFER
+                    //🐞 PUSH DESCRIPTOR SET FOR A REGULAR BUFFER
                     accessPath.cumulativeOffset->PushIndex();
 
                     DescriptorBinding binding;
@@ -450,8 +447,7 @@ namespace Pudu
             case slang::ParameterCategory::PushConstantBuffer:
                 {
                     accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
-                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-                        | VK_SHADER_STAGE_COMPUTE_BIT;
+                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; //TODO: USE REAL RANGES
                     accessPath.setIndex = 0;
                     accessPath.cumulativeOffset->PushIndex();
                     accessPath.rootBufferInfo->bindingIndex = 0;
@@ -586,7 +582,21 @@ namespace Pudu
             layout.Bindings.push_back(binding.ToVKDescriptorSetLayoutBinding());
         }
 
-        //Setup layout create info
+        //🐞 SetupPushConstants
+        PushConstantInfo pushConstants {};
+        for (const auto& pushBuffer : context.GetPushConstants() )
+        {
+            VkPushConstantRange pushConstantRange;
+            pushConstantRange.offset = pushBuffer.offset;
+            pushConstantRange.size = pushBuffer.size;
+            pushConstantRange.stageFlags = pushBuffer.shaderStages;
+
+            pushConstants.ranges.push_back(pushConstantRange);
+        }
+
+        outCompilationObject.m_pushConstantsInfo = pushConstants;
+
+        //🐞 Setup layout create info
         for (auto& layout : outCompilationObject.descriptorsData.setLayoutInfos)
         {
             ASSERT(layout.Bindings.size() <= 16, "Maximum binding count exceded for layout: {} bindings count: {}",

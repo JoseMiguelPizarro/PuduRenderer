@@ -5,6 +5,7 @@
 #include "DescriptorSetLayoutInfo.h"
 #include "IDescriptorProvider.h"
 #include "DescriptorSetLayoutCollection.h"
+#include "ShaderCompilation/ShaderCompilationObject.h"
 
 namespace Pudu
 {
@@ -14,7 +15,10 @@ namespace Pudu
     class IShaderObject : public IDescriptorProvider
     {
     public:
-        virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
+        virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData()
+        {
+            return &m_compilationObject.descriptorsData;
+        };
         virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
         virtual VkShaderModule GetModule() { return m_module; }
         virtual void SetName(const char* name) = 0;
@@ -23,13 +27,17 @@ namespace Pudu
 
 #pragma region DescriptorProvider
         std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override { return &descriptorSetLayouts; };
-        DescriptorBinding* GetBindingByName(const char* name) override;
         ShaderNode* GetShaderLayout() override;
         VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override { return m_VkDescriptorSetLayouts.data(); }
 #pragma endregion
 
     protected:
         friend class PuduGraphics;
+
+        void SetCompilationObject(const ShaderCompilationObject& compilationObject)
+        {
+            m_compilationObject = compilationObject;
+        };
 
         void SetDescriptorSetLayouts(const std::vector<SPtr<DescriptorSetLayout>>& layouts)
         {
@@ -44,7 +52,7 @@ namespace Pudu
         }
 
         VkShaderModule m_module;
-        DescriptorSetLayoutsCollection m_descriptorLayoutsData;
+        ShaderCompilationObject m_compilationObject;
         std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
         std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
         std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;

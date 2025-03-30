@@ -42,7 +42,7 @@ namespace Pudu
         depthRT->height = graphics->WindowHeight;
         depthRT->format = VK_FORMAT_D32_SFLOAT;
         depthRT->name = "DepthPrepassTexture";
-        depthRT->SetUsage(DEPTH_WRITE);
+        depthRT->SetUsage(static_cast<ResourceUsage>(DEPTH_WRITE | PIXEL_SHADER_RESOURCE));
 
         auto depthCopyRT = graphics->GetRenderTexture();
         depthCopyRT->depth = 1;
@@ -203,10 +203,10 @@ namespace Pudu
         //AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         AddRenderPass(drawGrassRP.get());
-        AddRenderPass(forwardColorCopyRP.get());
-        AddRenderPass(depthCopyRP.get());
+        //AddRenderPass(forwardColorCopyRP.get());
+      //  AddRenderPass(depthCopyRP.get());
         //AddRenderPass(transparentRP.get());
-        //AddRenderPass(m_postProcessingRenderPass.get());
+        AddRenderPass(m_postProcessingRenderPass.get());
         //AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());

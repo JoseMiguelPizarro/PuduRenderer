@@ -65,7 +65,7 @@ namespace Pudu
         return this;
     }
 
-    size Material::GetDescriptorSetsCount() const
+    Size Material::GetDescriptorSetsCount() const
     {
         return m_descriptorSetCount;
     }

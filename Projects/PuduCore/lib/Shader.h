@@ -5,6 +5,7 @@
 #include "Resources/GPUResource.h"
 #include  "Resources/Resources.h"
 #include "ShaderObject.h"
+#include "ShaderCompilation/ShaderCompilationObject.h"
 
 namespace Pudu
 {
@@ -40,10 +41,12 @@ namespace Pudu
 		void SetName(const char* name) override { this->name = name; };
 		const char* GetName() override { return this->name.c_str(); };
 
+
 		SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
 	private:
 		friend class PuduGraphics;
+
 		std::filesystem::path m_shaderPath;
 		bool m_hasFragmentData;
 		bool m_hasVertexData;

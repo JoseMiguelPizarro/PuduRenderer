@@ -2335,9 +2335,9 @@ namespace Pudu
         shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
         shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
         shader->SetName(name);
-        shader->m_descriptorLayoutsData = compileData.descriptorsData;
+        shader->m_compilationObject = compileData;
 
-        CreateDescriptorsLayouts(shader->m_descriptorLayoutsData.setLayoutInfos, shader->m_descriptorSetLayoutHandles);
+        CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos, shader->m_descriptorSetLayoutHandles);
 
         std::vector<SPtr<DescriptorSetLayout>> layouts;
         for (uint32_t i = 0; i < shader->m_descriptorSetLayoutHandles.size(); i++)
@@ -2363,10 +2363,10 @@ namespace Pudu
         const char* kernelName = "computeMain";
         auto kernel = compiledShader.GetKernel(kernelName);
         shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, name);
-        shader->m_descriptorLayoutsData = compiledShader.descriptorsData;
+        shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
 
-        CreateDescriptorsLayouts(shader->m_descriptorLayoutsData.setLayoutInfos, shader->m_descriptorSetLayoutHandles);
+        CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos, shader->m_descriptorSetLayoutHandles);
 
         std::vector<SPtr<DescriptorSetLayout>> layouts;
         for (uint32_t i = 0; i < shader->m_descriptorSetLayoutHandles.size(); i++)

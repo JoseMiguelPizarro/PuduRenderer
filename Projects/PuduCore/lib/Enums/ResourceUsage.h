@@ -24,6 +24,7 @@ namespace Pudu
             COPY_SOURCE = 0x800,
             PRESENT = 0x1000,
             COMMON = 0x2000,
+
     };
 
     static VkImageLayout VkImageLayoutFromUsage(const ResourceUsage usage) {

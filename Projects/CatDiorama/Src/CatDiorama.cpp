@@ -11,30 +11,39 @@ bool showAxis;
 void CatDiorama::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
+
     return;
+    auto camRot = m_camera.Transform.GetRotationQuat();
+    auto rot = glm::rotate(camRot, glm::radians(1.f) * Time.DeltaTime(), vec3(0, 1, 0));
+    m_camera.Transform.SetRotation(rot);
+
+    return;
+
+
     float speed = 0.15f;
+
     float phase = Time.Time() * speed;
-    float radius = 15 - sin(phase)*10;
+    float radius = 30 - sin(phase) * 10;
     float pich = 45;
 
 
     float x = cos(-phase) * radius;
     float z = sin(-phase) * radius;
-    float y = sin(glm::radians(30.f - sin(phase)*20) ) * radius;
+    float y = sin(glm::radians(30.f - sin(phase) * 20)) * radius;
 
     vec3 pos = vec3(x, y, z);
     m_camera.Transform.SetLocalPosition(pos);
 
     vec3 forward = glm::normalize(vec3(0) - pos);
 
-    m_camera.Transform.SetForward(forward, {0, 1, 0});
+   // m_camera.Transform.SetForward(forward, {0, 1, 0});
 }
 
 void CatDiorama::OnInit()
 {
     m_camera = {};
-    m_camera.Transform.SetLocalPosition({0, 0, -8});
-    m_camera.Transform.SetLocalRotationEuler({8.,0,0});
+    m_camera.Transform.SetLocalPosition({0, 0, 0});
+    m_camera.Transform.SetLocalRotationEuler({8., 0, 0});
     Projection projection;
 
     projection.Width = Graphics.WindowWidth;
@@ -59,7 +68,7 @@ void CatDiorama::OnInit()
     directionalLight.GetTransform().SetLocalPosition({20, 20, 20});
     m_scene.directionalLight = &directionalLight;
 
-   // LoadGameboyModel();
+    // LoadGameboyModel();
 
     TextureLoadSettings planeSettings{};
     planeSettings.bindless = false;
@@ -86,10 +95,10 @@ void CatDiorama::OnInit()
     skyTexSettings.samplerData = samplerCreationData;
     skyTexSettings.textureType = TextureType::Texture_Cube;
 
-    const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx",skyTexSettings);
+    const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx", skyTexSettings);
 
     m_cubemapTexture = Graphics.LoadTextureCube(cubeMapPath, cubemapSettings);
-    const auto waternormalTex = Graphics.LoadTexture2D("textures/water_normal.png",waterNormalTexSettings);
+    const auto waternormalTex = Graphics.LoadTexture2D("textures/water_normal.png", waterNormalTexSettings);
     const auto transParentShader = Graphics.CreateShader("transparent.slang", "transparent");
     const auto waterShader = Graphics.CreateShader("water.shader.slang", "water");
 
@@ -99,14 +108,14 @@ void CatDiorama::OnInit()
 
     const auto catScene = FileManager::LoadGltfScene("models/Diorama_Cat/CatDiorama.gltf");
 
-    const auto skyboxModel =std::dynamic_pointer_cast<RenderEntity>( FileManager::LoadGltfScene("models/skybox.gltf"));
+    const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
     auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
 
     auto planeMaterial = Graphics.Resources()->AllocateMaterial();
-    planeMaterial->name ="PlaneMat";
+    planeMaterial->name = "PlaneMat";
     planeMaterial->SetShader(waterShader);
-    planeMaterial->SetProperty("material.normalTex",waternormalTex);
-    planeMaterial->SetProperty("material.skyTex",skyTexture);
+    planeMaterial->SetProperty("material.normalTex", waternormalTex);
+    planeMaterial->SetProperty("material.skyTex", skyTexture);
 
     auto planeModel = Graphics.CreateModel(Graphics.GetDefaultQuad(), planeMaterial);
 
@@ -115,7 +124,6 @@ void CatDiorama::OnInit()
     planeEntity->GetTransform().SetLocalPosition({0, 0, 0});
     planeEntity->GetTransform().SetLocalScale({3, 3, 3});
     planeEntity->GetRenderSettings().layer = 1;
-
 
 
     // for (const auto& e : axisModel)
@@ -133,9 +141,9 @@ void CatDiorama::OnInit()
     //     }
     // }
 
-    auto waterModel =catScene->GetChildByName<RenderEntity>("WATER");
-    auto catModel =  catScene->GetChildByName<RenderEntity>("CAT");
-    auto groundModel =catScene->GetChildByName<RenderEntity>("TERRAIN");
+    auto waterModel = catScene->GetChildByName<RenderEntity>("WATER");
+    auto catModel = catScene->GetChildByName<RenderEntity>("CAT");
+    auto groundModel = catScene->GetChildByName<RenderEntity>("TERRAIN");
 
 
     catModel->GetModel()->Materials[0]->SetShader(standardShader);
@@ -144,8 +152,8 @@ void CatDiorama::OnInit()
     auto waterMaterial = waterModel->GetModel()->Materials[0];
     waterMaterial->name = "Water";
     waterMaterial->SetShader(waterShader);
-    waterMaterial->SetProperty("material.normalTex",waternormalTex);
-    waterMaterial->SetProperty("material.skyTex",skyTexture);
+    waterMaterial->SetProperty("material.normalTex", waternormalTex);
+    waterMaterial->SetProperty("material.skyTex", skyTexture);
     waterMaterial->SetProperty("material.intensity", 1.0f);
 
     // for (const auto& e : sphereModel)
@@ -170,10 +178,10 @@ void CatDiorama::OnInit()
     skyboxMaterial->SetShader(skyboxShader);
     skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
 
-   // m_scene.AddEntities(axisModel);
+    // m_scene.AddEntities(axisModel);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(catScene);
- //   m_scene.AddEntities(sphereModel);
+    //   m_scene.AddEntities(sphereModel);
 }
 
 void CatDiorama::DrawImGUI()
@@ -222,13 +230,12 @@ void CatDiorama::DrawImGUI()
 
     ImGui::Text("Light");
     vec3 forward = directionalLight.GetTransform().GetForward();
-   if ( ImGui::InputFloat3("Light Direction",&forward[0]))
-   {
-       directionalLight.GetTransform().SetForward(normalize(forward), {0,1,0});
-   }
+    if (ImGui::InputFloat3("Light Direction", &forward[0]))
+    {
+        directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
+    }
 }
 
 void CatDiorama::OnCleanup()
 {
-
 }

@@ -606,12 +606,11 @@ namespace Pudu
 		VertexInputCreation vertexInput;
 		ShaderStateCreationData shadersStateCreationData;
 
-
 		GPUResourceHandle<RenderPass> renderPassHandle;
 
 		DescriptorSetLayoutsCollection descriptorCreationData;
 		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
-		PushConstantInfo pushConstants;
+		PushConstantInfo* pushConstants;
 
 		VkDescriptorSetLayout* vkDescriptorSetLayout;
 		uint32_t activeLayouts;

@@ -5,6 +5,7 @@
 #include "ShaderLayout.h"
 #include "ShaderCompilation/ShaderCompilationObject.h"
 #include "Resources/ConstantBufferInfo.h"
+#include "Resources/Resources.h"
 
 namespace Pudu
 {
@@ -21,6 +22,7 @@ namespace Pudu
         ShaderKernel* GetKernel(const char* name) { return &m_kernelsByName[name]; }
         void AddKernel(const char* name, ShaderKernel& kernel);
         std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges; }
+        PushConstantInfo* GetPushConstantsInfo();
         std::vector<ConstantBufferInfo>* GetConstantBuffers() { return &m_constantBuffers; }
         std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo() { return &m_pushConstants; }
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) { m_constantBuffers = buffers; }
@@ -32,5 +34,6 @@ namespace Pudu
         std::vector<VkPushConstantRange> m_pushConstantRanges;
         std::vector<ConstantBufferInfo> m_constantBuffers;
         std::vector<ConstantBufferInfo> m_pushConstants;
+        PushConstantInfo m_pushConstantsInfo;
     };
 }
