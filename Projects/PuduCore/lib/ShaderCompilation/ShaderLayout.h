@@ -8,6 +8,7 @@
 
 namespace Pudu
 {
+    //🐞 DON'T FORGET TO MODIFY SHADER_NODE_TYPE_NAMES WHEN MODIFYING THIS
     enum ShaderNodeType
     {
         Root,
@@ -25,6 +26,7 @@ namespace Pudu
     static std::map<ShaderNodeType, const char*> SHADER_NODE_TYPE_NAMES = {
         {Root, "Root"},
         {CBuffer, "CBuffer"},
+        {Buffer, "Buffer"},
         {Array, "Array"},
         {Resource, "Resource"},
         {Uniform, "Uniform"},

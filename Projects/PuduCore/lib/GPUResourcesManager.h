@@ -115,6 +115,7 @@ namespace Pudu
 
         ResourcePool<SPtr<Texture>>* GetAllocatedTextures() { return &m_textures; }
         ResourcePool<SPtr<Material>>* GetAllocatedMaterials() { return &m_materials; }
+        ResourcePool<SPtr<Shader>>* GetAllocatedShaders() { return &m_shaders; }
 
     private:
         friend class PuduGraphics;

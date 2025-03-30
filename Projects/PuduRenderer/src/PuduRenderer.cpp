@@ -206,7 +206,7 @@ namespace Pudu
         //AddRenderPass(forwardColorCopyRP.get());
       //  AddRenderPass(depthCopyRP.get());
         //AddRenderPass(transparentRP.get());
-        AddRenderPass(m_postProcessingRenderPass.get());
+   //     AddRenderPass(m_postProcessingRenderPass.get());
         //AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());

@@ -1,11 +1,9 @@
 #pragma once
 #include <string>
 #include <filesystem>
-#include <vulkan/vulkan_core.h>
 #include "Resources/GPUResource.h"
 #include  "Resources/Resources.h"
 #include "ShaderObject.h"
-#include "ShaderCompilation/ShaderCompilationObject.h"
 
 namespace Pudu
 {

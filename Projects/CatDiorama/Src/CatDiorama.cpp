@@ -36,7 +36,7 @@ void CatDiorama::OnRun()
 
     vec3 forward = glm::normalize(vec3(0) - pos);
 
-   // m_camera.Transform.SetForward(forward, {0, 1, 0});
+    // m_camera.Transform.SetForward(forward, {0, 1, 0});
 }
 
 void CatDiorama::OnInit()
@@ -196,23 +196,28 @@ void CatDiorama::DrawImGUI()
 
     auto textures = Graphics.Resources()->GetAllocatedTextures()->GetAllResources();
 
-    if (ImGui::BeginTable("textures", 2))
+    if (ImGui::CollapsingHeader("Textures"))
     {
-        for (size_t row = 0; row < textures.size(); row++)
+        if (ImGui::BeginTable("textures", 2))
         {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::Text(textures[row]->name.c_str());
-            ImGui::TableSetColumnIndex(1);
-            ImGui::Text("%d", textures[row]->Handle().Index());
-        }
+            for (size_t row = 0; row < textures.size(); row++)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text(textures[row]->name.c_str());
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%d", textures[row]->Handle().Index());
+            }
 
-        ImGui::EndTable();
+            ImGui::EndTable();
+        }
     }
+
+    ImGuiUtils::DrawShaderTree(Graphics.Resources()->GetAllocatedShaders()->GetAllResources());
 
     if (ImGui::CollapsingHeader("Materials"))
     {
-        auto materials = Graphics.Resources()->GetAllocatedMaterials()->GetAllResources();
+        const auto materials = Graphics.Resources()->GetAllocatedMaterials()->GetAllResources();
 
         for (Size row = 0; row < materials.size(); row++)
         {
