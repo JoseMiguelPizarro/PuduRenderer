@@ -248,10 +248,10 @@ namespace Pudu
         frame.lightingBuffer = m_lightingBuffer;
     }
 
-    void PuduRenderer::UpdateGlobalConstantsBuffer(RenderFrameData& frame) const
+    void PuduRenderer::UpdateGlobalConstantsBuffer(const RenderFrameData& frame) const
     {
         GlobalConstants globalConstants{};
-        auto graphics = frame.graphics;
+        const auto graphics = frame.graphics;
         globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
         globalConstants.farPlane = frame.camera->Projection.farPlane;
         globalConstants.nearPlane = frame.camera->Projection.nearPlane;
