@@ -37,8 +37,9 @@ float4 fragmentMain(VSOut input)
     float vignette =saturate( smoothstep(0, .8, 1 - mask));
     mask *= 1.5;
     mask = saturate(mask);
+    mask = 1;
 
-    float chromatic = 1.;
+    float chromatic = 15.;
     float depth =LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r);
     mask *= saturate((1-depth));
     float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;

@@ -105,6 +105,5 @@ float4 fragmentMain(VSOut input)
 
     c = (c)*(shadow) * material.intensity;
 
-    //c = normal;
     return float4(c,1.);
 }

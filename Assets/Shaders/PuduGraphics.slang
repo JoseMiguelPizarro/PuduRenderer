@@ -20,8 +20,8 @@ public struct GlobalsConstants
     public float farPlane;
     public float3 cameraPosWS;
     public float time;
-    public float4x4 proj;
     public float4x4 view;
+    public float4x4 proj;
 }
 
 public struct Globals

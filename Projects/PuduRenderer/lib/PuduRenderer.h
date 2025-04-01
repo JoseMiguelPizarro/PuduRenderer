@@ -17,7 +17,7 @@ namespace Pudu
 
 	protected:
 		void OnInit(PuduGraphics* graphics, PuduApp* app) override;
-		virtual void OnRender(RenderFrameData& data) override;
+		void OnRender(RenderFrameData& data) override;
 
 	private:
 		void UpdateLightingBuffer(RenderFrameData& data) const;
