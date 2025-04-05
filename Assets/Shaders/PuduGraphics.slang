@@ -16,10 +16,10 @@ struct ScopeAttribute
 public struct GlobalsConstants
 {
     public float2 screenSize;
+    public float time;
     public float nearPlane;
     public float farPlane;
     public float3 cameraPosWS;
-    public float time;
     public float4x4 view;
     public float4x4 proj;
 }

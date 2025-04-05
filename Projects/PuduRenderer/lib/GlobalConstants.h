@@ -1,13 +1,13 @@
 #pragma once
 #include "glm/glm.hpp"
 
-struct alignas(16) GlobalConstants
+struct  GlobalConstants
 {
-      vec2 screenSize;
-      float nearPlane;
-      float farPlane;
-      vec3 cameraPosWS;
-      float time;
-      mat4 viewMatrix;
-      mat4 projectionMatrix;
+      alignas(8) vec2 screenSize;
+      alignas(4) float time;
+      alignas(4) float nearPlane;
+      alignas(4) float farPlane;
+      alignas(16) vec3 cameraPosWS;
+      alignas(16) mat4 viewMatrix;
+      alignas(16) mat4 projectionMatrix;
 };
