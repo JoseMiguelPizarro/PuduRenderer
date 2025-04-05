@@ -179,7 +179,7 @@ void CatDiorama::OnInit()
     skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
 
     // m_scene.AddEntities(axisModel);
-  //  m_scene.AddEntity(skyboxModel);
+  m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(catScene);
     //   m_scene.AddEntities(sphereModel);
 }

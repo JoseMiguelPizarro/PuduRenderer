@@ -123,13 +123,36 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::UploadBufferData(GraphicsBuffer* buffer, const void* data, const Size size, const Size offset)
+    void GPUCommands::UploadBufferData(GraphicsBuffer* buffer, const byte* data, const Size size, const Size offset) const
     {
         ASSERT(size % 4 == 0, "Buffer {} Size must be a multiple of 4", buffer->name);
         ASSERT(offset % 4 == 0, "Buffer {} Offset must be a multiple of 4", buffer->name);
         ASSERT(size <= 65536, "Buffer {} Size must be less or equal than 65536[bytes]", buffer->name);
 
         vkCmdUpdateBuffer(vkHandle, buffer->vkHandle, offset, size, data);
+    }
+
+    void GPUCommands::BufferBarrier(GraphicsBuffer* buffer, Size size, Size offset, VkAccessFlags srcAccessMask,
+        VkAccessFlags dstAccessMask, u32 srcQueueIndex, u32 dstQueueIndex)
+    {
+        VkBufferMemoryBarrier2 bufferBarrier{};
+        bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        bufferBarrier.srcAccessMask =  VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; //Hardcoded for now
+        bufferBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+        bufferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        bufferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+        bufferBarrier.srcQueueFamilyIndex = srcQueueIndex;
+        bufferBarrier.dstQueueFamilyIndex = dstQueueIndex;
+        bufferBarrier.buffer = buffer->vkHandle;
+        bufferBarrier.offset = offset;
+        bufferBarrier.size = size;
+
+        VkDependencyInfo dependencyInfo{};
+        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.pNext = nullptr;
+        dependencyInfo.bufferMemoryBarrierCount = 1;
+        dependencyInfo.pBufferMemoryBarriers =& bufferBarrier;
+        vkCmdPipelineBarrier2(vkHandle,&dependencyInfo);
     }
 
     void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)

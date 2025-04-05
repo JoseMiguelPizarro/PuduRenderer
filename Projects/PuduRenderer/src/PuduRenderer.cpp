@@ -197,7 +197,7 @@ namespace Pudu
         m_imguiRenderPass->name = "ImGui";
         m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
-       // AddRenderPass(computeRP.get());
+        // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
@@ -236,6 +236,29 @@ namespace Pudu
         UpdateGlobalConstantsBuffer(data);
     }
 
+    void PuduRenderer::OnUploadCameraData(RenderFrameData& frameData)
+    {
+        //UpdateGlobalConstantsBuffer(frameData);
+
+        GlobalConstants globalConstants{};
+        auto camera = m_renderCamera;
+
+        globalConstants.farPlane = camera->Projection.farPlane;
+        globalConstants.nearPlane = camera->Projection.nearPlane;
+        globalConstants.cameraPosWS = camera->Transform.GetLocalPosition();
+        globalConstants.viewMatrix = camera->GetViewMatrix();
+        globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
+
+        const Size offset = offsetof(GlobalConstants, nearPlane);
+        const Size size = sizeof(GlobalConstants) - offset;
+        const byte* data = reinterpret_cast<byte*>(&globalConstants) + offset;
+
+        frameData.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), data, size, offset);
+        frameData.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(),sizeof(GlobalConstants),0,0,0,0,0);
+
+
+    }
+
     void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
     {
         LightBuffer lightBuffer{};
@@ -243,7 +266,7 @@ namespace Pudu
         lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
         lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-        frame.graphics->UploadBufferData(m_lightingBuffer.get(), &lightBuffer, sizeof(LightBuffer));
+        frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer), sizeof(LightBuffer));
 
         frame.lightingBuffer = m_lightingBuffer;
     }
@@ -251,16 +274,20 @@ namespace Pudu
     void PuduRenderer::UpdateGlobalConstantsBuffer(const RenderFrameData& frame) const
     {
         GlobalConstants globalConstants{};
+        auto camera = m_renderCamera;
         const auto graphics = frame.graphics;
         globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
-        globalConstants.farPlane = frame.camera->Projection.farPlane;
-        globalConstants.nearPlane = frame.camera->Projection.nearPlane;
-        globalConstants.cameraPosWS = frame.camera->Transform.GetLocalPosition();
         globalConstants.time = frame.app->Time.Time();
-        globalConstants.viewMatrix = frame.camera->GetViewMatrix();
-        globalConstants.projectionMatrix = frame.camera->Projection.GetProjectionMatrix();
+        globalConstants.farPlane = camera->Projection.farPlane;
+        globalConstants.nearPlane = camera->Projection.nearPlane;
+        globalConstants.cameraPosWS = camera->Transform.GetLocalPosition();
+        globalConstants.viewMatrix = camera->GetViewMatrix();
+        globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
 
-        graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
+        frame.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), reinterpret_cast<const byte*>(&globalConstants),
+                                               sizeof(GlobalConstants));
+
+        frame.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(),sizeof(GlobalConstants),0,0,0,0,0);
     }
 
     void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
@@ -275,7 +302,7 @@ namespace Pudu
     void PuduRenderer::InitConstantsBuffer(PuduGraphics* graphics)
     {
         m_globalConstantsBuffer = graphics->CreateGraphicsBuffer(sizeof(GlobalConstants), nullptr,
-                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                                  VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
                                                                  | VMA_ALLOCATION_CREATE_MAPPED_BIT, "GlobalConstants");
     };
