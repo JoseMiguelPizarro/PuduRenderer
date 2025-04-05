@@ -4,32 +4,53 @@
 #include "RenderFrameData.h"
 #include "FrameGraph/FrameGraph.h"
 
-namespace Pudu {
-	class RenderPass;
-	class Pipeline;
-	class Shader;
+namespace Pudu
+{
+    class RenderPass;
+    class Pipeline;
+    class Shader;
 
-	class Renderer {
-	public:
-		Pipeline* GetOrCreatePipeline(PipelineQueryData query);
+    class Renderer
+    {
+    public:
+        Pipeline* GetOrCreatePipeline(PipelineQueryData query);
 
-		Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, IShaderObject* shader);
+        Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, IShaderObject* shader);
 
-		void AddRenderPass(RenderPass* renderPass);
+        void AddRenderPass(RenderPass* renderPass);
 
-		void Init(PuduGraphics* graphics, PuduApp* app);
+        void Init(PuduGraphics* graphics, PuduApp* app);
 
-		void Render(Scene* scene);
+        void Render(Scene* scene);
 
-	protected:
-		PuduGraphics* graphics;
-		PuduApp* app;
+        virtual void SetRenderCamera(Camera* camera)
+        {
+            m_isRenderCameraDirty = true;
+            m_renderCamera = camera;
+        };
+        Camera* GetRenderCamera();
 
-		virtual void OnInit(PuduGraphics* graphics, PuduApp* app) {};
-		virtual void OnRender(RenderFrameData& data) {};
+        void UploadCameraData(RenderFrameData& frameData);
 
-		FrameGraph frameGraph;
-		FrameGraphBuilder frameGraphBuilder;
-		std::unordered_map < RenderPass*, std::unordered_map<IShaderObject*, Pipeline*>> m_pipelinesByRenderPass;
-	};
+    protected:
+        friend class FrameGraph;
+
+        PuduGraphics* graphics;
+        PuduApp* app;
+
+        virtual void OnUploadCameraData(RenderFrameData& frameData) {};
+        virtual void OnInit(PuduGraphics* graphics, PuduApp* app)
+        {
+        };
+
+        virtual void OnRender(RenderFrameData& data)
+        {
+        };
+
+        bool m_isRenderCameraDirty = false;
+        FrameGraph frameGraph;
+        FrameGraphBuilder frameGraphBuilder;
+        std::unordered_map<RenderPass*, std::unordered_map<IShaderObject*, Pipeline*>> m_pipelinesByRenderPass;
+        Camera* m_renderCamera;
+    };
 }

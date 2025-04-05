@@ -97,11 +97,25 @@ namespace Pudu
 		renderData.frameGraph = &frameGraph;
 		renderData.graphics = graphics;
 		renderData.app = app;
-		renderData.camera = scene->camera;
 
-		OnRender(renderData);
+		SetRenderCamera(scene->camera);
 
 		graphics->DrawFrame(renderData);
+	}
+
+	Camera* Renderer::GetRenderCamera()
+	{
+		return m_renderCamera;
+	}
+
+	void Renderer::UploadCameraData(RenderFrameData& frameData)
+	{
+		if (m_isRenderCameraDirty)
+		{
+			OnUploadCameraData(frameData);
+
+			m_isRenderCameraDirty = false;
+		}
 	}
 }
 

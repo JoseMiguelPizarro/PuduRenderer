@@ -137,10 +137,16 @@ namespace Pudu
 		CullMode GetCullMode();
 
 		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
+
+		//Best place for doing any modification to the camera
 		virtual void PreRender(RenderFrameData& renderData);
-		virtual void Render(RenderFrameData& frameData);
+		//Here is where scissors, viewport, depthbias. target render target are set and Camera values are pushed
 		virtual void SetupRender(RenderFrameData& frameData);
+		virtual void Render(RenderFrameData& frameData);
+
+		//Restore or release resources
 		virtual void AfterRender(RenderFrameData& frameData) {};
+
 		virtual void OnResize(PuduGraphics& gpu, uint32_t newWidth, uint32_t newHeight) {}
 		virtual void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}
 		virtual void AfterRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) {}

@@ -42,7 +42,7 @@ void CatDiorama::OnRun()
 void CatDiorama::OnInit()
 {
     m_camera = {};
-    m_camera.Transform.SetLocalPosition({0, 0, 0});
+    m_camera.Transform.SetLocalPosition({0, 0, -8});
     m_camera.Transform.SetLocalRotationEuler({8., 0, 0});
     Projection projection;
 
@@ -179,7 +179,7 @@ void CatDiorama::OnInit()
     skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
 
     // m_scene.AddEntities(axisModel);
-    m_scene.AddEntity(skyboxModel);
+  //  m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(catScene);
     //   m_scene.AddEntities(sphereModel);
 }

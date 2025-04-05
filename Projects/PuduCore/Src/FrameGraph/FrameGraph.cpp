@@ -2,11 +2,10 @@
 #include <simdjson.h>
 #include "Logger.h"
 #include "FrameGraph/FrameGraph.h"
+
+#include "Renderer.h"
 #include "FrameGraph/RenderPass.h"
 #include "RenderFrameData.h"
-#include <Resources/FrameBufferCreationData.h>
-#include "Texture2D.h"
-#include <algorithm>
 
 namespace Pudu
 {
@@ -1587,6 +1586,8 @@ namespace Pudu
     {
         auto commands = renderData.currentCommand;
         auto gfx = renderData.graphics;
+
+        renderData.renderer->OnRender(renderData);
 
         for (auto nodeHandle : nodes)
         {
