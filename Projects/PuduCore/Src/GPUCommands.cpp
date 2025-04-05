@@ -125,6 +125,10 @@ namespace Pudu
 
     void GPUCommands::UploadBufferData(GraphicsBuffer* buffer, const void* data, const Size size, const Size offset)
     {
+        ASSERT(size % 4 == 0, "Buffer {} Size must be a multiple of 4", buffer->name);
+        ASSERT(offset % 4 == 0, "Buffer {} Offset must be a multiple of 4", buffer->name);
+        ASSERT(size <= 65536, "Buffer {} Size must be less or equal than 65536[bytes]", buffer->name);
+
         vkCmdUpdateBuffer(vkHandle, buffer->vkHandle, offset, size, data);
     }
 
