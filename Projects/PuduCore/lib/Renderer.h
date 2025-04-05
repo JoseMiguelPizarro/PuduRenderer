@@ -23,12 +23,13 @@ namespace Pudu
 
         void Render(Scene* scene);
 
-        virtual void SetRenderCamera(Camera* camera)
+        void SetRenderCamera(Camera* camera)
         {
             m_isRenderCameraDirty = true;
             m_renderCamera = camera;
         };
-        Camera* GetRenderCamera();
+
+        Camera* GetRenderCamera() const;
 
         void UploadCameraData(RenderFrameData& frameData);
 
