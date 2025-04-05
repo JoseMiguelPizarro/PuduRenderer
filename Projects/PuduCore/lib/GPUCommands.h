@@ -42,6 +42,7 @@ namespace Pudu
 		void PushConstants(VkPipelineLayout pipelineLayout, VkPipelineStageFlags stagesFlag, uint32_t offset, uint32_t size, void* data);
 		void PushDescriptorSets(VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout pipelineLayout, uint32_t set, uint32_t writeCount, const VkWriteDescriptorSet* writes);
 
+		void UploadBufferData(GraphicsBuffer* buffer, const void* data, const Size size, const Size offset);
 		/// <summary>
 		/// Beging dynamic rendering renderpass
 		/// </summary>
