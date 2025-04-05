@@ -104,7 +104,7 @@ namespace Pudu
 		graphics->DrawFrame(renderData);
 	}
 
-	Camera* Renderer::GetRenderCamera()
+	Camera* Renderer::GetRenderCamera() const
 	{
 		return m_renderCamera;
 	}
