@@ -12,14 +12,11 @@
 #include "PuduGraphics.h"
 #include <PuduGlobals.h>
 #include <stdexcept>
-#include <limits>
 #include <algorithm>
 #include <Logger.h>
 #include <set>
 #include "UniformBufferObject.h"
 #include <chrono>
-#include <PuduMath.h>
-
 
 #include "DrawCall.h"
 
@@ -392,7 +389,6 @@ namespace Pudu
         frameData.frame = &m_Frames[m_currentFrameIndex];
         frameData.currentCommand = frame.CommandBuffer;
         frameData.graphics = this;
-        frameData.camera = frameData.scene->camera;
 
         frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
 
@@ -2262,26 +2258,11 @@ namespace Pudu
         memcpy(m_uniformBuffers[currentImage].MappedMemory, &ubo, sizeof(ubo));*/
     }
 
-    UniformBufferObject PuduGraphics::GetUniformBufferObject(Camera* cam, DrawCall& drawCall)
+    UniformBufferObject PuduGraphics::GetUniformBufferObject(DrawCall& drawCall)
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
         UniformBufferObject ubo{};
 
         ubo.modelMatrix = drawCall.TransformMatrix;
-
-        if (drawCall.GetRenderMaterial()->m_shader->HasFragmentData())
-        {
-            //if (drawCall.MaterialPtr.baseColorHandle.IsValid()) //TODO: HERE WE SHOULD BIND ALL PRESENT TEXTURES
-            //{
-            //	ubo.materialId = drawCall.MaterialPtr.baseColorHandle.Index();
-            //}
-        }
-
         return ubo;
     }
 
