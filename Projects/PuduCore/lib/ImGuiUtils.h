@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "ShaderCompilation/ShaderLayout.h"
 #include "Shader.h"
+#include "glm/matrix.hpp"
 
 namespace Pudu
 {
@@ -15,6 +16,14 @@ namespace Pudu
             ImGui::InputFloat3("Position", &transform.m_localPosition[0]);
             ImGui::InputFloat3("Scale", &transform.m_localScale[0]);
             ImGui::InputFloat3("Rotation", &transform.m_localRotation[0]);
+        }
+
+        static void DrawMat4x4(mat4 mat)
+        {
+            ImGui::InputFloat4("0",&mat[0][0]);
+            ImGui::InputFloat4("1",&mat[1][0]);
+            ImGui::InputFloat4("2",&mat[2][0]);
+            ImGui::InputFloat4("3",&mat[3][0]);
         }
 
         static void DrawEntityNode(EntitySPtr entity)

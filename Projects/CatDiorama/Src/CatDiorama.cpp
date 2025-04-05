@@ -232,6 +232,8 @@ void CatDiorama::DrawImGUI()
 
     ImGui::Text("Camera");
     ImGuiUtils::DrawTransform(m_camera.Transform);
+    ImGui::Text("Projection");
+    ImGuiUtils::DrawMat4x4(m_camera.Projection.GetProjectionMatrix());
 
     ImGui::Text("Light");
     vec3 forward = directionalLight.GetTransform().GetForward();
