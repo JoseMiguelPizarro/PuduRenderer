@@ -100,6 +100,7 @@ namespace Pudu
 
 		SetRenderCamera(scene->camera);
 
+		renderData.camera = scene->camera;
 		graphics->DrawFrame(renderData);
 	}
 
