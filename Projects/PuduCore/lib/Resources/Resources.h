@@ -4,8 +4,10 @@
 #include <vulkan/vulkan_core.h>
 #include <glm/fwd.hpp>
 #include <vector>
+
+#include "DescriptorSetLayoutCollection.h"
 #include "PuduCore.h"
-#include "DescriptorSetLayoutData.h"
+#include "DescriptorSetLayoutInfo.h"
 #include "GPUResource.h"
 #include "PuduConstants.h"
 
@@ -560,7 +562,7 @@ namespace Pudu
 		uint32_t codeSize = 0;
 		VkShaderStageFlagBits type = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 		const char* entryPointName;
-		DescriptorSetLayoutData descriptorSetLayoutData;
+		DescriptorSetLayoutInfo descriptorSetLayoutData;
 	};
 
 	struct ShaderStateCreationData
@@ -581,10 +583,16 @@ namespace Pudu
 		const char* kernel;
 		GPUResourceHandle<ComputeShader> computeShaderHandle;
 
-		DescriptorSetLayoutsData descriptorCreationData;
+		DescriptorSetLayoutsCollection descriptorCreationData;
 		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
 		VkDescriptorSetLayout* vkDescriptorSetLayout;
 		uint32_t activeLayouts;
+	};
+
+	struct PushConstantInfo
+	{
+		std::vector<VkPushConstantRange> ranges;
+		VkShaderStageFlags shaderStages;
 	};
 
 	struct PipelineCreationData
@@ -600,8 +608,10 @@ namespace Pudu
 
 		GPUResourceHandle<RenderPass> renderPassHandle;
 
-		DescriptorSetLayoutsData descriptorCreationData;
+		DescriptorSetLayoutsCollection descriptorCreationData;
 		std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
+		PushConstantInfo* pushConstants;
+
 		VkDescriptorSetLayout* vkDescriptorSetLayout;
 		uint32_t activeLayouts;
 

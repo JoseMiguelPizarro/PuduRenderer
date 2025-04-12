@@ -17,11 +17,18 @@ namespace Pudu
 
     void Texture::OnCreate(PuduGraphics* gfx)
     {
-        SamplerCreationData samplerData;
-        samplerData.wrap = false;
+        SamplerCreationData* samplerPtr =  static_cast<SamplerCreationData*>(samplerData);
+
+        SamplerCreationData sampler;
+        sampler.wrap = false;
+
+        if (samplerData == nullptr)
+        {
+            samplerPtr = &sampler;
+        }
 
         gfx->CreateVKTexture(this);
-        gfx->CreateVKTextureSampler(samplerData, Sampler.vkHandle);
+        gfx->CreateVKTextureSampler(*samplerPtr, Sampler.vkHandle);
     }
 
     void RenderTexture::SetUsage(const ResourceUsage usage)
@@ -37,5 +44,15 @@ namespace Pudu
     bool Texture::IsDestroyed()
     {
         return m_disposed;
+    }
+
+    void Texture::SetImageLayout(VkImageLayout layout)
+    {
+        this->m_layout = layout;
+    }
+
+    VkImageLayout Texture::GetImageLayout() const
+    {
+        return m_layout;
     }
 }

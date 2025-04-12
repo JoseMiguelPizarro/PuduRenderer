@@ -4,15 +4,6 @@
 
 import PuduGraphics;
 
-struct Sampler2DHandle
-{
-    uint32_t handle;
-    Sampler2D Get()
-    {
-        return GLOBALS_BINDLESS.textures[handle];
-    }
-}
-
 struct SkyboxMaterial
 {
     SamplerCube skyboxTex;
@@ -37,7 +28,7 @@ float4 GetLighting(float3 normal, float3 lightDirection)
 VSOut vertexMain(VertexInput input)
 {
     VSOut output = (VSOut)0.0;
-    output.PosCS = mul(UBO.proj, mul(UBO.view, mul(UBO.model, float4(input.Position, 1.0))));
+    output.PosCS = mul(GetProjectionMatrix(), mul(GetViewMatrix(), mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);

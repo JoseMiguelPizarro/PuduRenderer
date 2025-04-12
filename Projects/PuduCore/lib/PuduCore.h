@@ -1,6 +1,12 @@
 #pragma once
 #include <memory>
 #include <filesystem>
+#include <glm/fwd.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/matrix.hpp>
+
 #include "PuduConstants.h"
 
 namespace Pudu
@@ -20,4 +26,14 @@ namespace Pudu
     using f32 = float;
     using f64 = double;
     using size = std::size_t;
+    using Size = std::size_t;
+    using vec2 = glm::vec2;
+    using vec3 = glm::vec3;
+    using vec4 = glm::vec4;
+    using mat4 = glm::mat4;
+    using mat3 = glm::mat3;
+    using mat2 = glm::mat2;
+    using byte = std::byte;
+
+    namespace fs = std::filesystem;
 }

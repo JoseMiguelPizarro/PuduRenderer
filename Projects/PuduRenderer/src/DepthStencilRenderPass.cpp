@@ -12,7 +12,7 @@ namespace Pudu
 		m_depthShader = graphics->CreateShader(K_DepthShaderPath, "Depth");
 		m_depthMaterial = graphics->Resources()->AllocateMaterial();
 		m_depthMaterial->SetShader(m_depthShader);
-		m_depthMaterial->Name = "DepthPassMaterial";
+		m_depthMaterial->name = "DepthPassMaterial";
 	}
 
 	void DepthPrepassRenderPass::BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)

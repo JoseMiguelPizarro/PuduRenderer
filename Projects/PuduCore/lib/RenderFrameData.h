@@ -35,7 +35,7 @@ namespace Pudu
 		SPtr<RenderTexture> activeRenderTarget;
 		SPtr<RenderPass> currentRenderPass;
 		DrawCall* currentDrawCall;
-		Pipeline* currentPipeline;
+		const Pipeline* currentPipeline;
 		PuduApp* app;
 		uint16_t width;
 		uint16_t height;
@@ -43,6 +43,8 @@ namespace Pudu
 		SPtr<GraphicsBuffer> lightingBuffer;
 		SPtr<Material> globalPropertiesMaterial;
 		uint32_t descriptorSetOffset;
+
+		bool areGlobalPropertiesBound = false;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
 		std::vector<SPtr<GPUCommands>> computeCommandsToSubmit;

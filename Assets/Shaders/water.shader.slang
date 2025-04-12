@@ -8,6 +8,7 @@ struct WaterMaterial
 {
     Sampler2D normalTex;
     SamplerCube skyTex;
+    float intensity = 1.;
 }
 
 
@@ -18,7 +19,7 @@ VSOut vertexMain(VertexInput input, uint vertexId: SV_VertexID)
 {
     VSOut output = (VSOut)0.0;
     output.PosWS =  mul(UBO.model, float4(input.Position, 1.0));
-    output.PosCS =  mul(UBO.proj,mul(UBO.view, output.PosWS));
+    output.PosCS =  mul(GetProjectionMatrix(),mul(GetViewMatrix(), output.PosWS));
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal,0.);
     output.viewDir = output.PosWS.xyz - GLOBALS.constants.cameraPosWS.xyz;
@@ -72,7 +73,7 @@ float4 fragmentMain(VSOut input)
     {
         rayPos += rayDir*step;
 
-        float4 posProjected = mul(UBO.proj,mul(UBO.view, float4(rayPos.xyz,1.)));
+        float4 posProjected = mul(GetProjectionMatrix(),mul(GetViewMatrix(), float4(rayPos.xyz,1.)));
         float rayDepth = posProjected.z/posProjected.w;
 
         //Convert raypos to ScreenSpace uvs. Perspective divide transform the position to NDC space

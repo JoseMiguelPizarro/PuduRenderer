@@ -17,15 +17,15 @@ namespace Pudu
 
 	protected:
 		void OnInit(PuduGraphics* graphics, PuduApp* app) override;
-		virtual void OnRender(RenderFrameData& data) override;
+		void OnRender(RenderFrameData& data) override;
+		void OnUploadCameraData(RenderFrameData& frameData) override;
 
 	private:
 		void UpdateLightingBuffer(RenderFrameData& data) const;
-		void UpdateGlobalConstantsBuffer(RenderFrameData& frame) const;
+		void UpdateGlobalConstantsBuffer(const RenderFrameData& frame) const;
 		void InitLightingBuffer(PuduGraphics* graphics);
 		void InitConstantsBuffer(PuduGraphics* graphics);
 
-	private:
 		SPtr<RenderPass> m_depthRenderPass;
 		SPtr<RenderPass> m_forwardRenderPass;
 		SPtr<RenderPass> m_shadowMapRenderPass;
@@ -34,6 +34,7 @@ namespace Pudu
 		SPtr<GraphicsBuffer> m_lightingBuffer;
 		SPtr<GraphicsBuffer> m_globalConstantsBuffer;
 		SPtr<Material> m_globalPropertiesMaterial;
+		SPtr<DescriptorSetLayoutsCollection> m_globalDescriptorSetLayouts;
 	};
 }
 

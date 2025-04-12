@@ -80,6 +80,8 @@ namespace Pudu
 		ShaderStateCreationData shaderData;
 		shaderData.SetName(name.c_str());
 
+		creationData.pushConstants = m_compilationObject.GetPushConstantsInfo();
+
 		if (HasFragmentData())
 		{
 			shaderData.AddStage(m_fragmentData, "fragmentMain", m_fragmentDataSize,

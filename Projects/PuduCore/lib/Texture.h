@@ -15,9 +15,7 @@ namespace Pudu
 		VkImageView vkImageViewHandle;
 		VkDeviceMemory vkMemoryHandle;
 		VmaAllocation vmaAllocation;
-		VkImageLayout vkImageLayout;
 		TextureSampler Sampler;
-		VkImageLayout layout;
 
 		bool isSwapChain = false;
 		uint32_t width;
@@ -29,6 +27,7 @@ namespace Pudu
 		bool bindless;
 		void* sourceData;
 		void* pixels;
+		void* samplerData;
 		uint32_t dataSize;
 
 		bool IsDestroyed();
@@ -37,6 +36,8 @@ namespace Pudu
 
 		GPUResourceType::Type Type() { return GPUResourceType::Texture; }
 		virtual TextureType::Enum GetTextureType() { return TextureType::Texture2D; }
+		void SetImageLayout(VkImageLayout layout);
+		VkImageLayout GetImageLayout() const;
 
 
 		Texture() {
@@ -49,9 +50,10 @@ namespace Pudu
 	private:
 		friend PuduGraphics;
 		void Destroy();
-
 		void OnCreate(PuduGraphics* gfx) override;
+
 		bool m_disposed;
+		VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		TextureFlags::Enum m_flags = TextureFlags::Default;
 	};
 

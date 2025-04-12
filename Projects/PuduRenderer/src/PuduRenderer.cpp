@@ -17,7 +17,6 @@
 #include "FileManager.h"
 
 
-
 namespace Pudu
 {
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -26,6 +25,13 @@ namespace Pudu
         this->app = app;
 
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
+        m_globalPropertiesMaterial->name = "Global Properties Material";
+        //Load Globals
+        m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(
+            graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphics.slang"));
+        m_globalPropertiesMaterial
+            ->SetScope("Global")
+            ->SetDescriptorProvider(m_globalDescriptorSetLayouts);
 
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
@@ -36,14 +42,14 @@ namespace Pudu
         depthRT->height = graphics->WindowHeight;
         depthRT->format = VK_FORMAT_D32_SFLOAT;
         depthRT->name = "DepthPrepassTexture";
-        depthRT->SetUsage(DEPTH_WRITE);
+        depthRT->SetUsage(static_cast<ResourceUsage>(DEPTH_WRITE | PIXEL_SHADER_RESOURCE));
 
         auto depthCopyRT = graphics->GetRenderTexture();
         depthCopyRT->depth = 1;
         depthCopyRT->width = graphics->WindowWidth;
         depthCopyRT->height = graphics->WindowHeight;
         depthCopyRT->format = VK_FORMAT_D32_SFLOAT;
-        depthCopyRT->name = "DepthPrepassTexture";
+        depthCopyRT->name = "DepthPrepassCopyTexture";
         depthCopyRT->SetUsage(SHADER_RESOURCE);
 
         auto shadowRT = graphics->GetRenderTexture();
@@ -133,7 +139,8 @@ namespace Pudu
         computeRP->SetGroupSize(groupSize, groupSize, 1);
 
         auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
-                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
         computeRP->SetShader(compute);
@@ -141,6 +148,8 @@ namespace Pudu
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         forwardColorCopyRP->SetBlitTargets(colorRT, colorCopyRT);
+        forwardColorCopyRP->SetName("ForwardColorCopy");
+
 
         auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         depthCopyRP->SetBlitTargets(depthRT, depthCopyRT);
@@ -158,7 +167,8 @@ namespace Pudu
 
         auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(),
                                                              indirectCommands.data(),
-                                                             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                                             VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
+                                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
         auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
@@ -189,7 +199,7 @@ namespace Pudu
         m_imguiRenderPass->name = "ImGui";
         m_imguiRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
-        //AddRenderPass(computeRP.get());
+        // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
@@ -207,8 +217,6 @@ namespace Pudu
 
         std::printf(frameGraph.ToString().c_str());
 
-        m_globalPropertiesMaterial->SetShader(grassShader);
-
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthCopyRT);
@@ -222,13 +230,33 @@ namespace Pudu
     void PuduRenderer::OnRender(RenderFrameData& data)
     {
         data.globalPropertiesMaterial = m_globalPropertiesMaterial;
-
         m_globalPropertiesMaterial->ApplyProperties();
 
-        data.descriptorSetOffset = isFirstFrame ? 0 : 2;
+        data.descriptorSetOffset = m_globalDescriptorSetLayouts->setsCount;
         isFirstFrame = false;
         UpdateLightingBuffer(data);
         UpdateGlobalConstantsBuffer(data);
+    }
+
+    void PuduRenderer::OnUploadCameraData(RenderFrameData& frameData)
+    {
+        //UpdateGlobalConstantsBuffer(frameData);
+
+        GlobalConstants globalConstants{};
+        auto camera = m_renderCamera;
+
+        globalConstants.farPlane = camera->Projection.farPlane;
+        globalConstants.nearPlane = camera->Projection.nearPlane;
+        globalConstants.cameraPosWS = camera->Transform.GetLocalPosition();
+        globalConstants.viewMatrix = camera->GetViewMatrix();
+        globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
+
+        const Size offset = offsetof(GlobalConstants, nearPlane);
+        const Size size = sizeof(GlobalConstants) - offset;
+        const byte* data = reinterpret_cast<byte*>(&globalConstants) + offset;
+
+        frameData.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), data, size, offset);
+        frameData.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
     void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
@@ -238,28 +266,37 @@ namespace Pudu
         lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
         lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-        frame.graphics->UploadBufferData(m_lightingBuffer.get(), &lightBuffer, sizeof(LightBuffer));
+        frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer),
+                                               sizeof(LightBuffer));
 
         frame.lightingBuffer = m_lightingBuffer;
     }
 
-    void PuduRenderer::UpdateGlobalConstantsBuffer(RenderFrameData& frame) const
+    void PuduRenderer::UpdateGlobalConstantsBuffer(const RenderFrameData& frame) const
     {
         GlobalConstants globalConstants{};
-        auto graphics = frame.graphics;
+        auto camera = m_renderCamera;
+        const auto graphics = frame.graphics;
         globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
-        globalConstants.farPlane = frame.camera->Projection.farPlane;
-        globalConstants.nearPlane = frame.camera->Projection.nearPlane;
-        globalConstants.cameraPosWS = frame.camera->Transform.GetLocalPosition();
         globalConstants.time = frame.app->Time.Time();
+        globalConstants.farPlane = camera->Projection.farPlane;
+        globalConstants.nearPlane = camera->Projection.nearPlane;
+        globalConstants.cameraPosWS = camera->Transform.GetLocalPosition();
+        globalConstants.viewMatrix = camera->GetViewMatrix();
+        globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
 
-        graphics->UploadBufferData(m_globalConstantsBuffer.get(), &globalConstants, sizeof(GlobalConstants));
+        frame.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(),
+                                               reinterpret_cast<const byte*>(&globalConstants),
+                                               sizeof(GlobalConstants));
+
+        frame.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
     void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
     {
         m_lightingBuffer = graphics->CreateGraphicsBuffer(sizeof(LightBuffer), nullptr,
-                                                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                                           VMA_ALLOCATION_CREATE_MAPPED_BIT
                                                           , "LightingBuffer");
@@ -268,7 +305,8 @@ namespace Pudu
     void PuduRenderer::InitConstantsBuffer(PuduGraphics* graphics)
     {
         m_globalConstantsBuffer = graphics->CreateGraphicsBuffer(sizeof(GlobalConstants), nullptr,
-                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                                  VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
                                                                  | VMA_ALLOCATION_CREATE_MAPPED_BIT, "GlobalConstants");
     };

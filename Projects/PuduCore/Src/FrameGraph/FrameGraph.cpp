@@ -2,11 +2,10 @@
 #include <simdjson.h>
 #include "Logger.h"
 #include "FrameGraph/FrameGraph.h"
+
+#include "Renderer.h"
 #include "FrameGraph/RenderPass.h"
 #include "RenderFrameData.h"
-#include <Resources/FrameBufferCreationData.h>
-#include "Texture2D.h"
-#include <algorithm>
 
 namespace Pudu
 {
@@ -1588,11 +1587,13 @@ namespace Pudu
         auto commands = renderData.currentCommand;
         auto gfx = renderData.graphics;
 
+        renderData.renderer->OnRender(renderData);
+
         for (auto nodeHandle : nodes)
         {
             //TODO: PUT MARKERS
             FrameGraphNode* node = builder->GetNode(nodeHandle);
-            auto renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
+            SPtr<RenderPass> renderPass = gfx->Resources()->GetRenderPass(node->renderPass);
 
             if (!renderPass->isEnabled)
             {
@@ -1618,9 +1619,10 @@ namespace Pudu
 
                     const auto previousUsage = GetTextureUsage(outputResource.resource->Handle());
 
-                    commands->TransitionImageLayout(texture->vkImageHandle, texture->format,
-                                                        VkImageLayoutFromUsage(previousUsage),
-                                                        VkImageLayoutFromUsage(outputResource.resourceUsage));
+                    commands->TransitionTextureLayout(texture,VkImageLayoutFromUsage(outputResource.resourceUsage));
+                    // commands->TransitionImageLayout(texture->vkImageHandle, texture->format,
+                    //                                     VkImageLayoutFromUsage(previousUsage),
+                    //                                     VkImageLayoutFromUsage(outputResource.resourceUsage));
                     // commands->AddImageBarrier(texture->vkImageHandle,
                     //                           previousUsage,
                     //                           outputResource.resourceUsage,
@@ -1649,9 +1651,7 @@ namespace Pudu
 
                     if (previousUsage != inputResource.resourceUsage)
                     {
-                        commands->TransitionImageLayout(texture->vkImageHandle, texture->format,
-                                                        VkImageLayoutFromUsage(previousUsage),
-                                                        VkImageLayoutFromUsage(inputResource.resourceUsage));
+                        commands->TransitionTextureLayout(texture,VkImageLayoutFromUsage(inputResource.resourceUsage));
 
                         SetTextureUsage(inputResource.resource->Handle(), inputResource.resourceUsage);
                     }
@@ -1662,11 +1662,11 @@ namespace Pudu
             renderData.height = height;
 
             renderPass->PreRender(renderData);
-            renderPass->BeginRender(renderData);
             renderPass->SetupRender(renderData);
+            renderPass->BeginRender(renderData);
             renderPass->Render(renderData);
-            renderPass->AfterRender(renderData);
             renderPass->EndRender(renderData);
+            renderPass->AfterRender(renderData);
             //TODO: IMPLEMENT MARKERS
         }
     }

@@ -7,6 +7,8 @@
 
 namespace Pudu
 {
+	constexpr Size MAX_RESOURCE_SIZE = 1024;
+
 	static uint64_t hash(char const* s) {
 		return std::hash<char const*>{}(s);
 	}
@@ -14,6 +16,11 @@ namespace Pudu
 	template <typename T>
 	struct ResourcePool
 	{
+		ResourcePool()
+		{
+			m_resources.reserve(MAX_RESOURCE_SIZE);
+		}
+
 		T* GetResourcePtr(uint32_t handle);
 
 		T GetResource(uint32_t handle);

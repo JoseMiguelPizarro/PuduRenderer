@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <filesystem>
-#include <vulkan/vulkan_core.h>
 #include "Resources/GPUResource.h"
 #include  "Resources/Resources.h"
 #include "ShaderObject.h"
@@ -23,13 +22,13 @@ namespace Pudu
 
 		Shader() = default;
 
-		void LoadFragmentData(const uint32_t* data, size_t dataSize, const char* entryPoint = "main");
-		void LoadVertexData(const uint32_t* data, size_t dataSize, const char* entryPoint = "main");
+		void LoadFragmentData(const u32* data, Size dataSize, const char* entryPoint = "main");
+		void LoadVertexData(const u32* data, Size dataSize, const char* entryPoint = "main");
 
-		const uint32_t* GetFragmentData() const { return m_fragmentData; }
-		const uint32_t* GetVertexData() const { return m_vertexData; }
-		size_t GetVertexDataSize() const { return m_vertexDataSize; }
-		size_t GetFragmentDataSize() const { return m_fragmentDataSize; }
+		const u32* GetFragmentData() const { return m_fragmentData; }
+		const u32* GetVertexData() const { return m_vertexData; }
+		Size GetVertexDataSize() const { return m_vertexDataSize; }
+		Size GetFragmentDataSize() const { return m_fragmentDataSize; }
 
 		bool HasFragmentData() const { return m_hasFragmentData; }
 		bool HasVertexData() const { return m_hasVertexData; }
@@ -40,19 +39,21 @@ namespace Pudu
 		void SetName(const char* name) override { this->name = name; };
 		const char* GetName() override { return this->name.c_str(); };
 
+
 		SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
 	private:
 		friend class PuduGraphics;
+
 		std::filesystem::path m_shaderPath;
 		bool m_hasFragmentData;
 		bool m_hasVertexData;
 		std::string m_fragmentEntryPoint;
 		std::string m_vertexEntryPoint;
 
-		const uint32_t* m_fragmentData;
-		size_t m_fragmentDataSize;
-		const uint32_t* m_vertexData;
-		size_t m_vertexDataSize;
+		const u32* m_fragmentData;
+		Size m_fragmentDataSize;
+		const u32* m_vertexData;
+		Size m_vertexDataSize;
 	};
 }

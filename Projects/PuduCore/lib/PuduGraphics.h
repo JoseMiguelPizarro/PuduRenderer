@@ -207,9 +207,10 @@ namespace Pudu
 
 		void SubmitFrame(RenderFrameData& frameData);
 		void EndDrawFrame();
-		UniformBufferObject GetUniformBufferObject(Camera* cam, DrawCall& drawCall);
+		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
 		//SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
-		SPtr<Shader> CreateShader(fs::path shaderPath , const char* name);
+		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
+		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
 		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
 
 		SPtr<RenderTexture> GetRenderTexture();
@@ -237,10 +238,10 @@ namespace Pudu
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
-		void UploadBufferData(GraphicsBuffer* buffer, const void* data, size_t size);
+		void UploadBufferData(GraphicsBuffer* buffer, const void* data, Size size, Size offset = 0);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
-		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, VkDescriptorSetLayout* layouts);
+		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		SPtr<Texture> GetDefaultWhiteTexture();
 		SPtr<Mesh> GetDefaultQuad();
 	private:
@@ -265,9 +266,9 @@ namespace Pudu
 		void InitDebugUtilsObjectName();
 
 		GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
-		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutData& creationData);
-		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutData& creationData);
-		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutData>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
+		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
+		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
+		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
 
 		void CreateBindlessDescriptorPool();
 		void CreateFrames();

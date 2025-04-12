@@ -2,47 +2,61 @@
 
 #include "Texture.h"
 #include "Resources/GPUResource.h"
-#include "DescriptorSetLayoutData.h"
+#include "DescriptorSetLayoutInfo.h"
+#include "IDescriptorProvider.h"
+#include "DescriptorSetLayoutCollection.h"
+#include "ShaderCompilation/ShaderCompilationObject.h"
 
-namespace Pudu {
+namespace Pudu
+{
+    class Pipeline;
+    class RenderPass;
 
-	class Pipeline;
-	class RenderPass;
+    class IShaderObject : public IDescriptorProvider
+    {
+    public:
+        virtual DescriptorSetLayoutsCollection* GetDescriptorSetLayoutsData()
+        {
+            return &m_compilationObject.descriptorsData;
+        };
+        virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
+        virtual VkShaderModule GetModule() { return m_module; }
+        virtual void SetName(const char* name) = 0;
+        virtual const char* GetName() = 0;
+        u32 GetActiveLayoutCount() const { return numActiveLayouts; }
 
-	class IShaderObject
-	{
-	public:
-		virtual DescriptorSetLayoutsData* GetDescriptorSetLayoutsData() { return &m_descriptorLayoutsData; };
-		virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
-		virtual VkShaderModule GetModule() { return m_module; }
-		DescriptorBinding* GetBindingByName(const char* name);
-		virtual void SetName(const char* name) = 0;
-		virtual const char* GetName() = 0;
+#pragma region DescriptorProvider
+        std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override { return &descriptorSetLayouts; };
+        ShaderNode* GetShaderLayout() override;
+        VkDescriptorSetLayout* GetVkDescriptorSetLayouts() override { return m_VkDescriptorSetLayouts.data(); }
+#pragma endregion
 
-		VkDescriptorSetLayout* GetVkDescriptorSetLayouts(){return m_VkDescriptorSetLayouts.data();}
-		uint32_t GetActiveLayoutCount(){return numActiveLayouts;}
+    protected:
+        friend class PuduGraphics;
 
+        void SetCompilationObject(const ShaderCompilationObject& compilationObject)
+        {
+            m_compilationObject = compilationObject;
+        };
 
-	protected:
-		friend class PuduGraphics;
-		void SetDescriptorSetLayouts(std::vector<SPtr<DescriptorSetLayout>> layouts)
-		{
-			descriptorSetLayouts = layouts;
+        void SetDescriptorSetLayouts(const std::vector<SPtr<DescriptorSetLayout>>& layouts)
+        {
+            descriptorSetLayouts = layouts;
 
-			for (const auto& layout: descriptorSetLayouts)
-			{
-				m_VkDescriptorSetLayouts.push_back(layout->vkHandle);
-			}
+            for (const auto& layout : descriptorSetLayouts)
+            {
+                m_VkDescriptorSetLayouts.push_back(layout->vkHandle);
+            }
 
-			numActiveLayouts = descriptorSetLayouts.size();
-		};
+            numActiveLayouts = descriptorSetLayouts.size();
+        }
 
-		VkShaderModule m_module;
-		DescriptorSetLayoutsData m_descriptorLayoutsData;
-		std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
-		std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
-		std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
+        VkShaderModule m_module;
+        ShaderCompilationObject m_compilationObject;
+        std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
+        std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
+        std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
 
-		uint32_t numActiveLayouts;
-	};
+        u32 numActiveLayouts;
+    };
 }

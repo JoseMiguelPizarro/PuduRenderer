@@ -262,32 +262,18 @@ namespace Pudu
                 .renderer = frameData.renderer
             });
 
-            if (pipeline != frameData.currentPipeline)
-            {
-                commands->BindPipeline(pipeline);
-                frameData.currentPipeline = pipeline;
-            }
+            BindPipeline(pipeline, frameData);
 
-            if (frameData.descriptorSetOffset > 0)
-            {
-                auto globalMaterial = frameData.globalPropertiesMaterial;
-                commands->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, globalMaterial->GetDescriptorSets(),
-                                            frameData.descriptorSetOffset);
-            }
-
-            for (auto& mat : model->Materials)
+            for (const auto& mat : model->Materials)
             {
                 mat->ApplyProperties();
             }
 
-            if (pipeline->numActiveLayouts - frameData.descriptorSetOffset > 0)
-            {
-                BindMaterialDescriptorSets(pipeline, material, frameData);
-            }
+            BindMaterialDescriptorSets(pipeline, material, frameData);
 
             commands->BindMesh(mesh.get());
 
-            auto ubo = frameData.graphics->GetUniformBufferObject(frameData.camera, drawCall);
+            auto ubo = frameData.graphics->GetUniformBufferObject(drawCall);
 
             Viewport viewport;
             viewport.rect = {0, 0, (uint16)frameData.graphics->WindowWidth, (uint16)frameData.graphics->WindowHeight};
@@ -310,17 +296,22 @@ namespace Pudu
         commands->SetScissor(0, 0, renderData.width, renderData.height);
         commands->SetViewport({{0, 0, renderData.width, renderData.height}, 0, 1});
 
-        SPtr<RenderTexture> renderTarget;
+        SPtr<RenderTexture> renderTarget = nullptr;
         if (attachments.ColorAttachmentCount())
         {
-            renderTarget = attachments.GetColorRenderPassAttachments()->at(0).resource;
+            auto colorAttachments = attachments.GetColorRenderPassAttachments();
+            if (colorAttachments->size() > 0)
+                renderTarget = attachments.GetColorRenderPassAttachments()->at(0).resource;
         }
         else if (attachments.depthAttachmentCount)
         {
             renderTarget = attachments.depthAttachments[0].resource;
         }
 
-        renderData.activeRenderTarget = renderTarget;
+        if (renderTarget)
+            renderData.activeRenderTarget = renderTarget;
+
+        renderData.renderer->UploadCameraData(renderData);
     }
 
     void RenderPass::SetComputeShader(ComputeShader* shader)
@@ -344,9 +335,9 @@ namespace Pudu
         if (pipeline->numActiveLayouts - frameData.descriptorSetOffset > 0)
         {
             frameData.currentCommand->BindDescriptorSet(pipeline->vkPipelineLayoutHandle,
-                                                        &material->GetDescriptorSets()[frameData.descriptorSetOffset],
-                                                        material->GetShader()->GetActiveLayoutCount() - frameData.
-                                                        descriptorSetOffset, frameData.descriptorSetOffset);
+                                                        material->GetDescriptorSets(),
+                                                        material->GetDescriptorSetsCount(),
+                                                        frameData.descriptorSetOffset);
         }
     }
 
@@ -408,12 +399,22 @@ namespace Pudu
         if (accessUsage & AttachmentAccessUsage::Write)
         {
             attachment.resourceUsage = ResourceUsage::RENDER_TARGET;
-        }else
+        }
+        else if
+        (accessUsage & AttachmentAccessUsage::CopySrc)
+        {
+            attachment.resourceUsage = ResourceUsage::COPY_SOURCE;
+        }
+        else if (accessUsage & AttachmentAccessUsage::CopyDst)
+        {
+            attachment.resourceUsage = ResourceUsage::COPY_DEST;
+        }
+        else if (accessUsage & AttachmentAccessUsage::Read)
         {
             attachment.resourceUsage = ResourceUsage::PIXEL_SHADER_RESOURCE;
         }
 
-            VkClearValue clear;
+        VkClearValue clear;
         clear.color = {{clearColor.x, clearColor.y, clearColor.z, clearColor.w}};
 
         attachment.clearValue = clear;
@@ -442,7 +443,8 @@ namespace Pudu
         if (writeDepth)
         {
             attachment.resourceUsage = ResourceUsage::DEPTH_WRITE;
-        }else
+        }
+        else
         {
             attachment.resourceUsage = ResourceUsage::DEPTH_READ;
         }
@@ -532,6 +534,31 @@ namespace Pudu
     bool RenderPass::HasReplacementMaterial() const
     {
         return m_replacementMaterial != nullptr;
+    }
+
+    void RenderPass::BindPipeline(const Pipeline* pipeline, RenderFrameData& frameData)
+    {
+        if (pipeline == frameData.currentPipeline)
+            return;
+
+        const auto command = frameData.currentCommand;
+
+        command->BindPipeline(pipeline);
+
+        if (!frameData.areGlobalPropertiesBound)
+        {
+            const auto& globalProperties = frameData.globalPropertiesMaterial;
+            if (globalProperties->GetDescriptorSetsCount() > 0)
+            {
+                command->BindDescriptorSet(pipeline->vkPipelineLayoutHandle, globalProperties->GetDescriptorSets(),
+                                           globalProperties->GetDescriptorSetsCount());
+            }
+
+            frameData.descriptorSetOffset = globalProperties->GetDescriptorSetsCount();
+            frameData.areGlobalPropertiesBound = true;
+        }
+
+        frameData.currentPipeline = pipeline;
     }
 
     BlendState* RenderPass::GetBlendState()

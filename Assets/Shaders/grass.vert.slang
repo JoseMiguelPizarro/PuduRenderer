@@ -56,7 +56,7 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
     float ratio = grassLength / newLength;
     pos += vertex * ratio;
 
-    output.PosCS = mul(ubo.proj, mul(ubo.view, float4(pos, 1)));
+    output.PosCS = mul(GetProjectionMatrix, mul(GetViewMatrix(), float4(pos, 1)));
 
     output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind));
 
