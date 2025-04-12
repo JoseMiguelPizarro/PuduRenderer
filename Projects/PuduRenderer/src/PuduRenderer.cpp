@@ -148,6 +148,8 @@ namespace Pudu
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         forwardColorCopyRP->SetBlitTargets(colorRT, colorCopyRT);
+        forwardColorCopyRP->SetName("ForwardColorCopy");
+
 
         auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         depthCopyRP->SetBlitTargets(depthRT, depthCopyRT);
@@ -207,7 +209,7 @@ namespace Pudu
         AddRenderPass(depthCopyRP.get());
         AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
-        //AddRenderPass(overlayRP.get());
+        AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();
@@ -254,9 +256,7 @@ namespace Pudu
         const byte* data = reinterpret_cast<byte*>(&globalConstants) + offset;
 
         frameData.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), data, size, offset);
-        frameData.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(),sizeof(GlobalConstants),0,0,0,0,0);
-
-
+        frameData.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
     void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
@@ -266,7 +266,8 @@ namespace Pudu
         lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
         lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
 
-        frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer), sizeof(LightBuffer));
+        frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer),
+                                               sizeof(LightBuffer));
 
         frame.lightingBuffer = m_lightingBuffer;
     }
@@ -284,16 +285,18 @@ namespace Pudu
         globalConstants.viewMatrix = camera->GetViewMatrix();
         globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
 
-        frame.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), reinterpret_cast<const byte*>(&globalConstants),
+        frame.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(),
+                                               reinterpret_cast<const byte*>(&globalConstants),
                                                sizeof(GlobalConstants));
 
-        frame.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(),sizeof(GlobalConstants),0,0,0,0,0);
+        frame.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
     void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
     {
         m_lightingBuffer = graphics->CreateGraphicsBuffer(sizeof(LightBuffer), nullptr,
-                                                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                                           VMA_ALLOCATION_CREATE_MAPPED_BIT
                                                           , "LightingBuffer");
@@ -302,7 +305,8 @@ namespace Pudu
     void PuduRenderer::InitConstantsBuffer(PuduGraphics* graphics)
     {
         m_globalConstantsBuffer = graphics->CreateGraphicsBuffer(sizeof(GlobalConstants), nullptr,
-                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                                  VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
                                                                  | VMA_ALLOCATION_CREATE_MAPPED_BIT, "GlobalConstants");
     };

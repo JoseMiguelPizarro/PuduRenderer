@@ -113,8 +113,6 @@ namespace Pudu
 	{
 	public:
 		VkRenderingInfo GetRenderingInfo(RenderFrameData& data);
-		virtual void BeginRender(RenderFrameData& data);
-		virtual void EndRender(RenderFrameData& data);
 		RenderPass* AddColorAttachment(SPtr<RenderTexture> rt, AttachmentAccessUsage accessUsage = AttachmentAccessUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, vec4 clearColor = vec4(0));
 		RenderPass* AddDepthStencilAttachment(SPtr<RenderTexture> rt, AttachmentAccessUsage accessUsage = AttachmentAccessUsage::Write, LoadOperation loadOp = LoadOperation::DontCare, float depthClear = 1.0f, uint32_t stencilClear = 0);
 		RenderPass* AddColorAttachment(RenderPassAttachment& attachment);
@@ -138,7 +136,10 @@ namespace Pudu
 
 		virtual Pipeline* GetPipeline(PipelineQueryData pipelineQuery);
 
-		//Best place for doing any modification to the camera
+		virtual void BeginRender(RenderFrameData& data);
+		virtual void EndRender(RenderFrameData& data);
+
+		//Best place for changing Texture layout or doing any modification to the camera
 		virtual void PreRender(RenderFrameData& renderData);
 		//Here is where scissors, viewport, depthbias. target render target are set and Camera values are pushed
 		virtual void SetupRender(RenderFrameData& frameData);

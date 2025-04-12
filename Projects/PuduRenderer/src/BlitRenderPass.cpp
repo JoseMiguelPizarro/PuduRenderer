@@ -14,23 +14,32 @@ namespace Pudu
     {
         m_src = src;
         m_dst = dst;
-        AddColorAttachment(std::dynamic_pointer_cast<RenderTexture>(src), Read, DontCare);
-        AddColorAttachment(std::dynamic_pointer_cast<RenderTexture>(dst), Write, DontCare);
+        AddColorAttachment(std::dynamic_pointer_cast<RenderTexture>(src), CopySrc, Load);
+        AddColorAttachment(std::dynamic_pointer_cast<RenderTexture>(dst), CopyDst, DontCare);
     }
 
-    void BlitRenderPass::Render(RenderFrameData& frameData)
+    void BlitRenderPass::PreRender(RenderFrameData& renderData)
     {
-        const auto command = frameData.currentCommand;
+        const auto command = renderData.currentCommand;
 
-        command->TransitionImageLayout(m_src->vkImageHandle, m_src->format,VkImageLayoutFromUsage(m_src->GetUsage()), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        command->TransitionImageLayout(m_dst->vkImageHandle, m_dst->format,VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        command->Blit(m_src,m_dst,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        command->TransitionImageLayout(m_src->vkImageHandle,m_src->format,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VkImageLayoutFromUsage(m_src->GetUsage()));
-        command->TransitionImageLayout(m_dst->vkImageHandle,m_dst->format,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_srcLayout = m_src->GetImageLayout();
+
+        //  command->TransitionTextureLayout(m_src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        //command->TransitionTextureLayout(m_dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    }
+
+    void BlitRenderPass::AfterRender(RenderFrameData& renderData)
+    {
         //TODO: What do we do with the source image? we'll need a way of knowing its previous copy layout so we can put it back to it
+
+        auto command = renderData.currentCommand;
+      //  command->TransitionTextureLayout(m_src, m_srcLayout);
+        //     command->TransitionTextureLayout(m_dst, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        renderData.currentCommand->Blit(m_src, m_dst, m_src->GetImageLayout(),
+                                        m_dst->GetImageLayout());
+    }
+
+    void BlitRenderPass::Render(RenderFrameData& renderData)
+    {
     }
 }
-
-
-
-

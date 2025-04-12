@@ -14,7 +14,9 @@ namespace Pudu
 		Read = 1,
 		Write = 2,
 		ReadAndWrite = 3,
-		Sample = 4
+		Sample = 4,
+		CopySrc = 8,
+		CopyDst = 16,
 	};
 
 	enum CullMode {
@@ -77,6 +79,8 @@ namespace Pudu
 		case Pudu::Sample:
 			return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 			break;
+		case CopyDst:
+			return VK_ATTACHMENT_STORE_OP_STORE;
 		default:
 			break;
 		}

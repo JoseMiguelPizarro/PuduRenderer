@@ -296,17 +296,20 @@ namespace Pudu
         commands->SetScissor(0, 0, renderData.width, renderData.height);
         commands->SetViewport({{0, 0, renderData.width, renderData.height}, 0, 1});
 
-        SPtr<RenderTexture> renderTarget;
+        SPtr<RenderTexture> renderTarget = nullptr;
         if (attachments.ColorAttachmentCount())
         {
-            renderTarget = attachments.GetColorRenderPassAttachments()->at(0).resource;
+            auto colorAttachments = attachments.GetColorRenderPassAttachments();
+            if (colorAttachments->size() > 0)
+                renderTarget = attachments.GetColorRenderPassAttachments()->at(0).resource;
         }
         else if (attachments.depthAttachmentCount)
         {
             renderTarget = attachments.depthAttachments[0].resource;
         }
 
-        renderData.activeRenderTarget = renderTarget;
+        if (renderTarget)
+            renderData.activeRenderTarget = renderTarget;
 
         renderData.renderer->UploadCameraData(renderData);
     }
@@ -397,7 +400,16 @@ namespace Pudu
         {
             attachment.resourceUsage = ResourceUsage::RENDER_TARGET;
         }
-        else
+        else if
+        (accessUsage & AttachmentAccessUsage::CopySrc)
+        {
+            attachment.resourceUsage = ResourceUsage::COPY_SOURCE;
+        }
+        else if (accessUsage & AttachmentAccessUsage::CopyDst)
+        {
+            attachment.resourceUsage = ResourceUsage::COPY_DEST;
+        }
+        else if (accessUsage & AttachmentAccessUsage::Read)
         {
             attachment.resourceUsage = ResourceUsage::PIXEL_SHADER_RESOURCE;
         }

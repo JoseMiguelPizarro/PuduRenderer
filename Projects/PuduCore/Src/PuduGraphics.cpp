@@ -394,21 +394,17 @@ namespace Pudu
 
         frameGraph->RenderFrame(frameData);
 
-        frameData.currentCommand->TransitionImageLayout(frameData.activeRenderTarget->vkImageHandle,
-                                                        frameData.activeRenderTarget->format,
-                                                        VkImageLayoutFromUsage(
-                                                            frameGraph->GetTextureUsage(
-                                                                frameData.activeRenderTarget->Handle())),
-                                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle,
-                                                        m_swapChainImageFormat, VK_IMAGE_LAYOUT_UNDEFINED,
-                                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        //PRESENT LOGIC
+
+        frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
+                                                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        frameData.currentCommand->TransitionTextureLayout(m_swapChainTextures[frameData.frameIndex],
+                                                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex],
                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        frameData.currentCommand->TransitionImageLayout(m_swapChainTextures[frameData.frameIndex]->vkImageHandle,
-                                                        m_swapChainImageFormat, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                                        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        frameData.currentCommand->TransitionTextureLayout(m_swapChainTextures[frameData.frameIndex],
+                                                          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
         frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
@@ -1275,17 +1271,18 @@ namespace Pudu
             depthStencilCount++;
         }
 
-        VkRenderPassCreateInfo2 renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
-        renderPassInfo.attachmentCount = colorAttachmentsCount + depthStencilCount;
-        renderPassInfo.pAttachments = attachments;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
+        //TODO: WE ARE USING DYNAMIC RENDERING SO NO VK RENDERPASSES!
+        // VkRenderPassCreateInfo2 renderPassInfo{};
+        // renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+        // renderPassInfo.attachmentCount = colorAttachmentsCount + depthStencilCount;
+        // renderPassInfo.pAttachments = attachments;
+        // renderPassInfo.subpassCount = 1;
+        // renderPassInfo.pSubpasses = &subpass;
+        //
+        // VKCheck(vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle),
+        //         "Failed to create renderpass");
 
-        VKCheck(vkCreateRenderPass2(m_device, &renderPassInfo, m_allocatorPtr, &renderPass->vkHandle),
-                "Failed to create renderpass");
-
-        SetResourceName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)renderPass->vkHandle, renderPass->name.c_str());
+        //  SetResourceName(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)renderPass->vkHandle, renderPass->name.c_str());
     }
 
     GPUResourceHandle<ShaderState> PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
@@ -2118,14 +2115,13 @@ namespace Pudu
 
         auto cmd = BeginSingleTimeCommands();
 
-        cmd.TransitionImageLayout(texture->vkImageHandle, texture->format, VK_IMAGE_LAYOUT_UNDEFINED,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &range);
+        cmd.TransitionTextureLayout(texture,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &range);
 
         cmd.CopyBufferToImage(stagingBuffer->vkHandle, texture->vkImageHandle, static_cast<uint32_t>(texture->width),
                               static_cast<uint32_t>(texture->height), regions);
 
-        cmd.TransitionImageLayout(texture->vkImageHandle, texture->format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &range);
+        cmd.TransitionTextureLayout(texture, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, &range);
 
         EndSingleTimeCommands(cmd);
 
@@ -2318,7 +2314,8 @@ namespace Pudu
         shader->SetName(name);
         shader->m_compilationObject = compileData;
 
-        CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos, shader->m_descriptorSetLayoutHandles);
+        CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
+                                 shader->m_descriptorSetLayoutHandles);
 
         std::vector<SPtr<DescriptorSetLayout>> layouts;
         for (uint32_t i = 0; i < shader->m_descriptorSetLayoutHandles.size(); i++)
@@ -2347,7 +2344,8 @@ namespace Pudu
         shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
 
-        CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos, shader->m_descriptorSetLayoutHandles);
+        CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
+                                 shader->m_descriptorSetLayoutHandles);
 
         std::vector<SPtr<DescriptorSetLayout>> layouts;
         for (uint32_t i = 0; i < shader->m_descriptorSetLayoutHandles.size(); i++)

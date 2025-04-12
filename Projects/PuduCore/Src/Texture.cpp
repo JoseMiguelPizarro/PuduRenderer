@@ -45,4 +45,14 @@ namespace Pudu
     {
         return m_disposed;
     }
+
+    void Texture::SetImageLayout(VkImageLayout layout)
+    {
+        this->m_layout = layout;
+    }
+
+    VkImageLayout Texture::GetImageLayout() const
+    {
+        return m_layout;
+    }
 }

@@ -10,12 +10,15 @@ namespace Pudu
 {
     class BlitRenderPass:public RenderPass {
     public:
-        void Render(RenderFrameData& frameData) override;
+        void Render(RenderFrameData& renderData) override;
         void SetBlitTargets(const SPtr<RenderTexture>& src, const SPtr<RenderTexture>& dst);
+        void PreRender(RenderFrameData& renderData) override;
+        void AfterRender(RenderFrameData& renderData) override;
 
     private:
         SPtr<RenderTexture> m_src;
         SPtr<RenderTexture> m_dst;
+        VkImageLayout m_srcLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     };
 }
 

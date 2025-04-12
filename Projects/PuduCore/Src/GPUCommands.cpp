@@ -136,7 +136,7 @@ namespace Pudu
         VkAccessFlags dstAccessMask, u32 srcQueueIndex, u32 dstQueueIndex)
     {
         VkBufferMemoryBarrier2 bufferBarrier{};
-        bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
         bufferBarrier.srcAccessMask =  VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; //Hardcoded for now
         bufferBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
         bufferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
@@ -291,6 +291,7 @@ namespace Pudu
         vkCmdDispatchIndirect(vkHandle, paramsBuffer->vkHandle, offset);
     }
 
+
     void GPUCommands::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
                                             VkImageLayout newLayout, VkImageSubresourceRange* range)
     {
@@ -350,6 +351,13 @@ namespace Pudu
         {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -542,6 +550,33 @@ namespace Pudu
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        }else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout ==VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout ==VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            return;
+        }
+        else if (oldLayout ==VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
         else
         {
@@ -551,6 +586,19 @@ namespace Pudu
         vkCmdPipelineBarrier(vkHandle, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
         m_hasRecordedCommand = true;
+    }
+
+    void GPUCommands::TransitionTextureLayout(const SPtr<Texture>& texture, VkImageLayout layout,
+        VkImageSubresourceRange* range)
+    {
+        TransitionTextureLayout(texture.get(), layout, range);
+    }
+
+    void GPUCommands::TransitionTextureLayout(Texture* texture, VkImageLayout layout, VkImageSubresourceRange* range)
+    {
+        TransitionImageLayout(texture->vkImageHandle,texture->format, texture->GetImageLayout(), layout,range);
+
+        texture->SetImageLayout(layout);
     }
 
     void GPUCommands::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)

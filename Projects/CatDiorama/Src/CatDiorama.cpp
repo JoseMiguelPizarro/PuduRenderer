@@ -156,21 +156,6 @@ void CatDiorama::OnInit()
     waterMaterial->SetProperty("material.skyTex", skyTexture);
     waterMaterial->SetProperty("material.intensity", 1.0f);
 
-    // for (const auto& e : sphereModel)
-    // {
-    //     RenderEntitySPtr re = std::dynamic_pointer_cast<RenderEntity>(e);
-    //     re->GetTransform().SetLocalPosition({0, 5, 0});
-    //     re->GetTransform().SetLocalScale({3, 3, 3});
-    //     auto& [layer] = re->GetRenderSettings();
-    //     layer = 1;
-    //
-    //     if (re != nullptr)
-    //     {
-    //         const auto mat = re->GetModel()->Materials[0];
-    //         mat->SetShader(transParentShader);
-    //     }
-    // }
-
     skyboxModel->GetTransform().SetLocalPosition({0, 5, 0});
     skyboxModel->GetTransform().SetLocalScale({60, 60, 60});
     const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
@@ -179,9 +164,8 @@ void CatDiorama::OnInit()
     skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
 
     // m_scene.AddEntities(axisModel);
-  m_scene.AddEntity(skyboxModel);
+    m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(catScene);
-    //   m_scene.AddEntities(sphereModel);
 }
 
 void CatDiorama::DrawImGUI()

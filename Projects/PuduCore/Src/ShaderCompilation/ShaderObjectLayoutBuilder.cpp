@@ -565,8 +565,6 @@ namespace Pudu
             }
         }
 
-        rootOffsets.shaderNode->Print();
-
         outCompilationObject.descriptorsData.setsCount = context.getSetIndex() + 1;
 
         outCompilationObject.SetPushConstants(context.GetPushConstants());

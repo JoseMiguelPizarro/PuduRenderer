@@ -89,7 +89,6 @@ namespace Pudu {
 		PrintDiagnostics(diagnostics);
 
 		//Global
-		LOG("Global scope : {}", path);
 		ShaderCompilationObject compiledData;
 		ShaderObjectLayoutBuilder layoutBuilder;
 		layoutBuilder.m_globalSession = m_globalSession;
