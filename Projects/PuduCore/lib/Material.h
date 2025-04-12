@@ -78,6 +78,7 @@ namespace Pudu
         void ApplyProperties(const MaterialApplyPropertyGPUTarget& target);
         std::vector<SPtr<GPUResourceBase>>* GetAllocatedResources();
 
+
     private:
         friend class Material;
         std::vector<PropertyUpdateRequest> m_descriptorUpdateRequests;

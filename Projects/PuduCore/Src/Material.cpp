@@ -1,6 +1,7 @@
 #include "Material.h"
 #include "PuduGraphics.h"
 #include "PuduConstants.h"
+
 #include "ShaderCursor/ShaderCursor.h"
 
 namespace Pudu
