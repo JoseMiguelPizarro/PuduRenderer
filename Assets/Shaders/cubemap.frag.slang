@@ -1,7 +1,7 @@
 // Bindless support
 //[[vk::binding(0, 0)]] SamplerCube cubeMap;
 #include "Lib/DefaultVertexInput.hlsl"
-import PuduGraphics;
+import PuduGraphicsModule;
 
 SamplerCube testText;
 

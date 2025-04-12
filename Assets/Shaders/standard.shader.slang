@@ -2,7 +2,7 @@
 #include "Lib/DefaultVertexInput.hlsl"
 #include "lib/Shadowmap.slang"
 
-import PuduGraphics;
+import PuduGraphicsModule;
 
 
 struct StandardMaterial

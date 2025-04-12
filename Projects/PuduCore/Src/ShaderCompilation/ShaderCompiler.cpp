@@ -51,7 +51,10 @@ namespace Pudu {
 	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, const std::vector<const char*>& entryPoints, bool compute) const
 	{
 		Slang::ComPtr<IBlob> diagnostics;
-		IModule* baseModule = m_session->loadModule("PuduGraphics.slang");
+		IModule* baseModule = m_session->loadModule("PuduGraphicsModule.slang", diagnostics.writeRef());
+
+		PrintDiagnostics(diagnostics);
+
 		IModule* module = m_session->loadModule(path, diagnostics.writeRef());
 
 		PrintDiagnostics(diagnostics);

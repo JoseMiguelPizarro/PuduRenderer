@@ -1,7 +1,7 @@
 #include "Lib/DefaultVertexInput.hlsl"
 #include "Lib/Lighting.hlsl"
 
-import PuduGraphics;
+import PuduGraphicsModule;
 
 [shader("vertex")]
 VSOut vertexMain(VertexInput input)

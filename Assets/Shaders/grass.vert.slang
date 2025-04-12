@@ -1,5 +1,5 @@
 
-import PuduGraphics;
+import PuduGraphicsModule;
 import "Lib/grass";
 
 #include "lib/lygia/generative/cnoise.hlsl"

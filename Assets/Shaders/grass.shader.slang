@@ -1,4 +1,4 @@
-import PuduGraphics;
+import PuduGraphicsModule;
 
 #include "Lib/grass.slang"
 #include "Lib/Shadowmap.slang"

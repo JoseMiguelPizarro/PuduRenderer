@@ -28,7 +28,7 @@ namespace Pudu
         m_globalPropertiesMaterial->name = "Global Properties Material";
         //Load Globals
         m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(
-            graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphics.slang"));
+            graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphicsModule.slang"));
         m_globalPropertiesMaterial
             ->SetScope("Global")
             ->SetDescriptorProvider(m_globalDescriptorSetLayouts);
