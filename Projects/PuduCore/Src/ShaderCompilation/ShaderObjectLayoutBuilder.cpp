@@ -436,7 +436,6 @@ namespace Pudu
     {
         m_indentation++;
         size usedLayoutUnitsCount = varLayout->getCategoryCount();
-        accessPath.Print();
 
         for (size_t i = 0; i < usedLayoutUnitsCount; i++)
         {

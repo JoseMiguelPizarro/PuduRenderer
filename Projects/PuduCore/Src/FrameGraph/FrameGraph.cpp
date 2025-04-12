@@ -1617,18 +1617,7 @@ namespace Pudu
                     width = texture->width;
                     height = texture->height;
 
-                    const auto previousUsage = GetTextureUsage(outputResource.resource->Handle());
-
                     commands->TransitionTextureLayout(texture,VkImageLayoutFromUsage(outputResource.resourceUsage));
-                    // commands->TransitionImageLayout(texture->vkImageHandle, texture->format,
-                    //                                     VkImageLayoutFromUsage(previousUsage),
-                    //                                     VkImageLayoutFromUsage(outputResource.resourceUsage));
-                    // commands->AddImageBarrier(texture->vkImageHandle,
-                    //                           previousUsage,
-                    //                           outputResource.resourceUsage,
-                    //                           0,
-                    //                           1,
-                    //                           TextureFormat::HasDepth(texture->format));
 
                     SetTextureUsage(outputResource.resource->Handle(), outputResource.resourceUsage);
                 }
