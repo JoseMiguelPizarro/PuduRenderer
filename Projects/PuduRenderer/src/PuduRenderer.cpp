@@ -49,7 +49,7 @@ namespace Pudu
         depthCopyRT->width = graphics->WindowWidth;
         depthCopyRT->height = graphics->WindowHeight;
         depthCopyRT->format = VK_FORMAT_D32_SFLOAT;
-        depthCopyRT->name = "DepthPrepassTexture";
+        depthCopyRT->name = "DepthPrepassCopyTexture";
         depthCopyRT->SetUsage(SHADER_RESOURCE);
 
         auto shadowRT = graphics->GetRenderTexture();

@@ -1971,6 +1971,7 @@ namespace Pudu
         imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCreateInfo.format = texture->format;
+        imageCreateInfo.initialLayout = texture->GetImageLayout();
 
         imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -1983,7 +1984,7 @@ namespace Pudu
 
         if (TextureFormat::HasDepthOrStencil(texture->format))
         {
-            imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT ; //TODO: ONLY ENABLE TRANSFER IF NEEDED
             if (isRenderTarget)
             {
                 imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
