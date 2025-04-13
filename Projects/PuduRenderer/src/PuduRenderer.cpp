@@ -204,11 +204,11 @@ namespace Pudu
         AddRenderPass(m_shadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
-        AddRenderPass(drawGrassRP.get());
+       // AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());
         AddRenderPass(depthCopyRP.get());
         AddRenderPass(transparentRP.get());
-        AddRenderPass(m_postProcessingRenderPass.get());
+        //AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());

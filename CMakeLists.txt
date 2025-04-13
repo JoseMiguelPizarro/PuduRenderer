@@ -151,14 +151,7 @@ file(GLOB_RECURSE PuduRenderer_SOURCES Projects/PuduRenderer/**)
 target_sources(PuduRenderer PRIVATE ${PuduRenderer_SOURCES})
 target_link_libraries(PuduRenderer PRIVATE PuduCore ${LIBS})
 
-add_target(CatDiorama EXECUTABLE)
-set_target_properties(CatDiorama PROPERTIES
-    COMPILE_DEFINITIONS "HLSLPP_FEATURE_TRANSFORM"
-)
-file(GLOB_RECURSE CatDiorama_SOURCES Projects/CatDiorama/**)
-target_sources(CatDiorama PRIVATE ${CatDiorama_SOURCES})
 
-target_link_libraries(CatDiorama PUBLIC PuduRenderer PuduCore PUBLIC slang)
 
 get_target_property(slangDLL slang SLANG_DLL)
 get_target_property(glslangDLL slang GLSLANG_DLL)
@@ -170,11 +163,27 @@ configure_file(${slangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
 
 configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
 
-message(STATUS "Copying asset files")
-add_custom_command(
-        TARGET CatDiorama
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/Assets"
-        "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Assets/"
-)
+macro(AddPuduApp app_name)
+    add_target(${app_name} EXECUTABLE)
+    set_target_properties(${app_name} PROPERTIES
+            COMPILE_DEFINITIONS "HLSLPP_FEATURE_TRANSFORM"
+    )
+    file(GLOB_RECURSE ${app_name}_SOURCES Projects/${app_name}/**)
+    target_sources(${app_name} PRIVATE ${${app_name}_SOURCES})
+
+    target_include_directories(${app_name} PRIVATE Projects/${app_name}/Lib)
+
+    target_link_libraries(${app_name} PUBLIC PuduRenderer PuduCore PUBLIC slang)
+
+    # Assets copy for the app
+    add_custom_command(
+            TARGET ${app_name}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/Assets"
+            "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Assets/"
+    )
+endmacro()
+
+AddPuduApp(CatDiorama)
+AddPuduApp(Test_PBR)

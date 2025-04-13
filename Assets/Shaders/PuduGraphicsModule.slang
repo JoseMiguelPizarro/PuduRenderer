@@ -95,6 +95,19 @@ public float4x4 GetViewMatrix(){
     return GLOBALS.constants.view;
     }
 
+
+/// <summary>
+/// Computes the normalized view direction vector in world space.
+/// </summary>
+/// <param name="worldPos">The position in world space from which the view direction is computed.</param>
+/// <returns>
+/// A float3 vector representing the direction from the given world position to the camera position,
+/// </returns>
+public float3 GetViewDirection(float3 worldPos)
+{
+    return normalize(GLOBALS.constants.cameraPosWS  - worldPos);
+}
+
 public float4x4 GetProjectionMatrix()
 {
     return GLOBALS.constants.proj;

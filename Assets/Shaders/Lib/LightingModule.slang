@@ -1,16 +1,41 @@
 import PuduCoreModule;
 module Lighting;
 
-struct SurfaceMaterial
+public struct SurfaceMaterial
 {
-    float3 albedo;
-    float3 normal;
-    float3 viewDir;
-    float3 lightDir;
-    float3 lightColor;
-    float roughness;
-    float metallic;
+    public float3 albedo;
+    public float3 normal;
+    public float3 viewDir;
+    public float3 lightDir;
+    public float3 lightColor;
+    public float3 specularColor = float3(1,1,1);
+    public float roughness;
+    public float metallic;
 };
+
+float3 BlinnPhongSpecularReflection(SurfaceMaterial mat)
+{
+float3 l = mat.lightDir;
+float3 n = mat.normal;
+float3 v = mat.viewDir;
+
+float3 h = normalize(l + v);
+
+float3 s = pow( mat.specularColor * mat.lightColor * saturate(dot(n,h)),20);
+
+return s;
+}
+float3 PhongSpecularReflection(SurfaceMaterial mat)
+{
+    float3 l = mat.lightDir;
+    float3 n = mat.normal;
+    float3 v = mat.viewDir;
+    float3 r = reflect(mat.lightDir,mat.normal);
+
+    float3 s = pow( mat.specularColor * mat.lightColor * saturate(dot(v,r)),15);
+
+    return s;
+}
 
 float3 LambertDiffuseReflection(SurfaceMaterial mat)
 {
@@ -22,11 +47,18 @@ float3 LambertDiffuseReflection(SurfaceMaterial mat)
 float3 LambertBRDF(SurfaceMaterial mat)
 {
     float3 diffuseReflection = LambertDiffuseReflection(mat);
+    float3 specularReflection = BlinnPhongSpecularReflection(mat);
+    float3 ambient = float3(0.3,0.2,0.1);
 
-    return diffuseReflection;
+    return diffuseReflection + specularReflection + ambient;
 }
 
-float3 StandardSurface(SurfaceMaterial mat)
+float3 ToneMap(float3 color, float exposure)
 {
-    return LambertBRDF(mat);
+    color *= exposure;
+    return color / (color + float3(1.0)); // Basic Reinhard tonemapping
+}
+public float3 StandardSurface(SurfaceMaterial mat)
+{
+    return ToneMap(LambertBRDF(mat),3.);
 }

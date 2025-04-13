@@ -255,6 +255,9 @@ namespace Pudu
             auto mesh = drawCall.MeshPtr;
 
             auto material = GetRenderMaterial(frameData);
+            ASSERT(mesh != nullptr, "Trying to render null mesh");
+            ASSERT(material != nullptr, "Trying to render null Material for mesh {}",mesh->name.c_str());
+            ASSERT(material->m_shader != nullptr, "Trying to render mesh material {} with null shader", mesh->name.c_str());
 
             Pipeline* pipeline = GetPipeline({
                 .renderPass = frameData.currentRenderPass.get(),
