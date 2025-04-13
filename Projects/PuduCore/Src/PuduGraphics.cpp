@@ -1968,7 +1968,7 @@ namespace Pudu
         imageCreateInfo.extent.depth = texture->depth;
         imageCreateInfo.mipLevels = texture->mipLevels;
         imageCreateInfo.arrayLayers = texture->GetTextureType() == TextureType::Texture_Cube ? 6 : 1;
-        imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageCreateInfo.samples = texture->GetSampleCount();
         imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCreateInfo.format = texture->format;
         imageCreateInfo.initialLayout = texture->GetImageLayout();

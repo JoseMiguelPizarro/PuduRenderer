@@ -16,4 +16,14 @@ namespace Pudu {
 	{
 		return Transform.GetTransformationMatrix();
 	}
+
+	void Camera::SetClearColor(Color color)
+	{
+		m_clearColor = color;
+	}
+
+	Color Camera::GetClearColor() const
+	{
+		return m_clearColor;
+	}
 }

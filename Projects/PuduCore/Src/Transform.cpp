@@ -44,6 +44,11 @@ namespace Pudu {
 		m_localScale = scale;
 	}
 
+	void Transform::SetUniformLocalScale(f32 scale)
+	{
+		m_localScale = vec3(scale);
+	}
+
 	mat4 Transform::GetTransformationMatrix()
 	{
 		mat4 rot = toMat4(GetRotationQuat());

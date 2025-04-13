@@ -33,7 +33,7 @@ VSOut vertexMain(VertexInput input)
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal, 0.);
-    output.Tangent = float4(input.Tangent,0.);
+    output.Tangent = input.Tangent;
     output.PosOS = float4(input.Position, 0.);
 
     output.viewDir = output.PosWS.xyz - GLOBALS.constants.cameraPosWS.xyz;

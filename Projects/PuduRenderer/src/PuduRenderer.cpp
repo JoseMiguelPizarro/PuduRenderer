@@ -92,7 +92,7 @@ namespace Pudu
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
             ->SetName("ForwardRenderPass")
-            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear, vec4(0.4, .4, 0.6, 0.))
+            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear)
             ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
             ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
@@ -201,15 +201,15 @@ namespace Pudu
 
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
-        AddRenderPass(m_shadowMapRenderPass.get());
-        AddRenderPass(normalRP.get());
+      //  AddRenderPass(m_shadowMapRenderPass.get());
+       // AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
        // AddRenderPass(drawGrassRP.get());
-        AddRenderPass(forwardColorCopyRP.get());
-        AddRenderPass(depthCopyRP.get());
-        AddRenderPass(transparentRP.get());
+       // AddRenderPass(forwardColorCopyRP.get());
+      //  AddRenderPass(depthCopyRP.get());
+     //   AddRenderPass(transparentRP.get());
         //AddRenderPass(m_postProcessingRenderPass.get());
-        AddRenderPass(overlayRP.get());
+      //  AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();

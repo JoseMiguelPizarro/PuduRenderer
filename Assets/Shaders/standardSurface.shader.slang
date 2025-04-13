@@ -8,10 +8,21 @@ struct StandardMaterial
 {
     Sampler2D albedoTex;
     Sampler2D normalTex;
-    Sampler2D roughness;
-    Sampler2D metallic;
+    Sampler2D roughnessTex;
+    Sampler2D metallicTex;
+    SamplerCube skybox; //Placeholder for environment
 }
 ParameterBlock<StandardMaterial> material;
+
+// struct SkyboxAmbientSampler:IDiffuseAmbientSampler
+// {
+//     SamplerCube m_skybox;
+//
+//     float3 Sample(float3 n)
+//     {
+//         return m_skybox.Sample(n).xyz;
+//     }
+// }
 
 [shader("vertex")]
 VSOut vertexMain(VertexInput input)
@@ -46,14 +57,18 @@ float4 fragmentMain(VSOut input)
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
 
+//     SkyboxAmbientSampler ambientSampler;
+//     ambientSampler.m_skybox = material.skybox;
+
     SurfaceInfo m = {};
     m.albedo = albedo;
     m.lightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
     m.lightColor = float3(1,1,1);
     m.specularColor = float3(1,1,1);
     m.normal = normalWS;
-    m.roughness = 5;
+    m.glossiness =1. - material.roughnessTex.Sample(input.TexCoord.xy).x;
     m.viewDir = GetViewDirection(input.PosWS.xyz);
+    m.ambientSampler = material.skybox;
 
     col.rgb = StandardSurface(m);
     return col;

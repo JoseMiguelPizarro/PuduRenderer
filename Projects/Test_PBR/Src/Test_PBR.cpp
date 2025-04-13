@@ -9,7 +9,6 @@
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
-    return;
 
     static float angle = 0.0f;
     const float radius = 5.0f;
@@ -23,7 +22,7 @@ void Test_PBR::OnRun()
     float z = radius * sin(angle);
 
     // Set the camera position and keep it above the XZ plane (upper hemisphere)
-    m_camera.Transform.SetLocalPosition({x, 4.0f, z});
+    m_camera.Transform.SetLocalPosition({x, .3f, z});
 
     // Make the camera look at the origin
     m_camera.Transform.SetForward(-m_camera.Transform.GetLocalPosition(), {0.0f, 1.0f, 0.0f});
@@ -35,6 +34,7 @@ void Test_PBR::OnInit()
     m_camera = {};
     m_camera.Transform.SetLocalPosition({0, 0, -6});
     m_camera.Transform.SetForward({0, 0, 1}, {0, 1, 0});
+    m_camera.SetClearColor({1,0,0,1});
     Projection projection;
 
     projection.Width = Graphics.WindowWidth;
@@ -55,9 +55,9 @@ void Test_PBR::OnInit()
     settings.name = "stringy_marble_albedo";
     settings.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png", settings);
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_Normal-ogl.png", settings);
+    SPtr<Texture2d> roughnessTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_roughness.png", settings);
 
     projection.nearPlane = 5;
     projection.farPlane = 50;
@@ -69,11 +69,31 @@ void Test_PBR::OnInit()
 
     auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
 
+    TextureLoadSettings skyTexSettings{};
+    skyTexSettings.bindless = false;
+    skyTexSettings.name = "Sky";
+    skyTexSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
+    skyTexSettings.textureType = TextureType::Texture_Cube;
+
+    const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx", skyTexSettings);
+    const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
+
+    auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
+    const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
+    skyboxMaterial->name = "Skybox";
+    skyboxMaterial->SetShader(skyboxShader);
+    skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
+
     auto sphereEntity =std::dynamic_pointer_cast<RenderEntity>(sphere);
     auto material = sphereEntity->GetModel()->Materials[0];
     material->SetShader(standardShader);
     material->SetProperty("material.albedoTex", albedoTexture);
     material->SetProperty("material.normalTex", normalTexture);
+    material->SetProperty("material.roughnessTex", roughnessTexture);
+    material->SetProperty("material.skybox", skyTexture);
+
+    skyboxModel->GetTransform().SetUniformLocalScale(80);
 
     m_scene.AddEntity(sphere);
+    m_scene.AddEntity(skyboxModel);
 }

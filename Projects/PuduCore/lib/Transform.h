@@ -22,6 +22,7 @@ namespace Pudu {
 
 		vec3 GetLocalScale();
 		void SetLocalScale(vec3 scale);
+		void SetUniformLocalScale(f32 scale);
 
 		mat4 GetTransformationMatrix();
 		vec3 GetForward();

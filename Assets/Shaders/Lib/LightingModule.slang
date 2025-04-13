@@ -1,6 +1,11 @@
 import PuduCoreModule;
 module Lighting;
 
+public interface IDiffuseAmbientSampler
+{
+    public float3 Sample(float3 n);
+}
+
 public struct SurfaceInfo
 {
     public float3 albedo;
@@ -9,48 +14,63 @@ public struct SurfaceInfo
     public float3 lightDir;
     public float3 lightColor;
     public float3 specularColor = float3(1,1,1);
-    public float roughness;
+    public float glossiness;
     public float metallic;
+    public SamplerCube ambientSampler;
 };
 
-float3 BlinnPhongSpecularReflection(SurfaceInfo mat)
+float3 SampleAmbientSpecular(SurfaceInfo surface)
 {
-float3 l = mat.lightDir;
-float3 n = mat.normal;
-float3 v = mat.viewDir;
+    float3 r = reflect(surface.viewDir, surface.normal);
+
+    return surface.ambientSampler.Sample(r).xyz * (surface.glossiness)*.5;
+}
+
+float3 SampleAmbientDiffuse(SurfaceInfo surface)
+{
+    return surface.ambientSampler.SampleBias(surface.normal,3.).xyz*(surface.glossiness);
+}
+
+
+float3 BlinnPhongSpecularReflection(SurfaceInfo surface)
+{
+float3 l = surface.lightDir;
+float3 n = surface.normal;
+float3 v = surface.viewDir;
 
 float3 h = normalize(l + v);
 
-float3 s = pow( mat.specularColor * mat.lightColor * saturate(dot(n,h)),mat.roughness);
+float3 s = pow( surface.specularColor * surface.lightColor * saturate(dot(n,h)),(surface.glossiness)) * surface.glossiness;
+s += SampleAmbientSpecular(surface);
 
 return s;
 }
-float3 PhongSpecularReflection(SurfaceInfo mat)
+float3 PhongSpecularReflection(SurfaceInfo surface)
 {
-    float3 l = mat.lightDir;
-    float3 n = mat.normal;
-    float3 v = mat.viewDir;
-    float3 r = reflect(mat.lightDir,mat.normal);
+    float3 l = surface.lightDir;
+    float3 n = surface.normal;
+    float3 v = surface.viewDir;
+    float3 r = reflect(surface.lightDir,surface.normal);
 
-    float3 s = pow( mat.specularColor * mat.lightColor * saturate(dot(v,r)),5);
+    float3 s = pow( surface.specularColor * surface.lightColor * saturate(dot(v,r)),5 * (surface.glossiness));
 
+    s = s + SampleAmbientSpecular(surface);
     return s;
 }
 
-float3 LambertDiffuseReflection(SurfaceInfo mat)
+float3 LambertDiffuseReflection(SurfaceInfo surface)
 {
-    float3 directColor = mat.lightColor * saturate(dot(mat.normal,mat.lightDir));
+    float3 directColor = surface.lightColor * saturate(dot(surface.normal,surface.lightDir));
 
-    return directColor*mat.albedo; //Missing diffuse ambient color here!
+    return directColor*surface.albedo + SampleAmbientDiffuse(surface); //Missing diffuse ambient color here!
 }
 
-float3 LambertBRDF(SurfaceInfo mat)
+float3 LambertBRDF(SurfaceInfo surface)
 {
-    float3 diffuseReflection = LambertDiffuseReflection(mat);
-    float3 specularReflection = BlinnPhongSpecularReflection(mat);
-    float3 ambient = float3(0.05,0.08,0.07);
+    float3 diffuseReflection = LambertDiffuseReflection(surface);
+    float3 specularReflection = BlinnPhongSpecularReflection(surface);
 
-    return diffuseReflection + specularReflection + ambient;
+    return diffuseReflection + specularReflection;
 }
 
 float3 ToneMap(float3 color, float exposure)
@@ -58,7 +78,7 @@ float3 ToneMap(float3 color, float exposure)
     color *= exposure;
     return color / (color + float3(1.0)); // Basic Reinhard tonemapping
 }
-public float3 StandardSurface(SurfaceInfo mat)
+public float3 StandardSurface(SurfaceInfo surface)
 {
-    return ToneMap(LambertBRDF(mat),3);
+    return ToneMap(LambertBRDF(surface),3);
 }
