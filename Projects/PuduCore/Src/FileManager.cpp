@@ -230,6 +230,14 @@ namespace Pudu
                             vertices[idx++].color = v;
                         });
                     }
+                    if (strcmp(attribName, "TANGENT") == 0)
+                    {
+                        std::size_t idx = 0;
+                        fastgltf::iterateAccessor<vec4>(gltfAsset.get(), accessor, [&](vec4 v)
+                        {
+                            vertices[idx++].tangent = v;
+                        });
+                    }
                 }
 
                 MeshCreationData meshCreationData{};

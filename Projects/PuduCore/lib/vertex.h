@@ -12,7 +12,7 @@ namespace Pudu
 		vec3 color = { 1,1,1 };
 		vec2 texcoord;
 		vec3 normal;
-		vec3 tangent;
+		vec4 tangent;
 
 		static VkVertexInputBindingDescription GetBindingDescription() {
 			VkVertexInputBindingDescription bindingDescription{};
@@ -54,7 +54,7 @@ namespace Pudu
 
 			attributeDescriptions[4].binding = 0;
 			attributeDescriptions[4].location = 4;
-			attributeDescriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 			attributeDescriptions[4].offset = offsetof(Vertex, tangent);
 			return attributeDescriptions;
 		}

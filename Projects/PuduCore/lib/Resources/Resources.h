@@ -371,7 +371,7 @@ namespace Pudu
 
 
 	struct SamplerCreationData {
-		bool wrap = false;
+		bool wrap = true;
 		uint32_t maxLOD = 1;
 	};
 

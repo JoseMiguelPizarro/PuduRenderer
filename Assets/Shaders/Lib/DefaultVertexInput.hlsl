@@ -22,7 +22,7 @@ struct VertexInput
     float3 Color: COLOR;
     float2 TexCoord: TEXCOORD;
     float3 Normal: NORMAL;
-    float3 Tangent:TANGENT;
+    float4 Tangent:TANGENT;
 };
 
 #endif

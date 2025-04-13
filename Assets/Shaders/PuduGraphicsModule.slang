@@ -80,15 +80,15 @@ public float LinearizeDepth(float d,float zNear,float zFar)
 
 public float3 DecodeNormal(float2 n)
 {
-    n = n*2. - 1.;
-    var z = sqrt(1. - n.x*n.x - n.y*n.y);
+    float2 m = n*2. - 1.;
+    var z = sqrt(1. - m.x*m.x - m.y*m.y);
 
-    return normalize(float3(n.x,n.y,z));
+    return normalize(float3(m,z));
 }
 
 public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
 {
-    return v.x*t + v.y*n + v.z*bt;
+    return normalize( v.x*t + v.y*bt + v.z*n);
 }
 
 public float4x4 GetViewMatrix(){

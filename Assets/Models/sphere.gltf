@@ -1,6 +1,6 @@
 {
 	"asset":{
-		"generator":"Khronos glTF Blender I/O v4.2.60",
+		"generator":"Khronos glTF Blender I/O v4.4.55",
 		"version":"2.0"
 	},
 	"scene":0,
@@ -26,9 +26,10 @@
 					"attributes":{
 						"POSITION":0,
 						"NORMAL":1,
-						"TEXCOORD_0":2
+						"TEXCOORD_0":2,
+						"TANGENT":3
 					},
-					"indices":3
+					"indices":4
 				}
 			]
 		}
@@ -64,6 +65,12 @@
 		},
 		{
 			"bufferView":3,
+			"componentType":5126,
+			"count":1087,
+			"type":"VEC4"
+		},
+		{
+			"bufferView":4,
 			"componentType":5123,
 			"count":5952,
 			"type":"SCALAR"
@@ -90,14 +97,20 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":11904,
+			"byteLength":17392,
 			"byteOffset":34784,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":11904,
+			"byteOffset":52176,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":46688,
+			"byteLength":64080,
 			"uri":"sphere.bin"
 		}
 	]

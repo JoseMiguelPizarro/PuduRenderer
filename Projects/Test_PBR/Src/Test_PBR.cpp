@@ -9,12 +9,31 @@
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
+    return;
+
+    static float angle = 0.0f;
+    const float radius = 5.0f;
+    const float speed = 0.0001f; // radians per frame
+
+    // Update the angle based on speed
+    angle += speed * Time.DeltaTime();
+
+    // Calculate the new position of the camera
+    float x = radius * cos(angle);
+    float z = radius * sin(angle);
+
+    // Set the camera position and keep it above the XZ plane (upper hemisphere)
+    m_camera.Transform.SetLocalPosition({x, 4.0f, z});
+
+    // Make the camera look at the origin
+    m_camera.Transform.SetForward(-m_camera.Transform.GetLocalPosition(), {0.0f, 1.0f, 0.0f});
+
 }
 
 void Test_PBR::OnInit()
 {
     m_camera = {};
-    m_camera.Transform.SetLocalPosition({0, 0, -8});
+    m_camera.Transform.SetLocalPosition({0, 0, -6});
     m_camera.Transform.SetForward({0, 0, 1}, {0, 1, 0});
     Projection projection;
 
@@ -31,6 +50,14 @@ void Test_PBR::OnInit()
     m_puduRenderer.Init(&Graphics, this);
 
     standardShader = Graphics.CreateShader("standardSurface.shader.slang", "standard");
+    TextureLoadSettings settings{};
+    settings.bindless = false;
+    settings.name = "stringy_marble_albedo";
+    settings.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+
+    SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png", settings);
+    SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_Normal-ogl.png", settings);
 
     projection.nearPlane = 5;
     projection.farPlane = 50;
@@ -40,9 +67,13 @@ void Test_PBR::OnInit()
     directionalLight.GetTransform().SetLocalPosition({20, 20, 20});
     m_scene.directionalLight = &directionalLight;
 
-
     auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
-    std::dynamic_pointer_cast<RenderEntity>(sphere)->GetModel()->Materials[0]->SetShader(standardShader);
+
+    auto sphereEntity =std::dynamic_pointer_cast<RenderEntity>(sphere);
+    auto material = sphereEntity->GetModel()->Materials[0];
+    material->SetShader(standardShader);
+    material->SetProperty("material.albedoTex", albedoTexture);
+    material->SetProperty("material.normalTex", normalTexture);
 
     m_scene.AddEntity(sphere);
 }
