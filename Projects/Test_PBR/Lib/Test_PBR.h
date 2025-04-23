@@ -14,6 +14,9 @@ class Test_PBR:public PuduApp {
     void OnRun() override;
     void OnInit() override;
 
+public:
+    void DrawImGUI() override;
+
 private:
     Camera m_camera;
     Scene m_scene;
