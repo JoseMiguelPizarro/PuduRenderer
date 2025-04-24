@@ -383,6 +383,8 @@ namespace Pudu
 	{
 		const char* name = nullptr;
 		bool bindless;
+		bool generateMipmaps = false;
+		i32 mipLevels = -1;
 		TextureType::Enum textureType = TextureType::Texture2D;
 		VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
 		SamplerCreationData samplerData;
@@ -407,6 +409,7 @@ namespace Pudu
 		void* sourceData = nullptr; //ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly
 		const char* name = nullptr;
 		bool allocate = true;
+		bool generateMipmaps = false;
 	};
 
 	struct Framebuffer :GPUResource<Framebuffer>

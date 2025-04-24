@@ -220,7 +220,8 @@ namespace Pudu
 		void CreateVKTexture(Texture* texture);
 		void CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler);
 
-		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range, std::vector<VkBufferImageCopy2>* regions = nullptr);
+		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range,std::vector<VkBufferImageCopy2>* regions = nullptr);
+		void GenerateTextureMipMaps(Texture* texture, GPUCommands* commandsBuffer);
 
 		void UpdateBindlessResources(VkDescriptorSet descriptorSet, uint32_t binding);
 		SPtr<CommandPool> GetCommandPool(QueueFamily type);

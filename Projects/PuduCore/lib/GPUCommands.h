@@ -17,6 +17,7 @@ namespace Pudu
     class RenderPass;
     class Pipeline;
 
+
     class GPUCommands : public GPUResource<GPUCommands>
     {
         struct CreationData
@@ -33,6 +34,7 @@ namespace Pudu
         void EndCommands();
         void Clear(vec4 color);
         void ClearDepthStencil(float depth, float stencil);
+        void ImageBarrier(const VkImageMemoryBarrier2* barrier) const;
         void AddImageBarrier(VkImage image, ResourceUsage oldUsage, ResourceUsage newUsage, u32 baseMipLevel,
                              u32 mipCount, bool isDepth) const;
         void AddMemoryBarrier(VkPipelineStageFlags2 srcStageMask, VkPipelineStageFlags2 dstStageMask,
@@ -60,6 +62,10 @@ namespace Pudu
                                uint32_t offset = 0);
         void BindDescriptorSetCompute(VkPipelineLayout, VkDescriptorSet* handles, uint16_t handlesCount);
         void Blit(SPtr<Texture> source, SPtr<Texture> dst, VkImageLayout srcLayout, VkImageLayout dstLayout);
+        void Blit(SPtr<Texture> source, SPtr<Texture> dst, VkFilter filter, VkImageLayout srcLayout, VkImageLayout dstLayout,
+          VkImageBlit2* regions, Size regionCount = 1) const;
+        void Blit(Texture* source, Texture* dst, VkFilter filter, VkImageLayout srcLayout, VkImageLayout dstLayout,
+                  VkImageBlit2* regions, Size regionCount = 1) const;
         void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ);
         void DispatchIndirect(GraphicsBuffer* paramsBuffer, uint64_t offset);
         void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,

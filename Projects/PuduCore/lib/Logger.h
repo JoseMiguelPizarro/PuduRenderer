@@ -1,6 +1,11 @@
 #pragma once
 #include <format>
 #include "PuduCore.h"
+#if defined(_MSC_VER)
+#include <intrin.h>
+#else
+#include <signal.h>
+#endif
 
 namespace Pudu
 {
@@ -32,6 +37,12 @@ namespace Pudu
 
         std::printf(std::format("{}🐞Error 👉👈: {} {}", k_red, formattedMessage, k_reset).c_str());
         std::printf("\n");
+
+#if defined(_MSC_VER)
+        __debugbreak();
+#else
+        raise(SIGTRAP);
+#endif
     }
 
     template <typename... Args>

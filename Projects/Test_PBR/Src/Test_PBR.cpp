@@ -5,10 +5,11 @@
 #include "Test_PBR.h"
 
 #include "FileManager.h"
+#include "StringUtils.h"
+#include "ImGui/imgui.h"
 
 void Test_PBR::OnRun()
 {
-    m_puduRenderer.Render(&m_scene);
 
     static float angle = 0.0f;
     const float radius = 5.0f;
@@ -27,6 +28,7 @@ void Test_PBR::OnRun()
     // Make the camera look at the origin
     m_camera.Transform.SetForward(-m_camera.Transform.GetLocalPosition(), {0.0f, 1.0f, 0.0f});
 
+    m_puduRenderer.Render(&m_scene);
 }
 
 void Test_PBR::OnInit()
@@ -54,6 +56,7 @@ void Test_PBR::OnInit()
     settings.bindless = false;
     settings.name = "stringy_marble_albedo";
     settings.format = VK_FORMAT_R8G8B8A8_UNORM;
+    settings.generateMipmaps = true;
 
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png", settings);
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_Normal-ogl.png", settings);
@@ -97,3 +100,13 @@ void Test_PBR::OnInit()
     m_scene.AddEntity(sphere);
     m_scene.AddEntity(skyboxModel);
 }
+
+void Test_PBR::DrawImGUI()
+{
+    PuduApp::DrawImGUI();
+
+    ImGui::Text(StringUtils::Format("FPS: {}", Time.GetFPS()).c_str());
+    ImGui::Text(StringUtils::Format("Time: {}", Time.Time()).c_str());
+    ImGui::Text(StringUtils::Format("DeltaTime: {}", Time.DeltaTime()).c_str());
+}
+
