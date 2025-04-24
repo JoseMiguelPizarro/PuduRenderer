@@ -27,6 +27,15 @@ namespace Pudu
         m_clearValues[1] = {{depth, stencil}};
     }
 
+    void GPUCommands::ImageBarrier(const VkImageMemoryBarrier2* barrier) const
+    {
+        VkDependencyInfo dependencyInfo{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+        dependencyInfo.imageMemoryBarrierCount = 1;
+        dependencyInfo.pImageMemoryBarriers = barrier;
+
+        vkCmdPipelineBarrier2(vkHandle, &dependencyInfo);
+    }
+
     void GPUCommands::AddImageBarrier(VkImage image, ResourceUsage oldState, ResourceUsage newState, u32 baseMipLevel,
                                       u32 mipCount, bool isDepth) const
     {
@@ -279,6 +288,27 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
+    void GPUCommands::Blit(SPtr<Texture> source, SPtr<Texture> dst, VkFilter filter, VkImageLayout srcLayout,
+        VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
+    {
+        Blit(source.get(), dst.get(), filter, srcLayout, dstLayout, regions, regionCount);
+    }
+
+    void GPUCommands::Blit(Texture* source, Texture* dst,VkFilter filter,  VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
+    {
+        VkBlitImageInfo2 blitInfo{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};
+        blitInfo.srcImage = source->vkImageHandle;
+        blitInfo.srcImageLayout = srcLayout;
+        blitInfo.dstImage = dst->vkImageHandle;
+        blitInfo.dstImageLayout = dstLayout;
+        blitInfo.filter = filter;
+
+        blitInfo.pRegions = regions;
+        blitInfo.regionCount = regionCount;
+
+        vkCmdBlitImage2(vkHandle, &blitInfo);
+    }
+
     void GPUCommands::Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
     {
         vkCmdDispatch(vkHandle, groupCountX, groupCountY, groupCountZ);
@@ -350,7 +380,7 @@ namespace Pudu
         if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -577,6 +607,14 @@ namespace Pudu
 
             sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (oldLayout ==VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT; //TODO: JUST USE THE PROPER MASK, WE NEED MORE USAGE CONTEXT HERE
         }
         else
         {

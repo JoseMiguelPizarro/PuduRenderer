@@ -21,6 +21,8 @@ namespace Pudu
 
         SamplerCreationData sampler;
         sampler.wrap = false;
+        sampler.maxLOD = mipLevels - 1;
+
 
         if (samplerData == nullptr)
         {

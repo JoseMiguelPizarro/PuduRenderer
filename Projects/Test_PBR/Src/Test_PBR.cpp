@@ -56,6 +56,7 @@ void Test_PBR::OnInit()
     settings.bindless = false;
     settings.name = "stringy_marble_albedo";
     settings.format = VK_FORMAT_R8G8B8A8_UNORM;
+    settings.generateMipmaps = true;
 
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png", settings);
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_Normal-ogl.png", settings);
