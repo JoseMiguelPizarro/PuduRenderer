@@ -5,7 +5,7 @@ Renderer made in C++23 & Vulkan
 
 *Tentative Logo sketch*
 #### Current state:
-Open sourcing it for ease of sharing but is still not ready to be used.
+Open sourcing it for ease of sharing but is still not ready to be used. And some dependencies need to be cleaned up
 #### Features:
 To do!
 #### How to build:
