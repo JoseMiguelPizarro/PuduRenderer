@@ -1,6 +1,8 @@
 ## Pudu Renderer
 Renderer made in C++23 & Vulkan
-![Logo Sketch](https://i.imgur.com/1z25UUn.png =x256)
+
+![Logo Sketch](https://i.imgur.com/Qx7X4T8.jpeg)
+
 *Tentative Logo sketch*
 #### Current state:
 Open sourcing it for ease of sharing but is still not ready to be used.
