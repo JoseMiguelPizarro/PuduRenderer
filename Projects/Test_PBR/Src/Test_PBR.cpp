@@ -33,6 +33,10 @@ void Test_PBR::OnRun()
 
 void Test_PBR::OnInit()
 {
+    AntialiasingSettings antialiasingSettings {};
+    antialiasingSettings.sampleCount = TextureSampleCount::Eight;
+    Graphics.SetAntiAliasing(antialiasingSettings);
+
     m_camera = {};
     m_camera.Transform.SetLocalPosition({0, 0, -6});
     m_camera.Transform.SetForward({0, 0, 1}, {0, 1, 0});
@@ -47,7 +51,7 @@ void Test_PBR::OnInit()
 
     m_scene = Scene(&Time);
     m_scene.camera = &m_camera;
-    TargetFPS = 30;
+    TargetFPS = 120;
 
     m_puduRenderer.Init(&Graphics, this);
 

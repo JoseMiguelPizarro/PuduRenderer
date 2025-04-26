@@ -1,6 +1,9 @@
 import PuduCoreModule;
 module Lighting;
 
+
+#define BlinnPhongSpecularAlpha 50.f
+
 public interface IDiffuseAmbientSampler
 {
     public float3 Sample(float3 n);
@@ -31,7 +34,6 @@ float3 SampleAmbientDiffuse(SurfaceInfo surface)
     return surface.ambientSampler.SampleBias(surface.normal,3.).xyz*(surface.glossiness);
 }
 
-
 float3 BlinnPhongSpecularReflection(SurfaceInfo surface)
 {
 float3 l = surface.lightDir;
@@ -40,7 +42,7 @@ float3 v = surface.viewDir;
 
 float3 h = normalize(l + v);
 
-float3 s = pow( surface.specularColor * surface.lightColor * saturate(dot(n,h)),(surface.glossiness)) * surface.glossiness;
+float3 s = pow( surface.specularColor * surface.lightColor * saturate(dot(n,h)),BlinnPhongSpecularAlpha) * surface.glossiness;
 s += SampleAmbientSpecular(surface);
 
 return s;
@@ -52,7 +54,7 @@ float3 PhongSpecularReflection(SurfaceInfo surface)
     float3 v = surface.viewDir;
     float3 r = reflect(surface.lightDir,surface.normal);
 
-    float3 s = pow( surface.specularColor * surface.lightColor * saturate(dot(v,r)),5 * (surface.glossiness));
+    float3 s = pow(surface.specularColor * surface.lightColor * saturate(dot(v,r)),5 * (surface.glossiness));
 
     s = s + SampleAmbientSpecular(surface);
     return s;

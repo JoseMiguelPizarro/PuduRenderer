@@ -32,6 +32,7 @@ namespace Pudu
         renderingAttachment.loadOp = attachment.loadOperation;
         renderingAttachment.storeOp = attachment.storeOp;
         renderingAttachment.clearValue = attachment.clearValue;
+        renderingAttachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
         return renderingAttachment;
     }
@@ -136,7 +137,7 @@ namespace Pudu
         return buffersCount;
     }
 
-    VkRenderingAttachmentInfo* RenderPassAttachments::GetVkColorAttachments()
+    VkRenderingAttachmentInfo* RenderPassAttachments::GetVkColorAttachments(RenderFrameData& frameData)
     {
         if (m_VkcolorAttachmentsCreated)
         {
@@ -151,7 +152,20 @@ namespace Pudu
 
             if (attachment.usage & AttachmentAccessUsage::Write)
             {
-                m_vkcolorAttachments[colorAttachmentVkCount] = RenderPassAttachmentToVKAttachment(attachment);
+                auto vkattachment = RenderPassAttachmentToVKAttachment(attachment);
+
+                //TODO: Multisampling is pretty hardcoded. Do we need to expose override for the multisampled textures?
+                if (frameData.currentRenderPass->IsMultisampled())
+                {
+                    vkattachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+                    vkattachment.resolveImageView = attachment.resource->vkImageViewHandle;
+                    vkattachment.resolveImageLayout = attachment.layout;
+                    vkattachment.imageLayout = attachment.layout;
+                    vkattachment.imageView = frameData.currentRenderPass->GetMultisampledColorTexture()->vkImageViewHandle;
+                }
+
+                m_vkcolorAttachments[colorAttachmentVkCount] = vkattachment;
+
                 colorAttachmentVkCount++;
             }
         }
@@ -181,7 +195,7 @@ namespace Pudu
         return &m_colorRenderPassAttachments;
     }
 
-    VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthVkAttachments()
+    VkRenderingAttachmentInfo* RenderPassAttachments::GetDepthVkAttachments(RenderFrameData& frameData)
     {
         if (m_depthAttachmentsCreated)
         {
@@ -196,7 +210,18 @@ namespace Pudu
 
             if (attachment.usage != AttachmentAccessUsage::Sample)
             {
-                m_vkDepthAttachments[depthAttachmentVkCount] = RenderPassAttachmentToVKAttachment(attachment);
+                auto vkattachment = RenderPassAttachmentToVKAttachment(attachment);
+                //TODO: Multisampling is pretty hardcoded. Do we need to expose override for the multisampled textures?
+                if (frameData.currentRenderPass->IsMultisampled())
+                {
+                    vkattachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+                    vkattachment.resolveImageView = attachment.resource->vkImageViewHandle;
+                    vkattachment.resolveImageLayout = attachment.layout;
+                    vkattachment.imageLayout = attachment.layout;
+                    vkattachment.imageView = frameData.currentRenderPass->GetMultisampledDepthTexture()->vkImageViewHandle;
+                }
+
+                m_vkDepthAttachments[depthAttachmentVkCount] =vkattachment;
                 depthAttachmentVkCount++;
             }
         }
@@ -206,7 +231,7 @@ namespace Pudu
         return m_vkDepthAttachments;
     }
 
-    VkRenderingAttachmentInfo* RenderPassAttachments::GetStencilAttachments()
+    VkRenderingAttachmentInfo* RenderPassAttachments::GetStencilAttachments(RenderFrameData& frameData)
     {
         return nullptr;
     }
@@ -256,8 +281,9 @@ namespace Pudu
 
             auto material = GetRenderMaterial(frameData);
             ASSERT(mesh != nullptr, "Trying to render null mesh");
-            ASSERT(material != nullptr, "Trying to render null Material for mesh {}",mesh->name.c_str());
-            ASSERT(material->m_shader != nullptr, "Trying to render mesh material {} with null shader", mesh->name.c_str());
+            ASSERT(material != nullptr, "Trying to render null Material for mesh {}", mesh->name.c_str());
+            ASSERT(material->m_shader != nullptr, "Trying to render mesh material {} with null shader",
+                   mesh->name.c_str());
 
             Pipeline* pipeline = GetPipeline({
                 .renderPass = frameData.currentRenderPass.get(),
@@ -366,10 +392,10 @@ namespace Pudu
         renderInfo.layerCount = 1;
         renderInfo.colorAttachmentCount = attachments.colorAttachmentVkCount;
         renderInfo.pColorAttachments = attachments.colorAttachmentVkCount > 0
-                                           ? attachments.GetVkColorAttachments()
+                                           ? attachments.GetVkColorAttachments(data)
                                            : nullptr;
         renderInfo.pDepthAttachment = attachments.depthAttachmentVkCount > 0
-                                          ? attachments.GetDepthVkAttachments()
+                                          ? attachments.GetDepthVkAttachments(data)
                                           : nullptr;
 
 
@@ -398,6 +424,7 @@ namespace Pudu
         attachment.resource = rt;
         attachment.loadOperation = ToVk(loadOp);
         attachment.storeOp = ToVk(accessUsage);
+        attachment.sampleCount = rt->GetSampleCount();
 
         if (accessUsage & AttachmentAccessUsage::Write)
         {
@@ -529,14 +556,36 @@ namespace Pudu
         return this;
     }
 
+    RenderPass* RenderPass::SetMultisampled(bool multisampled)
+    {
+        this->m_multisampled = multisampled;
+
+        return this;
+    }
+
     SPtr<Material> RenderPass::GetReplacementMaterial() const
     {
         return m_replacementMaterial;
     }
 
+    SPtr<Texture> RenderPass::GetMultisampledColorTexture() const
+    {
+        return m_gpu->GetMultisampledColorTexture();
+    }
+
+    SPtr<Texture> RenderPass::GetMultisampledDepthTexture() const
+    {
+        return m_gpu->GetMultisampledDepthTexture();
+    }
+
     bool RenderPass::HasReplacementMaterial() const
     {
         return m_replacementMaterial != nullptr;
+    }
+
+    bool RenderPass::IsMultisampled() const
+    {
+        return m_multisampled;
     }
 
     void RenderPass::BindPipeline(const Pipeline* pipeline, RenderFrameData& frameData)

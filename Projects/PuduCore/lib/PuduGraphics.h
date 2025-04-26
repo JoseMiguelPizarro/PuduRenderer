@@ -42,6 +42,8 @@
 #include "Pipeline.h"
 #include "Resources/CommandPool.h"
 #include <Resources/DescriptorPool.h>
+
+#include "AntialiasingSettings.h"
 #include "Resources/CommandPool.h"
 #include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
@@ -93,7 +95,7 @@ namespace Pudu
 		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
 		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
 		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 	};
 
 
@@ -109,6 +111,8 @@ namespace Pudu
 		static PuduGraphics* Instance();
 		void Init(int windowWidth, int windowHeight);
 		void DrawFrame(RenderFrameData& frameData);
+		SPtr<Texture> GetMultisampledColorTexture();
+		SPtr<Texture> GetMultisampledDepthTexture();
 
 		PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR{ VK_NULL_HANDLE };
 
@@ -145,6 +149,7 @@ namespace Pudu
 		std::vector<VkImageView>* GetSwapchainImageViews() {
 			return &m_swapChainImagesViews;
 		}
+		int2 GetResolution() const;
 		QueueFamilyIndices GetQueueFamiliesIndex();
 
 		void DestroyRenderPass(SPtr<RenderPass> renderPass);
@@ -222,7 +227,9 @@ namespace Pudu
 
 		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range,std::vector<VkBufferImageCopy2>* regions = nullptr);
 		void GenerateTextureMipMaps(Texture* texture, GPUCommands* commandsBuffer);
+		void SetAntiAliasing(const AntialiasingSettings& settings);
 
+		VkFormat GetDepthFormat() const { return m_depthFormat; }
 		void UpdateBindlessResources(VkDescriptorSet descriptorSet, uint32_t binding);
 		SPtr<CommandPool> GetCommandPool(QueueFamily type);
 		SPtr<DescriptorPool> GetDescriptorPool(DescriptorPoolCreationData& creationData);
@@ -318,7 +325,6 @@ namespace Pudu
 
 		void CreateUniformBuffers();
 
-
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
 		bool IsDeviceSuitable(VkPhysicalDevice device);
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -361,6 +367,7 @@ namespace Pudu
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 		std::vector<VkImageView> m_swapChainImagesViews;
 		VkFormat m_swapChainImageFormat;
+		VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
 		VkSwapchainKHR m_swapChain;
 		VkInstance m_vkInstance;
 		VkSurfaceKHR m_surface;
@@ -373,6 +380,8 @@ namespace Pudu
 		std::vector<SPtr<RenderTexture>> m_swapChainTextures;
 
 		SPtr<CommandPool> m_commandPool;
+		SPtr<RenderTexture> m_multisampledColorTexture;
+		SPtr<RenderTexture> m_multisampledDepthTexture;
 
 		std::vector<SPtr<GraphicsBuffer>> m_uniformBuffers;
 
@@ -395,6 +404,8 @@ namespace Pudu
 		PhysicalDeviceCreationData m_physicalDeviceData;
 
 		ShaderCompiler m_shaderCompiler;
+
+		AntialiasingSettings m_antialiasingSettings;
 	};
 
 

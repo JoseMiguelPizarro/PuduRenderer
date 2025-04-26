@@ -33,6 +33,7 @@ namespace Pudu
 		PuduGraphics* graphics;
 		Renderer* renderer;
 		SPtr<RenderTexture> activeRenderTarget;
+		SPtr<RenderTexture> currentSwapChain;
 		SPtr<RenderPass> currentRenderPass;
 		DrawCall* currentDrawCall;
 		const Pipeline* currentPipeline;

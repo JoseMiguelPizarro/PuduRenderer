@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan_core.h>
 #include <vma/vk_mem_alloc.h>
+
+#include "AntialiasingSettings.h"
 #include "Resources/Resources.h"
 #include "TextureSampler.h"
 #include "Enums/ResourceUsage.h"
@@ -20,7 +22,7 @@ namespace Pudu
         bool isSwapChain = false;
         u32 width;
         u32 height;
-        u32 depth;
+        u32 depth = 1;
         u32 mipLevels = 1;
         VkFormat format;
         u32 layers = 1;
@@ -38,8 +40,8 @@ namespace Pudu
         GPUResourceType::Type Type() { return GPUResourceType::Texture; }
         virtual TextureType::Enum GetTextureType() { return TextureType::Texture2D; }
         void SetImageLayout(VkImageLayout layout);
-        VkSampleCountFlagBits GetSampleCount() const { return m_sampleCount; }
-        void SetSampleCount(VkSampleCountFlagBits count) { m_sampleCount = count; };
+        TextureSampleCount GetSampleCount() const { return m_sampleCount; }
+        bool IsMultisampled() const { return m_sampleCount != TextureSampleCount::One; }
         VkImageLayout GetImageLayout() const;
 
 
@@ -50,13 +52,13 @@ namespace Pudu
 
     protected:
         virtual TextureFlags::Enum PopulateFlags() { return TextureFlags::Default; };
+        TextureSampleCount m_sampleCount = TextureSampleCount::One;
 
     private:
         friend PuduGraphics;
         void Destroy();
         void OnCreate(PuduGraphics* gfx) override;
 
-        VkSampleCountFlagBits m_sampleCount = VK_SAMPLE_COUNT_1_BIT;
         bool m_disposed;
         VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
         TextureFlags::Enum m_flags = TextureFlags::Default;
@@ -74,6 +76,5 @@ namespace Pudu
     protected:
         TextureFlags::Enum PopulateFlags() override { return TextureFlags::RenderTarget; };
         ResourceUsage m_usage = ResourceUsage::UNDEFINED;
-        u32 m_sampleCount = 1;
     };
 }

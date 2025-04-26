@@ -105,6 +105,7 @@ namespace Pudu
 		creationData.descriptorSetLayouts = &descriptorSetLayouts;
 		creationData.activeLayouts = numActiveLayouts;
 		creationData.vkDescriptorSetLayout = GetVkDescriptorSetLayouts();
+		creationData.multiSampled = renderPass->IsMultisampled();
 
 		auto handle = graphics->CreateGraphicsPipeline(creationData);
 		auto pipeline = graphics->Resources()->GetPipeline(handle);
