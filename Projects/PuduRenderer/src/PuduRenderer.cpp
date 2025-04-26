@@ -83,7 +83,9 @@ namespace Pudu
 
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
         m_depthRenderPass->name = "DepthPrepassRenderPass";
-        m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
+        m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Clear)
+        ->SetMultisampled(true);
+
 
         m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
         m_shadowMapRenderPass->name = "ShadowMapRenderPass";
