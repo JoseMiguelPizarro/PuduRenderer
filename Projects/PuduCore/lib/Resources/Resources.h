@@ -617,6 +617,7 @@ namespace Pudu
 
 		VkDescriptorSetLayout* vkDescriptorSetLayout;
 		uint32_t activeLayouts;
+		bool multiSampled;
 
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 

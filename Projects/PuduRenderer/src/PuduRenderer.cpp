@@ -94,7 +94,8 @@ namespace Pudu
             ->SetName("ForwardRenderPass")
             ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear)
             ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+            ->SetMultisampled(true);
 
 
         auto transparentRP = graphics->GetRenderPass<ForwardRenderPass>();

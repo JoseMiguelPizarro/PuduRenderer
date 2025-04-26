@@ -33,6 +33,10 @@ void Test_PBR::OnRun()
 
 void Test_PBR::OnInit()
 {
+    AntialiasingSettings antialiasingSettings {};
+    antialiasingSettings.sampleCount = TextureSampleCount::Four;
+    Graphics.SetAntiAliasing(antialiasingSettings);
+
     m_camera = {};
     m_camera.Transform.SetLocalPosition({0, 0, -6});
     m_camera.Transform.SetForward({0, 0, 1}, {0, 1, 0});

@@ -34,6 +34,9 @@ namespace Pudu
     using mat3 = glm::mat3;
     using mat2 = glm::mat2;
     using byte = std::byte;
+    using int2 = glm::ivec2;
+    using int3 = glm::ivec3;
+    using int4 = glm::ivec4;
 
     namespace fs = std::filesystem;
 }

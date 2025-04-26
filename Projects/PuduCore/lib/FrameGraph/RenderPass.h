@@ -1,5 +1,7 @@
 #pragma once
 #include <GPUCommands.h>
+
+#include "AntialiasingSettings.h"
 #include "Resources/Resources.h"
 #include "DrawCall.h"
 #include "Pipeline.h"
@@ -23,8 +25,10 @@ namespace Pudu
 		GPUResourceType::Type type = GPUResourceType::Texture;
 		AttachmentAccessUsage usage = AttachmentAccessUsage::Write;
 		ResourceUsage resourceUsage;
+		TextureSampleCount sampleCount  = TextureSampleCount::One;
 
 		RenderPassAttachment() = default;
+
 
 		RenderPassAttachment(
 			SPtr<RenderTexture> rt,
@@ -63,9 +67,9 @@ namespace Pudu
 
 		std::vector<RenderPassAttachment>* GetColorRenderPassAttachments();
 
-		VkRenderingAttachmentInfo* GetVkColorAttachments();
-		VkRenderingAttachmentInfo* GetDepthVkAttachments();
-		VkRenderingAttachmentInfo* GetStencilAttachments();
+		VkRenderingAttachmentInfo* GetVkColorAttachments(RenderFrameData& frameData);
+		VkRenderingAttachmentInfo* GetDepthVkAttachments(RenderFrameData& frameData);
+		VkRenderingAttachmentInfo* GetStencilAttachments(RenderFrameData& frameData);
 
 
 		RenderPassAttachment colorAttachments[K_MAX_IMAGE_OUTPUTS];
@@ -124,9 +128,13 @@ namespace Pudu
 		RenderPass* SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha, VkBlendOp alphaOperation);
 		RenderPass* SetReplacementMaterial(SPtr<Material> material);
 		RenderPass* SetRenderLayer(uint32_t layer);
+		RenderPass* SetMultisampled(bool multisampled);
 		SPtr<Material> GetReplacementMaterial() const;
-		bool HasReplacementMaterial() const;
+		SPtr<Texture> GetMultisampledColorTexture() const;
+		SPtr<Texture> GetMultisampledDepthTexture() const;
 
+		bool HasReplacementMaterial() const;
+		bool IsMultisampled() const;
 		static void BindPipeline(const Pipeline* pipeline,RenderFrameData& frameData);
 
 
@@ -168,6 +176,7 @@ namespace Pudu
 		bool isCompute;
 		bool isEnabled = true;
 		bool writeDepth;
+		//Indicates if pipeline rasterization should be created using graphics antialiasing multisampling settings or not
 		RenderPassAttachments attachments;
 
 		uint16_t dispatchX = 0;
@@ -184,6 +193,7 @@ namespace Pudu
 		BlendState m_blendState;
 		ComputeShader* m_computeShader;
 		uint32_t m_renderLayer;
+		bool m_multisampled = false;
 		SPtr<Material> m_replacementMaterial;
 	};
 
