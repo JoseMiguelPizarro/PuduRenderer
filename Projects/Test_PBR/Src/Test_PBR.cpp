@@ -11,9 +11,8 @@
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
-
-    static float angle = 0.0f;
-    const float radius = 4.0f;
+    static float angle = PI/2;
+    const float radius = 4.5f;
     const float speed = 0.0001f; // radians per frame
 
     // Update the angle based on speed
@@ -63,6 +62,7 @@ void Test_PBR::OnInit()
     settings.generateMipmaps = true;
     settings.samplerData.wrap = true;
 
+
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D(
@@ -81,6 +81,7 @@ void Test_PBR::OnInit()
     m_scene.directionalLight = &directionalLight;
 
     auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
+
 
     TextureLoadSettings skyTexSettings{};
     skyTexSettings.bindless = false;

@@ -49,12 +49,13 @@ namespace Pudu
         return s_instance;
     }
 
-    void PuduGraphics::Init(int windowWidth, int windowHeight)
+    void PuduGraphics::Init(PuduGraphicsSettings& settings)
     {
         PuduGraphics::s_instance = this;
         LOG("Graphics Init");
-        WindowWidth = windowWidth;
-        WindowHeight = windowHeight;
+        m_settings = settings;
+        WindowWidth = settings.resolution.x;
+        WindowHeight = settings.resolution.y;
 
         m_resources.Init(this);
 
@@ -194,12 +195,14 @@ namespace Pudu
     {
         for (const auto& availableFormat : availableFormats)
         {
-            if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace ==
-                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            if (availableFormat.format == m_settings.surfaceFormat && availableFormat.colorSpace ==
+                m_settings.surfaceColorSpace)
             {
                 return availableFormat;
             }
         }
+
+        LOG_ERROR("Failed to find suitable surface format!");
 
         return availableFormats[0];
     }
@@ -1055,9 +1058,6 @@ namespace Pudu
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
-
-        m_surfaceFormat = surfaceFormat.format;
 
         QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};

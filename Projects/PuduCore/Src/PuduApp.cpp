@@ -13,7 +13,11 @@ namespace Pudu
 	void PuduApp::Init()
 	{
 		LOG("PuduApp Init");
-		Graphics.Init(1024, 1024);
+		PuduGraphicsSettings settings;
+		settings.resolution.x = 1024;
+		settings.resolution.y = 1024;
+
+		Graphics.Init(settings);
 
 		OnInit();
 

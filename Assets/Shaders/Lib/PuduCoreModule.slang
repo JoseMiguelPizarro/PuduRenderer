@@ -79,3 +79,57 @@ public float2 ParallaxOcclusionMapping(Sampler2D heightMap, float2 uv, float3 vi
 
     return currentUv;
 }
+
+public struct POMS_OUT
+{
+    public float2 uv;
+    public bool hit;
+    }
+public POMS_OUT ParallaxOcclusionMapping_Shadow(Sampler2D heightMap, float2 uv, float3 viewDirTS,float3 lightDirTS, float scale) {
+    const float minLayers = 64;
+    const float maxLayers = 128;
+    float numLayers = lerp(maxLayers, minLayers, abs(dot(float3(0.0, 0.0, 1.0), viewDirTS)));
+
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    float2 P = viewDirTS.xy / viewDirTS.z * scale;
+    float2 deltaTexCoords = P / numLayers;
+
+    // get initial values
+    float2 currentUv = uv;
+    float currentDepthMapValue = 1.0 - heightMap.Sample(currentUv).r;
+
+    while (currentLayerDepth < currentDepthMapValue) {
+        // shift texture coordinates along direction of P
+        currentUv -= deltaTexCoords;
+        // get depth of current layer
+        currentDepthMapValue = 1.0 - heightMap.Sample(currentUv).r;
+        // get depth of next layer
+        currentLayerDepth += layerDepth;
+    }
+
+    //UV Found. Look for shadow
+    numLayers = lerp(maxLayers,minLayers,abs(dot(float3(0,0,1),lightDirTS)));
+    P = lightDirTS.xy/lightDirTS.z * scale;
+    layerDepth = 1./numLayers;
+    deltaTexCoords = P/numLayers;
+
+    currentLayerDepth = currentDepthMapValue;
+    float2 shadowUv = currentUv;
+    bool shadow = false;
+    while(currentLayerDepth>0)
+    {
+        shadowUv +=deltaTexCoords;
+        currentDepthMapValue = 1. - heightMap.Sample(shadowUv).r;
+
+        currentLayerDepth-=layerDepth;
+
+        if(currentLayerDepth>currentDepthMapValue)
+            shadow = true;
+    }
+
+    return {currentUv,shadow};
+}

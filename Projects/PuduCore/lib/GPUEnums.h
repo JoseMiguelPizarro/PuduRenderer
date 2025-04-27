@@ -26,6 +26,18 @@ namespace Pudu
 		None
 	};
 
+	enum PresentMode
+	{
+		IMMEDIATE = 0,
+		FIFO = 1,
+		MAILBOX = 2
+	};
+
+	inline VkPresentModeKHR ToVkPresentMode(PresentMode mode)
+	{
+		return static_cast<VkPresentModeKHR>(mode);
+	}
+
 
 	static VkCullModeFlagBits ToVk(CullMode cullMode) {
 		switch (cullMode)

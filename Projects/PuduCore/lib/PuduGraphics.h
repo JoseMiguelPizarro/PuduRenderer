@@ -44,6 +44,7 @@
 #include <Resources/DescriptorPool.h>
 
 #include "AntialiasingSettings.h"
+#include "PuduGraphicsSettings.h"
 #include "Resources/CommandPool.h"
 #include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
@@ -109,7 +110,7 @@ namespace Pudu
 
 	public:
 		static PuduGraphics* Instance();
-		void Init(int windowWidth, int windowHeight);
+		void Init(PuduGraphicsSettings& settings);
 		void DrawFrame(RenderFrameData& frameData);
 		SPtr<Texture> GetMultisampledColorTexture();
 		SPtr<Texture> GetMultisampledDepthTexture();
@@ -240,7 +241,7 @@ namespace Pudu
 		/// Format of the surface used to create the swapchain
 		/// </summary>
 		/// <returns></returns>
-		VkFormat GetSurfaceFormat() { return m_surfaceFormat; }
+		VkFormat GetSurfaceFormat() { return m_settings.surfaceFormat; }
 		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
 		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
@@ -357,8 +358,8 @@ namespace Pudu
 		PuduTime* m_time;
 
 		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
-		VkFormat m_surfaceFormat;
 		VkDevice m_device;
+		PuduGraphicsSettings m_settings;
 
 		GPUResourcesManager m_resources;
 		SPtr<Semaphore> m_graphicsTimelineSemaphore;

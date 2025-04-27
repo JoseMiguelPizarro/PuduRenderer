@@ -19,6 +19,7 @@ public struct SurfaceInfo
     public float3 specularColor = float3(1,1,1);
     public float glossiness;
     public float metallic;
+    public float shadowAttenuation;
     public SamplerCube ambientSampler;
 };
 
