@@ -2246,6 +2246,7 @@ namespace Pudu
         LOG("End Generating mipmaps");
     }
 
+    //TODO: HANDLE CASE WHEN ANTIALIASING HAS ALREADY BEEN SET
     void PuduGraphics::SetAntiAliasing(const AntialiasingSettings& settings)
     {
         auto resolution = GetResolution();
@@ -2255,7 +2256,7 @@ namespace Pudu
         m_multisampledColorTexture->width = resolution.x;
         m_multisampledColorTexture->height = resolution.y;
         m_multisampledColorTexture->name = "Multisampled Texture";
-        m_multisampledColorTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
+        m_multisampledColorTexture->format = VK_FORMAT_R8G8B8A8_UNORM; //TODO: GET A CLEVER WAY OF GETTING THIS FORMAT SINCE MUST MATCH WHATEVER IS GOING TO BE USED ON THE RENDERPASS, SWAPCHAIN FORMAT IS A GOOD CANDIDATE
         m_multisampledColorTexture->SetUsage(ResourceUsage::RENDER_TARGET);
         m_multisampledColorTexture->Create(this);
 

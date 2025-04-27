@@ -212,7 +212,7 @@ namespace Pudu
       //  AddRenderPass(depthCopyRP.get());
      //   AddRenderPass(transparentRP.get());
         //AddRenderPass(m_postProcessingRenderPass.get());
-      //  AddRenderPass(overlayRP.get());
+        AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());
         frameGraph.AllocateRequiredResources();

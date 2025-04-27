@@ -1,6 +1,7 @@
 ﻿#include "Lib/Lighting.hlsl"
 import "Lib/PuduCoreModule.slang";
 import "Lib/LightingModule.slang";
+import "Lib/PuduCoreModule.slang";
 
 module PuduGraphics;
 
@@ -73,27 +74,9 @@ public float LinearizeDepth(float d)
     return LinearizeDepth(d, GLOBALS.constants.nearPlane, GLOBALS.constants.farPlane);
 };
 
-public float LinearizeDepth(float d,float zNear,float zFar)
-{
-    return zNear * zFar / (zFar + d * (zNear - zFar));
-}
-
-public float3 DecodeNormal(float2 n)
-{
-    float2 m = n*2. - 1.;
-    var z = sqrt(1. - m.x*m.x - m.y*m.y);
-
-    return normalize(float3(m,z));
-}
-
-public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
-{
-    return normalize( v.x*t + v.y*bt + v.z*n);
-}
-
 public float4x4 GetViewMatrix(){
     return GLOBALS.constants.view;
-    }
+}
 
 
 /// <summary>

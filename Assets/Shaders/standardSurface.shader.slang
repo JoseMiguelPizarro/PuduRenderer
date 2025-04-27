@@ -3,6 +3,7 @@
 
 import PuduGraphicsModule;
 import "Lib/LightingModule.slang";
+import "Lib/PuduCoreModule.slang";
 
 struct StandardMaterial
 {
@@ -10,6 +11,7 @@ struct StandardMaterial
     Sampler2D normalTex;
     Sampler2D roughnessTex;
     Sampler2D metallicTex;
+    Sampler2D heightTex;
     SamplerCube skybox; //Placeholder for environment
 }
 ParameterBlock<StandardMaterial> material;
@@ -32,12 +34,14 @@ VSOut vertexMain(VertexInput input)
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
     output.Color = float4(input.Color, 1.0);
     output.TexCoord = float4(input.TexCoord, 0, 0);
-    output.Normal = float4(input.Normal, 0.);
-    output.Tangent = input.Tangent;
+    output.Normal = mul(UBO.model, float4(input.Normal, 0.));
+    output.Tangent = mul(UBO.model,input.Tangent);
     output.PosOS = float4(input.Position, 0.);
 
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.ShadowCoords = GetShadowCoord(lightingBuffer.shadowMatrix, lightingBuffer.lightMatrix, output.PosWS);
+
+
 
     return output;
 }
@@ -47,18 +51,22 @@ float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
     float4 col = 0;
-    float3 albedo =material.albedoTex.Sample(input.TexCoord.xy).rgb;
     float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
 
-    float3 normalTS = DecodeNormal(material.normalTex.Sample(input.TexCoord.xy).xy);
+    float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);
     float3 normal = normalize(input.Normal.xyz);
     float3 bitangent = cross(normal,tangent);
+    float height = material.heightTex.Sample(input.TexCoord.xy).x;
+
+    float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
+    float2 uv = ParallaxOcclusionMapping(material.heightTex,input.TexCoord.xy,tangentView,0.08);
+
+    float3 albedo = material.albedoTex.Sample(uv).rgb;
+
+    float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
-
-//     SkyboxAmbientSampler ambientSampler;
-//     ambientSampler.m_skybox = material.skybox;
 
     SurfaceInfo m = {};
     m.albedo = albedo;
@@ -66,8 +74,8 @@ float4 fragmentMain(VSOut input)
     m.lightColor = float3(1,1,1);
     m.specularColor = float3(1,1,1);
     m.normal = normalWS;
-    m.glossiness =1. - material.roughnessTex.Sample(input.TexCoord.xy).x;
-    m.viewDir = GetViewDirection(input.PosWS.xyz);
+    m.glossiness =1. - material.roughnessTex.Sample(uv).x;
+    m.viewDir = viewDir;
     m.ambientSampler = material.skybox;
 
     col.rgb = StandardSurface(m);

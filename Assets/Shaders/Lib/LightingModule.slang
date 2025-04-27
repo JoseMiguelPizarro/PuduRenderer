@@ -22,6 +22,8 @@ public struct SurfaceInfo
     public SamplerCube ambientSampler;
 };
 
+
+
 float3 SampleAmbientSpecular(SurfaceInfo surface)
 {
     float3 r = reflect(surface.viewDir, surface.normal);
