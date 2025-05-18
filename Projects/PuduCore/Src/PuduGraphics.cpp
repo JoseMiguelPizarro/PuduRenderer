@@ -211,7 +211,7 @@ namespace Pudu
     {
         for (const auto& availablePresentMode : availablePresentModes)
         {
-            if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR)
+            if (availablePresentMode == ToVkPresentMode(m_settings.presentMode))
             {
                 return availablePresentMode;
             }

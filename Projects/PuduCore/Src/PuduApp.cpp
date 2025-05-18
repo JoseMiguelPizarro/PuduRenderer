@@ -16,7 +16,7 @@ namespace Pudu
 		PuduGraphicsSettings settings;
 		settings.resolution.x = 1024;
 		settings.resolution.y = 1024;
-
+		settings.presentMode = PresentMode::FIFO;
 		Graphics.Init(settings);
 
 		OnInit();
@@ -36,17 +36,26 @@ namespace Pudu
 	void PuduApp::Run()
 	{
 
-		auto targetFrameDuration = std::chrono::duration<float, std::milli>(1000.0f / (float)TargetFPS);
 		Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
 		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
 
 		//Main Loop
 		while (!glfwWindowShouldClose(Graphics.WindowPtr))
 		{
-			Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
-			auto startFrame = std::chrono::high_resolution_clock::now();
+			auto targetFrameDuration = std::chrono::duration<double, std::milli>(1000.0f / static_cast<double>(TargetFPS));
 			glfwPollEvents();
 
+			std::chrono::duration<double, std::milli> elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
+
+			Time.m_endFrameTime = Time.m_startFrameTime;
+			Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
+
+
+			if (elapsed < targetFrameDuration)
+			{
+				std::chrono::duration<double,std::milli> timeToWait = targetFrameDuration - elapsed;
+				std::this_thread::sleep_for(timeToWait);
+			}
 			try {
 
 				OnRun();
@@ -54,27 +63,9 @@ namespace Pudu
 			catch (std::exception& e) {
 				std::printf(e.what());
 			}
-
-			std::chrono::duration<float, std::milli> elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
-
-			//If load is to low, let's artificially wait before continuing
-			if (elapsed.count() < 2.0f)
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-				elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
-			}
-
-				if (elapsed < targetFrameDuration)
-			{
-				auto towait = targetFrameDuration - elapsed * 2; //Multiplied by 2 to compensate to next frame
-
-				std::this_thread::sleep_for(towait);
-			}
-
 			Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
 
-			std::chrono::duration<float, std::milli> deltaTime = std::chrono::high_resolution_clock::now() - startFrame;
+			std::chrono::duration<double, std::milli> deltaTime = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
 			Time.m_deltaTime = deltaTime.count();
 		}
 

@@ -12,7 +12,7 @@ void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
     static float angle = PI/2;
-    const float radius = 4.5f;
+    const float radius = 3.5f;
     const float speed = 0.0001f; // radians per frame
 
     // Update the angle based on speed

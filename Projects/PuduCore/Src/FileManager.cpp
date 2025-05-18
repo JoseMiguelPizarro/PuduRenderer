@@ -53,7 +53,7 @@ namespace Pudu
     /// </summary>
     inline fs::path FileManager::GetAssetPath(fs::path const& path)
     {
-        return fs::absolute(ASSETS_FOLDER_PATH / path);
+        return fs::absolute(path);
     }
 
     /// <summary>

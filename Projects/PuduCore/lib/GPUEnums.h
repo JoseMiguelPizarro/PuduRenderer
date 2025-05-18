@@ -29,8 +29,9 @@ namespace Pudu
 	enum PresentMode
 	{
 		IMMEDIATE = 0,
-		FIFO = 1,
-		MAILBOX = 2
+		MAILBOX = 1,
+		FIFO = 2,
+		FIFO_RELAXED = 3,
 	};
 
 	inline VkPresentModeKHR ToVkPresentMode(PresentMode mode)

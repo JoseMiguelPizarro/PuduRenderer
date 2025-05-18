@@ -168,6 +168,7 @@ macro(AddPuduApp app_name)
     set_target_properties(${app_name} PROPERTIES
             COMPILE_DEFINITIONS "HLSLPP_FEATURE_TRANSFORM"
     )
+    
     file(GLOB_RECURSE ${app_name}_SOURCES Projects/${app_name}/**)
     target_sources(${app_name} PRIVATE ${${app_name}_SOURCES})
 
@@ -175,14 +176,19 @@ macro(AddPuduApp app_name)
 
     target_link_libraries(${app_name} PUBLIC PuduRenderer PuduCore PUBLIC slang)
 
-    # Assets copy for the app
-    add_custom_command(
-            TARGET ${app_name}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_SOURCE_DIR}/Assets"
-            "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Assets/"
+    
+    set_target_properties(${app_name} PROPERTIES
+            DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
     )
+
+    #    # Assets copy for the app
+    #    add_custom_command(
+    #            TARGET ${app_name}
+    #            POST_BUILD
+    #            COMMAND ${CMAKE_COMMAND} -E copy_directory
+    #            "${CMAKE_SOURCE_DIR}/Assets"
+    #            "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Assets/"
+    #    )
 endmacro()
 
 AddPuduApp(CatDiorama)
