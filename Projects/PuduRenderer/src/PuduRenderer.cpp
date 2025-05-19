@@ -196,7 +196,7 @@ namespace Pudu
         m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
         m_postProcessingRenderPass->name = "Postprocessing";
         m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
-        m_postProcessingRenderPass->AddColorAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+        m_postProcessingRenderPass->AddColorAttachment(depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
         m_imguiRenderPass = graphics->GetRenderPass<ImguiRenderPass>();
         m_imguiRenderPass->name = "ImGui";
@@ -205,13 +205,13 @@ namespace Pudu
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
       //  AddRenderPass(m_shadowMapRenderPass.get());
-       // AddRenderPass(normalRP.get());
+        AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
        // AddRenderPass(drawGrassRP.get());
-       // AddRenderPass(forwardColorCopyRP.get());
-      //  AddRenderPass(depthCopyRP.get());
+        AddRenderPass(forwardColorCopyRP.get());
+        AddRenderPass(depthCopyRP.get());
      //   AddRenderPass(transparentRP.get());
-        //AddRenderPass(m_postProcessingRenderPass.get());
+        AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
 
         AddRenderPass(m_imguiRenderPass.get());

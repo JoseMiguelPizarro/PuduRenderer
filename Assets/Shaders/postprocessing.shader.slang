@@ -37,13 +37,10 @@ float4 fragmentMain(VSOut input)
     float vignette =saturate( smoothstep(0, .8, 1 - mask));
     mask *= 1.5;
     mask = saturate(mask);
-    mask = 1;
 
-    float chromatic = 0.5;
+    float chromatic = 0.15;
     float depth =LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r);
 
-    mask *= saturate((1-depth));
-    mask = 1.;
 
     float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
     float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)).y;
@@ -51,6 +48,4 @@ float4 fragmentMain(VSOut input)
     float d =  saturate(1. - exp(-depth/40));
 
     return float4(r,g,b,0) * vignette;
-
-    return lerp( float4(r, g, b, 0),float4(.1,.35,.5,1.), d) * vignette;
 }
