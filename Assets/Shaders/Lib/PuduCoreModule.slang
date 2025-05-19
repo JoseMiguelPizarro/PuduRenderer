@@ -82,7 +82,7 @@ public float2 ParallaxOcclusionMapping(Sampler2D heightMap, float2 uv, float3 vi
 public struct POMS_OUT
 {
     public float2 uv;
-    public bool hit;
+    public float shadow;
     }
 public POMS_OUT ParallaxOcclusionMapping_Shadow(Sampler2D heightMap, float2 uv, float3 viewDirTS,float3 lightDirTS, float scale) {
     const float minLayers = 128;
@@ -129,21 +129,24 @@ public POMS_OUT ParallaxOcclusionMapping_Shadow(Sampler2D heightMap, float2 uv, 
     numLayers = lerp(maxLayers,minLayers,abs(dot(float3(0,0,1),lightDirTS)));
     P = lightDirTS.xy/lightDirTS.z * scale;
     layerDepth = 1./numLayers;
-    deltaTexCoords = P/numLayers;
+    deltaTexCoords = -P/numLayers;
 
-    currentLayerDepth = currentDepthMapValue;
+    float shadowLayerDepth = currentDepthMapValue;
     float2 shadowUv = currentUv;
-    bool shadow = false;
-//     while(currentLayerDepth>0)
-//     {
-//         shadowUv -=deltaTexCoords;
-//         currentDepthMapValue = heightMap.Sample(shadowUv).r;
-//
-//         currentLayerDepth+=layerDepth;
-//
-//         if(currentLayerDepth>currentDepthMapValue)
-//             shadow = true;
-//     }
+    float shadow = 1.;
+    while(shadowLayerDepth<1)
+    {
+        shadowUv +=deltaTexCoords;
+        currentDepthMapValue = heightMap.Sample(shadowUv).r;
+
+        shadowLayerDepth+=layerDepth;
+
+        if(shadowLayerDepth<currentDepthMapValue)
+        {
+            shadow = 0.0;
+            break;
+        }
+    }
 
     return {currentUv,shadow};
 }

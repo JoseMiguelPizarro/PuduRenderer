@@ -11,12 +11,12 @@
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
-    static float angle = PI/2;
+    static float angle = PI/4 + PI;
     const float radius = 3.5f;
     const float speed = 0.0001f; // radians per frame
 
     // Update the angle based on speed
-    angle += speed * Time.DeltaTime();
+    //angle += speed * Time.DeltaTime();
 
     // Calculate the new position of the camera
     float x = radius * cos(angle);

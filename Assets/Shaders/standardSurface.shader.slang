@@ -60,15 +60,14 @@ float4 fragmentMain(VSOut input)
     float height = material.heightTex.Sample(input.TexCoord.xy).x;
 
     float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
-    float3 ligthDirTS = WorldToTangent(GLOBALS.lightingBuffer.lightDirection.xyz,tangent,bitangent,normal);
-    let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,ligthDirTS,0.08);
+    float3 lightDirTS = WorldToTangent(GLOBALS.lightingBuffer.lightDirection.xyz,tangent,bitangent,normal);
+    let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,lightDirTS,0.08);
 
     float2 uv = pom.uv;
 
     float3 albedo = material.albedoTex.Sample(uv).rgb;
 
-     if(pom.hit)
-            albedo*=0.5;
+    return pom.shadow;
 
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
