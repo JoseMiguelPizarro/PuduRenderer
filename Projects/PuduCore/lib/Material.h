@@ -103,9 +103,9 @@ namespace Pudu
     {
     public:
         explicit Material(PuduGraphics* graphics);
-        void SetShader(const SPtr<Shader>& shader);
+        void SetShader(const SPtr<IShaderObject>& shader);
         void SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider);
-        SPtr<Shader> GetShader() { return m_shader; }
+        SPtr<IShaderObject> GetShader() { return m_shader; }
         ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
         void ApplyProperties();
         void SetProperty(const std::string_view& name, float value);
@@ -121,7 +121,7 @@ namespace Pudu
     private:
         friend class PuduGraphics;
         friend class RenderPass;
-        SPtr<Shader> m_shader;
+        SPtr<IShaderObject> m_shader;
         ShaderPropertiesBlock m_propertiesBlock;
         SPtr<IDescriptorProvider> m_descriptorProvider;
         VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};

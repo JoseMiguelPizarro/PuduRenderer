@@ -239,6 +239,9 @@ namespace Pudu
     void GPUCommands::BindDescriptorSet(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles,
                                         uint16_t handlesCount, uint32_t offset)
     {
+        if (handlesCount == 0)
+            return;
+
         vkCmdBindDescriptorSets(vkHandle, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, offset, handlesCount,
                                 handles, 0, nullptr);
     }
@@ -246,6 +249,9 @@ namespace Pudu
     void GPUCommands::BindDescriptorSetCompute(VkPipelineLayout pipelineLayout, VkDescriptorSet* handles,
                                                uint16_t handlesCount)
     {
+        if (handlesCount == 0)
+            return;
+
         vkCmdBindDescriptorSets(vkHandle, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, handlesCount, handles, 0,
                                 nullptr);
 
@@ -615,6 +621,28 @@ namespace Pudu
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT; //TODO: JUST USE THE PROPER MASK, WE NEED MORE USAGE CONTEXT HERE
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            //Both are shader reads so is safe to just not transition them at all
+            return;
+        }
+        //This case is mostly expected when transitioning a texture from a compute shader render target to a shader read
+        else if (oldLayout== VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
         }
         else
         {

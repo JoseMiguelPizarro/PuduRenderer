@@ -7,6 +7,7 @@
 #include "FileManager.h"
 #include "StringUtils.h"
 #include "ImGui/imgui.h"
+#include "ComputeShaderRenderer.h"
 
 void Test_PBR::OnRun()
 {
@@ -32,6 +33,27 @@ void Test_PBR::OnRun()
 
 void Test_PBR::OnInit()
 {
+    auto testCompute = Graphics.CreateComputeShader("Compute/Test.compute.slang", "testCompute");
+
+    auto testRT = Graphics.GetRenderTexture();
+    testRT->depth =1;
+    testRT->width = 1024;
+    testRT->height = 1024;
+    testRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+    testRT->name ="TestRT";
+    testRT->SetUsage(ResourceUsage::UNORDERED_ACCESS);
+    testRT->Create(&Graphics);
+
+    auto computeMaterial = Graphics.Resources()->AllocateMaterial();
+    computeMaterial->SetShader(testCompute);
+    computeMaterial->SetProperty("material.test", testRT);
+
+    ComputeShaderRenderer computeRenderer;
+    computeRenderer.SetShader(testCompute);
+    computeRenderer.SetMaterial(computeMaterial);
+
+    Graphics.DispatchCompute(&computeRenderer,1024,1024,1);
+
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
     Graphics.SetAntiAliasing(antialiasingSettings);
