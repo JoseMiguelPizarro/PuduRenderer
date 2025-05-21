@@ -95,7 +95,8 @@ namespace Pudu
             return m_descriptorSets[slotIndex];
         }
 
-        return m_descriptorSets[m_descriptorSetRemap[slotIndex]];
+        auto index = m_descriptorSetRemap[slotIndex];
+        return m_descriptorSets[index];
     }
 
     void ShaderPropertiesBlock::SetProperty(const std::string_view& name, float value)

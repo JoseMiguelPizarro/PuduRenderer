@@ -255,6 +255,7 @@ namespace Pudu
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		SPtr<Texture> GetDefaultWhiteTexture();
+		SPtr<Shader> GetDefaultOverlayShader();
 		SPtr<Mesh> GetDefaultQuad();
 	private:
 		friend class GPUResourcesManager;
@@ -355,6 +356,7 @@ namespace Pudu
 		GPUResourceHandle<Texture> m_defaultWhiteTexture;
 		SPtr<Mesh> m_defaultQuad;
 		SPtr<Mesh> m_defaultPlane;
+		SPtr<Shader> m_defaultOverlayShader;
 
 #pragma endregion
 		static PuduGraphics* s_instance;

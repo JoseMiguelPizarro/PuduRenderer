@@ -484,18 +484,20 @@ namespace Pudu
 
     void PuduGraphics::InitializeDefaultResources()
     {
-        MeshCreationData meshData;
-        meshData.Indices = {0, 2, 1, 1, 2, 3};
-        meshData.Vertices = {
+        MeshCreationData defaultQuadMeshData;
+        defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
+        defaultQuadMeshData.Vertices = {
             Vertex({-.5, 0, -0.5}, {1, 1, 1}, {0, 0}, {0, 1, 0},{1,0,0,1}),
             Vertex({0.5, 0, -0.5}, {1, 1, 1}, {1., 0}, {0, 1, 0},{1,0,0,1}),
             Vertex({-.5, 0, 0.5}, {1, 1, 1}, {0, 1}, {0, 1, 0},{1,0,0,1}),
             Vertex({0.5, 0, 0.5}, {1, 1, 1}, {1, 1}, {0, 1, 0},{1,0,0,1})
         };
 
-        meshData.Name = "DefaultQuad";
+        defaultQuadMeshData.Name = "DefaultQuad";
 
-        m_defaultQuad = CreateMesh(meshData);
+        m_defaultQuad = CreateMesh(defaultQuadMeshData);
+
+        m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
 
         InitializeDefaultTextures();
     }
@@ -1497,6 +1499,8 @@ namespace Pudu
 
         descriptorSetLayout->vkHandle = layout;
         descriptorSetLayout->scope = data.scope;
+        descriptorSetLayout->name = data.name;
+        descriptorSetLayout->setIndex = data.SetNumber;
 
         return descriptorSetLayout->Handle();
     }
@@ -1569,6 +1573,11 @@ namespace Pudu
     SPtr<Texture> PuduGraphics::GetDefaultWhiteTexture()
     {
         return m_resources.GetTexture<Texture>(m_defaultWhiteTexture);
+    }
+
+    SPtr<Shader> PuduGraphics::GetDefaultOverlayShader()
+    {
+        return m_defaultOverlayShader;
     }
 
     SPtr<Mesh> PuduGraphics::GetDefaultQuad()

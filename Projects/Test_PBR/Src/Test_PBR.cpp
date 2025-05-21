@@ -8,6 +8,7 @@
 #include "StringUtils.h"
 #include "ImGui/imgui.h"
 #include "ComputeShaderRenderer.h"
+#include "OverlayQuadEntity.h"
 
 void Test_PBR::OnRun()
 {
@@ -17,7 +18,7 @@ void Test_PBR::OnRun()
     const float speed = 0.0001f; // radians per frame
 
     // Update the angle based on speed
-    //angle += speed * Time.DeltaTime();
+    angle += speed * Time.DeltaTime();
 
     // Calculate the new position of the camera
     float x = radius * cos(angle);
@@ -85,6 +86,8 @@ void Test_PBR::OnInit()
     settings.samplerData.wrap = true;
 
 
+
+
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D(
@@ -139,9 +142,18 @@ void Test_PBR::OnInit()
     layer = 2;
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
+    Graphics.GetDefaultOverlayShader()->GetShaderLayout()->Print();
     m_scene.AddEntity(sphere);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
+
+    auto oq = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
+
+    oq->GetModel()->Materials[0]->SetProperty("material.texture", testRT);
+    oq->SetPositionAndSize(0.0,0.0,0.25,0.25);
+    oq->SetPtr(oq);
+
+    m_scene.AddEntity(oq);
 }
 
 void Test_PBR::DrawImGUI()

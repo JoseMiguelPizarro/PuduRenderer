@@ -20,7 +20,7 @@ namespace Pudu {
 		void AttatchToScene(Scene& scene) override;
 		RenderSettings& GetRenderSettings();
 
-	private:
+	protected:
 		Model m_model = {};
 		RenderSettings m_renderSettings = {};
 	};

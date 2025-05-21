@@ -19,6 +19,16 @@
 
 namespace Pudu
 {
+    SPtr<RenderTexture> PuduRenderer::GetDepthCopyRT() const
+    {
+        return m_depthCopyRT;
+    }
+
+    SPtr<RenderTexture> PuduRenderer::GetColorCopyRT() const
+    {
+        return m_colorCopyRT;
+    }
+
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
     {
         this->graphics = graphics;
@@ -44,13 +54,14 @@ namespace Pudu
         depthRT->name = "DepthPrepassTexture";
         depthRT->SetUsage(static_cast<ResourceUsage>(DEPTH_WRITE | PIXEL_SHADER_RESOURCE));
 
-        auto depthCopyRT = graphics->GetRenderTexture();
-        depthCopyRT->depth = 1;
-        depthCopyRT->width = graphics->WindowWidth;
-        depthCopyRT->height = graphics->WindowHeight;
-        depthCopyRT->format = VK_FORMAT_D32_SFLOAT;
-        depthCopyRT->name = "DepthPrepassCopyTexture";
-        depthCopyRT->SetUsage(SHADER_RESOURCE);
+        m_depthCopyRT = graphics->GetRenderTexture();
+
+        m_depthCopyRT->depth = 1;
+        m_depthCopyRT->width = graphics->WindowWidth;
+        m_depthCopyRT->height = graphics->WindowHeight;
+        m_depthCopyRT->format = VK_FORMAT_D32_SFLOAT;
+        m_depthCopyRT->name = "DepthPrepassCopyTexture";
+        m_depthCopyRT->SetUsage(SHADER_RESOURCE);
 
         auto shadowRT = graphics->GetRenderTexture();
         shadowRT->depth = 1;
@@ -74,12 +85,12 @@ namespace Pudu
         normalRT->format = VK_FORMAT_R8G8B8A8_UNORM;
         normalRT->name = "ForwardNormal";
 
-        auto colorCopyRT = graphics->GetRenderTexture();
-        colorCopyRT->depth = 1;
-        colorCopyRT->width = graphics->WindowWidth;
-        colorCopyRT->height = graphics->WindowHeight;
-        colorCopyRT->format = VK_FORMAT_R8G8B8A8_UNORM;
-        colorCopyRT->name = "ColorCopy";
+        m_colorCopyRT = graphics->GetRenderTexture();
+        m_colorCopyRT->depth = 1;
+        m_colorCopyRT->width = graphics->WindowWidth;
+        m_colorCopyRT->height = graphics->WindowHeight;
+        m_colorCopyRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+        m_colorCopyRT->name = "ColorCopy";
 
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
         m_depthRenderPass->name = "DepthPrepassRenderPass";
@@ -107,8 +118,8 @@ namespace Pudu
                      ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
                      ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
                      ->AddColorAttachment(normalRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-                     ->AddColorAttachment(colorCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-                     ->AddColorAttachment(depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(m_colorCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(m_depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
                      ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
@@ -150,12 +161,12 @@ namespace Pudu
         computeRP->AddBufferAttachment(grassBuffer, AttachmentAccessUsage::Write);
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
-        forwardColorCopyRP->SetBlitTargets(colorRT, colorCopyRT);
+        forwardColorCopyRP->SetBlitTargets(colorRT, m_colorCopyRT);
         forwardColorCopyRP->SetName("ForwardColorCopy");
 
 
         auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
-        depthCopyRP->SetBlitTargets(depthRT, depthCopyRT);
+        depthCopyRP->SetBlitTargets(depthRT, m_depthCopyRT);
 
         std::array<VkDrawIndirectCommand, grassCount> indirectCommands{};
         for (size_t i = 0; i < grassCount; i++)
@@ -196,7 +207,7 @@ namespace Pudu
         m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
         m_postProcessingRenderPass->name = "Postprocessing";
         m_postProcessingRenderPass->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load);
-        m_postProcessingRenderPass->AddColorAttachment(depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load);
+        m_postProcessingRenderPass->AddColorAttachment(m_depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load);
 
         m_imguiRenderPass = graphics->GetRenderPass<ImguiRenderPass>();
         m_imguiRenderPass->name = "ImGui";
@@ -222,10 +233,10 @@ namespace Pudu
 
         m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", depthCopyRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", m_depthCopyRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", colorCopyRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
     }
 
     static bool isFirstFrame = true;

@@ -14,11 +14,14 @@ namespace Pudu
 	{
 	public:
 		void SetSkyBox();
+		SPtr<RenderTexture> GetDepthCopyRT() const;
+		SPtr<RenderTexture> GetColorCopyRT() const;
 
 	protected:
 		void OnInit(PuduGraphics* graphics, PuduApp* app) override;
 		void OnRender(RenderFrameData& data) override;
 		void OnUploadCameraData(RenderFrameData& frameData) override;
+		// In PuduRenderer.h
 
 	private:
 		void UpdateLightingBuffer(RenderFrameData& data) const;
@@ -26,6 +29,8 @@ namespace Pudu
 		void InitLightingBuffer(PuduGraphics* graphics);
 		void InitConstantsBuffer(PuduGraphics* graphics);
 
+		SPtr<RenderTexture> m_depthCopyRT;
+		SPtr<RenderTexture> m_colorCopyRT;
 		SPtr<RenderPass> m_depthRenderPass;
 		SPtr<RenderPass> m_forwardRenderPass;
 		SPtr<RenderPass> m_shadowMapRenderPass;

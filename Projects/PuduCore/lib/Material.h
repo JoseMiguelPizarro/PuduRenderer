@@ -125,6 +125,8 @@ namespace Pudu
         ShaderPropertiesBlock m_propertiesBlock;
         SPtr<IDescriptorProvider> m_descriptorProvider;
         VkDescriptorSet m_descriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
+        //Remap that takes an absolute setnumber and remap it to scope-only store descriptor set index in m_descriptorSets array.
+        //This is for preventing to generate descriptor sets out of scope (ie GLOBAL) while still being able to refer to descriptor sets by their absolute set index
         Size m_descriptorSetsIndexRemap[K_MAX_DESCRIPTOR_SET_LAYOUTS]{};
         Size m_descriptorSetCount = 0;
         bool m_resourcesAllocated = false;
