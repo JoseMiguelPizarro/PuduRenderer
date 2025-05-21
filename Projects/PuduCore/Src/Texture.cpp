@@ -17,7 +17,7 @@ namespace Pudu
 
     void Texture::OnCreate(PuduGraphics* gfx)
     {
-        SamplerCreationData* samplerPtr =  static_cast<SamplerCreationData*>(samplerData);
+        SamplerCreationData* samplerPtr = static_cast<SamplerCreationData*>(samplerData);
 
         SamplerCreationData sampler;
         sampler.wrap = false;
@@ -36,6 +36,18 @@ namespace Pudu
     void RenderTexture::SetUsage(const ResourceUsage usage)
     {
         m_usage = usage;
+    }
+
+    void RenderTexture::OnCreate(PuduGraphics* gfx)
+    {
+        Texture::OnCreate(gfx);
+
+        if (m_usage == ResourceUsage::UNORDERED_ACCESS)
+        {
+            auto cmd = gfx->BeginSingleTimeCommands();
+            cmd.TransitionTextureLayout(this, VK_IMAGE_LAYOUT_GENERAL);
+            gfx->EndSingleTimeCommands(cmd);
+        }
     }
 
     ResourceUsage RenderTexture::GetUsage() const

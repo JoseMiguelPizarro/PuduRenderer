@@ -44,6 +44,7 @@
 #include <Resources/DescriptorPool.h>
 
 #include "AntialiasingSettings.h"
+#include "ComputeShaderRenderer.h"
 #include "PuduGraphicsSettings.h"
 #include "Resources/CommandPool.h"
 #include "Resources/DescriptorPool.h"
@@ -212,6 +213,7 @@ namespace Pudu
 		GPUResourceHandle<Pipeline> CreateComputePipeline(ComputePipelineCreationData& creationData);
 
 		void SubmitFrame(RenderFrameData& frameData);
+		void DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY, u32 groupCountZ);
 		void EndDrawFrame();
 		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
 		//SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
@@ -247,6 +249,7 @@ namespace Pudu
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
 		void EndSingleTimeCommands(GPUCommands commandBuffer);
+		void EndSingleTimeComputeCommands(GPUCommands commandBuffer);
 		void UploadBufferData(GraphicsBuffer* buffer, const void* data, Size size, Size offset = 0);
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;

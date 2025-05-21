@@ -379,7 +379,7 @@ namespace Pudu
         this->Create(graphics);
     }
 
-    void Material::SetShader(const SPtr<Shader>& shader)
+    void Material::SetShader(const SPtr<IShaderObject>& shader)
     {
         m_shader = shader;
 

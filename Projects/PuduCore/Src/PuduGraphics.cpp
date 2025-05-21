@@ -418,7 +418,7 @@ namespace Pudu
         frame.ComputeCommandBuffer->EndCommands();
 
         auto computeCommands = frame.ComputeCommandBuffer;
-        frameData.computeCommandsToSubmit.push_back(computeCommands);
+        frameData.computeCommandsToSubmit.push_back(computeCommands.get());
 
         SubmitComputeWork(frameData);
         SubmitFrame(frameData);
@@ -438,8 +438,6 @@ namespace Pudu
 
     void PuduGraphics::SubmitComputeWork(RenderFrameData& frameData)
     {
-        auto frame = frameData.frame;
-
         bool hasWaitSemaphore = m_computeTimelineSemaphore->TimelineValue() > 0;
 
         VkSemaphoreSubmitInfo waitSemaphores[]{
@@ -456,9 +454,6 @@ namespace Pudu
                 m_computeTimelineSemaphore->Signal(), VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT, 0
             }
         };
-
-        VkCommandBufferSubmitInfo commandSubmitInfo;
-
 
         std::vector<VkCommandBufferSubmitInfo> commandSubmitInfos;
         for (auto command : frameData.computeCommandsToSubmit)
@@ -627,6 +622,25 @@ namespace Pudu
             throw std::runtime_error("Failed to present swap chain image!");
         }
     }
+
+    //Do a one-shot compute dispatch. WARNING: This will stall the CPU till the computation is done. For for sequential CS executions prefer to use a compute renderpass
+    void PuduGraphics::DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY,
+        u32 groupCountZ)
+    {
+        auto cmd = BeginSingleTimeCommands();
+        auto pipeline = m_resources.GetPipeline(computeShaderRenderer->GetShader()->GetPipelineHandle());
+
+        cmd.BindPipeline(pipeline.get());
+
+        auto material = computeShaderRenderer->GetMaterial();
+
+        material->ApplyProperties();
+        cmd.BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle,material->GetDescriptorSets(),material->GetDescriptorSetsCount());
+        cmd.Dispatch(groupCountX, groupCountY, groupCountZ);
+
+       EndSingleTimeComputeCommands(cmd);
+    }
+
 
     void PuduGraphics::AdvanceFrame()
     {
@@ -2904,6 +2918,28 @@ namespace Pudu
 
         vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(m_graphicsQueue);
+
+        vkFreeCommandBuffers(m_device, m_commandPool->vkHandle, 1, &commandBuffer.vkHandle);
+    }
+
+    void PuduGraphics::EndSingleTimeComputeCommands(GPUCommands commandBuffer)
+    {
+        vkEndCommandBuffer(commandBuffer.vkHandle);
+        RenderFrameData frameData;
+        frameData.computeCommandsToSubmit.push_back(&commandBuffer);
+        SubmitComputeWork(frameData);
+
+        //Wait for compute work to complete
+        uint64_t computeTimelineValue = m_computeTimelineSemaphore->TimelineValue();
+        VkSemaphore semaphores[]{m_computeTimelineSemaphore->vkHandle};
+        uint64_t timelineValues[]{computeTimelineValue};
+
+        VkSemaphoreWaitInfo waitInfo{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};
+        waitInfo.semaphoreCount = 1;
+        waitInfo.pSemaphores = semaphores;
+        waitInfo.pValues = timelineValues;
+
+        vkWaitSemaphores(m_device, &waitInfo, 1e+8); //Hardcoded timeout 100ms
 
         vkFreeCommandBuffers(m_device, m_commandPool->vkHandle, 1, &commandBuffer.vkHandle);
     }

@@ -52,12 +52,12 @@ namespace Pudu
 
     protected:
         virtual TextureFlags::Enum PopulateFlags() { return TextureFlags::Default; };
+        void OnCreate(PuduGraphics* gfx) override;
         TextureSampleCount m_sampleCount = TextureSampleCount::One;
 
     private:
         friend PuduGraphics;
         void Destroy();
-        void OnCreate(PuduGraphics* gfx) override;
 
         bool m_disposed;
         VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -75,6 +75,7 @@ namespace Pudu
 
     protected:
         TextureFlags::Enum PopulateFlags() override { return TextureFlags::RenderTarget; };
+        void OnCreate(PuduGraphics* gfx) override;
         ResourceUsage m_usage = ResourceUsage::UNDEFINED;
     };
 }

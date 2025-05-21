@@ -61,7 +61,14 @@ namespace Pudu
         if (!condition)
         {
             auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
-            throw std::runtime_error(std::vformat("Assertion failed 🫤: {0}", std::make_format_args(formattedMessage)));
+            std::printf(std::format("{}Assertion failed 🫤: {}{}", k_red, formattedMessage, k_reset).c_str());
+            std::printf("\n");
+
+#if defined(_MSC_VER)
+            __debugbreak();
+#else
+            raise(SIGTRAP);
+#endif
         }
     }
 

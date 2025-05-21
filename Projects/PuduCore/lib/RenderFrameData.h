@@ -17,7 +17,6 @@ namespace Pudu
 	class PuduGraphics;
 	class Renderer;
 	struct Framebuffer;
-	class RenderPass;
 	class Texture2d;
 	class PuduApp;
 	class Camera;
@@ -48,6 +47,6 @@ namespace Pudu
 		bool areGlobalPropertiesBound = false;
 
 		std::vector<VkCommandBuffer> commandsToSubmit;
-		std::vector<SPtr<GPUCommands>> computeCommandsToSubmit;
+		std::vector<GPUCommands*> computeCommandsToSubmit;
 	};
 }

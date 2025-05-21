@@ -62,12 +62,10 @@ float4 fragmentMain(VSOut input)
     float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
     float3 lightDirTS = WorldToTangent(GLOBALS.lightingBuffer.lightDirection.xyz,tangent,bitangent,normal);
     let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,lightDirTS,0.08);
-
+    shadow *= pom.shadow;
     float2 uv = pom.uv;
 
     float3 albedo = material.albedoTex.Sample(uv).rgb;
-
-    return pom.shadow;
 
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 

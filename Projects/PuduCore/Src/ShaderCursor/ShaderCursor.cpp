@@ -105,11 +105,12 @@ namespace Pudu
             return;
         }
 
+        VkImageLayout layout = m_descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageView = texture->vkImageViewHandle;
         imageInfo.sampler = texture->Sampler.vkHandle;
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageLayout =  layout;
 
         VkWriteDescriptorSet imageWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
         imageWrite.descriptorCount = 1;
@@ -117,6 +118,16 @@ namespace Pudu
         imageWrite.dstSet = m_target->GetDescriptorSet(m_setIndex);
         imageWrite.pImageInfo = &imageInfo;
         imageWrite.descriptorType = m_descriptorType;
+
+        //If the texture comes from a render target or has been written on a compute shader, we'd might need to transition its layout depending on the intended usage
+        //So far there are two possible usages for images on descriptor, either being read on a shader or used as a RW texture on a compute shader
+        if (layout != texture->GetImageLayout())
+        {
+            //Doing the transition here might not be the best solution. TODO: Consult with Tim or someone who can know more about sync
+            auto cmd = m_target->graphics->BeginSingleTimeCommands();
+            cmd.TransitionTextureLayout(texture.get(), layout);
+            m_target->graphics->EndSingleTimeCommands(cmd);
+        }
 
         m_target->graphics->UpdateDescriptorSet(1, &imageWrite);
     }
