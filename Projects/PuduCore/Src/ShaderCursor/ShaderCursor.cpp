@@ -105,7 +105,8 @@ namespace Pudu
             return;
         }
 
-        VkImageLayout layout = m_descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
+        VkImageLayout layout = (m_descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+            m_descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageView = texture->vkImageViewHandle;

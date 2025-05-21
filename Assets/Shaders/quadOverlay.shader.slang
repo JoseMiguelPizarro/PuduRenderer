@@ -26,7 +26,7 @@ VSOut vertexMain(VertexInput input)
     float2 pos = float2(input.Position.xz) + float2(0.5, 0.5f); //move pivot to bottom left corner;
 
 //Convert screen coordinates to NDC
-    pos = float2(overlayData.x,overlayData.y)*2 -1 + pos*float2(overlayData.width,overlayData.height);
+    pos = float2(overlayData.x,overlayData.y)*2 -1 + pos*float2(overlayData.width,overlayData.height)*2;
 
     float4 posCS = float4(pos,0, 1);
 

@@ -2666,7 +2666,7 @@ namespace Pudu
 
     SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureLoadSettings& settings)
     {
-        bool isKTX = path.extension() == ".ktx";
+        bool isKTX = path.extension() == ".ktx" || path.extension() == ".ktx2";
         void* pixelsData = nullptr;
         void* sourceData = nullptr;
 

@@ -13,6 +13,7 @@ class OverlayQuadEntity : public RenderEntity {
 
 public:
     explicit OverlayQuadEntity(PuduGraphics* gfx);
+    SPtr<Material> GetMaterial();
 
     void SetPtr(SPtr<RenderEntity> ptr);
     ///Values in [0,1] Screen coordinates

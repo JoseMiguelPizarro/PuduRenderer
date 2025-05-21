@@ -38,22 +38,32 @@ void Test_PBR::OnInit()
 
     auto testRT = Graphics.GetRenderTexture();
     testRT->depth =1;
-    testRT->width = 1024;
-    testRT->height = 1024;
+    testRT->width = 4096;
+    testRT->height = 2048;
     testRT->format = VK_FORMAT_R8G8B8A8_UNORM;
     testRT->name ="TestRT";
     testRT->SetUsage(ResourceUsage::UNORDERED_ACCESS);
     testRT->Create(&Graphics);
 
+    TextureLoadSettings hdrSettings{};
+    hdrSettings.bindless = false;
+    hdrSettings.name = "hdr_sky";
+    hdrSettings.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    hdrSettings.generateMipmaps = false;
+    hdrSettings.samplerData.wrap = true;
+
+    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/kloofendal_48d_partly_cloudy_puresky_4k.ktx2",hdrSettings);
+
     auto computeMaterial = Graphics.Resources()->AllocateMaterial();
     computeMaterial->SetShader(testCompute);
-    computeMaterial->SetProperty("material.test", testRT);
+    computeMaterial->SetProperty("material.input", hdrSky);
+    computeMaterial->SetProperty("material.output", testRT);
 
     ComputeShaderRenderer computeRenderer;
     computeRenderer.SetShader(testCompute);
     computeRenderer.SetMaterial(computeMaterial);
 
-    Graphics.DispatchCompute(&computeRenderer,1024,1024,1);
+    Graphics.DispatchCompute(&computeRenderer,4096,2048,1);
 
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
@@ -149,10 +159,18 @@ void Test_PBR::OnInit()
 
     auto oq = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
 
-    oq->GetModel()->Materials[0]->SetProperty("material.texture", testRT);
-    oq->SetPositionAndSize(0.0,0.0,0.25,0.25);
+    auto inputQO = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
+    inputQO->GetMaterial()->SetProperty("material.texture", hdrSky);
+    float qoSize = 0.15;
+
+    inputQO->SetPositionAndSize(0.0, 0.0, qoSize, qoSize);
+    inputQO->SetPtr(inputQO);
+
+    oq->GetMaterial()->SetProperty("material.texture", testRT);
+    oq->SetPositionAndSize(0.0,qoSize*1.1,qoSize,qoSize);
     oq->SetPtr(oq);
 
+    m_scene.AddEntity(inputQO);
     m_scene.AddEntity(oq);
 }
 

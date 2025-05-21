@@ -27,6 +27,11 @@ namespace Pudu
         m_renderSettings.layer = 2;
     }
 
+    SPtr<Material> OverlayQuadEntity::GetMaterial()
+    {
+        return m_model.Materials[0];
+    }
+
     void OverlayQuadEntity::SetPtr(SPtr<RenderEntity> ptr)
     {
         m_entitySPtr = ptr;
