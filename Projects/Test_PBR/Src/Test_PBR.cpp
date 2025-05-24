@@ -45,6 +45,9 @@ void Test_PBR::OnInit()
     testRT->SetUsage(ResourceUsage::UNORDERED_ACCESS);
     testRT->Create(&Graphics);
 
+
+
+
     TextureLoadSettings hdrSettings{};
     hdrSettings.bindless = false;
     hdrSettings.name = "hdr_sky";
@@ -64,6 +67,36 @@ void Test_PBR::OnInit()
     computeRenderer.SetMaterial(computeMaterial);
 
     Graphics.DispatchCompute(&computeRenderer,4096,2048,1);
+
+
+    //Env To Cubemap
+
+    SamplerCreationData samplerCreationData{};
+
+    TextureCreationData textureCreationData{};
+    textureCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    textureCreationData.width = 512;
+    textureCreationData.height = 512;
+    textureCreationData.textureType = TextureType::Texture_2D_Array;
+    textureCreationData.generateMipmaps = false;
+    textureCreationData.name = "EnvCube";
+    textureCreationData.flags = TextureFlags::Compute;
+    textureCreationData.samplerData = &samplerCreationData;
+    textureCreationData.layers = 6;
+
+    auto envCubemap = Graphics.CreateTexture(textureCreationData);
+
+    auto horizonToCubemapCS = Graphics.CreateComputeShader("Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap");
+    auto horizonToCubemapMat = Graphics.Resources()->AllocateMaterial();
+    horizonToCubemapMat->SetShader(horizonToCubemapCS);
+    horizonToCubemapMat->SetProperty("material.output", Graphics.Resources()->GetTexture<Texture>(envCubemap));
+    horizonToCubemapMat->SetProperty("material.input", testRT);
+
+    ComputeShaderRenderer cubeComputeRenderer;
+    cubeComputeRenderer.SetShader(horizonToCubemapCS);
+    cubeComputeRenderer.SetMaterial(horizonToCubemapMat);
+    Graphics.DispatchCompute(&cubeComputeRenderer,512,512,1);
+
 
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
@@ -96,8 +129,6 @@ void Test_PBR::OnInit()
     settings.samplerData.wrap = true;
 
 
-
-
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D(
@@ -123,6 +154,7 @@ void Test_PBR::OnInit()
     skyTexSettings.name = "Sky";
     skyTexSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
     skyTexSettings.textureType = TextureType::Texture_Cube;
+
 
     const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx", skyTexSettings);
     const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
@@ -152,7 +184,6 @@ void Test_PBR::OnInit()
     layer = 2;
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
-    Graphics.GetDefaultOverlayShader()->GetShaderLayout()->Print();
     m_scene.AddEntity(sphere);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
@@ -170,8 +201,17 @@ void Test_PBR::OnInit()
     oq->SetPositionAndSize(0.0,qoSize*1.1,qoSize,qoSize);
     oq->SetPtr(oq);
 
+    m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
+    m_arrayQO->GetMaterial()->SetProperty("material.texture", Graphics.Resources()->GetTexture<Texture>(envCubemap));
+    m_arrayQO->SetPositionAndSize(0.0,qoSize,qoSize,qoSize);
+    m_arrayQO->SetTextureIndex(0);
+
+    m_arrayQO->SetPtr(m_arrayQO);
+
+
     m_scene.AddEntity(inputQO);
-    m_scene.AddEntity(oq);
+    // m_scene.AddEntity(oq);
+    m_scene.AddEntity(m_arrayQO);
 }
 
 void Test_PBR::DrawImGUI()
@@ -181,4 +221,11 @@ void Test_PBR::DrawImGUI()
     ImGui::Text(StringUtils::Format("FPS: {}", Time.GetFPS()).c_str());
     ImGui::Text(StringUtils::Format("Time: {}", Time.Time()).c_str());
     ImGui::Text(StringUtils::Format("DeltaTime: {}", Time.DeltaTime()).c_str());
+
+    static int index = 0;
+
+    if (ImGui::SliderInt("Array", &index,0,5))
+    {
+        m_arrayQO->SetTextureIndex(index);
+    }
 }

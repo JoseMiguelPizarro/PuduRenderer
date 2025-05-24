@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "OverlayQuadEntity.h"
 #include "PuduCore.h"
 #include "PuduApp.h"
 #include "PuduRenderer.h"
@@ -23,6 +24,7 @@ private:
     PuduRenderer m_puduRenderer;
     SPtr<Shader> standardShader;
     Light directionalLight;
+    SPtr<OverlayQuadTextureArrayEntity> m_arrayQO;
 };
 
 

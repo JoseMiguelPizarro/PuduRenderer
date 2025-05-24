@@ -498,6 +498,7 @@ namespace Pudu
         m_defaultQuad = CreateMesh(defaultQuadMeshData);
 
         m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
+        m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
 
         InitializeDefaultTextures();
     }
@@ -1580,6 +1581,11 @@ namespace Pudu
         return m_defaultOverlayShader;
     }
 
+    SPtr<Shader> PuduGraphics::GetDefaultOverlayTextureArrayShader()
+    {
+        return m_defaultOverlayTextureArrayShader;
+    }
+
     SPtr<Mesh> PuduGraphics::GetDefaultQuad()
     {
         return m_defaultQuad;
@@ -1968,6 +1974,9 @@ namespace Pudu
         case TextureType::Texture_Cube:
             texture = m_resources.AllocateTextureCube();
             break;
+        case TextureType::Texture_2D_Array:
+            texture = m_resources.AllocateTexture2DArray();
+
         default:
             //LOG_ERROR("Texture Type not supported {}", creationData.textureType);
             break;
@@ -2013,7 +2022,7 @@ namespace Pudu
         imageCreateInfo.extent.height = texture->height;
         imageCreateInfo.extent.depth = texture->depth;
         imageCreateInfo.mipLevels = texture->mipLevels;
-        imageCreateInfo.arrayLayers = texture->GetTextureType() == TextureType::Texture_Cube ? 6 : 1;
+        imageCreateInfo.arrayLayers = texture->GetTextureType() == TextureType::Texture_Cube ? 6 : texture->layers;
         imageCreateInfo.samples = static_cast<VkSampleCountFlagBits>(texture->GetSampleCount());
         imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageCreateInfo.format = texture->format;
@@ -2030,7 +2039,7 @@ namespace Pudu
             usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         imageCreateInfo.usage = usage;
-        imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
+        imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT: 0;
 
         imageCreateInfo.usage ^= texture->IsMultisampled()? VK_IMAGE_USAGE_STORAGE_BIT : 0;
 
@@ -2097,8 +2106,10 @@ namespace Pudu
             subresourceRange.levelCount = texture->mipLevels;
             subresourceRange.layerCount = 6;
 
-            uint32_t offset = 0;
+            if (texture->sourceData== nullptr)
+                goto outCubemap;
 
+            uint32_t offset = 0;
             for (uint32_t face = 0; face < 6; face++)
             {
                 for (uint32_t layer = 0; layer < texture->layers; layer++)
@@ -2124,6 +2135,7 @@ namespace Pudu
                 }
             }
         }
+        outCubemap:
 
 
         //Image view

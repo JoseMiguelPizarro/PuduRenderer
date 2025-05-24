@@ -126,7 +126,14 @@ namespace Pudu
         {
             //Doing the transition here might not be the best solution. TODO: Consult with Tim or someone who can know more about sync
             auto cmd = m_target->graphics->BeginSingleTimeCommands();
-            cmd.TransitionTextureLayout(texture.get(), layout);
+            VkImageSubresourceRange range{};
+            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //TODO: GET THE RIGHT ASPECT MASK
+            range.baseMipLevel = 0;
+            range.levelCount = texture->mipLevels;
+            range.baseArrayLayer = 0;
+            range.layerCount = texture->layers;
+
+            cmd.TransitionTextureLayout(texture.get(), layout, &range);
             m_target->graphics->EndSingleTimeCommands(cmd);
         }
 

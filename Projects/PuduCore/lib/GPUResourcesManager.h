@@ -36,6 +36,8 @@ namespace Pudu
         SPtr<Texture> GetTextureByName(const char* name);
         SPtr<Texture2d> AllocateTexture2D();
         SPtr<TextureCube> AllocateTextureCube();
+        std::shared_ptr<Texture2DArray> AllocateTexture2DArray();
+
 
         SPtr<RenderPass> GetRenderPass(GPUResourceHandle<RenderPass> handle);
 

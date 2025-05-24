@@ -40,6 +40,11 @@ namespace Pudu {
 		return AllocateGPUResource<TextureCube>(m_textures);
 	}
 
+	std::shared_ptr<Texture2DArray> GPUResourcesManager::AllocateTexture2DArray()
+	{
+		return AllocateGPUResource<Texture2DArray>(m_textures);
+	}
+
 	SPtr<RenderPass> GPUResourcesManager::GetRenderPass(GPUResourceHandle<RenderPass> handle)
 	{
 		return m_renderPasses.GetResource(handle);

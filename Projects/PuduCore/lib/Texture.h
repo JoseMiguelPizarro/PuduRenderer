@@ -78,4 +78,10 @@ namespace Pudu
         void OnCreate(PuduGraphics* gfx) override;
         ResourceUsage m_usage = ResourceUsage::UNDEFINED;
     };
+
+    class Texture2DArray : public Texture
+    {
+        TextureType::Enum GetTextureType() override { return TextureType::Texture_2D_Array; }
+
+    };
 }
