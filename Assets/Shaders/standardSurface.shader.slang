@@ -2,8 +2,9 @@
 #include "lib/Shadowmap.slang"
 
 import PuduGraphicsModule;
+import PuduCoreModule;
+
 import "Lib/LightingModule.slang";
-import "Lib/PuduCoreModule.slang";
 
 struct StandardMaterial
 {

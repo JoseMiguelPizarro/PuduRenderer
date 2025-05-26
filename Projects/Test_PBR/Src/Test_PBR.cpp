@@ -13,6 +13,7 @@
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
+    return;
     static float angle = PI/4 + PI;
     const float radius = 3.5f;
     const float speed = 0.0001f; // radians per frame
@@ -29,25 +30,10 @@ void Test_PBR::OnRun()
 
     // Make the camera look at the origin
     m_camera.Transform.SetForward(-m_camera.Transform.GetLocalPosition(), {0.0f, 1.0f, 0.0f});
-
 }
 
 void Test_PBR::OnInit()
 {
-    auto testCompute = Graphics.CreateComputeShader("Compute/Test.compute.slang", "testCompute");
-
-    auto testRT = Graphics.GetRenderTexture();
-    testRT->depth =1;
-    testRT->width = 4096;
-    testRT->height = 2048;
-    testRT->format = VK_FORMAT_R8G8B8A8_UNORM;
-    testRT->name ="TestRT";
-    testRT->SetUsage(ResourceUsage::UNORDERED_ACCESS);
-    testRT->Create(&Graphics);
-
-
-
-
     TextureLoadSettings hdrSettings{};
     hdrSettings.bindless = false;
     hdrSettings.name = "hdr_sky";
@@ -55,56 +41,44 @@ void Test_PBR::OnInit()
     hdrSettings.generateMipmaps = false;
     hdrSettings.samplerData.wrap = true;
 
-    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/kloofendal_48d_partly_cloudy_puresky_4k.ktx2",hdrSettings);
-
-    auto computeMaterial = Graphics.Resources()->AllocateMaterial();
-    computeMaterial->SetShader(testCompute);
-    computeMaterial->SetProperty("material.input", hdrSky);
-    computeMaterial->SetProperty("material.output", testRT);
-
-    ComputeShaderRenderer computeRenderer;
-    computeRenderer.SetShader(testCompute);
-    computeRenderer.SetMaterial(computeMaterial);
-
-    Graphics.DispatchCompute(&computeRenderer,4096,2048,1);
-
+    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/piazza_bologni_4k.ktx2",hdrSettings);
 
     //Env To Cubemap
 
     SamplerCreationData samplerCreationData{};
 
-    TextureCreationData textureCreationData{};
-    textureCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    textureCreationData.width = 512;
-    textureCreationData.height = 512;
-    textureCreationData.textureType = TextureType::Texture_2D_Array;
-    textureCreationData.generateMipmaps = false;
-    textureCreationData.name = "EnvCube";
-    textureCreationData.flags = TextureFlags::Compute;
-    textureCreationData.samplerData = &samplerCreationData;
-    textureCreationData.layers = 6;
+    TextureCreationData envCubemapRTCreationData{};
+    envCubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    envCubemapRTCreationData.width = 512;
+    envCubemapRTCreationData.height = 512;
+    envCubemapRTCreationData.textureType = TextureType::Texture_2D_Array;
+    envCubemapRTCreationData.generateMipmaps = false;
+    envCubemapRTCreationData.name = "EnvCube";
+    envCubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
+    envCubemapRTCreationData.samplerData = &samplerCreationData;
+    envCubemapRTCreationData.layers = 6;
 
-    auto envCubemap = Graphics.CreateTexture(textureCreationData);
+    auto envCubemap = Graphics.CreateTexture(envCubemapRTCreationData);
 
     auto horizonToCubemapCS = Graphics.CreateComputeShader("Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap");
     auto horizonToCubemapMat = Graphics.Resources()->AllocateMaterial();
     horizonToCubemapMat->SetShader(horizonToCubemapCS);
-    horizonToCubemapMat->SetProperty("material.output", Graphics.Resources()->GetTexture<Texture>(envCubemap));
-    horizonToCubemapMat->SetProperty("material.input", testRT);
+    auto envCubemapTexture = Graphics.Resources()->GetTexture<Texture>(envCubemap);
+    horizonToCubemapMat->SetProperty("material.output", envCubemapTexture);
+    horizonToCubemapMat->SetProperty("material.input", hdrSky);
 
     ComputeShaderRenderer cubeComputeRenderer;
     cubeComputeRenderer.SetShader(horizonToCubemapCS);
     cubeComputeRenderer.SetMaterial(horizonToCubemapMat);
     Graphics.DispatchCompute(&cubeComputeRenderer,512,512,1);
 
-
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
     Graphics.SetAntiAliasing(antialiasingSettings);
 
     m_camera = {};
-    m_camera.Transform.SetLocalPosition({0, 0, -6});
-    m_camera.Transform.SetForward({0, 0, 1}, {0, 1, 0});
+    m_camera.Transform.SetLocalPosition({0, 0, 6});
+    m_camera.Transform.SetForward({0, 0, -1}, {0, 1, 0});
     m_camera.SetClearColor({1, 0, 0, 1});
     Projection projection;
 
@@ -163,7 +137,7 @@ void Test_PBR::OnInit()
     const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
     skyboxMaterial->name = "Skybox";
     skyboxMaterial->SetShader(skyboxShader);
-    skyboxMaterial->SetProperty("material.skyboxTex", skyTexture);
+    skyboxMaterial->SetProperty("material.skyboxTex", envCubemapTexture);
 
     auto sphereEntity = std::dynamic_pointer_cast<RenderEntity>(sphere);
     auto material = sphereEntity->GetModel()->Materials[0];
@@ -197,7 +171,7 @@ void Test_PBR::OnInit()
     inputQO->SetPositionAndSize(0.0, 0.0, qoSize, qoSize);
     inputQO->SetPtr(inputQO);
 
-    oq->GetMaterial()->SetProperty("material.texture", testRT);
+    oq->GetMaterial()->SetProperty("material.texture", hdrSky);
     oq->SetPositionAndSize(0.0,qoSize*1.1,qoSize,qoSize);
     oq->SetPtr(oq);
 

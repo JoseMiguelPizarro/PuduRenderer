@@ -312,7 +312,7 @@ namespace Pudu
 		{
 			Default = 1,
 			RenderTarget = 2,
-			Compute = 4,
+			UnorderedAccess = 4,
 			Count = 8,
 			Sample = 16,
 		};

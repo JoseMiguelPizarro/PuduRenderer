@@ -1,7 +1,6 @@
 ﻿#include "Lib/Lighting.hlsl"
-import "Lib/PuduCoreModule.slang";
+import  PuduCoreModule;
 import "Lib/LightingModule.slang";
-import "Lib/PuduCoreModule.slang";
 
 module PuduGraphics;
 
@@ -95,3 +94,4 @@ public float4x4 GetProjectionMatrix()
 {
     return GLOBALS.constants.proj;
 }
+

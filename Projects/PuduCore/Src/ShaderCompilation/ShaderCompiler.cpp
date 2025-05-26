@@ -52,6 +52,7 @@ namespace Pudu {
 	{
 		Slang::ComPtr<IBlob> diagnostics;
 		IModule* baseModule = m_session->loadModule("PuduGraphicsModule.slang", diagnostics.writeRef());
+		IModule* coreModule = m_session->loadModule("PuduCoreModule.slang", diagnostics.writeRef());
 
 		PrintDiagnostics(diagnostics);
 
@@ -70,10 +71,11 @@ namespace Pudu {
 		}
 
 		std::vector<IComponentType*> components = {};
+		components.push_back(coreModule);
+
+		//Base module has global descriptor sets which are not relevant for compute
 		if (!compute)
-		{
 			components.push_back(baseModule);
-		}
 
 		components.push_back(module);
 
