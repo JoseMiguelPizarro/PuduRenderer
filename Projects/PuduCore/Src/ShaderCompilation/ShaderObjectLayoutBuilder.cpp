@@ -251,7 +251,7 @@ namespace Pudu
                             Size stringSize = 0;
                             scope = scopeAttribute->getArgumentValueString(0, &stringSize);
                             if (stringSize > 0)
-                                scope = scope.substr(1, stringSize - 2);
+                                scope = scope.substr(0, stringSize);
                             //Hack since Slang API doen'st return the real string but the whole code
 
                             descriptorSetLayoutInfo.scope = scope;
