@@ -10,28 +10,6 @@
 #include "ComputeShaderRenderer.h"
 #include "OverlayQuadEntity.h"
 
-void Test_PBR::OnRun()
-{
-    m_puduRenderer.Render(&m_scene);
-    return;
-    static float angle = PI/4 + PI;
-    const float radius = 3.5f;
-    const float speed = 0.0001f; // radians per frame
-
-    // Update the angle based on speed
-    angle += speed * Time.DeltaTime();
-
-    // Calculate the new position of the camera
-    float x = radius * cos(angle);
-    float z = radius * sin(angle);
-
-    // Set the camera position and keep it above the XZ plane (upper hemisphere)
-    m_camera.Transform.SetLocalPosition({x, .3f, z});
-
-    // Make the camera look at the origin
-    m_camera.Transform.SetForward(-m_camera.Transform.GetLocalPosition(), {0.0f, 1.0f, 0.0f});
-}
-
 void Test_PBR::OnInit()
 {
     TextureLoadSettings hdrSettings{};
@@ -46,31 +24,44 @@ void Test_PBR::OnInit()
     //Env To Cubemap
 
     SamplerCreationData samplerCreationData{};
-
+    u32 envCubemapResolution = 1024;
     TextureCreationData envCubemapRTCreationData{};
     envCubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    envCubemapRTCreationData.width = 512;
-    envCubemapRTCreationData.height = 512;
+    envCubemapRTCreationData.width = envCubemapResolution;
+    envCubemapRTCreationData.height = envCubemapResolution;
     envCubemapRTCreationData.textureType = TextureType::Texture_2D_Array;
     envCubemapRTCreationData.generateMipmaps = false;
-    envCubemapRTCreationData.name = "EnvCube";
+    envCubemapRTCreationData.name = "EnvCubeRT";
     envCubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
     envCubemapRTCreationData.samplerData = &samplerCreationData;
     envCubemapRTCreationData.layers = 6;
 
-    auto envCubemap = Graphics.CreateTexture(envCubemapRTCreationData);
+    TextureCreationData envCubemapCreationData{};
+    envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    envCubemapCreationData.width = envCubemapResolution;
+    envCubemapCreationData.height = envCubemapResolution;
+    envCubemapCreationData.generateMipmaps = false;
+    envCubemapCreationData.textureType = TextureType::Texture_Cube;
+    envCubemapCreationData.name = "EnvCube";
+    envCubemapCreationData.samplerData = &samplerCreationData;
+    envCubemapCreationData.layers = 6;
+
+    auto envCubemapHandle = Graphics.CreateTexture(envCubemapCreationData);
+    auto envCubeMap = Graphics.Resources()->GetTexture<Texture>(envCubemapHandle);
+
+    auto envCubemapRTHandle = Graphics.CreateTexture(envCubemapRTCreationData);
+    auto envCubemapRT = Graphics.Resources()->GetTexture<Texture>(envCubemapRTHandle);
 
     auto horizonToCubemapCS = Graphics.CreateComputeShader("Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap");
     auto horizonToCubemapMat = Graphics.Resources()->AllocateMaterial();
     horizonToCubemapMat->SetShader(horizonToCubemapCS);
-    auto envCubemapTexture = Graphics.Resources()->GetTexture<Texture>(envCubemap);
-    horizonToCubemapMat->SetProperty("material.output", envCubemapTexture);
+    horizonToCubemapMat->SetProperty("material.output", envCubemapRT);
     horizonToCubemapMat->SetProperty("material.input", hdrSky);
 
     ComputeShaderRenderer cubeComputeRenderer;
     cubeComputeRenderer.SetShader(horizonToCubemapCS);
     cubeComputeRenderer.SetMaterial(horizonToCubemapMat);
-    Graphics.DispatchCompute(&cubeComputeRenderer,512,512,1);
+    Graphics.DispatchCompute(&cubeComputeRenderer,envCubemapResolution,envCubemapResolution,6);
 
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
@@ -93,6 +84,24 @@ void Test_PBR::OnInit()
     TargetFPS = 120;
 
     m_puduRenderer.Init(&Graphics, this);
+
+    auto cmd = Graphics.BeginSingleTimeCommands();
+    VkImageBlit2 blitRegions { VK_STRUCTURE_TYPE_IMAGE_BLIT_2};
+    blitRegions.srcOffsets[0] = {0,0,0};
+    blitRegions.srcOffsets[1] = {512,512,1};
+    blitRegions.dstOffsets[0] = {0,0,0};
+    blitRegions.dstOffsets[1] = {512,512,1};
+    VkImageSubresourceLayers subresourceLayers;
+    subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceLayers.baseArrayLayer = 0;
+    subresourceLayers.layerCount = 6;
+    subresourceLayers.mipLevel = 0;
+    blitRegions.srcSubresource = subresourceLayers;
+    blitRegions.dstSubresource = subresourceLayers;
+
+    cmd.TransitionTextureLayout(envCubeMap,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    cmd.Blit(envCubemapRT,envCubeMap,VK_FILTER_NEAREST,VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&blitRegions,1);
+    Graphics.EndSingleTimeCommands(cmd);
 
     standardShader = Graphics.CreateShader("standardSurface.shader.slang", "standard");
     TextureLoadSettings settings{};
@@ -120,6 +129,8 @@ void Test_PBR::OnInit()
     directionalLight.GetTransform().SetLocalPosition({20, 20, 20});
     m_scene.directionalLight = &directionalLight;
 
+
+    //SKYBOX
     auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
 
 
@@ -129,7 +140,6 @@ void Test_PBR::OnInit()
     skyTexSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
     skyTexSettings.textureType = TextureType::Texture_Cube;
 
-
     const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx", skyTexSettings);
     const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
 
@@ -137,7 +147,7 @@ void Test_PBR::OnInit()
     const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
     skyboxMaterial->name = "Skybox";
     skyboxMaterial->SetShader(skyboxShader);
-    skyboxMaterial->SetProperty("material.skyboxTex", envCubemapTexture);
+    skyboxMaterial->SetProperty("material.skyboxTex", envCubeMap);
 
     auto sphereEntity = std::dynamic_pointer_cast<RenderEntity>(sphere);
     auto material = sphereEntity->GetModel()->Materials[0];
@@ -176,7 +186,7 @@ void Test_PBR::OnInit()
     oq->SetPtr(oq);
 
     m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
-    m_arrayQO->GetMaterial()->SetProperty("material.texture", Graphics.Resources()->GetTexture<Texture>(envCubemap));
+    m_arrayQO->GetMaterial()->SetProperty("material.texture", Graphics.Resources()->GetTexture<Texture>(envCubemapRTHandle));
     m_arrayQO->SetPositionAndSize(0.0,qoSize,qoSize,qoSize);
     m_arrayQO->SetTextureIndex(0);
 
@@ -186,6 +196,28 @@ void Test_PBR::OnInit()
     m_scene.AddEntity(inputQO);
     // m_scene.AddEntity(oq);
     m_scene.AddEntity(m_arrayQO);
+}
+
+void Test_PBR::OnRun()
+{
+    m_puduRenderer.Render(&m_scene);
+    static float angle = PI/4 + PI;
+    const float radius = 3.5f;
+    const float speed = 0.0001f; // radians per frame
+
+    // Update the angle based on speed
+    angle += speed * Time.DeltaTime();
+
+    // Calculate the new position of the camera
+    float x = radius * cos(angle);
+    float z = radius * sin(angle);
+    float y = sin(angle);
+
+    // Set the camera position and keep it above the XZ plane (upper hemisphere)
+    m_camera.Transform.SetLocalPosition({x, y, z});
+
+    // Make the camera look at the origin
+    m_camera.Transform.SetForward(-m_camera.Transform.GetLocalPosition(), {0.0f, 1.0f, 0.0f});
 }
 
 void Test_PBR::DrawImGUI()

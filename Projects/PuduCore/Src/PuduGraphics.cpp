@@ -2063,7 +2063,7 @@ namespace Pudu
             imageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         }*/
 
-        if (texture->GetFlags() & TextureFlags::Sample)
+        if (texture->GetFlags() & TextureFlags::Sample || texture->GetFlags() & TextureFlags::Default)
         {
             imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }

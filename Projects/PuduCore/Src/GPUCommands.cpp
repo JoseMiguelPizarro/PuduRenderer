@@ -662,7 +662,15 @@ namespace Pudu
 
     void GPUCommands::TransitionTextureLayout(Texture* texture, VkImageLayout layout, VkImageSubresourceRange* range)
     {
-        TransitionImageLayout(texture->vkImageHandle,texture->format, texture->GetImageLayout(), layout,range);
+        VkImageSubresourceRange subresourceRange;
+        VkImageSubresourceRange* rangePtr = range;
+        if (range == nullptr)
+        {
+            subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, texture->mipLevels, 0, texture->layers};
+            rangePtr = &subresourceRange;
+        }
+
+        TransitionImageLayout(texture->vkImageHandle,texture->format, texture->GetImageLayout(), layout,rangePtr);
 
         texture->SetImageLayout(layout);
     }
