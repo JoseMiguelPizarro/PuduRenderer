@@ -19,7 +19,7 @@ void Test_PBR::OnInit()
     hdrSettings.generateMipmaps = false;
     hdrSettings.samplerData.wrap = true;
 
-    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/piazza_bologni_4k.ktx2",hdrSettings);
+    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/kloofendal_48d_partly_cloudy_puresky_4k.ktx2",hdrSettings);
 
     //Env To Cubemap
 
@@ -86,21 +86,7 @@ void Test_PBR::OnInit()
     m_puduRenderer.Init(&Graphics, this);
 
     auto cmd = Graphics.BeginSingleTimeCommands();
-    VkImageBlit2 blitRegions { VK_STRUCTURE_TYPE_IMAGE_BLIT_2};
-    blitRegions.srcOffsets[0] = {0,0,0};
-    blitRegions.srcOffsets[1] = {512,512,1};
-    blitRegions.dstOffsets[0] = {0,0,0};
-    blitRegions.dstOffsets[1] = {512,512,1};
-    VkImageSubresourceLayers subresourceLayers;
-    subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceLayers.baseArrayLayer = 0;
-    subresourceLayers.layerCount = 6;
-    subresourceLayers.mipLevel = 0;
-    blitRegions.srcSubresource = subresourceLayers;
-    blitRegions.dstSubresource = subresourceLayers;
-
-    cmd.TransitionTextureLayout(envCubeMap,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    cmd.Blit(envCubemapRT,envCubeMap,VK_FILTER_NEAREST,VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&blitRegions,1);
+        cmd.Blit(envCubemapRT,envCubeMap);
     Graphics.EndSingleTimeCommands(cmd);
 
     standardShader = Graphics.CreateShader("standardSurface.shader.slang", "standard");
@@ -156,7 +142,7 @@ void Test_PBR::OnInit()
     material->SetProperty("material.normalTex", normalTexture);
     material->SetProperty("material.roughnessTex", roughnessTexture);
     material->SetProperty("material.heightTex", heightTexture);
-    material->SetProperty("material.skybox", skyTexture);
+    material->SetProperty("material.skybox", envCubeMap);
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
@@ -186,12 +172,11 @@ void Test_PBR::OnInit()
     oq->SetPtr(oq);
 
     m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
-    m_arrayQO->GetMaterial()->SetProperty("material.texture", Graphics.Resources()->GetTexture<Texture>(envCubemapRTHandle));
+    m_arrayQO->GetMaterial()->SetProperty("material.texture", envCubemapRT);
     m_arrayQO->SetPositionAndSize(0.0,qoSize,qoSize,qoSize);
     m_arrayQO->SetTextureIndex(0);
 
     m_arrayQO->SetPtr(m_arrayQO);
-
 
     m_scene.AddEntity(inputQO);
     // m_scene.AddEntity(oq);

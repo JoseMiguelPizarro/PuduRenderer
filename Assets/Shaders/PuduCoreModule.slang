@@ -166,11 +166,12 @@ public POMS_OUT ParallaxOcclusionMapping_Shadow(Sampler2D heightMap, float2 uv, 
 //       | -Y |
 //       | +Z |
 //       +----+
+// Coordinates are remapped by "looking" at the given face
 public float3 CubeCoordToDir(float u, float v, uint faceID)
 {
      float3 d = 0.0001;
      if (faceID == 0) d = float3(   1.,-v,-u);
-     if (faceID == 1) d =  float3(1.,    -v,u);
+     if (faceID == 1) d =  float3(-1.,    -v,u);
      if (faceID == 2) d =  float3(    u, 1.,v);
      if (faceID == 3) d =  float3(u,-1.f,-v);
      if (faceID == 4) d =  float3(u,-v,1.f);
@@ -184,4 +185,15 @@ public float2 DirToLongitudeLatitude(float3 dir)
     float phi = acos(dir.y);
 
     return float2(theta*PI_INVERSE_HALF + 0.5, phi * PI_INVERSE);
+}
+
+public float3 ToneMap_Reinhard(float3 color, float exposure)
+{
+    color *= exposure;
+    return color / (color + float3(1.0)); // Basic Reinhard tonemapping
+}
+
+public float3 ToneMap_Reinhard(float4 color, float exposure)
+{
+    return ToneMap_Reinhard(color.xyz,exposure);
 }

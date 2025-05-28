@@ -948,6 +948,9 @@ namespace Pudu
 
         queueCreateInfo.pQueuePriorities = &queuePriority;
 
+        VkPhysicalDeviceVulkan11Features featuresVulkan11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+        featuresVulkan11.shaderDrawParameters = VK_TRUE;
+
         VkPhysicalDeviceVulkan12Features featuresVulkan12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
         featuresVulkan12.timelineSemaphore = VK_TRUE;
         featuresVulkan12.descriptorIndexing = VK_TRUE;
@@ -961,8 +964,6 @@ namespace Pudu
         featuresVulkan12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-
-
 
         VkPhysicalDeviceFeatures2 deviceFeatures{};
         deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -999,6 +1000,9 @@ namespace Pudu
 
         featuresVulkan12.pNext = currentPNext;
         currentPNext = &featuresVulkan12;
+
+        featuresVulkan11.pNext = currentPNext;
+        currentPNext = &featuresVulkan11;
 
         createInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
         createInfo.ppEnabledExtensionNames = DeviceExtensions.data();
@@ -2960,8 +2964,7 @@ namespace Pudu
         waitInfo.pSemaphores = semaphores;
         waitInfo.pValues = timelineValues;
 
-        vkWaitSemaphores(m_device, &waitInfo, 1e+8); //Hardcoded timeout 100ms
-
+        vkWaitSemaphores(m_device, &waitInfo, UINT64_MAX);
         vkFreeCommandBuffers(m_device, m_commandPool->vkHandle, 1, &commandBuffer.vkHandle);
     }
 

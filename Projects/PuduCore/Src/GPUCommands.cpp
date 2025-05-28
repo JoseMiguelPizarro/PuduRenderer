@@ -258,8 +258,48 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst)
+    {
+        if (dst->GetImageLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            TransitionTextureLayout(dst,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        }
 
-    void GPUCommands::Blit(SPtr<Texture> source, SPtr<Texture> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
+        Blit(src,dst,VK_FILTER_LINEAR);
+    }
+
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter)
+    {
+        VkImageBlit2 blitRegions { VK_STRUCTURE_TYPE_IMAGE_BLIT_2};
+        blitRegions.srcOffsets[0] = {0,0,0};
+        blitRegions.srcOffsets[1] = {static_cast<int32_t>(src->width), static_cast<int32_t>(src->height), 1};
+        blitRegions.dstOffsets[0] = {0,0,0};
+        blitRegions.dstOffsets[1] = {static_cast<int32_t>(dst->width),static_cast<int32_t>(dst->height),1};
+        VkImageSubresourceLayers srcSubresourceLayers;
+        srcSubresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        srcSubresourceLayers.baseArrayLayer = 0;
+        srcSubresourceLayers.layerCount = src->layers;
+        srcSubresourceLayers.mipLevel = 0;
+
+        VkImageSubresourceLayers dstSubresourceLayers;
+        dstSubresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        dstSubresourceLayers.baseArrayLayer = 0;
+        dstSubresourceLayers.layerCount = dst->layers;
+        dstSubresourceLayers.mipLevel = 0;
+        blitRegions.srcSubresource = srcSubresourceLayers;
+        blitRegions.dstSubresource = dstSubresourceLayers;
+
+        Blit(src, dst, filter, src->GetImageLayout(), dst->GetImageLayout(), &blitRegions, 1);
+    }
+
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter, VkImageBlit2* blitRegion)
+    {
+        Blit(src, dst, filter, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            blitRegion, 1);
+    }
+
+
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
     {
         VkBlitImageInfo2 blitInfo{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};
         VkImageBlit2 blitRegion{VK_STRUCTURE_TYPE_IMAGE_BLIT_2};
@@ -275,13 +315,13 @@ namespace Pudu
         dstSubresource.baseArrayLayer = 0;
 
         blitRegion.dstOffsets[0] = {0, 0, 0};
-        blitRegion.dstOffsets[1] = {(int)dst->width, (int)dst->height, 1};
+        blitRegion.dstOffsets[1] = {static_cast<int>(dst->width), static_cast<int>(dst->height), 1};
         blitRegion.srcOffsets[0] = {0, 0, 0};
-        blitRegion.srcOffsets[1] = {(int)source->width, (int)source->height, 1};
+        blitRegion.srcOffsets[1] = {static_cast<int>(src->width), static_cast<int>(src->height), 1};
         blitRegion.dstSubresource = dstSubresource;
         blitRegion.srcSubresource = dstSubresource;
 
-        blitInfo.srcImage = source->vkImageHandle;
+        blitInfo.srcImage = src->vkImageHandle;
         blitInfo.srcImageLayout = srcLayout;
         blitInfo.dstImage = dst->vkImageHandle;
         blitInfo.dstImageLayout = dstLayout;
@@ -294,16 +334,16 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::Blit(SPtr<Texture> source, SPtr<Texture> dst, VkFilter filter, VkImageLayout srcLayout,
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter, VkImageLayout srcLayout,
         VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
     {
-        Blit(source.get(), dst.get(), filter, srcLayout, dstLayout, regions, regionCount);
+        Blit(src.get(), dst.get(), filter, srcLayout, dstLayout, regions, regionCount);
     }
 
-    void GPUCommands::Blit(Texture* source, Texture* dst,VkFilter filter,  VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
+    void GPUCommands::Blit(const Texture* src, const Texture* dst,VkFilter filter,  VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
     {
         VkBlitImageInfo2 blitInfo{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};
-        blitInfo.srcImage = source->vkImageHandle;
+        blitInfo.srcImage = src->vkImageHandle;
         blitInfo.srcImageLayout = srcLayout;
         blitInfo.dstImage = dst->vkImageHandle;
         blitInfo.dstImageLayout = dstLayout;
@@ -322,7 +362,7 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::DispatchIndirect(GraphicsBuffer* paramsBuffer, uint64_t offset)
+    void GPUCommands::DispatchIndirect(const GraphicsBuffer* paramsBuffer, uint64_t offset)
     {
         vkCmdDispatchIndirect(vkHandle, paramsBuffer->vkHandle, offset);
     }

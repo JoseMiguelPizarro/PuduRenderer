@@ -1,5 +1,6 @@
 #include "Lib/DefaultVertexInput.hlsl"
 
+import PuduCoreModule;
 import PuduGraphicsModule;
 
 struct PostProcessingData
@@ -30,7 +31,7 @@ VSOut vertexMain(VertexInput in, uint vertexId: SV_VertexID)
 float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
-    Sampler2D tex = Data.colorTex;
+    Sampler2D screenColorTex = Data.colorTex;
 
     float2 baseUV = input.TexCoord.xy;
     float mask = length(baseUV - 0.5);
@@ -42,9 +43,14 @@ float4 fragmentMain(VSOut input)
     float depth =LinearizeDepth( GLOBALS.depthBuffer.Sample(baseUV).r);
 
 
-    float r = tex.Sample(lerp(baseUV, baseUV, mask)).x;
-    float g = tex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)).y;
-    float b = tex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01)*chromatic, mask)).z;
+    //TONEMAP
+    float exposure = 4.f;
+
+    float r = ToneMap_Reinhard(screenColorTex.Sample(lerp(baseUV, baseUV, mask)),exposure).x;
+    float g = ToneMap_Reinhard(screenColorTex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)),exposure).y;
+    float b = ToneMap_Reinhard(screenColorTex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01)*chromatic, mask)),exposure).z;
+
+    //Fog
     float d =  saturate(1. - exp(-depth/40));
 
     return float4(r,g,b,0) * vignette;

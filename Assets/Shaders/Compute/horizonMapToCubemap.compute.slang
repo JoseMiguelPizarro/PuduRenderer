@@ -16,9 +16,10 @@ void computeMain(uint3 threadId:SV_DispatchThreadID, uint3 gId: SV_GroupID)
 {
  //   material.output[gId.xy] = material.input[gId.xy] * float4(1,0.2,0.3,1.);
 
-    uint size = 1024;
+    uint width, height, arraySize;
+    material.output.GetDimensions(width, height, arraySize);
 
-    float2 uv = (threadId.xy)/float(size);
+    float2 uv = (threadId.xy)/float2(width,height);
     uv = uv * 2 - 1.;
 
     float2 longLat = DirToLongitudeLatitude(CubeCoordToDir(uv.x,uv.y,gId.z));

@@ -78,12 +78,7 @@ float3 LambertBRDF(SurfaceInfo surface)
     return diffuseReflection + specularReflection;
 }
 
-float3 ToneMap(float3 color, float exposure)
-{
-    color *= exposure;
-    return color / (color + float3(1.0)); // Basic Reinhard tonemapping
-}
 public float3 StandardSurface(SurfaceInfo surface)
 {
-    return ToneMap(LambertBRDF(surface),3);
+    return LambertBRDF(surface);
 }
