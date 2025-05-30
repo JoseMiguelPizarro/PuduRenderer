@@ -1,14 +1,15 @@
 import PuduCoreModule;
+import PuduLightingModule;
 
 
 struct Input
 {
-    RWTexture2DArray<float4> output;
+    RWTexture2D<float4> output;
     Sampler2D input;
+    uint sampleCount;
 }
 
 ParameterBlock<Input> material;
-
 
 [shader("compute")]
 [numthreads(32, 32, 1)]
@@ -18,9 +19,9 @@ void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
     material.output.GetDimensions(width, height, arraySize);
 
     float2 uv = (ThreadID.xy)/float2(width,height);
-    uv = uv * 2 - 1.;
+    uv.y = 1. - uv.y;
 
-    uint face = GroupID.z;
-    float2 longLat = DirToLongitudeLatitude(CubeCoordToDir(uv.x,uv.y,face));
-    material.output[uint3(ThreadID.xy,face)] = material.input.SampleLevel(longLat,0.);
+    float3 brdf = BRDF(uv.x,uv.y);
+
+    output[ThreadID.xy]  = float4(brdf.xy,0,1);
 }

@@ -4,7 +4,7 @@
 import PuduGraphicsModule;
 import PuduCoreModule;
 
-import "Lib/LightingModule.slang";
+import "Lib/PuduLightingModule.slang";
 
 struct StandardMaterial
 {
@@ -73,14 +73,14 @@ float4 fragmentMain(VSOut input)
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
 
     SurfaceInfo m = {};
-    m.albedo = albedo;
-    m.lightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
-    m.lightColor = float3(1,1,1);
-    m.specularColor = float3(1,1,1);
-    m.normal = normalWS;
-    m.glossiness =1. - material.roughnessTex.Sample(uv).x;
-    m.viewDir = viewDir;
-    m.ambientSampler = material.skybox;
+    m.Albedo = albedo;
+    m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
+    m.LightColor = float3(1,1,1);
+    m.SpecularColor = float3(1,1,1);
+    m.Normal = normalWS;
+    m.Glossiness =1. - material.roughnessTex.Sample(uv).x;
+    m.ViewDir = viewDir;
+    m.AmbientSampler = material.skybox;
 
     col.rgb = StandardSurface(m);
 

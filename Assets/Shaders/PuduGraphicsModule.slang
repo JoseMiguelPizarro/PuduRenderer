@@ -1,6 +1,6 @@
 ﻿#include "Lib/Lighting.hlsl"
 import  PuduCoreModule;
-import "Lib/LightingModule.slang";
+import "Lib/PuduLightingModule.slang";
 
 module PuduGraphics;
 
