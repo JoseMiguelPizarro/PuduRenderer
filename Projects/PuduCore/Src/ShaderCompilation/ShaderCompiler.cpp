@@ -51,8 +51,8 @@ namespace Pudu {
 	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, const std::vector<const char*>& entryPoints, bool compute) const
 	{
 		Slang::ComPtr<IBlob> diagnostics;
-		IModule* baseModule = m_session->loadModule("PuduGraphicsModule.slang", diagnostics.writeRef());
-		IModule* coreModule = m_session->loadModule("PuduCoreModule.slang", diagnostics.writeRef());
+		IModule* coreModule = m_session->loadModule("PuduCoreModule", diagnostics.writeRef());
+		IModule* baseModule = m_session->loadModule("PuduGraphicsModule", diagnostics.writeRef());
 
 		PrintDiagnostics(diagnostics);
 
@@ -73,6 +73,8 @@ namespace Pudu {
 		std::vector<IComponentType*> components = {};
 		components.push_back(coreModule);
 
+
+		ASSERT(baseModule!=nullptr, "Base module is null for {}", path);
 		//Base module has global descriptor sets which are not relevant for compute
 		if (!compute)
 			components.push_back(baseModule);

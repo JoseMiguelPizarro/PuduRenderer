@@ -16,12 +16,17 @@ public float2 HammersleyHemisphere(uint i, uint N) {
   return float2(float(i) / float(N), rdi);
 }
 
+float mod(float x, float y)
+{
+  return x - y * floor(x/y);
+}
+
 ///<summary>From https://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/ </summary>
-float random(float2 co) {
+public float random(float2 co) {
   float a  = 12.9898;
   float b  = 78.233;
   float c  = 43758.5453;
   float dt = dot( co.xy ,float2(a,b) );
-  float sn = dt % 3.14;
+  float sn = mod(dt ,3.14);
   return fract(sin(sn) * c);
 }

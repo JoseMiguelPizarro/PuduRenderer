@@ -36,6 +36,34 @@ void Test_PBR::OnInit()
     envCubemapRTCreationData.samplerData = &samplerCreationData;
     envCubemapRTCreationData.layers = 6;
 
+    u32 brdfLUTResolution = 256;
+    SamplerCreationData brdfLUTSamplerCreationData{};
+    brdfLUTSamplerCreationData.wrap = false;
+    TextureCreationData BRDF_LUTCreationData;
+    BRDF_LUTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    BRDF_LUTCreationData.width = brdfLUTResolution;
+    BRDF_LUTCreationData.height = brdfLUTResolution;
+    BRDF_LUTCreationData.generateMipmaps = false;
+    BRDF_LUTCreationData.textureType = TextureType::Texture2D;
+    BRDF_LUTCreationData.name = "BRDF_LUT";
+    BRDF_LUTCreationData.flags = TextureFlags::UnorderedAccess;
+    BRDF_LUTCreationData.samplerData = &brdfLUTSamplerCreationData;
+    BRDF_LUTCreationData.layers = 1;
+
+    auto BRDF_LUTHandle = Graphics.CreateTexture(BRDF_LUTCreationData);
+    auto BRDF_LUT = Graphics.Resources()->GetTexture<Texture>(BRDF_LUTHandle);
+    auto BRDF_LUTCS = Graphics.CreateComputeShader("Compute/brdfLUT.compute.slang", "BRDF_LUT");
+    auto BRDF_LUTMat = Graphics.Resources()->AllocateMaterial();
+
+    BRDF_LUTMat->SetShader(BRDF_LUTCS);
+    BRDF_LUTMat->SetProperty("material.output", BRDF_LUT);
+
+    ComputeShaderRenderer brdfLutCSRenderer;
+    brdfLutCSRenderer.SetShader(BRDF_LUTCS);
+    brdfLutCSRenderer.SetMaterial(BRDF_LUTMat);
+
+    Graphics.DispatchCompute(&brdfLutCSRenderer,brdfLUTResolution/32,brdfLUTResolution/32,1);
+
     TextureCreationData envCubemapCreationData{};
     envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     envCubemapCreationData.width = envCubemapResolution;
@@ -81,7 +109,7 @@ void Test_PBR::OnInit()
 
     m_scene = Scene(&Time);
     m_scene.camera = &m_camera;
-    TargetFPS = 120;
+    TargetFPS = 30;
 
     m_puduRenderer.Init(&Graphics, this);
 
@@ -120,13 +148,6 @@ void Test_PBR::OnInit()
     auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
 
 
-    TextureLoadSettings skyTexSettings{};
-    skyTexSettings.bindless = false;
-    skyTexSettings.name = "Sky";
-    skyTexSettings.format = VK_FORMAT_R8G8B8A8_UNORM;
-    skyTexSettings.textureType = TextureType::Texture_Cube;
-
-    const auto skyTexture = Graphics.LoadTextureCube("textures/skyCube.ktx", skyTexSettings);
     const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
 
     auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
@@ -167,8 +188,8 @@ void Test_PBR::OnInit()
     inputQO->SetPositionAndSize(0.0, 0.0, qoSize, qoSize);
     inputQO->SetPtr(inputQO);
 
-    oq->GetMaterial()->SetProperty("material.texture", hdrSky);
-    oq->SetPositionAndSize(0.0,qoSize*1.1,qoSize,qoSize);
+    oq->GetMaterial()->SetProperty("material.texture", BRDF_LUT);
+    oq->SetPositionAndSize(0.0,qoSize*1.1,0.5,0.5);
     oq->SetPtr(oq);
 
     m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
@@ -179,8 +200,8 @@ void Test_PBR::OnInit()
     m_arrayQO->SetPtr(m_arrayQO);
 
     m_scene.AddEntity(inputQO);
-    // m_scene.AddEntity(oq);
-    m_scene.AddEntity(m_arrayQO);
+    m_scene.AddEntity(oq);
+    //m_scene.AddEntity(m_arrayQO);
 }
 
 void Test_PBR::OnRun()

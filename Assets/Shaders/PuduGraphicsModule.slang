@@ -1,8 +1,8 @@
-﻿#include "Lib/Lighting.hlsl"
-import  PuduCoreModule;
+﻿import  PuduCoreModule;
 import "Lib/PuduLightingModule.slang";
+#include "Lib/Lighting.hlsl"
 
-module PuduGraphics;
+module PuduGraphicsModule;
 
 [__AttributeUsage(_AttributeTargets.Var)]
 struct BindlessAttribute
