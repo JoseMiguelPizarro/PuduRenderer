@@ -29,3 +29,5 @@ void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
     float3 c = v25*float3(1,0,0) + (v50 - v25)*float3(0,1,0) + (v75 - v50)*float3(0,0,1) + (1. - v75)*float3(1,1,1);
     material.output[ThreadID.xy]  = float4(brdf,1);
 }
+
+

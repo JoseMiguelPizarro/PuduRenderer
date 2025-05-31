@@ -2512,16 +2512,16 @@ namespace Pudu
         return shader;
     }
 
-    SPtr<ComputeShader> PuduGraphics::CreateComputeShader(fs::path shaderPath, const char* name)
+    SPtr<ComputeShader> PuduGraphics::CreateComputeShader(ComputeShaderCreationData& creationData)
     {
-        LOG("Creating Compute Shader {}:", name);
+        LOG("Creating Compute Shader {}:", creationData.name);
         auto shader = m_resources.AllocateComputeShader();
 
-        auto compiledShader = m_shaderCompiler.Compile(shaderPath.string().c_str(), {"computeMain"}, true);
+        auto compiledShader = m_shaderCompiler.Compile(creationData.shaderPath.string().c_str(), {creationData.kernel.c_str()}, true);
 
         const char* kernelName = "computeMain";
         auto kernel = compiledShader.GetKernel(kernelName);
-        shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, name);
+        shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, creationData.name.c_str());
         shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
 

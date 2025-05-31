@@ -142,23 +142,15 @@ namespace Pudu
 
         const uint32_t grassCount = 1;
 
-        auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
-        computeRP.get()->SetName("Grass Compute");
-        auto compute = graphics->CreateComputeShader("testCompute.compute.slang", "Test Compute");
-
 
         auto grassPointCloud = FileManager::LoadPointCloud("models/Diorama_Cat/CatDiorama_Grass.xyz");
         const uint32_t instances = grassPointCloud.size();
-        auto groupSize = ceil(sqrt(instances / (32 * 32)));
-        computeRP->SetGroupSize(groupSize, groupSize, 1);
 
         auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
-        computeRP->SetShader(compute);
-        computeRP->AddBufferAttachment(grassBuffer, AttachmentAccessUsage::Write);
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         forwardColorCopyRP->SetBlitTargets(colorRT, m_colorCopyRT);

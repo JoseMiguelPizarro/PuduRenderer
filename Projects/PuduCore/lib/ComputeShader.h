@@ -8,6 +8,13 @@ namespace Pudu
 {
 	class Pipeline;
 
+	struct ComputeShaderCreationData
+	{
+		fs::path shaderPath;
+		std::string name;
+		std::string kernel = "computeMain";
+	};
+
 	class ComputeShader :public GPUResource<ComputeShader>, public IShaderObject
 	{
 	public:

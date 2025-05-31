@@ -219,7 +219,7 @@ namespace Pudu
 		//SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
-		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
+		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
 
 		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);

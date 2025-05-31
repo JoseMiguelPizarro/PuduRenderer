@@ -52,7 +52,9 @@ void Test_PBR::OnInit()
 
     auto BRDF_LUTHandle = Graphics.CreateTexture(BRDF_LUTCreationData);
     auto BRDF_LUT = Graphics.Resources()->GetTexture<Texture>(BRDF_LUTHandle);
-    auto BRDF_LUTCS = Graphics.CreateComputeShader("Compute/brdfLUT.compute.slang", "BRDF_LUT");
+
+    ComputeShaderCreationData BRDF_LUT_CS_Data{ "Compute/brdfLUT.compute.slang", "BRDF_LUT"};
+    auto BRDF_LUTCS = Graphics.CreateComputeShader(BRDF_LUT_CS_Data);
     auto BRDF_LUTMat = Graphics.Resources()->AllocateMaterial();
 
     BRDF_LUTMat->SetShader(BRDF_LUTCS);
@@ -80,7 +82,8 @@ void Test_PBR::OnInit()
     auto envCubemapRTHandle = Graphics.CreateTexture(envCubemapRTCreationData);
     auto envCubemapRT = Graphics.Resources()->GetTexture<Texture>(envCubemapRTHandle);
 
-    auto horizonToCubemapCS = Graphics.CreateComputeShader("Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap");
+    ComputeShaderCreationData envToCubemapCS_Data{ "Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
+    auto horizonToCubemapCS = Graphics.CreateComputeShader(envToCubemapCS_Data);
     auto horizonToCubemapMat = Graphics.Resources()->AllocateMaterial();
     horizonToCubemapMat->SetShader(horizonToCubemapCS);
     horizonToCubemapMat->SetProperty("material.output", envCubemapRT);
@@ -189,7 +192,7 @@ void Test_PBR::OnInit()
     inputQO->SetPtr(inputQO);
 
     oq->GetMaterial()->SetProperty("material.texture", BRDF_LUT);
-    oq->SetPositionAndSize(0.0,qoSize*1.1,0.5,0.5);
+    oq->SetPositionAndSize(0.0,qoSize*1.1,0.15,0.15);
     oq->SetPtr(oq);
 
     m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
