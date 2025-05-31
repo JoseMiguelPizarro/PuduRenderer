@@ -72,6 +72,8 @@ float4 fragmentMain(VSOut input)
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
 
+    return material.skybox.SampleLevel(input.Normal.xyz,0);
+
     SurfaceInfo m = {};
     m.Albedo = albedo;
     m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);

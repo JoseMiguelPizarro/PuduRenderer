@@ -27,6 +27,24 @@ public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
     return normalize( v.x*t + v.y*bt + v.z*n);
 }
 
+//<summary> TBN generates a tangent bitangent normal coordinate frame from the normal (the normal must be normalized)</summary>
+public float3x3 GenerateTBN(float3 Normal) {
+  float3 bitangent = float3(0.0, 1.0, 0.0);
+
+  float NdotUp = dot(Normal, float3(0.0, 1.0, 0.0));
+  float epsilon = 0.0000001;
+  if (1.0 - abs(NdotUp) <= epsilon) {
+    // Sampling +Y or -Y, so we need a more robust bitangent.
+    bitangent = (NdotUp > 0.0) ? float3(0.0, 0.0, 1.0) : float3(0.0, 0.0, -1.0);
+  }
+
+  float3 tangent = normalize(cross(bitangent, Normal));
+  bitangent = cross(Normal, tangent);
+
+    //PUDU RENDERER IS IN COLUMN MAJOR SO WE NEED TO TRANSPOSE IT
+  return transpose(float3x3(tangent, bitangent, Normal));
+}
+
 public float3 WorldToTangent(float3 v, float3 t, float3 bt, float3 n)
 {
     return mul(float3x3(
