@@ -41,5 +41,5 @@ VSOut vertexMain(VertexInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOut input) : SV_Target
 {
-    return material.texture.Sample(input.TexCoord.xy);
+    return material.texture.SampleLevel(input.TexCoord.xy,0);
 }

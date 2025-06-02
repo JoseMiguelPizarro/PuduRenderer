@@ -409,6 +409,7 @@ namespace Pudu
 		void* sourceData = nullptr; //ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly
 		const char* name = nullptr;
 		bool allocate = true;
+		bool exposeMipViews = false;
 		bool generateMipmaps = false;
 	};
 

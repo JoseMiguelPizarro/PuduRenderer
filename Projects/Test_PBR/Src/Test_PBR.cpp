@@ -36,10 +36,13 @@ void Test_PBR::OnInit()
     envCubemapRTCreationData.samplerData = &samplerCreationData;
     envCubemapRTCreationData.layers = 6;
 
+
     auto envCubemapRTHandle = Graphics.CreateTexture(envCubemapRTCreationData);
     auto envCubemapRT = Graphics.Resources()->GetTexture<Texture>(envCubemapRTHandle);
 
     u32 IBLRTResolution = 1024;
+    u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution,IBLRTResolution);
+
     TextureCreationData IBLRTCreationData{};
     IBLRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     IBLRTCreationData.width = IBLRTResolution;
@@ -50,6 +53,8 @@ void Test_PBR::OnInit()
     IBLRTCreationData.flags = TextureFlags::UnorderedAccess;
     IBLRTCreationData.samplerData = &samplerCreationData;
     IBLRTCreationData.layers = 6;
+    IBLRTCreationData.exposeMipViews = true;
+    IBLRTCreationData.mipmaps = IBLMips;
 
     auto IBLRTHandle = Graphics.CreateTexture(IBLRTCreationData);
     auto IBLRT = Graphics.Resources()->GetTexture<Texture>(IBLRTHandle);
@@ -183,7 +188,6 @@ void Test_PBR::OnInit()
     //SKYBOX
     auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
 
-
     const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
 
     auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
@@ -232,6 +236,7 @@ void Test_PBR::OnInit()
     m_arrayQO->GetMaterial()->SetProperty("material.texture", IBLRT);
     m_arrayQO->SetPositionAndSize(qoSize*1.1,qoSize*1.1,.15,.15);
     m_arrayQO->SetTextureIndex(0);
+    m_arrayQO->SetLOD(0);
 
     m_arrayQO->SetPtr(m_arrayQO);
 
@@ -275,5 +280,11 @@ void Test_PBR::DrawImGUI()
     if (ImGui::SliderInt("Array", &index,0,5))
     {
         m_arrayQO->SetTextureIndex(index);
+    }
+
+    static int lod = 0;
+    if (ImGui::SliderInt("Lod",&lod,0,11))
+    {
+        m_arrayQO->SetLOD(lod);
     }
 }

@@ -52,6 +52,11 @@ namespace Pudu
         m->SetProperty("overlayData.height", height);
     }
 
+    void OverlayQuadEntity::SetLOD(u32 lod)
+    {
+        GetMaterial()->SetProperty("lod",lod);
+    }
+
     SPtr<Shader> OverlayQuadEntity::GetShader(PuduGraphics* gfx)
     {
         return gfx->GetDefaultOverlayShader();
@@ -79,6 +84,11 @@ namespace Pudu
     void OverlayQuadTextureArrayEntity::SetTextureIndex(uint index)
     {
         m_model.Materials[0]->SetProperty("material.index", index);
+    }
+
+    void OverlayQuadTextureArrayEntity::SetLOD(u32 lod)
+    {
+        GetMaterial()->SetProperty("material.lod",lod);
     }
 
     SPtr<Material> OverlayQuadTextureArrayEntity::GetMaterial()

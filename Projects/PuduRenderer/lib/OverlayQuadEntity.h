@@ -18,6 +18,7 @@ public:
     void SetPtr(SPtr<RenderEntity> ptr);
     ///Values in [0,1] Screen coordinates
     void SetPositionAndSize(float x, float y, float width, float height);
+    void SetLOD(u32 lod);
 private:
     float width, height, x,y;
 
@@ -33,6 +34,7 @@ private:
 
         //Index of texture from the texture array to render
         void SetTextureIndex(uint index);
+        void SetLOD(u32 lod);
         SPtr<Material> GetMaterial();
 
         void SetPtr(SPtr<RenderEntity> ptr);

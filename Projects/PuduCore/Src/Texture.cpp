@@ -69,4 +69,15 @@ namespace Pudu
     {
         return m_layout;
     }
+
+    VkImageView Texture::GetMipImageView(u32 mipLevel) const
+    {
+        ASSERT(mipLevel<mipLevels,"[Texture: {} MipLevels: {}] Trying to fetch ImageView from exceeded mip level", name, mipLevels,mipLevel);
+        return m_mipImageViews[mipLevel];
+    }
+
+    u32 Texture::CalculateMipLevels(u32 width, u32 height)
+    {
+        return static_cast<u32>(std::floor(std::log2(std::max(width,height)))) + 1;
+    }
 }
