@@ -76,7 +76,7 @@ float4 fragmentMain(VSOut input)
     m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
     m.LightColor = float3(1,1,1);
     m.SpecularColor = float3(1,1,1);
-    m.Normal = normalWS;
+    m.Normal = input.Normal.xyz;  
     m.Glossiness =1. - material.roughnessTex.Sample(uv).x;
     m.ViewDir = viewDir;
     col.rgb = StandardSurface(m);

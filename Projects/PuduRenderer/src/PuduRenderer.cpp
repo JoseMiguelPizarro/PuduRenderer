@@ -191,6 +191,23 @@ namespace Pudu
 
             gfx->DispatchCompute(&IBL_CSRenderer, IBLRTResolution / 32, IBLRTResolution / 32, 6);
         }
+
+        TextureCreationData envCubemapCreationData{};
+        envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        envCubemapCreationData.width = IBLRTResolution;
+        envCubemapCreationData.height = IBLRTResolution;
+        envCubemapCreationData.generateMipmaps = false;
+        envCubemapCreationData.textureType = TextureType::Texture_Cube;
+        envCubemapCreationData.name = "EnvCube";
+        envCubemapCreationData.layers = 6;
+        envCubemapCreationData.samplerData = &samplerData;
+
+        auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
+        m_IBL_Cube = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
+
+        auto cmd = gfx->BeginSingleTimeCommands();
+        cmd.Blit(m_IBL, m_IBL_Cube);
+        gfx->EndSingleTimeCommands(cmd);
     }
 
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -397,7 +414,7 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.BRDF_LUT",m_BRDF_LUT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL",m_IBL);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL",m_IBL_Cube);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox",m_skybox);
     }
 

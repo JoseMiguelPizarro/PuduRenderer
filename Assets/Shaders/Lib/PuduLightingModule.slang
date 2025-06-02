@@ -163,7 +163,7 @@ float3 LambertBRDF(SurfaceInfo Surface) {
     float3 DiffuseReflection = LambertDiffuseReflection(Surface);
     float3 SpecularReflection = BlinnPhongSpecularReflection(Surface);
 
-    return DiffuseReflection + SpecularReflection;
+    return GLOBALS.IBL.SampleLevel(Surface.Normal,0).xyz;
 }
 
 public float3 StandardSurface(SurfaceInfo Surface) {

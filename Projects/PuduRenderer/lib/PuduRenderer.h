@@ -40,6 +40,7 @@ namespace Pudu
 		SPtr<Texture> m_skybox;
 		SPtr<Texture> m_envMap;
 		SPtr<Texture> m_IBL;
+		SPtr<Texture> m_IBL_Cube;
 		SPtr<RenderTexture> m_depthCopyRT;
 		SPtr<RenderTexture> m_colorCopyRT;
 		SPtr<RenderPass> m_depthRenderPass;
