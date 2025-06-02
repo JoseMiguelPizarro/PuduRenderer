@@ -19,6 +19,32 @@
 
 namespace Pudu
 {
+    void PuduRenderer::SetSkyBox(SPtr<Texture> skybox)
+    {
+        m_skybox = skybox;
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox",skybox);
+    }
+
+    SPtr<Texture> PuduRenderer::GetSkybox()
+    {
+        return m_skybox;
+    }
+
+    SPtr<Texture> PuduRenderer::GetEnvMap()
+    {
+        return m_envMap;
+    }
+
+    SPtr<Texture> PuduRenderer::GetBRDF_LUT()
+    {
+        return m_BRDF_LUT;
+    }
+
+    SPtr<Texture> PuduRenderer::GetIBL()
+    {
+        return m_IBL;
+    }
+
     SPtr<RenderTexture> PuduRenderer::GetDepthCopyRT() const
     {
         return m_depthCopyRT;
@@ -27,6 +53,144 @@ namespace Pudu
     SPtr<RenderTexture> PuduRenderer::GetColorCopyRT() const
     {
         return m_colorCopyRT;
+    }
+
+
+    void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
+    {
+        u32 brdfLUTResolution = 256;
+        SamplerCreationData brdfLUTSamplerCreationData{};
+        brdfLUTSamplerCreationData.wrap = false;
+        TextureCreationData BRDF_LUTCreationData;
+        BRDF_LUTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        BRDF_LUTCreationData.width = brdfLUTResolution;
+        BRDF_LUTCreationData.height = brdfLUTResolution;
+        BRDF_LUTCreationData.generateMipmaps = false;
+        BRDF_LUTCreationData.textureType = TextureType::Texture2D;
+        BRDF_LUTCreationData.name = "BRDF_LUT";
+        BRDF_LUTCreationData.flags = TextureFlags::UnorderedAccess;
+        BRDF_LUTCreationData.samplerData = &brdfLUTSamplerCreationData;
+        BRDF_LUTCreationData.layers = 1;
+
+        auto BRDF_LUTHandle = gfx->CreateTexture(BRDF_LUTCreationData);
+        m_BRDF_LUT = gfx->Resources()->GetTexture<Texture>(BRDF_LUTHandle);
+
+        ComputeShaderCreationData BRDF_LUT_CS_Data{"Compute/brdfLUT.compute.slang", "BRDF_LUT"};
+        auto BRDF_LUTCS = gfx->CreateComputeShader(BRDF_LUT_CS_Data);
+        auto BRDF_LUTMat = gfx->Resources()->AllocateMaterial();
+
+        BRDF_LUTMat->SetShader(BRDF_LUTCS);
+        BRDF_LUTMat->SetProperty("material.output", m_BRDF_LUT);
+
+        ComputeShaderRenderer brdfLutCSRenderer;
+        brdfLutCSRenderer.SetShader(BRDF_LUTCS);
+        brdfLutCSRenderer.SetMaterial(BRDF_LUTMat);
+
+        gfx->DispatchCompute(&brdfLutCSRenderer, brdfLUTResolution / 32, brdfLUTResolution / 32, 1);
+    }
+
+    void PuduRenderer::InitSkybox(PuduGraphics* gfx)
+    {
+        SamplerCreationData samplerData{};
+        TextureLoadSettings hdrSettings{};
+        hdrSettings.bindless = false;
+        hdrSettings.name = "hdr_sky";
+        hdrSettings.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        hdrSettings.generateMipmaps = true;
+        hdrSettings.samplerData.wrap = true;
+
+        auto horizonSkybox = gfx->LoadTexture2D("textures/skybox/piazza_bologni_4k.ktx2", hdrSettings);
+        m_envMap = horizonSkybox;
+
+        u32 envCubemapResolution = 1024;
+        TextureCreationData envCubemapRTCreationData{};
+        envCubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        envCubemapRTCreationData.width = envCubemapResolution;
+        envCubemapRTCreationData.height = envCubemapResolution;
+        envCubemapRTCreationData.textureType = TextureType::Texture_2D_Array;
+        envCubemapRTCreationData.generateMipmaps = false;
+        envCubemapRTCreationData.name = "EnvCubeRT";
+        envCubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
+        envCubemapRTCreationData.layers = 6;
+        envCubemapRTCreationData.samplerData = &samplerData;
+
+        auto envCubemapRTHandle = gfx->CreateTexture(envCubemapRTCreationData);
+        auto envCubemapRT = gfx->Resources()->GetTexture<Texture>(envCubemapRTHandle);
+
+        ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
+        auto horizonToCubemapCS = gfx->CreateComputeShader(envToCubemapCS_Data);
+        auto horizonToCubemapMat = gfx->Resources()->AllocateMaterial();
+        horizonToCubemapMat->SetShader(horizonToCubemapCS);
+        horizonToCubemapMat->SetProperty("material.output", envCubemapRT);
+        horizonToCubemapMat->SetProperty("material.input", horizonSkybox);
+
+        ComputeShaderRenderer cubeComputeRenderer;
+        cubeComputeRenderer.SetShader(horizonToCubemapCS);
+        cubeComputeRenderer.SetMaterial(horizonToCubemapMat);
+        gfx->DispatchCompute(&cubeComputeRenderer, envCubemapResolution/32, envCubemapResolution/32, 6);
+
+        TextureCreationData envCubemapCreationData{};
+        envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        envCubemapCreationData.width = envCubemapResolution;
+        envCubemapCreationData.height = envCubemapResolution;
+        envCubemapCreationData.generateMipmaps = false;
+        envCubemapCreationData.textureType = TextureType::Texture_Cube;
+        envCubemapCreationData.name = "EnvCube";
+        envCubemapCreationData.layers = 6;
+        envCubemapCreationData.samplerData = &samplerData;
+
+        auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
+        m_skybox = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
+
+
+        auto cmd = gfx->BeginSingleTimeCommands();
+        cmd.Blit(envCubemapRT, m_skybox);
+        gfx->EndSingleTimeCommands(cmd);
+
+        gfx->DestroyTexture(envCubemapRT);
+    }
+
+    void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
+    {
+        u32 IBLRTResolution = 1024;
+        u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
+
+        SamplerCreationData samplerData{};
+        TextureCreationData IBLRTCreationData{};
+        IBLRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        IBLRTCreationData.width = IBLRTResolution;
+        IBLRTCreationData.height = IBLRTResolution;
+        IBLRTCreationData.textureType = TextureType::Texture_2D_Array;
+        IBLRTCreationData.generateMipmaps = false;
+        IBLRTCreationData.name = "IBLRT";
+        IBLRTCreationData.flags = TextureFlags::UnorderedAccess;
+        IBLRTCreationData.layers = 6;
+        IBLRTCreationData.exposeMipViews = true;
+        IBLRTCreationData.mipmaps = IBLMips;
+        IBLRTCreationData.samplerData = &samplerData;
+
+        auto IBLRTHandle = gfx->CreateTexture(IBLRTCreationData);
+        m_IBL = gfx->Resources()->GetTexture<Texture>(IBLRTHandle);
+
+        ComputeShaderCreationData IBL_ComputeData{"Compute/IBL.compute.slang", "IBL"};
+        ComputeShaderRenderer IBL_CSRenderer;
+        auto IBLCS = gfx->CreateComputeShader(IBL_ComputeData);
+        auto IBLMaterial = gfx->Resources()->AllocateMaterial();
+        IBLMaterial->SetShader(IBLCS);
+        IBLMaterial->SetProperty("material.input", envMap);
+        IBL_CSRenderer.SetShader(IBLCS);
+        IBL_CSRenderer.SetMaterial(IBLMaterial);
+
+        for (int mip = 0; mip < m_IBL->mipLevels; mip++)
+        {
+            float roughness = static_cast<float>(mip) / (m_IBL->mipLevels - 1);
+            IBLMaterial->SetProperty("material.output", m_IBL, mip);
+            IBLMaterial->SetProperty("material.roughness", roughness);
+            IBLMaterial->SetProperty("material.sampleCount", 1024);
+            IBLMaterial->SetProperty("material.inputResolution", m_IBL->width>>mip); //Assuming power of 2 hehe
+
+            gfx->DispatchCompute(&IBL_CSRenderer, IBLRTResolution / 32, IBLRTResolution / 32, 6);
+        }
     }
 
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -45,6 +209,9 @@ namespace Pudu
 
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
+        InitBRDF_LUT(graphics);
+        InitSkybox(graphics);
+        InitIBL(graphics,m_envMap);
 
         auto depthRT = graphics->GetRenderTexture();
         depthRT->depth = 1;
@@ -229,6 +396,9 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.BRDF_LUT",m_BRDF_LUT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL",m_IBL);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox",m_skybox);
     }
 
     static bool isFirstFrame = true;

@@ -13,7 +13,6 @@ struct StandardMaterial
     Sampler2D roughnessTex;
     Sampler2D metallicTex;
     Sampler2D heightTex;
-    SamplerCube skybox; //Placeholder for environment
 }
 ParameterBlock<StandardMaterial> material;
 
@@ -72,8 +71,6 @@ float4 fragmentMain(VSOut input)
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
 
-    return material.skybox.SampleLevel(input.Normal.xyz,0);
-
     SurfaceInfo m = {};
     m.Albedo = albedo;
     m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
@@ -82,8 +79,6 @@ float4 fragmentMain(VSOut input)
     m.Normal = normalWS;
     m.Glossiness =1. - material.roughnessTex.Sample(uv).x;
     m.ViewDir = viewDir;
-    m.AmbientSampler = material.skybox;
-
     col.rgb = StandardSurface(m);
 
     return col;

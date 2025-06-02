@@ -84,9 +84,14 @@ void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
 
     uint face = GroupID.z;
 
-    float3 n = CubeCoordToDir(uv.x,uv.y,face);
+    if(material.roughness == 0)
+    {
+            float3 c = material.input.SampleLevel(DirToLongitudeLatitude(CubeCoordToDir(uv.x,uv.y,face)),0).xyz;
+            material.output[uint3(ThreadID.xy,face)] = float4(c,1.);
+            return;
+    }
+
     float3 c =  DiffuseFilteredIBL(material.input, CubeCoordToDir(uv.x,uv.y,face),material.roughness,material.sampleCount);
 
-    n = material.input.SampleLevel(DirToLongitudeLatitude(n),0).xyz;
     material.output[uint3(ThreadID.xy,face)] = float4(c, 1.);
 }

@@ -13,7 +13,11 @@ namespace Pudu
 	class PuduRenderer :public Renderer
 	{
 	public:
-		void SetSkyBox();
+		void SetSkyBox(SPtr<Texture> skybox);
+		SPtr<Texture> GetSkybox();
+		SPtr<Texture> GetEnvMap();
+		SPtr<Texture> GetBRDF_LUT();
+		SPtr<Texture> GetIBL();
 		SPtr<RenderTexture> GetDepthCopyRT() const;
 		SPtr<RenderTexture> GetColorCopyRT() const;
 
@@ -28,7 +32,14 @@ namespace Pudu
 		void UpdateGlobalConstantsBuffer(const RenderFrameData& frame) const;
 		void InitLightingBuffer(PuduGraphics* graphics);
 		void InitConstantsBuffer(PuduGraphics* graphics);
+		void InitBRDF_LUT(PuduGraphics* gfx);
+		void InitSkybox(PuduGraphics* gfx);
+		void InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap);
 
+		SPtr<Texture> m_BRDF_LUT;
+		SPtr<Texture> m_skybox;
+		SPtr<Texture> m_envMap;
+		SPtr<Texture> m_IBL;
 		SPtr<RenderTexture> m_depthCopyRT;
 		SPtr<RenderTexture> m_colorCopyRT;
 		SPtr<RenderPass> m_depthRenderPass;

@@ -1,5 +1,4 @@
 ﻿import  PuduCoreModule;
-import "Lib/PuduLightingModule.slang";
 #include "Lib/Lighting.hlsl"
 
 module PuduGraphicsModule;
@@ -33,6 +32,9 @@ public struct Globals
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;
+    public SamplerCube IBL; //Convoluted image based lighting env map
+    public SamplerCube skybox;
+    public Sampler2D BRDF_LUT;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
 }

@@ -2,7 +2,7 @@ module PuduLightingModule;
 
 import PuduCoreModule;
 import PuduRandomModule;
-
+import PuduGraphicsModule;
 
 
 #define BlinnPhongSpecularAlpha 50.f
@@ -10,6 +10,12 @@ import PuduRandomModule;
 public interface IDiffuseAmbientSampler {
     public float3 Sample(float3 N);
 }
+
+public struct IBLAmbientSampler: IDiffuseAmbientSampler{
+
+    public float3 Sample(float3 N){
+        return float3(0.);}
+    }
 
 public struct SurfaceInfo {
     public float3 Albedo;
@@ -21,7 +27,6 @@ public struct SurfaceInfo {
     public float Glossiness;
     public float Metallic;
     public float ShadowAttenuation;
-    public SamplerCube AmbientSampler;
 };
 
 float G_SchlicksmithGGX(
@@ -116,11 +121,11 @@ public float3 BRDF(float Ndv, float Roughness) {
 
 float3 SampleAmbientSpecular(SurfaceInfo Surface) {
     float3 R = reflect(Surface.ViewDir, Surface.Normal);
-    return Surface.AmbientSampler.Sample(R).xyz * (Surface.Glossiness) * .5;
+    return 0;
 }
 
 float3 SampleAmbientDiffuse(SurfaceInfo Surface) {
-    return Surface.AmbientSampler.SampleBias(Surface.Normal, 3.).xyz * (Surface.Glossiness);
+    return 0;
 }
 
 float3 BlinnPhongSpecularReflection(SurfaceInfo Surface) {
