@@ -31,6 +31,7 @@ namespace Pudu
     {
         std::string name;
         ShaderPropertyType::Enum type;
+        u32 mipLevel = 0;
         vec4 value;
         SPtr<Texture> texture;
         Size arrayIndex;
@@ -72,7 +73,7 @@ namespace Pudu
     public:
         void SetProperty(const std::string_view& name, float value);
         void SetProperty(const std::string& name, vec2 value);
-        void SetProperty(const std::string& name, const SPtr<Texture>& texture);
+        void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         void ApplyProperties(const MaterialApplyPropertyGPUTarget& target);
@@ -110,7 +111,7 @@ namespace Pudu
         void ApplyProperties();
         void SetProperty(const std::string_view& name, float value);
         void SetProperty(const std::string& name, glm::vec2 value);
-        void SetProperty(const std::string& name, const SPtr<Texture>& texture);
+        void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         Material* SetScope(const char* scope);

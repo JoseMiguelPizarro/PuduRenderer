@@ -54,7 +54,7 @@ namespace Pudu
 
     void OverlayQuadEntity::SetLOD(u32 lod)
     {
-        GetMaterial()->SetProperty("lod",lod);
+        GetMaterial()->SetProperty("mipLevel",lod);
     }
 
     SPtr<Shader> OverlayQuadEntity::GetShader(PuduGraphics* gfx)
@@ -88,7 +88,7 @@ namespace Pudu
 
     void OverlayQuadTextureArrayEntity::SetLOD(u32 lod)
     {
-        GetMaterial()->SetProperty("material.lod",lod);
+        GetMaterial()->SetProperty("material.mipLevel",lod);
     }
 
     SPtr<Material> OverlayQuadTextureArrayEntity::GetMaterial()

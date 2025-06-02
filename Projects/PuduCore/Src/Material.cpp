@@ -42,9 +42,9 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, value);
     }
 
-    void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture)
+    void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
-        m_propertiesBlock.SetProperty(name, texture);
+        m_propertiesBlock.SetProperty(name, texture, mipLevel);
     }
 
     void Material::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)
@@ -119,11 +119,12 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
-    void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture)
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
         PropertyUpdateRequest updateRequest{};
         updateRequest.property.texture = texture;
         updateRequest.property.name = name;
+        updateRequest.property.mipLevel = mipLevel;
         updateRequest.property.type = ShaderPropertyType::Texture;
 
         m_descriptorUpdateRequests.push_back(updateRequest);
@@ -202,7 +203,7 @@ namespace Pudu
 
         if (field.IsValid())
         {
-            field.Write(request.property.texture);
+            field.Write( request.property.texture, request.property.mipLevel);
             BindPropertyToShaderNode(field.GetNode(), request.property);
         }
         else
@@ -267,7 +268,7 @@ namespace Pudu
 
             VkDescriptorImageInfo& descriptorImageInfo = imageInfos[currentWriteIndex];
             descriptorImageInfo.sampler = textureSampler.vkHandle;
-            descriptorImageInfo.imageView = texture->vkImageViewHandle;
+            descriptorImageInfo.imageView = request.property.mipLevel==0? texture->vkImageViewHandle: texture->GetMipImageView(request.property.mipLevel);
             descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             descriptorWrite.pImageInfo = &descriptorImageInfo;

@@ -90,7 +90,7 @@ namespace Pudu
         return m_isValid;
     }
 
-    void ShaderCursor::Write(const SPtr<Texture>& texture)
+    void ShaderCursor::Write(const SPtr<Texture>& texture, u32 mipLevel)
     {
         if (texture == nullptr)
         {
@@ -109,7 +109,7 @@ namespace Pudu
             m_descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
 
         VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageView = texture->vkImageViewHandle;
+        imageInfo.imageView = mipLevel==0? texture->vkImageViewHandle: texture->GetMipImageView(mipLevel);
         imageInfo.sampler = texture->Sampler.vkHandle;
         imageInfo.imageLayout =  layout;
 

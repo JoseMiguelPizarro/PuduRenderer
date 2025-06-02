@@ -9,6 +9,7 @@ struct Input
     Sampler2D input;
     float roughness;
     float sampleCount;
+    float inputResolution;
 }
 
 ParameterBlock<Input> material;
@@ -78,16 +79,13 @@ float3 DiffuseFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint Samp
 [numthreads(32, 32, 1)]
 void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
 {
-    uint width, height, arraySize;
-    material.output.GetDimensions(width, height, arraySize);
-
-    float2 uv = (ThreadID.xy)/float2(width,height);
+    float2 uv = (ThreadID.xy)/float2(material.inputResolution);
     uv = uv * 2 - 1.;
 
     uint face = GroupID.z;
 
     float3 n = CubeCoordToDir(uv.x,uv.y,face);
-    float3 c =  DiffuseFilteredIBL(material.input, CubeCoordToDir(uv.x,uv.y,face),0.2,1024);
+    float3 c =  DiffuseFilteredIBL(material.input, CubeCoordToDir(uv.x,uv.y,face),material.roughness,material.sampleCount);
 
     n = material.input.SampleLevel(DirToLongitudeLatitude(n),0).xyz;
     material.output[uint3(ThreadID.xy,face)] = float4(c, 1.);

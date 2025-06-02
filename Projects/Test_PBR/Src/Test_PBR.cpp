@@ -19,7 +19,7 @@ void Test_PBR::OnInit()
     hdrSettings.generateMipmaps = true;
     hdrSettings.samplerData.wrap = true;
 
-    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/piazza_bologni_4k.ktx2",hdrSettings);
+    SPtr<Texture2d> hdrSky = Graphics.LoadTexture2D("textures/skybox/piazza_bologni_4k.ktx2", hdrSettings);
 
     //Env To Cubemap
 
@@ -41,7 +41,7 @@ void Test_PBR::OnInit()
     auto envCubemapRT = Graphics.Resources()->GetTexture<Texture>(envCubemapRTHandle);
 
     u32 IBLRTResolution = 1024;
-    u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution,IBLRTResolution);
+    u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
 
     TextureCreationData IBLRTCreationData{};
     IBLRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -76,7 +76,7 @@ void Test_PBR::OnInit()
     auto BRDF_LUTHandle = Graphics.CreateTexture(BRDF_LUTCreationData);
     auto BRDF_LUT = Graphics.Resources()->GetTexture<Texture>(BRDF_LUTHandle);
 
-    ComputeShaderCreationData BRDF_LUT_CS_Data{ "Compute/brdfLUT.compute.slang", "BRDF_LUT"};
+    ComputeShaderCreationData BRDF_LUT_CS_Data{"Compute/brdfLUT.compute.slang", "BRDF_LUT"};
     auto BRDF_LUTCS = Graphics.CreateComputeShader(BRDF_LUT_CS_Data);
     auto BRDF_LUTMat = Graphics.Resources()->AllocateMaterial();
 
@@ -87,23 +87,27 @@ void Test_PBR::OnInit()
     brdfLutCSRenderer.SetShader(BRDF_LUTCS);
     brdfLutCSRenderer.SetMaterial(BRDF_LUTMat);
 
-    Graphics.DispatchCompute(&brdfLutCSRenderer,brdfLUTResolution/32,brdfLUTResolution/32,1);
+    Graphics.DispatchCompute(&brdfLutCSRenderer, brdfLUTResolution / 32, brdfLUTResolution / 32, 1);
 
-
-    ComputeShaderCreationData IBL_ComputeData{ "Compute/IBL.compute.slang", "IBL"};
+    ComputeShaderCreationData IBL_ComputeData{"Compute/IBL.compute.slang", "IBL"};
     ComputeShaderRenderer IBL_CSRenderer;
     auto IBLCS = Graphics.CreateComputeShader(IBL_ComputeData);
     auto IBLMaterial = Graphics.Resources()->AllocateMaterial();
     IBLMaterial->SetShader(IBLCS);
     IBLMaterial->SetProperty("material.input", hdrSky);
-    IBLMaterial->SetProperty("material.output", IBLRT);
-    IBLMaterial->SetProperty("material.roughness", 1);
-    IBLMaterial->SetProperty("material.sampleCount", 1024);
-
     IBL_CSRenderer.SetShader(IBLCS);
     IBL_CSRenderer.SetMaterial(IBLMaterial);
 
-    Graphics.DispatchCompute(&IBL_CSRenderer,IBLRTResolution/32,IBLRTResolution/32,6);
+    for (int mip = 0; mip < IBLRT->mipLevels; mip++)
+    {
+        float roughness = static_cast<float>(mip) / (IBLRT->mipLevels - 1);
+        IBLMaterial->SetProperty("material.output", IBLRT, mip);
+        IBLMaterial->SetProperty("material.roughness", roughness);
+        IBLMaterial->SetProperty("material.sampleCount", 1024);
+        IBLMaterial->SetProperty("material.inputResolution", IBLRT->width>>mip);
+
+        Graphics.DispatchCompute(&IBL_CSRenderer, IBLRTResolution / 32, IBLRTResolution / 32, 6);
+    }
 
     TextureCreationData envCubemapCreationData{};
     envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -118,9 +122,7 @@ void Test_PBR::OnInit()
     auto envCubemapHandle = Graphics.CreateTexture(envCubemapCreationData);
     auto envCubeMap = Graphics.Resources()->GetTexture<Texture>(envCubemapHandle);
 
-
-
-    ComputeShaderCreationData envToCubemapCS_Data{ "Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
+    ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
     auto horizonToCubemapCS = Graphics.CreateComputeShader(envToCubemapCS_Data);
     auto horizonToCubemapMat = Graphics.Resources()->AllocateMaterial();
     horizonToCubemapMat->SetShader(horizonToCubemapCS);
@@ -130,7 +132,7 @@ void Test_PBR::OnInit()
     ComputeShaderRenderer cubeComputeRenderer;
     cubeComputeRenderer.SetShader(horizonToCubemapCS);
     cubeComputeRenderer.SetMaterial(horizonToCubemapMat);
-    Graphics.DispatchCompute(&cubeComputeRenderer,envCubemapResolution,envCubemapResolution,6);
+    Graphics.DispatchCompute(&cubeComputeRenderer, envCubemapResolution, envCubemapResolution, 6);
 
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
@@ -155,7 +157,7 @@ void Test_PBR::OnInit()
     m_puduRenderer.Init(&Graphics, this);
 
     auto cmd = Graphics.BeginSingleTimeCommands();
-        cmd.Blit(IBLRT,envCubeMap);
+    cmd.Blit(IBLRT, envCubeMap);
     Graphics.EndSingleTimeCommands(cmd);
 
     standardShader = Graphics.CreateShader("standardSurface.shader.slang", "standard");
@@ -224,17 +226,17 @@ void Test_PBR::OnInit()
     inputQO->GetMaterial()->SetProperty("material.texture", hdrSky);
     float qoSize = 0.15;
 
-    inputQO->SetPositionAndSize(0.0, 0.0, qoSize*2., qoSize);
+    inputQO->SetPositionAndSize(0.0, 0.0, qoSize * 2., qoSize);
     inputQO->SetPtr(inputQO);
 
     auto oq = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
     oq->GetMaterial()->SetProperty("material.texture", BRDF_LUT);
-    oq->SetPositionAndSize(0.0,qoSize*1.1,0.15,0.15);
+    oq->SetPositionAndSize(0.0, qoSize * 1.1, 0.15, 0.15);
     oq->SetPtr(oq);
 
     m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
     m_arrayQO->GetMaterial()->SetProperty("material.texture", IBLRT);
-    m_arrayQO->SetPositionAndSize(qoSize*1.1,qoSize*1.1,.15,.15);
+    m_arrayQO->SetPositionAndSize(qoSize * 1.1, qoSize * 1.1, .15, .15);
     m_arrayQO->SetTextureIndex(0);
     m_arrayQO->SetLOD(0);
 
@@ -248,7 +250,7 @@ void Test_PBR::OnInit()
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
-    static float angle = PI/4 + PI;
+    static float angle = PI / 4 + PI;
     const float radius = 3.5f;
     const float speed = 0.0001f; // radians per frame
 
@@ -258,7 +260,7 @@ void Test_PBR::OnRun()
     // Calculate the new position of the camera
     float x = radius * cos(angle);
     float z = radius * sin(angle);
-    float y = sin(angle)*radius;
+    float y = sin(angle) * radius;
 
     // Set the camera position and keep it above the XZ plane (upper hemisphere)
     m_camera.Transform.SetLocalPosition({x, y, z});
@@ -277,13 +279,13 @@ void Test_PBR::DrawImGUI()
 
     static int index = 0;
 
-    if (ImGui::SliderInt("Array", &index,0,5))
+    if (ImGui::SliderInt("Array", &index, 0, 5))
     {
         m_arrayQO->SetTextureIndex(index);
     }
 
     static int lod = 0;
-    if (ImGui::SliderInt("Lod",&lod,0,11))
+    if (ImGui::SliderInt("Lod", &lod, 0, 11))
     {
         m_arrayQO->SetLOD(lod);
     }
