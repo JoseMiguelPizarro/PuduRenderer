@@ -27,13 +27,14 @@ public struct GlobalsConstants
 
 public struct Globals
 {
-    float myFloatValue;
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;
-    public SamplerCube IBL; //Convoluted image based lighting env map
     public SamplerCube skybox;
+    public SamplerCube IBL_Specular; //Convoluted image based lighting env map
+    public SamplerCube IBL_Diffuse;
+    public float IBL_Levels;
     public Sampler2D BRDF_LUT;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;

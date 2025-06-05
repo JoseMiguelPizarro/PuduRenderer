@@ -25,7 +25,7 @@ public struct SurfaceInfo {
     public float3 LightDir;
     public float3 LightColor;
     public float3 SpecularColor = float3(1, 1, 1);
-    public float Glossiness;
+    public float Roughness;
     public float Metallic;
     public float ShadowAttenuation;
 };
@@ -136,7 +136,7 @@ float3 BlinnPhongSpecularReflection(SurfaceInfo Surface) {
 
     float3 H = normalize(L + V);
 
-    float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(N, H)), BlinnPhongSpecularAlpha) * Surface.Glossiness;
+    float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(N, H)), BlinnPhongSpecularAlpha) * (1. - Surface.Roughness);
     S += SampleAmbientSpecular(Surface);
 
     return S;
@@ -148,7 +148,7 @@ float3 PhongSpecularReflection(SurfaceInfo Surface) {
     float3 V = Surface.ViewDir;
     float3 R = reflect(Surface.LightDir, Surface.Normal);
 
-    float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(V, R)), 5 * (Surface.Glossiness));
+    float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(V, R)), 5 * (1. - Surface.Roughness));
 
     S = S + SampleAmbientSpecular(Surface);
     return S;
@@ -164,14 +164,20 @@ float3 LambertBRDF(SurfaceInfo Surface) {
     float3 DiffuseReflection = LambertDiffuseReflection(Surface);
     float3 SpecularReflection = BlinnPhongSpecularReflection(Surface);
 
-    return GLOBALS.IBL.SampleLevel(Surface.Normal,0).xyz;
+    return GLOBALS.IBL_Specular.SampleLevel(Surface.Normal,0).xyz;
 }
 
 public float3 StandardSurface(SurfaceInfo Surface) {
     float NdV = dot(Surface.Normal, Surface.ViewDir);
     float3 diffuseColor = Surface.Albedo.rgb * (1.0 - DielectricSpecular) * (1.0 - Surface.Metallic);
     float3 F0 = lerp(DielectricSpecular.xxx,Surface.Albedo.rgb,Surface.Metallic);
-    float2 f_ab = GLOBALS.BRDF_LUT.Sample({NdV,1. - Surface.Glossiness}).xy;
 
-    return LambertBRDF(Surface);
+    float2 f_ab = GLOBALS.BRDF_LUT.Sample({NdV,Surface.Roughness}).xy;
+    float lodLevel = (Surface.Roughness) * GLOBALS.IBL_Levels;
+    float3 radiance = GLOBALS.IBL_Specular.SampleLevel(reflect(-Surface.ViewDir,Surface.Normal),lodLevel).rgb;
+    float3 irradiance = GLOBALS.IBL_Diffuse.SampleLevel(Surface.Normal,0).rgb;
+
+    float3 reflectance = F0 *f_ab.x + f_ab.y;
+
+    return reflectance*radiance + diffuseColor*irradiance;
 }

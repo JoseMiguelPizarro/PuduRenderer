@@ -115,7 +115,7 @@ void Test_PBR::OnInit()
 
     m_scene.AddEntity(inputQO);
     m_scene.AddEntity(oq);
-    m_scene.AddEntity(m_arrayQO);
+    // m_scene.AddEntity(m_arrayQO);
 }
 
 void Test_PBR::OnRun()
