@@ -3,10 +3,10 @@ module PuduCore;
 
 
 public static const float PI = 3.14159265358979f;
-static constexpr float PI_HALF = PI/2;
-static constexpr float TAU = PI*2;
-static constexpr float PI_INVERSE = 1./PI;
-static constexpr float PI_INVERSE_HALF = PI_INVERSE*0.5f;
+public static constexpr float PI_HALF = PI/2;
+public static constexpr float TAU = PI*2;
+public static constexpr float PI_INVERSE = 1./PI;
+public static constexpr float PI_INVERSE_HALF = PI_INVERSE*0.5f;
 
 
 public float LinearizeDepth(float d,float zNear,float zFar)
@@ -205,6 +205,20 @@ public float2 DirToLongitudeLatitude(float3 dir)
     float phi = acos(dir.y);
 
     return float2(theta*PI_INVERSE_HALF + 0.5, phi * PI_INVERSE);
+}
+
+public float3 SphericalToCartesian(float2 phiTheta)
+{
+    float x = cos(phiTheta.x);
+    float z = sin(phiTheta.x);
+    float y = cos(phiTheta.y);
+
+    return float3(x,y,z);
+}
+
+public float3 SphericalToCartesian(float phi, float theta)
+{
+    return SphericalToCartesian({phi,theta});
 }
 
 public float3 ToneMap_Reinhard(float3 color, float exposure)

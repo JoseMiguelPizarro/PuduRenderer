@@ -6,6 +6,7 @@ import PuduGraphicsModule;
 
 
 #define BlinnPhongSpecularAlpha 50.f
+static const float DielectricSpecular = 0.04f;
 
 public interface IDiffuseAmbientSampler {
     public float3 Sample(float3 N);
@@ -167,5 +168,10 @@ float3 LambertBRDF(SurfaceInfo Surface) {
 }
 
 public float3 StandardSurface(SurfaceInfo Surface) {
+    float NdV = dot(Surface.Normal, Surface.ViewDir);
+    float3 diffuseColor = Surface.Albedo.rgb * (1.0 - DielectricSpecular) * (1.0 - Surface.Metallic);
+    float3 F0 = lerp(DielectricSpecular.xxx,Surface.Albedo.rgb,Surface.Metallic);
+    float2 f_ab = GLOBALS.BRDF_LUT.Sample({NdV,1. - Surface.Glossiness}).xy;
+
     return LambertBRDF(Surface);
 }

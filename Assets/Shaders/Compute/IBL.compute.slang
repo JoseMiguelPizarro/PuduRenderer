@@ -10,6 +10,7 @@ struct Input
     float roughness;
     float sampleCount;
     float inputResolution;
+    float outputResolution;
 }
 
 ParameterBlock<Input> material;
@@ -79,7 +80,7 @@ float3 DiffuseFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint Samp
 [numthreads(32, 32, 1)]
 void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
 {
-    float2 uv = (ThreadID.xy)/float2(material.inputResolution);
+    float2 uv = (ThreadID.xy)/float2(material.outputResolution);
     uv = uv * 2 - 1.;
 
     uint face = GroupID.z;

@@ -152,7 +152,7 @@ namespace Pudu
 
     void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
     {
-        u32 IBLRTResolution = 1024;
+        u32 IBLRTResolution = 256;
         u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
 
         SamplerCreationData samplerData{};
@@ -178,18 +178,22 @@ namespace Pudu
         auto IBLMaterial = gfx->Resources()->AllocateMaterial();
         IBLMaterial->SetShader(IBLCS);
         IBLMaterial->SetProperty("material.input", envMap);
+        IBLMaterial->SetProperty("material.inputResolution", envMap->width);
         IBL_CSRenderer.SetShader(IBLCS);
         IBL_CSRenderer.SetMaterial(IBLMaterial);
 
+
         for (int mip = 0; mip < m_IBL->mipLevels; mip++)
         {
+            uint resolution = m_IBL->width>>mip;
+
             float roughness = static_cast<float>(mip) / (m_IBL->mipLevels - 1);
             IBLMaterial->SetProperty("material.output", m_IBL, mip);
             IBLMaterial->SetProperty("material.roughness", roughness);
             IBLMaterial->SetProperty("material.sampleCount", 1024);
-            IBLMaterial->SetProperty("material.inputResolution", m_IBL->width>>mip); //Assuming power of 2 hehe
+            IBLMaterial->SetProperty("material.outputResolution", resolution); //Assuming power of 2 hehe
 
-            gfx->DispatchCompute(&IBL_CSRenderer, IBLRTResolution / 32, IBLRTResolution / 32, 6);
+            gfx->DispatchCompute(&IBL_CSRenderer, resolution / 32, resolution / 32, 6);
         }
 
         TextureCreationData envCubemapCreationData{};
