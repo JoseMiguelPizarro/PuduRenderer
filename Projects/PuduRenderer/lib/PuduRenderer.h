@@ -18,6 +18,7 @@ namespace Pudu
 		SPtr<Texture> GetEnvMap();
 		SPtr<Texture> GetBRDF_LUT();
 		SPtr<Texture> GetIBL();
+		SPtr<Texture> GetIBLDiffuse();
 		SPtr<RenderTexture> GetDepthCopyRT() const;
 		SPtr<RenderTexture> GetColorCopyRT() const;
 
@@ -41,6 +42,7 @@ namespace Pudu
 		SPtr<Texture> m_envMap;
 		SPtr<Texture> m_IBL;
 		SPtr<Texture> m_IBL_Cube;
+		SPtr<Texture> m_IBL_DiffuseCube;
 		SPtr<RenderTexture> m_depthCopyRT;
 		SPtr<RenderTexture> m_colorCopyRT;
 		SPtr<RenderPass> m_depthRenderPass;

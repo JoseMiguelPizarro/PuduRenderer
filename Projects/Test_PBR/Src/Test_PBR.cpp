@@ -107,12 +107,11 @@ void Test_PBR::OnInit()
     oq->SetPtr(oq);
 
     m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
-    m_arrayQO->GetMaterial()->SetProperty("material.texture", m_puduRenderer.GetIBL());
+    m_arrayQO->GetMaterial()->SetProperty("material.texture", m_puduRenderer.GetIBLDiffuse());
     m_arrayQO->SetPositionAndSize(qoSize * 1.1, qoSize * 1.1, .15, .15);
     m_arrayQO->SetTextureIndex(0);
     m_arrayQO->SetLOD(0);
     m_arrayQO->SetPtr(m_arrayQO);
-
 
     m_scene.AddEntity(inputQO);
     m_scene.AddEntity(oq);

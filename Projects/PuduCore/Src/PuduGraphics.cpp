@@ -2537,7 +2537,7 @@ namespace Pudu
         auto compiledShader = m_shaderCompiler.Compile(creationData.shaderPath.string().c_str(),
                                                        {creationData.kernel.c_str()}, true);
 
-        const char* kernelName = "computeMain";
+        const char* kernelName = creationData.kernel.c_str();
         auto kernel = compiledShader.GetKernel(kernelName);
         shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, creationData.name.c_str());
         shader->m_compilationObject = compiledShader;

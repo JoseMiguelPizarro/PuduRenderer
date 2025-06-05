@@ -13,7 +13,16 @@ struct Input
     float outputResolution;
 }
 
+struct IBLDiffuseData
+{
+    SamplerCube input;
+    RWTexture2DArray<float4> output;
+    float inputResolution;
+    float outputResolution;
+}
+
 ParameterBlock<Input> material;
+ParameterBlock<IBLDiffuseData> materialDiffuse;
 
 
 // mipmap filtered samples (GPU Gems 3, 20.4)
@@ -41,7 +50,41 @@ float4 GetImportanceSample(uint SampleIndex, float3 N, float Roughness, uint Sam
     return float4(dir,importanceSample.pdf);
 }
 
-float3 DiffuseFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint SampleCount)
+float3 DiffuseFilteredIBL_BruteForce(SamplerCube EnvMap, float3 N, uint EnvMapResolution)
+{
+    float3 irradiance = 0.;
+    float sampleCount = 0.;
+    float invRes = 1./EnvMapResolution;
+
+    for(uint face = 0; face<6;++face)
+    {
+        for(uint x= 0; x<EnvMapResolution;++x)
+        {
+            for(uint y = 0; y<EnvMapResolution;++y)
+            {
+                float2 uv = (float2(x,y) + 0.5) * invRes;
+                float2 pos = 2.f * uv - 1.f;
+
+                float3 sampleDir = CubeCoordToDir(uv.x,uv.y,face);
+
+                float cosTheta = dot(sampleDir,N);
+
+                if(cosTheta>0.)
+                {
+                    float tmp = 1.f + pos.x * pos.y + pos.y * pos.y;
+                    float weight = 4.f * cosTheta/(sqrt(tmp) * tmp); //Based on solid angle https://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
+
+                    irradiance += EnvMap.SampleLevel(sampleDir,0).xyz * weight;
+                    sampleCount += weight;
+                }
+            }
+        }
+    }
+
+    return irradiance/sampleCount;
+}
+
+float3 SpecularFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint SampleCount)
 {
     uint width, height;
     EnvMap.GetDimensions(width,height);
@@ -92,7 +135,23 @@ void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
             return;
     }
 
-    float3 c =  DiffuseFilteredIBL(material.input, CubeCoordToDir(uv.x,uv.y,face),material.roughness,material.sampleCount);
+    float3 c =  SpecularFilteredIBL(material.input, CubeCoordToDir(uv.x,uv.y,face),material.roughness,material.sampleCount);
 
     material.output[uint3(ThreadID.xy,face)] = float4(c, 1.);
+}
+
+
+[shader("compute")]
+[numthreads(32, 32, 1)]
+void Kernel_DiffuseIBL(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
+{
+    float2 uv = (ThreadID.xy)/float2(materialDiffuse.outputResolution);
+    uv = uv * 2 - 1.;
+
+    uint face = GroupID.z;
+    float3 cubeDir =  CubeCoordToDir(uv.x,uv.y,face);
+
+    float3 c =  DiffuseFilteredIBL_BruteForce(materialDiffuse.input,cubeDir, materialDiffuse.inputResolution);
+
+    materialDiffuse.output[uint3(ThreadID.xy,face)] = float4(c, 1.);
 }
