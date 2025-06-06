@@ -33,23 +33,6 @@ float ComputeLod(float PDF, uint Width, uint Height, uint SampleCount) {
   return 0.5 * log2( 6.0 * w * h / (sampleCountF * PDF));
 }
 
-float4 GetImportanceSample(uint SampleIndex, float3 N, float Roughness, uint SampleCount)
-{
-    float2 xi = HammersleyHemisphere(SampleIndex,SampleCount);
-    MicrofacetDistributionSample importanceSample = GGX(xi,Roughness);
-
-    float3 directionTS = normalize(
-        float3(
-        importanceSample.sinTheta * cos(importanceSample.phi),
-        importanceSample.sinTheta * sin(importanceSample.phi),
-        importanceSample.cosTheta));
-
-    float3x3 TBN = GenerateTBN(N);
-    float3 dir = mul(TBN, directionTS);
-
-    return float4(dir,importanceSample.pdf);
-}
-
 float3 DiffuseFilteredIBL_BruteForce(SamplerCube EnvMap, float3 N, uint EnvMapResolution)
 {
     float3 irradiance = 0.;
@@ -94,7 +77,7 @@ float3 SpecularFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint Sam
 
     for(uint i = 0; i<SampleCount;i++)
     {
-            float4 importanceSample = GetImportanceSample(i, N, Roughness, SampleCount);
+            float4 importanceSample = GetDGGXImportanceSample(i, N, Roughness, SampleCount);
             float3 H = importanceSample.xyz;
             float pdf = importanceSample.w;
 

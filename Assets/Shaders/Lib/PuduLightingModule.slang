@@ -57,12 +57,12 @@ public struct MicrofacetDistributionSample {
 // This implementation is based on https://bruop.github.io/ibl/,
 //  https://www.tobias-franke.eu/log/2014/03/30/notes_on_importance_sampling.html
 // and https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch20.html
-public MicrofacetDistributionSample GGX(float2 Xi, float Roughness) {
+public MicrofacetDistributionSample DGGX_ImportanceSample(float2 Xi, float Roughness) {
   MicrofacetDistributionSample ggx;
 
   // evaluate sampling equations
   float alpha = Roughness * Roughness;
-  ggx.cosTheta = saturate(sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y)));
+  ggx.cosTheta = saturate(sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y))); //cosTheta comes from the inverse GGX_D CDF. Taking xi.y (uniform random value) as input
   ggx.sinTheta = sqrt(1.0 - ggx.cosTheta * ggx.cosTheta);
   ggx.phi = 2.0 * PI * Xi.x;
 
@@ -78,20 +78,27 @@ public MicrofacetDistributionSample GGX(float2 Xi, float Roughness) {
   return ggx;
 }
 
+///<summary>Returns microfacet H vector using importance sampling with a DGGX PDF</summary>
+public float4 GetDGGXImportanceSample(uint SampleIndex, float3 N, float Roughness, uint SampleCount)
+{
+    float2 xi = HammersleyHemisphere(SampleIndex,SampleCount);
+    MicrofacetDistributionSample importanceSample = DGGX_ImportanceSample(xi,Roughness);
 
-float3 ImportanceSampleGGX(float2 Xi, float Roughness, float3 N) {
-     float alpha = Roughness * Roughness;
-     float phi = 2 * PI * Xi.x + random(N.xz) * 0.1;
-     float cosTheta  = sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y));
-     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-     float3 H = float3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-      float3 up = abs(N.z) < 0.999 ?
-         float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-       float3 tangentX = normalize(cross(up, N));
-       float3 tangentY = normalize(cross(N, tangentX));
-       return normalize(tangentX * H.x +
-                        tangentY * H.y +
-                          N * H.z);
+    float3 directionTS = normalize(
+        float3(
+        importanceSample.sinTheta * cos(importanceSample.phi),
+        importanceSample.sinTheta * sin(importanceSample.phi),
+        importanceSample.cosTheta));
+
+     float3 up = abs(N.z) < 0.999 ?
+     float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+     float3 tangentX = normalize(cross(up, N));
+     float3 tangentY = normalize(cross(N, tangentX));
+     float3 H = normalize(tangentX * directionTS.x +
+                            tangentY * directionTS.y +
+                              N * directionTS.z);
+
+    return float4(H,importanceSample.pdf);
 }
 
 const static uint K_Num_Samples = 1024;
@@ -102,8 +109,7 @@ public float3 BRDF(float Ndv, float Roughness) {
     float3 Lut = float3(0.0);
 
     for (uint I = 0u; I < K_Num_Samples; I++) {
-      float2 Xi = HammersleyHemisphere(I, K_Num_Samples);
-      float3 H = ImportanceSampleGGX(Xi, Roughness, N);
+      float3 H = GetDGGXImportanceSample(I,N,Roughness,K_Num_Samples).xyz;
       float3 L = 2.0 * dot(V, H) * H - V;
       float NdL = max(dot(N, L), 0.0);
       float NdV = max(dot(N, V), 0.0);
