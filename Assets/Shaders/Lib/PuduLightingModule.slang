@@ -62,7 +62,7 @@ public MicrofacetDistributionSample DGGX_ImportanceSample(float2 Xi, float Rough
 
   // evaluate sampling equations
   float alpha = Roughness * Roughness;
-  ggx.cosTheta = saturate(sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y))); //cosTheta comes from the inverse GGX_D CDF. Taking xi.y (uniform random value) as input
+  ggx.cosTheta = saturate(sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y))); //cosTheta comes from the inverse GGX_D CDF. Taking xi.y (uniform random value) as input. Derivation can be found on Filament docs
   ggx.sinTheta = sqrt(1.0 - ggx.cosTheta * ggx.cosTheta);
   ggx.phi = 2.0 * PI * Xi.x;
 

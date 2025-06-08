@@ -207,6 +207,8 @@ public float2 DirToLongitudeLatitude(float3 dir)
     return float2(theta*PI_INVERSE_HALF + 0.5, phi * PI_INVERSE);
 }
 
+
+//<summary>Converts spherical coordinates (phi, theta) to Cartesian coordinates (x,y,z). Phi represents azimuthal angle and theta represents polar (zenit) angle</summary>
 public float3 SphericalToCartesian(float2 phiTheta)
 {
     float x = cos(phiTheta.x);
@@ -216,6 +218,7 @@ public float3 SphericalToCartesian(float2 phiTheta)
     return float3(x,y,z);
 }
 
+//<summary>Converts spherical coordinates (phi, theta) to Cartesian coordinates (x,y,z). Phi represents azimuthal angle and theta represents polar (zenit) angle</summary>
 public float3 SphericalToCartesian(float phi, float theta)
 {
     return SphericalToCartesian({phi,theta});

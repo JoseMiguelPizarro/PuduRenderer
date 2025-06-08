@@ -33,6 +33,32 @@ float ComputeLod(float PDF, uint Width, uint Height, uint SampleCount) {
   return 0.5 * log2( 6.0 * w * h / (sampleCountF * PDF));
 }
 
+
+
+float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float N, uint EnvMapResolution, uint SampleCount)
+{
+float3 irradiance = 0;
+float height = 0;
+
+for(uint i = 0; i<SampleCount; i++)
+{
+    float2 xi = HammersleyHemisphere(i, SampleCount);
+
+    float phi = xi.x * TAU;
+
+    float theta = acos(xi.y) * 0.5;
+
+    float3 dir = SphericalToCartesian(phi,theta);
+
+    float pdf = cos(theta) * sin(theta) / TAU;
+
+
+
+
+
+}
+}
+
 float3 DiffuseFilteredIBL_BruteForce(SamplerCube EnvMap, float3 N, uint EnvMapResolution)
 {
     float3 irradiance = 0.;
