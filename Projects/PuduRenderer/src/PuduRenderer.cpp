@@ -243,6 +243,7 @@ namespace Pudu
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.output", IBL_DiffuseRT);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.outputResolution", IBLRTResolution);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.inputResolution", m_skybox->width);
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.sampleCount", 512);
 
         ComputeShaderRenderer IBL_DiffuseCSRenderer;
         IBL_DiffuseCSRenderer.SetShader(IBL_DiffuseCS);

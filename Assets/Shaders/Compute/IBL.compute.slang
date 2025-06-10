@@ -19,6 +19,7 @@ struct IBLDiffuseData
     RWTexture2DArray<float4> output;
     float inputResolution;
     float outputResolution;
+    float sampleCount;
 }
 
 ParameterBlock<Input> material;
@@ -35,28 +36,37 @@ float ComputeLod(float PDF, uint Width, uint Height, uint SampleCount) {
 
 
 
-float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float N, uint EnvMapResolution, uint SampleCount)
+float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float3 N, uint EnvMapResolution, uint SampleCount)
 {
-float3 irradiance = 0;
-float height = 0;
+    float3 irradiance = 0;
+    float weight = 0;
 
-for(uint i = 0; i<SampleCount; i++)
-{
-    float2 xi = HammersleyHemisphere(i, SampleCount);
+     float3 up = abs(N.z) < 0.999 ?
+     float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+     float3 tangentX = normalize(cross(up, N));
+     float3 tangentY = normalize(cross(N, tangentX));
+    for(uint i = 0; i<SampleCount; i++)
+    {
+        float2 xi = HammersleyHemisphere(i, SampleCount);
 
-    float phi = xi.x * TAU;
+        float phi = xi.x * TAU;
 
-    float theta = acos(xi.y) * 0.5;
-
-    float3 dir = SphericalToCartesian(phi,theta);
-
-    float pdf = cos(theta) * sin(theta) / TAU;
-
+        float sinTheta = sqrt(xi.y);
+        float cosTheta = sqrt(1 - xi.y);
+        float sinPhi = sin(phi);
+        float cosPhi = cos(phi);
 
 
+        float3 directionTS = float3(sinTheta * cosPhi,sinTheta*sinPhi,cosTheta);
+
+        float3 H = normalize(tangentX * directionTS.x +
+                                tangentY * directionTS.y +
+                                  N * directionTS.z);
 
 
-}
+        irradiance += EnvMap.SampleLevel(H,0).xyz;
+    }
+    return irradiance/SampleCount;
 }
 
 float3 DiffuseFilteredIBL_BruteForce(SamplerCube EnvMap, float3 N, uint EnvMapResolution)
@@ -160,7 +170,7 @@ void Kernel_DiffuseIBL(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_Gro
     uint face = GroupID.z;
     float3 cubeDir =  CubeCoordToDir(uv.x,uv.y,face);
 
-    float3 c =  DiffuseFilteredIBL_BruteForce(materialDiffuse.input,cubeDir, materialDiffuse.inputResolution);
+    float3 c =  DiffuseFilteredIBL_ImportanceSampled(materialDiffuse.input,cubeDir, materialDiffuse.inputResolution, materialDiffuse.sampleCount);
 
     materialDiffuse.output[uint3(ThreadID.xy,face)] = float4(c, 1.);
 }
