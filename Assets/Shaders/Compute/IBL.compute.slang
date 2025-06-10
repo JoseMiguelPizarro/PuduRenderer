@@ -6,7 +6,7 @@ import "Lib/PuduLightingModule.slang";
 struct Input
 {
     RWTexture2DArray<float4> output;
-    Sampler2D input;
+    SamplerCube input;
     float roughness;
     float sampleCount;
     float inputResolution;
@@ -36,7 +36,7 @@ float ComputeLod(float PDF, uint Width, uint Height, uint SampleCount) {
 
 
 
-float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float3 N, uint EnvMapResolution, uint SampleCount)
+float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float3 N, uint SampleCount)
 {
     float3 irradiance = 0;
     float weight = 0;
@@ -103,7 +103,7 @@ float3 DiffuseFilteredIBL_BruteForce(SamplerCube EnvMap, float3 N, uint EnvMapRe
     return irradiance/sampleCount;
 }
 
-float3 SpecularFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint SampleCount)
+float3 SpecularFilteredIBL(SamplerCube EnvMap, float3 N, float Roughness, uint SampleCount)
 {
     uint width, height;
     EnvMap.GetDimensions(width,height);
@@ -126,7 +126,7 @@ float3 SpecularFilteredIBL(Sampler2D EnvMap, float3 N, float Roughness, uint Sam
             {
                 if(Roughness == 0.0) lod = 0.0;
 
-                float3 sampleColor = EnvMap.SampleLevel(DirToLongitudeLatitude(L),lod).xyz;
+                float3 sampleColor = EnvMap.SampleLevel(L,lod).xyz;
 
                 c += sampleColor*NdL;
                 weight += NdL;
@@ -149,7 +149,7 @@ void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
 
     if(material.roughness == 0)
     {
-            float3 c = material.input.SampleLevel(DirToLongitudeLatitude(CubeCoordToDir(uv.x,uv.y,face)),0).xyz;
+            float3 c = material.input.SampleLevel(CubeCoordToDir(uv.x,uv.y,face),0).xyz;
             material.output[uint3(ThreadID.xy,face)] = float4(c,1.);
             return;
     }
@@ -170,7 +170,7 @@ void Kernel_DiffuseIBL(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_Gro
     uint face = GroupID.z;
     float3 cubeDir =  CubeCoordToDir(uv.x,uv.y,face);
 
-    float3 c =  DiffuseFilteredIBL_ImportanceSampled(materialDiffuse.input,cubeDir, materialDiffuse.inputResolution, materialDiffuse.sampleCount);
+    float3 c =  DiffuseFilteredIBL_ImportanceSampled(materialDiffuse.input,cubeDir, materialDiffuse.sampleCount);
 
     materialDiffuse.output[uint3(ThreadID.xy,face)] = float4(c, 1.);
 }

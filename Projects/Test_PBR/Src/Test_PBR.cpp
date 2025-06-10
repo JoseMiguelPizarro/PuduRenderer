@@ -42,6 +42,14 @@ void Test_PBR::OnInit()
     settings.generateMipmaps = true;
     settings.samplerData.wrap = true;
 
+    TextureLoadSettings skyboxLoadSettings{};
+    skyboxLoadSettings.bindless = false;
+    skyboxLoadSettings.name = "Skybox";
+    skyboxLoadSettings.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    skyboxLoadSettings.samplerData.wrap = true;
+
+    auto skybox = Graphics.LoadTextureHorizonAsCube("textures/skybox/piazza_bologni_4k.ktx2", skyboxLoadSettings);
+    m_puduRenderer.SetSkyBox(skybox);
 
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
@@ -113,7 +121,7 @@ void Test_PBR::OnInit()
     m_arrayQO->SetLOD(0);
     m_arrayQO->SetPtr(m_arrayQO);
 
-    m_scene.AddEntity(inputQO);
+  //  m_scene.AddEntity(inputQO);
     m_scene.AddEntity(oq);
     // m_scene.AddEntity(m_arrayQO);
 }

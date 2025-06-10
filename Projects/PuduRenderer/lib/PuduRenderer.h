@@ -34,14 +34,14 @@ namespace Pudu
 		void InitLightingBuffer(PuduGraphics* graphics);
 		void InitConstantsBuffer(PuduGraphics* graphics);
 		void InitBRDF_LUT(PuduGraphics* gfx);
-		void InitSkybox(PuduGraphics* gfx);
 		void InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap);
+
 
 		SPtr<Texture> m_BRDF_LUT;
 		SPtr<Texture> m_skybox;
 		SPtr<Texture> m_envMap;
 		SPtr<Texture> m_IBL;
-		SPtr<Texture> m_IBL_Cube;
+		SPtr<Texture> m_IBL_SpecularCube;
 		SPtr<Texture> m_IBL_DiffuseCube;
 		SPtr<RenderTexture> m_depthCopyRT;
 		SPtr<RenderTexture> m_colorCopyRT;

@@ -65,7 +65,7 @@ namespace Pudu
 
         InitWindow();
         InitVulkan();
-        InitializeDefaultResources();
+        InitDefaultResources();
 
         m_initialized = true;
     }
@@ -484,7 +484,7 @@ namespace Pudu
         vkQueueSubmit2(m_computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
-    void PuduGraphics::InitializeDefaultResources()
+    void PuduGraphics::InitDefaultResources()
     {
         MeshCreationData defaultQuadMeshData;
         defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
@@ -502,10 +502,18 @@ namespace Pudu
         m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
         m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
 
-        InitializeDefaultTextures();
+        ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
+        m_horizonToCubeCompute = CreateComputeShader(envToCubemapCS_Data);
+        auto horizonToCubemapMat = CreateMaterial();
+        horizonToCubemapMat->SetShader(m_horizonToCubeCompute);
+
+        m_horizonToCubemapCSRenderer.SetShader(m_horizonToCubeCompute);
+        m_horizonToCubemapCSRenderer.SetMaterial(horizonToCubemapMat);
+
+        InitDefaultTextures();
     }
 
-    void PuduGraphics::InitializeDefaultTextures()
+    void PuduGraphics::InitDefaultTextures()
     {
         TextureCreationData textureCreationData;
         textureCreationData.height = 2;
@@ -1362,7 +1370,9 @@ namespace Pudu
             vkDestroyImageView(m_device, texture->vkImageViewHandle, m_allocatorPtr);
             vkDestroySampler(m_device, texture->Sampler.vkHandle, m_allocatorPtr);
 
-            vkFreeMemory(m_device, texture->vkMemoryHandle, m_allocatorPtr);
+            vmaFreeMemory(m_VmaAllocator,texture->vmaAllocation);
+
+            //vkFreeMemory(m_device, texture->vkMemoryHandle, m_allocatorPtr);
 
             texture->Destroy();
         }
@@ -1575,6 +1585,11 @@ namespace Pudu
                                             const VkDescriptorSetLayout* layouts) const
     {
         CreateDescriptorSets(m_bindlessDescriptorPool, descriptorSet, setsCount, layouts);
+    }
+
+    SPtr<ComputeShader> PuduGraphics::GetHorizonMapToCubeComputeShader()
+    {
+        return m_horizonToCubeCompute;
     }
 
     SPtr<Texture> PuduGraphics::GetDefaultWhiteTexture()
@@ -2237,7 +2252,7 @@ namespace Pudu
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.layerCount = texture->layers;
         barrier.subresourceRange.levelCount = 1;
 
         for (u32 i = 1; i < texture->mipLevels; i++)
@@ -2269,7 +2284,7 @@ namespace Pudu
             blit.srcOffsets[1] = {static_cast<i32>(mipWidth), static_cast<i32>(mipHeight), 1};
             blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
+            blit.srcSubresource.layerCount = texture->layers;
             blit.srcSubresource.mipLevel = srcMip;
 
             mipWidth = std::max(mipWidth / 2, 1u);
@@ -2279,7 +2294,7 @@ namespace Pudu
             blit.dstOffsets[1] = {static_cast<i32>(mipWidth), static_cast<i32>(mipHeight), 1};
             blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
+            blit.dstSubresource.layerCount = texture->layers;
             blit.dstSubresource.mipLevel = dstMip;
 
             cmd->Blit(texture, texture, VK_FILTER_LINEAR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -2687,6 +2702,57 @@ namespace Pudu
         return std::dynamic_pointer_cast<TextureCube>(LoadAndCreateTexture(filePath, settings));
     }
 
+    SPtr<TextureCube> PuduGraphics::LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings)
+    {
+        ASSERT(fs::exists(filePath), "Trying to load a non-existent texture {}. Did you check the path is correct?", filePath.string());
+
+        creationSettings.textureType = TextureType::Texture2D;
+        auto horizonTexture = LoadAndCreateTexture(filePath, creationSettings);
+
+        u32 cubemapResolution = horizonTexture->width/4;
+        SamplerCreationData samplerData;
+        TextureCreationData cubemapRTCreationData{};
+        cubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        cubemapRTCreationData.width = cubemapResolution;
+        cubemapRTCreationData.height = cubemapResolution;
+        cubemapRTCreationData.textureType = TextureType::Texture_2D_Array;
+        cubemapRTCreationData.generateMipmaps = false;
+        cubemapRTCreationData.name = "EnvCubeRT";
+        cubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
+        cubemapRTCreationData.layers = 6;
+        cubemapRTCreationData.samplerData = &samplerData;
+
+        auto envCubemapRTHandle = CreateTexture(cubemapRTCreationData);
+        auto cubemapRT = Resources()->GetTexture<Texture>(envCubemapRTHandle);
+
+        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.input",horizonTexture);
+        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.output",cubemapRT);
+
+        DispatchCompute(&m_horizonToCubemapCSRenderer, cubemapResolution / 32, cubemapResolution / 32, 6);
+
+        TextureCreationData cubemapCreationData{};
+        cubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        cubemapCreationData.width = cubemapResolution;
+        cubemapCreationData.height = cubemapResolution;
+        cubemapCreationData.generateMipmaps = false;
+        cubemapCreationData.textureType = TextureType::Texture_Cube;
+        cubemapCreationData.name = horizonTexture->name.c_str();
+        cubemapCreationData.layers = 6;
+        cubemapCreationData.samplerData = &samplerData;
+
+        auto cubemapHandle = CreateTexture(cubemapCreationData);
+        auto cubeMap = Resources()->GetTexture<TextureCube>(cubemapHandle);
+        auto cmd = BeginSingleTimeCommands();
+        cmd.Blit(cubemapRT, cubeMap);
+        // gfx->GenerateTextureMipMaps(m_skybox.get(),&cmd);
+        EndSingleTimeCommands(cmd);
+
+        DestroyTexture(horizonTexture);
+        DestroyTexture(cubemapRT);
+
+        return cubeMap;
+    }
+
 
     void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height,
                                          std::vector<VkBufferImageCopy2>* regions)
@@ -2700,6 +2766,9 @@ namespace Pudu
 
     SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureLoadSettings& settings)
     {
+        ASSERT(fs::exists(path), "Trying to load a non-existent texture {}. Did you check the path is correct?", path.string());
+        ASSERT(settings.name!=nullptr, "Trying to load a texture without a name! Be sure to set settings.name");
+
         bool isKTX = path.extension() == ".ktx" || path.extension() == ".ktx2";
         void* pixelsData = nullptr;
         void* sourceData = nullptr;

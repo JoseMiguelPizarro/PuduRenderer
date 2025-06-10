@@ -220,10 +220,13 @@ namespace Pudu
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
 		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
+		SPtr<Material> CreateMaterial();
 
 		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);
 		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureLoadSettings& creationSettings);
+		//<summary>Loads a texture as a horizonmap and converts it to a cubemap</summary>
+		SPtr<TextureCube> LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings);
 		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
 		void CreateVKTexture(Texture* texture);
 		void CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler);
@@ -254,10 +257,15 @@ namespace Pudu
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
+
+#pragma region DefaultResources
+		SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
 		SPtr<Texture> GetDefaultWhiteTexture();
 		SPtr<Shader> GetDefaultOverlayShader();
 		SPtr<Shader> GetDefaultOverlayTextureArrayShader();
 		SPtr<Mesh> GetDefaultQuad();
+#pragma endregion
+
 	private:
 		friend class GPUResourcesManager;
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
@@ -274,8 +282,8 @@ namespace Pudu
 		/// Setup and dispatch compute workload for the frame
 		/// </summary>
 		void SubmitComputeWork(RenderFrameData& frameData);
-		void InitializeDefaultResources();
-		void InitializeDefaultTextures();
+		void InitDefaultResources();
+		void InitDefaultTextures();
 
 		void InitDebugUtilsObjectName();
 
@@ -359,6 +367,9 @@ namespace Pudu
 		SPtr<Mesh> m_defaultPlane;
 		SPtr<Shader> m_defaultOverlayShader;
 		SPtr<Shader> m_defaultOverlayTextureArrayShader;
+		SPtr<ComputeShader> m_horizonToCubeCompute;
+
+		ComputeShaderRenderer m_horizonToCubemapCSRenderer;
 
 #pragma endregion
 		static PuduGraphics* s_instance;
@@ -415,6 +426,11 @@ namespace Pudu
 
 		AntialiasingSettings m_antialiasingSettings;
 	};
+
+	inline SPtr<Material> PuduGraphics::CreateMaterial()
+	{
+		return m_resources.AllocateMaterial();
+	}
 
 
 	void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)

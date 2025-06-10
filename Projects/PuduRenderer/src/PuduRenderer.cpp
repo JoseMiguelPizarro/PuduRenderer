@@ -23,6 +23,8 @@ namespace Pudu
     {
         m_skybox = skybox;
         m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox", skybox);
+
+        InitIBL(graphics, m_skybox);
     }
 
     SPtr<Texture> PuduRenderer::GetSkybox()
@@ -92,69 +94,8 @@ namespace Pudu
         brdfLutCSRenderer.SetMaterial(BRDF_LUTMat);
 
         gfx->DispatchCompute(&brdfLutCSRenderer, brdfLUTResolution / 32, brdfLUTResolution / 32, 1);
-    }
 
-    void PuduRenderer::InitSkybox(PuduGraphics* gfx)
-    {
-        SamplerCreationData samplerData{};
-        TextureLoadSettings hdrSettings{};
-        hdrSettings.bindless = false;
-        hdrSettings.name = "hdr_sky";
-        hdrSettings.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        hdrSettings.generateMipmaps = true;
-        hdrSettings.samplerData.wrap = true;
-
-        auto horizonSkybox = gfx->LoadTexture2D("textures/skybox/piazza_bologni_4k.ktx2", hdrSettings);
-        m_envMap = horizonSkybox;
-
-        u32 envCubemapResolution = 512;
-        TextureCreationData envCubemapRTCreationData{};
-        envCubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        envCubemapRTCreationData.width = envCubemapResolution;
-        envCubemapRTCreationData.height = envCubemapResolution;
-        envCubemapRTCreationData.textureType = TextureType::Texture_2D_Array;
-        envCubemapRTCreationData.generateMipmaps = false;
-        envCubemapRTCreationData.name = "EnvCubeRT";
-        envCubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
-        envCubemapRTCreationData.layers = 6;
-        envCubemapRTCreationData.samplerData = &samplerData;
-
-        auto envCubemapRTHandle = gfx->CreateTexture(envCubemapRTCreationData);
-        auto envCubemapRT = gfx->Resources()->GetTexture<Texture>(envCubemapRTHandle);
-
-        ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
-        auto horizonToCubemapCS = gfx->CreateComputeShader(envToCubemapCS_Data);
-        auto horizonToCubemapMat = gfx->Resources()->AllocateMaterial();
-        horizonToCubemapMat->SetShader(horizonToCubemapCS);
-        horizonToCubemapMat->SetProperty("material.output", envCubemapRT);
-        horizonToCubemapMat->SetProperty("material.input", horizonSkybox);
-
-        ComputeShaderRenderer cubeComputeRenderer;
-        cubeComputeRenderer.SetShader(horizonToCubemapCS);
-        cubeComputeRenderer.SetMaterial(horizonToCubemapMat);
-        gfx->DispatchCompute(&cubeComputeRenderer, envCubemapResolution / 32, envCubemapResolution / 32, 6);
-
-        TextureCreationData skyboxTextureCreationData{};
-        skyboxTextureCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        skyboxTextureCreationData.width = envCubemapResolution;
-        skyboxTextureCreationData.height = envCubemapResolution;
-        skyboxTextureCreationData.generateMipmaps = false;
-        skyboxTextureCreationData.textureType = TextureType::Texture_Cube;
-        skyboxTextureCreationData.name = "Skybox";
-        skyboxTextureCreationData.layers = 6;
-        skyboxTextureCreationData.samplerData = &samplerData;
-        // skyboxTextureCreationData.mipmaps = Texture::CalculateMipLevels(envCubemapResolution,envCubemapResolution);
-
-        auto skyboxHandle = gfx->CreateTexture(skyboxTextureCreationData);
-        m_skybox = gfx->Resources()->GetTexture<Texture>(skyboxHandle);
-
-
-        auto cmd = gfx->BeginSingleTimeCommands();
-            cmd.Blit(envCubemapRT, m_skybox);
-            // gfx->GenerateTextureMipMaps(m_skybox.get(),&cmd);
-        gfx->EndSingleTimeCommands(cmd);
-
-        gfx->DestroyTexture(envCubemapRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.BRDF_LUT", m_BRDF_LUT);
     }
 
     void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
@@ -202,22 +143,29 @@ namespace Pudu
             gfx->DispatchCompute(&IBL_CSRenderer, resolution / 32, resolution / 32, 6);
         }
 
-        TextureCreationData envCubemapCreationData{};
-        envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        envCubemapCreationData.width = IBLRTResolution;
-        envCubemapCreationData.height = IBLRTResolution;
-        envCubemapCreationData.generateMipmaps = false;
-        envCubemapCreationData.textureType = TextureType::Texture_Cube;
-        envCubemapCreationData.name = "EnvCube";
-        envCubemapCreationData.layers = 6;
-        envCubemapCreationData.samplerData = &samplerData;
-        envCubemapCreationData.mipmaps = IBLMips;
-
-        auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
-        m_IBL_Cube = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
+        if (m_IBL_SpecularCube != nullptr &&
+            (m_IBL_SpecularCube->width != IBLRTResolution || m_IBL_SpecularCube->height != IBLRTResolution))
+        {
+            gfx->DestroyTexture(m_IBL_SpecularCube);
+        }
+        else
+        {
+            TextureCreationData envCubemapCreationData{};
+            envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+            envCubemapCreationData.width = IBLRTResolution;
+            envCubemapCreationData.height = IBLRTResolution;
+            envCubemapCreationData.generateMipmaps = false;
+            envCubemapCreationData.textureType = TextureType::Texture_Cube;
+            envCubemapCreationData.name = ("IBL_SpecularCube_" + envMap->name).c_str();
+            envCubemapCreationData.layers = 6;
+            envCubemapCreationData.samplerData = &samplerData;
+            envCubemapCreationData.mipmaps = IBLMips;
+            auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
+            m_IBL_SpecularCube = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
+        }
 
         auto cmd = gfx->BeginSingleTimeCommands();
-        cmd.Blit(m_IBL, m_IBL_Cube);
+        cmd.Blit(m_IBL, m_IBL_SpecularCube);
         gfx->EndSingleTimeCommands(cmd);
 
         TextureCreationData IBLDiffuseRTCreationData{};
@@ -251,24 +199,37 @@ namespace Pudu
 
         gfx->DispatchCompute(&IBL_DiffuseCSRenderer, IBLRTResolution / 32, IBLRTResolution / 32, 6);
 
-        TextureCreationData IBLDiffuseCubeCreationData{};
-        IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        IBLDiffuseCubeCreationData.width = IBLRTResolution;
-        IBLDiffuseCubeCreationData.height = IBLRTResolution;
-        IBLDiffuseCubeCreationData.generateMipmaps = false;
-        IBLDiffuseCubeCreationData.textureType = TextureType::Texture_Cube;
-        IBLDiffuseCubeCreationData.name = "IBL_Cube";
-        IBLDiffuseCubeCreationData.layers = 6;
-        IBLDiffuseCubeCreationData.samplerData = &samplerData;
 
-        auto IBLDiffuseCubeHandle = gfx->CreateTexture(IBLDiffuseCubeCreationData);
-        m_IBL_DiffuseCube = gfx->Resources()->GetTexture<Texture>(IBLDiffuseCubeHandle);
+        if (m_IBL_DiffuseCube != nullptr &&
+            (m_IBL_DiffuseCube->width != IBLRTResolution || m_IBL_DiffuseCube->height != IBLRTResolution))
+        {
+            gfx->DestroyTexture(m_IBL_SpecularCube);
+        }
+        else
+        {
+            TextureCreationData IBLDiffuseCubeCreationData{};
+            IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+            IBLDiffuseCubeCreationData.width = IBLRTResolution;
+            IBLDiffuseCubeCreationData.height = IBLRTResolution;
+            IBLDiffuseCubeCreationData.generateMipmaps = false;
+            IBLDiffuseCubeCreationData.textureType = TextureType::Texture_Cube;
+            IBLDiffuseCubeCreationData.name = ("IBL_DiffuseCube_" + envMap->name).c_str();
+            IBLDiffuseCubeCreationData.layers = 6;
+            IBLDiffuseCubeCreationData.samplerData = &samplerData;
+
+            auto IBLDiffuseCubeHandle = gfx->CreateTexture(IBLDiffuseCubeCreationData);
+            m_IBL_DiffuseCube = gfx->Resources()->GetTexture<Texture>(IBLDiffuseCubeHandle);
+        }
 
         auto cmd2 = gfx->BeginSingleTimeCommands();
         cmd2.Blit(IBL_DiffuseRT, m_IBL_DiffuseCube);
         gfx->EndSingleTimeCommands(cmd2);
 
         gfx->DestroyTexture(IBL_DiffuseRT);
+
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_SpecularCube);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels - 1);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
     }
 
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -287,9 +248,7 @@ namespace Pudu
 
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
-        InitSkybox(graphics);
         InitBRDF_LUT(graphics);
-        InitIBL(graphics, m_envMap);
 
         auto depthRT = graphics->GetRenderTexture();
         depthRT->depth = 1;
@@ -474,11 +433,6 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.BRDF_LUT", m_BRDF_LUT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_Cube);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_Cube->mipLevels - 1);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox", m_skybox);
     }
 
     static bool isFirstFrame = true;
