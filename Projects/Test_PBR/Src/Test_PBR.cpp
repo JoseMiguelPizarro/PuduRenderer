@@ -60,6 +60,15 @@ void Test_PBR::OnInit()
     SPtr<Texture2d> heightTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_height.png",
                                                            settings);
 
+
+    SPtr<Texture2d> silverAlbedoTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_albedo.png", settings);
+    SPtr<Texture2d> silverNormalTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_normal-ogl.png", settings);
+    SPtr<Texture2d> silverRoughnessTexture = Graphics.
+        LoadTexture2D("textures/silver-bl/silver_roughness.png", settings);
+    SPtr<Texture2d> silverMetalnessTexture = Graphics.
+        LoadTexture2D("textures/silver-bl/silver_metallic.png", settings);
+    SPtr<Texture2d> silverHeightTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_height.png", settings);
+
     projection.nearPlane = 5;
     projection.farPlane = 50;
     directionalLight = {};
@@ -82,10 +91,11 @@ void Test_PBR::OnInit()
     auto sphereEntity = std::dynamic_pointer_cast<RenderEntity>(sphere);
     auto material = sphereEntity->GetModel()->Materials[0];
     material->SetShader(standardShader);
-    material->SetProperty("material.albedoTex", albedoTexture);
-    material->SetProperty("material.normalTex", normalTexture);
-    material->SetProperty("material.roughnessTex", roughnessTexture);
-    material->SetProperty("material.heightTex", heightTexture);
+    material->SetProperty("material.albedoTex", silverAlbedoTexture);
+    material->SetProperty("material.normalTex", silverNormalTexture);
+    material->SetProperty("material.roughnessTex", silverRoughnessTexture);
+    material->SetProperty("material.heightTex", silverHeightTexture);
+    material->SetProperty("material.metallicTex", silverMetalnessTexture);
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 

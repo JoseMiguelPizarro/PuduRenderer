@@ -169,6 +169,8 @@ namespace Pudu
         /// <param name="dst">Destination texture</param>
         void Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst);
 
+        ///<summary>Blits src texture to dst texture using a linear filter through all mip levels</summary>
+        void BlitMips(const SPtr<Texture>& src, const SPtr<Texture>& dst);
         /// <summary>
         /// Copies source texture to destination texture using specified filter
         /// </summary>

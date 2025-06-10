@@ -77,6 +77,7 @@ float4 fragmentMain(VSOut input)
     m.LightColor = float3(1,1,1);
     m.SpecularColor = float3(1,1,1);
     m.Normal = normalWS;
+    m.Metallic = material.metallicTex.Sample(uv).x;
     m.Roughness = material.roughnessTex.Sample(uv).x;
     m.ViewDir = viewDir;
     col.rgb = StandardSurface(m);

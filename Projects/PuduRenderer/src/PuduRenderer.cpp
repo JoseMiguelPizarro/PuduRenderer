@@ -166,7 +166,6 @@ namespace Pudu
 
         auto cmd = gfx->BeginSingleTimeCommands();
         cmd.Blit(m_IBL, m_IBL_SpecularCube);
-        gfx->EndSingleTimeCommands(cmd);
 
         TextureCreationData IBLDiffuseRTCreationData{};
         IBLDiffuseRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -221,9 +220,8 @@ namespace Pudu
             m_IBL_DiffuseCube = gfx->Resources()->GetTexture<Texture>(IBLDiffuseCubeHandle);
         }
 
-        auto cmd2 = gfx->BeginSingleTimeCommands();
-        cmd2.Blit(IBL_DiffuseRT, m_IBL_DiffuseCube);
-        gfx->EndSingleTimeCommands(cmd2);
+        cmd.Blit(IBL_DiffuseRT, m_IBL_DiffuseCube);
+        gfx->EndSingleTimeCommands(cmd);
 
         gfx->DestroyTexture(IBL_DiffuseRT);
 
