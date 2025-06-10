@@ -51,18 +51,16 @@ float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float3 N, uint S
 
         float phi = xi.x * TAU;
 
-        float sinTheta = sqrt(xi.y);
-        float cosTheta = sqrt(1 - xi.y);
+        float cosTheta = sqrt(xi.y);
+        float sinTheta = sqrt(1 - xi.y);
         float sinPhi = sin(phi);
         float cosPhi = cos(phi);
-
 
         float3 directionTS = float3(sinTheta * cosPhi,sinTheta*sinPhi,cosTheta);
 
         float3 H = normalize(tangentX * directionTS.x +
                                 tangentY * directionTS.y +
                                   N * directionTS.z);
-
 
         irradiance += EnvMap.SampleLevel(H,0).xyz;
     }

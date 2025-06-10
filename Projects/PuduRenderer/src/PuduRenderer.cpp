@@ -132,13 +132,13 @@ namespace Pudu
 
         for (int mip = 0; mip < m_IBL->mipLevels; mip++)
         {
-            uint resolution = m_IBL->width >> mip;
+            uint resolution = m_IBL->width >> mip; //Assuming power of 2 hehe
 
             float roughness = static_cast<float>(mip) / (m_IBL->mipLevels - 1);
             IBLMaterial->SetProperty("material.output", m_IBL, mip);
             IBLMaterial->SetProperty("material.roughness", roughness);
             IBLMaterial->SetProperty("material.sampleCount", 1024);
-            IBLMaterial->SetProperty("material.outputResolution", resolution); //Assuming power of 2 hehe
+            IBLMaterial->SetProperty("material.outputResolution", resolution);
 
             gfx->DispatchCompute(&IBL_CSRenderer, resolution / 32, resolution / 32, 6);
         }
@@ -190,7 +190,7 @@ namespace Pudu
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.output", IBL_DiffuseRT);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.outputResolution", IBLRTResolution);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.inputResolution", m_skybox->width);
-        IBL_DiffuseMaterial->SetProperty("materialDiffuse.sampleCount", 512);
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.sampleCount", 1024);
 
         ComputeShaderRenderer IBL_DiffuseCSRenderer;
         IBL_DiffuseCSRenderer.SetShader(IBL_DiffuseCS);

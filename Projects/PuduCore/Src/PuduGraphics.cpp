@@ -2743,8 +2743,8 @@ namespace Pudu
         auto cubemapHandle = CreateTexture(cubemapCreationData);
         auto cubeMap = Resources()->GetTexture<TextureCube>(cubemapHandle);
         auto cmd = BeginSingleTimeCommands();
+
         cmd.Blit(cubemapRT, cubeMap);
-        // gfx->GenerateTextureMipMaps(m_skybox.get(),&cmd);
         EndSingleTimeCommands(cmd);
 
         DestroyTexture(horizonTexture);

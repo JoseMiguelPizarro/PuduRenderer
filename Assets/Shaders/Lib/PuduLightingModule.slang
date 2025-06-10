@@ -64,7 +64,7 @@ public MicrofacetDistributionSample DGGX_ImportanceSample(float2 Xi, float Rough
   float alpha = Roughness * Roughness;
   ggx.cosTheta = saturate(sqrt((1.0 - Xi.y) / (1.0 + (alpha * alpha - 1.0) * Xi.y))); //cosTheta comes from the inverse GGX_D CDF. Taking xi.y (uniform random value) as input. Derivation can be found on Filament docs
   ggx.sinTheta = sqrt(1.0 - ggx.cosTheta * ggx.cosTheta);
-  ggx.phi = 2.0 * PI * Xi.x;
+  ggx.phi = TAU * Xi.x;
 
   // evaluate GGX pdf (for half vector)
   ggx.pdf = D_GGX(ggx.cosTheta, alpha);
@@ -178,7 +178,7 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 diffuseColor = Surface.Albedo.rgb * (1.0 - DielectricSpecular) * (1.0 - Surface.Metallic);
     float3 F0 = lerp(DielectricSpecular.xxx,Surface.Albedo.rgb,Surface.Metallic);
 
-    float2 f_ab = GLOBALS.BRDF_LUT.Sample({NdV,Surface.Roughness}).xy;
+    float2 f_ab = GLOBALS.BRDF_LUT.SampleLevel(float2(NdV,Surface.Roughness),0).xy;
     float lodLevel = (Surface.Roughness) * GLOBALS.IBL_Levels;
     float3 radiance = GLOBALS.IBL_Specular.SampleLevel(reflect(-Surface.ViewDir,Surface.Normal),lodLevel).rgb;
     float3 irradiance = GLOBALS.IBL_Diffuse.SampleLevel(Surface.Normal,0).rgb;
