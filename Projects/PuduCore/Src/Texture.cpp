@@ -78,6 +78,6 @@ namespace Pudu
 
     u32 Texture::CalculateMipLevels(u32 width, u32 height)
     {
-        return min( static_cast<u32>(std::floor(std::log2(std::max(width,height))))+ 1,K_MAX_MIP_LEVELS);
+        return static_cast<u32>(std::floor(std::log2(std::max(width,height)))) + 1;
     }
 }
