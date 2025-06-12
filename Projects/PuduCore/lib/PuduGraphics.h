@@ -261,6 +261,7 @@ namespace Pudu
 #pragma region DefaultResources
 		SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
 		SPtr<Texture> GetDefaultWhiteTexture();
+		SPtr<Texture> GetDefaultBlackTexture();
 		SPtr<Texture> GetDefaultNormalMapTexture();
 		SPtr<Texture> GetDefaultMetallicRoughnessTexture();
 		
@@ -367,6 +368,7 @@ namespace Pudu
 
 #pragma region DefaultResources
 		GPUResourceHandle<Texture> m_defaultWhiteTexture;
+		GPUResourceHandle<Texture> m_defaultBlackTexture;
 		GPUResourceHandle<Texture> m_defaultNormalmapTexture;
 		GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
 		SPtr<Mesh> m_defaultQuad;

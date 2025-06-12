@@ -549,13 +549,36 @@ namespace Pudu
             b{0}, b{128}, b{0}, b{128}, // G
         };
 
-        // Create default normal texture data
         std::byte normalData[] = {
-            b{128}, b{128}, b{255}, b{255}, // First pixel for flat normal
-            b{128}, b{128}, b{255}, b{255}, // Second pixel for flat normal
-            b{128}, b{128}, b{255}, b{255}, // Third pixel for flat normal
-            b{128}, b{128}, b{255}, b{255} // Fourth pixel for flat normal
+            b{128}, b{128}, b{255}, b{255},
+            b{128}, b{128}, b{255}, b{255},
+            b{128}, b{128}, b{255}, b{255},
+            b{128}, b{128}, b{255}, b{255}
         };
+
+        std::byte blackData[] = {
+            b{0}, b{0}, b{0}, b{255},
+            b{0}, b{0}, b{0}, b{255},
+            b{0}, b{0}, b{0}, b{255},
+            b{0}, b{0}, b{0}, b{255}
+        };
+
+        TextureCreationData blackTextureData;
+        blackTextureData.height = 2;
+        blackTextureData.width = 2;
+        blackTextureData.format = VK_FORMAT_R8G8B8A8_UNORM; // Format for RGBA
+        blackTextureData.depth = 1;
+        blackTextureData.layers = 1;
+        blackTextureData.bindless = true;
+        blackTextureData.name = "DefaultBlack";
+        blackTextureData.flags = TextureFlags::Sample;
+        blackTextureData.pixels = blackData;
+        blackTextureData.dataSize = sizeof(blackData);
+
+        SamplerCreationData blackSamplerData{true};
+        blackTextureData.samplerData = &blackSamplerData;
+
+        m_defaultBlackTexture = CreateTexture(blackTextureData);
 
         TextureCreationData normalTextureData;
         normalTextureData.height = 2;
@@ -1644,6 +1667,11 @@ namespace Pudu
     SPtr<Texture> PuduGraphics::GetDefaultWhiteTexture()
     {
         return m_resources.GetTexture<Texture>(m_defaultWhiteTexture);
+    }
+
+    SPtr<Texture> PuduGraphics::GetDefaultBlackTexture()
+    {
+        return m_resources.GetTexture<Texture>(m_defaultBlackTexture);
     }
 
     SPtr<Texture> PuduGraphics::GetDefaultNormalMapTexture()
@@ -2980,11 +3008,11 @@ namespace Pudu
             settings.name = "Albedo";
             settings.samplerData.wrap = true;
 
-            material->SetProperty("material.baseColorTex", LoadTexture2D(path, settings));
+            material->SetProperty("material.albedoTex", LoadTexture2D(path, settings));
         }
         else
         {
-            material->SetProperty("material.baseColorTex", GetDefaultWhiteTexture());
+            material->SetProperty("material.albedoTex", GetDefaultWhiteTexture());
         }
 
         if (data.Material.hasNormalMap)
@@ -2996,11 +3024,25 @@ namespace Pudu
             normalCreation.name = "Normal";
             normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-            material->SetProperty("material.normalTex", LoadTexture2D(path, normalCreation));
+            material->SetProperty("material.normalTex", LoadTexture2D(data.Material.NormalMapPath, normalCreation));
         }else
         {
-            material->SetProperty("material.normalTex", GetDefaultWhiteTexture());
+            material->SetProperty("material.normalTex", GetDefaultNormalMapTexture());
         }
+        if (data.Material.hasMetallicRoughness)
+        {
+            TextureLoadSettings metallicRoughnessCreation;
+            metallicRoughnessCreation.bindless = true;
+            metallicRoughnessCreation.name = "Roughness";
+            metallicRoughnessCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+            material->SetProperty("material.metallicRoughnessTex", LoadTexture2D(data.Material.MetallicRoughnessPath, metallicRoughnessCreation));
+        }else
+        {
+            material->SetProperty("material.metallicRoughnessTex", GetDefaultMetallicRoughnessTexture());
+        }
+
+        material->SetProperty("material.heightTex", GetDefaultBlackTexture());
 
         auto m = CreateModel(mesh, material);
         m.Name = data.Name;

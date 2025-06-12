@@ -99,6 +99,8 @@ void Test_PBR::OnInit()
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
+    auto testModel = FileManager::LoadGltfScene("models/damagedHelmet/damagedHelmet.gltf");
+
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
     const auto axisModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/axis.gltf"));
     axisModel->GetTransform().SetLocalPosition({0, 0, 0});
@@ -107,7 +109,9 @@ void Test_PBR::OnInit()
     layer = 2;
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
-    m_scene.AddEntity(sphere);
+    testModel->GetTransform().SetLocalPosition({0, 0, 0});
+    // m_scene.AddEntity(sphere);
+    m_scene.AddEntity(testModel);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
 

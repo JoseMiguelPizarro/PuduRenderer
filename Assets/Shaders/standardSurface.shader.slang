@@ -12,6 +12,7 @@ struct StandardMaterial
     Sampler2D normalTex;
     Sampler2D metallicRoughnessTex;
     Sampler2D heightTex;
+    float parallax = 0;
 }
 ParameterBlock<StandardMaterial> material;
 
@@ -60,9 +61,14 @@ float4 fragmentMain(VSOut input)
 
     float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
     float3 lightDirTS = WorldToTangent(GLOBALS.lightingBuffer.lightDirection.xyz,tangent,bitangent,normal);
-    let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,lightDirTS,0.08);
-    shadow *= pom.shadow;
-    float2 uv = pom.uv;
+    float2 uv = input.TexCoord.xy;
+
+    if(material.parallax>0)
+    {
+        let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,lightDirTS,0.08);
+        shadow *= pom.shadow;
+        uv = pom.uv;
+     }
 
     float3 albedo = material.albedoTex.Sample(uv).rgb;
 
@@ -71,7 +77,7 @@ float4 fragmentMain(VSOut input)
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
 
     SurfaceInfo m = {};
-    float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).xy;
+    float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).gb; // MetallicRoughnessChannels according to gltf2.0 specs
     m.Albedo = albedo;
     m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
     m.LightColor = float3(1,1,1);
