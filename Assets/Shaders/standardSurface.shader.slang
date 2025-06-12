@@ -10,8 +10,7 @@ struct StandardMaterial
 {
     Sampler2D albedoTex;
     Sampler2D normalTex;
-    Sampler2D roughnessTex;
-    Sampler2D metallicTex;
+    Sampler2D metallicRoughnessTex;
     Sampler2D heightTex;
 }
 ParameterBlock<StandardMaterial> material;
@@ -72,13 +71,14 @@ float4 fragmentMain(VSOut input)
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
 
     SurfaceInfo m = {};
+    float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).xy;
     m.Albedo = albedo;
     m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
     m.LightColor = float3(1,1,1);
     m.SpecularColor = float3(1,1,1);
     m.Normal = normalWS;
-    m.Metallic = material.metallicTex.Sample(uv).x;
-    m.Roughness = material.roughnessTex.Sample(uv).x;
+    m.Metallic = metallicRoughness.x;
+    m.Roughness = metallicRoughness.y;
     m.ViewDir = viewDir;
     col.rgb = StandardSurface(m);
 

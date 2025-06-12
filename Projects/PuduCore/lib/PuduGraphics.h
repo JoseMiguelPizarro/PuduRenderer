@@ -261,8 +261,12 @@ namespace Pudu
 #pragma region DefaultResources
 		SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
 		SPtr<Texture> GetDefaultWhiteTexture();
+		SPtr<Texture> GetDefaultNormalMapTexture();
+		SPtr<Texture> GetDefaultMetallicRoughnessTexture();
+		
 		SPtr<Shader> GetDefaultOverlayShader();
 		SPtr<Shader> GetDefaultOverlayTextureArrayShader();
+		SPtr<Shader> GetDefaultStandardShader();
 		SPtr<Mesh> GetDefaultQuad();
 #pragma endregion
 
@@ -363,10 +367,13 @@ namespace Pudu
 
 #pragma region DefaultResources
 		GPUResourceHandle<Texture> m_defaultWhiteTexture;
+		GPUResourceHandle<Texture> m_defaultNormalmapTexture;
+		GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
 		SPtr<Mesh> m_defaultQuad;
 		SPtr<Mesh> m_defaultPlane;
 		SPtr<Shader> m_defaultOverlayShader;
 		SPtr<Shader> m_defaultOverlayTextureArrayShader;
+		SPtr<Shader> m_defaultStandardShader;
 		SPtr<ComputeShader> m_horizonToCubeCompute;
 
 		ComputeShaderRenderer m_horizonToCubemapCSRenderer;
@@ -382,6 +389,7 @@ namespace Pudu
 		GPUResourcesManager m_resources;
 		SPtr<Semaphore> m_graphicsTimelineSemaphore;
 		SPtr<Semaphore> m_computeTimelineSemaphore;
+		std::unordered_map<fs::path, SPtr<Texture>> m_loadedTexturesMap;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
 		std::vector<VkImageView> m_swapChainImagesViews;

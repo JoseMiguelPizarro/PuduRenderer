@@ -34,7 +34,7 @@ void Test_PBR::OnInit()
 
     m_puduRenderer.Init(&Graphics, this);
 
-    standardShader = Graphics.CreateShader("standardSurface.shader.slang", "standard");
+    standardShader = Graphics.GetDefaultStandardShader();
     TextureLoadSettings settings{};
     settings.bindless = false;
     settings.name = "stringy_marble_albedo";
@@ -47,6 +47,7 @@ void Test_PBR::OnInit()
     skyboxLoadSettings.name = "Skybox";
     skyboxLoadSettings.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     skyboxLoadSettings.samplerData.wrap = true;
+    skyboxLoadSettings.generateMipmaps = true;
 
     auto skybox = Graphics.LoadTextureHorizonAsCube("textures/skybox/piazza_bologni_4k.ktx2", skyboxLoadSettings);
     m_puduRenderer.SetSkyBox(skybox);
@@ -92,10 +93,9 @@ void Test_PBR::OnInit()
     auto material = sphereEntity->GetModel()->Materials[0];
     material->SetShader(standardShader);
     material->SetProperty("material.albedoTex", silverAlbedoTexture);
-    material->SetProperty("material.normalTex", silverNormalTexture);
-    material->SetProperty("material.roughnessTex", silverRoughnessTexture);
+    material->SetProperty("material.normalTex", Graphics.GetDefaultNormalMapTexture());
+    material->SetProperty("material.metallicRoughnessTex", Graphics.GetDefaultMetallicRoughnessTexture());
     material->SetProperty("material.heightTex", silverHeightTexture);
-    material->SetProperty("material.metallicTex", silverMetalnessTexture);
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 

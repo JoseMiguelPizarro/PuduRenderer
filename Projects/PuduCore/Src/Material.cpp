@@ -383,6 +383,9 @@ namespace Pudu
 
     void Material::SetShader(const SPtr<IShaderObject>& shader)
     {
+        if (shader == m_shader)
+            return;
+
         m_shader = shader;
 
         SetDescriptorProvider(std::dynamic_pointer_cast<IDescriptorProvider>(shader));
@@ -390,8 +393,6 @@ namespace Pudu
 
     void Material::SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider)
     {
-        ASSERT(m_descriptorProvider == nullptr, "Descriptor provider already set");
-
         m_descriptorProvider = descriptorProvider;
 
         std::vector<VkDescriptorSetLayout> descriptorSetsToCreate;
@@ -412,6 +413,7 @@ namespace Pudu
         m_descriptorSetCount = descriptorSetCount;
         //TODO: STORE A SHADER ROOT NODE THAT PARENTS ALL THE CHILD SHADERNODES? Since set number is cached on the shaderNode itself, this will need recompute it each time or recache it
 
+//TODO: What to do with already allocated descriptor sets??
         m_gpu->CreateDescriptorSets(m_descriptorSets, descriptorSetsToCreate.size(),
                                     descriptorSetsToCreate.data());
 

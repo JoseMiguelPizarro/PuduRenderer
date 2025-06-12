@@ -499,7 +499,9 @@ namespace Pudu
 
         m_defaultQuad = CreateMesh(defaultQuadMeshData);
 
+        m_defaultStandardShader = CreateShader("standardSurface.shader.slang","Default StandardSurface");
         m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
+
         m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
 
         ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
@@ -541,6 +543,53 @@ namespace Pudu
         textureCreationData.samplerData = &samplerCreationData;
 
         m_defaultWhiteTexture = CreateTexture(textureCreationData);
+
+        std::byte metallicRoughnessData[] = {
+            b{0}, b{128}, b{0}, b{128}, // R = 0, G = 0.5 (128 in byte value), A = 0
+            b{0}, b{128}, b{0}, b{128}, // G
+        };
+
+        // Create default normal texture data
+        std::byte normalData[] = {
+            b{128}, b{128}, b{255}, b{255}, // First pixel for flat normal
+            b{128}, b{128}, b{255}, b{255}, // Second pixel for flat normal
+            b{128}, b{128}, b{255}, b{255}, // Third pixel for flat normal
+            b{128}, b{128}, b{255}, b{255} // Fourth pixel for flat normal
+        };
+
+        TextureCreationData normalTextureData;
+        normalTextureData.height = 2;
+        normalTextureData.width = 2;
+        normalTextureData.format = VK_FORMAT_R8G8B8A8_UNORM; // Four channels, R, G, B, A
+        normalTextureData.depth = 1;
+        normalTextureData.layers = 1;
+        normalTextureData.bindless = true;
+        normalTextureData.name = "DefaultNormal";
+        normalTextureData.flags = TextureFlags::Sample;
+        normalTextureData.pixels = normalData;
+        normalTextureData.dataSize = sizeof(normalData);
+
+        SamplerCreationData normalSamplerData{true};
+        normalTextureData.samplerData = &normalSamplerData;
+
+        m_defaultNormalmapTexture = CreateTexture(normalTextureData);
+
+        TextureCreationData metallicRoughnessTextureData;
+        metallicRoughnessTextureData.height = 2;
+        metallicRoughnessTextureData.width = 2;
+        metallicRoughnessTextureData.format = VK_FORMAT_R8G8_UNORM; // Two channels: R and G
+        metallicRoughnessTextureData.depth = 1;
+        metallicRoughnessTextureData.layers = 1;
+        metallicRoughnessTextureData.bindless = true;
+        metallicRoughnessTextureData.name = "DefaultMetallicRoughness";
+        metallicRoughnessTextureData.flags = TextureFlags::Sample;
+        metallicRoughnessTextureData.pixels = metallicRoughnessData;
+        metallicRoughnessTextureData.dataSize = sizeof(metallicRoughnessData);
+
+        SamplerCreationData metallicRoughnessSamplerData{true};
+        metallicRoughnessTextureData.samplerData = &metallicRoughnessSamplerData;
+
+        m_defaultMetallicRoughnessTexture = CreateTexture(metallicRoughnessTextureData);
     }
 
     void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
@@ -1597,6 +1646,16 @@ namespace Pudu
         return m_resources.GetTexture<Texture>(m_defaultWhiteTexture);
     }
 
+    SPtr<Texture> PuduGraphics::GetDefaultNormalMapTexture()
+    {
+        return m_resources.GetTexture<Texture>(m_defaultNormalmapTexture);
+    }
+
+    SPtr<Texture> PuduGraphics::GetDefaultMetallicRoughnessTexture()
+    {
+        return m_resources.GetTexture<Texture>(m_defaultMetallicRoughnessTexture);
+    }
+
     SPtr<Shader> PuduGraphics::GetDefaultOverlayShader()
     {
         return m_defaultOverlayShader;
@@ -1605,6 +1664,11 @@ namespace Pudu
     SPtr<Shader> PuduGraphics::GetDefaultOverlayTextureArrayShader()
     {
         return m_defaultOverlayTextureArrayShader;
+    }
+
+    SPtr<Shader> PuduGraphics::GetDefaultStandardShader()
+    {
+        return m_defaultStandardShader;
     }
 
     SPtr<Mesh> PuduGraphics::GetDefaultQuad()
@@ -2720,6 +2784,7 @@ namespace Pudu
         cubemapRTCreationData.name = "EnvCubeRT";
         cubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
         cubemapRTCreationData.layers = 6;
+
         cubemapRTCreationData.samplerData = &samplerData;
 
         auto envCubemapRTHandle = CreateTexture(cubemapRTCreationData);
@@ -2738,14 +2803,23 @@ namespace Pudu
         cubemapCreationData.textureType = TextureType::Texture_Cube;
         cubemapCreationData.name = horizonTexture->name.c_str();
         cubemapCreationData.layers = 6;
+        cubemapCreationData.exposeMipViews = true;
         cubemapCreationData.samplerData = &samplerData;
+        cubemapCreationData.mipmaps = creationSettings.generateMipmaps? Texture::CalculateMipLevels(cubemapResolution,cubemapResolution):1;
 
         auto cubemapHandle = CreateTexture(cubemapCreationData);
         auto cubeMap = Resources()->GetTexture<TextureCube>(cubemapHandle);
         auto cmd = BeginSingleTimeCommands();
 
         cmd.Blit(cubemapRT, cubeMap);
+        if (creationSettings.generateMipmaps)
+        {
+            cubeMap->useAutoGeneratedMipMaps = true;
+            GenerateTextureMipMaps(cubeMap.get(),&cmd);
+        }
+
         EndSingleTimeCommands(cmd);
+
 
         DestroyTexture(horizonTexture);
         DestroyTexture(cubemapRT);
@@ -2766,6 +2840,11 @@ namespace Pudu
 
     SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureLoadSettings& settings)
     {
+        if (m_loadedTexturesMap.contains(path))
+        {
+            return m_loadedTexturesMap[path];
+        }
+
         ASSERT(fs::exists(path), "Trying to load a non-existent texture {}. Did you check the path is correct?", path.string());
         ASSERT(settings.name!=nullptr, "Trying to load a texture without a name! Be sure to set settings.name");
 
@@ -2847,7 +2926,11 @@ namespace Pudu
             stbi_image_free(pixelsData);
         }
 
-        return m_resources.GetTexture<Texture>(textureHandle);
+
+        auto texture = m_resources.GetTexture<Texture>(textureHandle);
+        m_loadedTexturesMap[path] = texture;
+
+        return texture;
     }
 
     int2 PuduGraphics::GetResolution() const
@@ -2886,7 +2969,8 @@ namespace Pudu
     {
         auto mesh = CreateMesh(data);
 
-        auto material = m_resources.AllocateMaterial();
+        auto material =CreateMaterial();
+        material->SetShader(m_defaultStandardShader);
         material->name = data.Name;
         const std::filesystem::path path = data.Material.BaseTexturePath;
         if (data.Material.hasBaseTexture)
@@ -2913,6 +2997,9 @@ namespace Pudu
             normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
             material->SetProperty("material.normalTex", LoadTexture2D(path, normalCreation));
+        }else
+        {
+            material->SetProperty("material.normalTex", GetDefaultWhiteTexture());
         }
 
         auto m = CreateModel(mesh, material);

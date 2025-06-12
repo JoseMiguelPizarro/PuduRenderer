@@ -315,7 +315,7 @@ namespace Pudu
     {
         static VkImageBlit2 s_blitRegions[K_MAX_MIP_LEVELS];
 
-        for (uint32_t mipLevel = 0; mipLevel < dst->mipLevels; ++mipLevel)
+        for (uint32_t mipLevel = 0; mipLevel < src->mipLevels; ++mipLevel)
         {
             VkImageBlit2* blitRegion = &s_blitRegions[mipLevel];
             blitRegion->sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
@@ -346,7 +346,7 @@ namespace Pudu
         }
 
         Blit(src, dst, filter, src->GetImageLayout(),
-             dst->GetImageLayout(), s_blitRegions, dst->mipLevels);
+             dst->GetImageLayout(), s_blitRegions, src->mipLevels);
     }
 
     void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter,

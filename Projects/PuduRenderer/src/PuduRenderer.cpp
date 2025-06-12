@@ -186,7 +186,10 @@ namespace Pudu
         auto IBL_DiffuseCS = gfx->CreateComputeShader(IBLDiffuse_ComputeData);
         auto IBL_DiffuseMaterial = gfx->Resources()->AllocateMaterial();
         IBL_DiffuseMaterial->SetShader(IBL_DiffuseCS);
-        IBL_DiffuseMaterial->SetProperty("materialDiffuse.input", m_skybox);
+
+        uint skyboxMip = max(1u, static_cast<uint>(std::log2(envMap->width / IBLRTResolution)) + 1);
+
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.input", envMap, skyboxMip);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.output", IBL_DiffuseRT);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.outputResolution", IBLRTResolution);
         IBL_DiffuseMaterial->SetProperty("materialDiffuse.inputResolution", m_skybox->width);
