@@ -110,6 +110,7 @@ void Test_PBR::OnInit()
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
     testModel->GetTransform().SetLocalPosition({0, 0, 0});
+  //  testModel->GetTransform().SetUniformLocalScale(20);
     // m_scene.AddEntity(sphere);
     m_scene.AddEntity(testModel);
     m_scene.AddEntity(skyboxModel);

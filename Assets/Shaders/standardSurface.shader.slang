@@ -77,12 +77,12 @@ float4 fragmentMain(VSOut input)
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal);
     SurfaceInfo m = {};
-    float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).gb; // MetallicRoughnessChannels according to gltf2.0 specs
+    float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).bg; // MetallicRoughnessChannels according to gltf2.0 specs
     m.Albedo = albedo;
     m.SpecularColor = float3(1,1,1);
     m.Normal = normalWS;
     m.Metallic = metallicRoughness.x;
-    m.Roughness =1 - metallicRoughness.y;
+    m.Roughness = metallicRoughness.y;
     m.ViewDir = viewDir;
     m.ShadowAttenuation = shadow;
     m.Emissive = material.emissiveTex.Sample(uv).xyz;
