@@ -171,6 +171,7 @@ namespace Pudu
         for (auto& mesh : gltfAsset->meshes)
         {
             LOG("Processing mesh {} primitives: {}\n", mesh.name, mesh.primitives.size());
+            bool hasTangents = false;
             for (auto& primitive : mesh.primitives)
             {
                 if (!primitive.indicesAccessor.has_value())
@@ -191,6 +192,7 @@ namespace Pudu
 
                 auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->accessorIndex];
                 vertices.resize(positionsAccessor.count);
+
 
                 for (auto& attribute : primitive.attributes)
                 {
@@ -237,6 +239,8 @@ namespace Pudu
                         {
                             vertices[idx++].tangent = v;
                         });
+
+                        hasTangents = true;
                     }
                 }
 
@@ -281,6 +285,7 @@ namespace Pudu
                 meshCreationData.Vertices = vertices;
                 meshCreationData.Material = materialCreationData;
                 meshCreationData.Name = mesh.name;
+                meshCreationData.HasTangents = hasTangents;
                 creationData.push_back(meshCreationData);
             }
         }

@@ -499,7 +499,7 @@ namespace Pudu
 
         m_defaultQuad = CreateMesh(defaultQuadMeshData);
 
-        m_defaultStandardShader = CreateShader("standardSurface.shader.slang","Default StandardSurface");
+        m_defaultStandardShader = CreateShader("standardSurface.shader.slang", "Default StandardSurface");
         m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
 
         m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
@@ -1442,7 +1442,7 @@ namespace Pudu
             vkDestroyImageView(m_device, texture->vkImageViewHandle, m_allocatorPtr);
             vkDestroySampler(m_device, texture->Sampler.vkHandle, m_allocatorPtr);
 
-            vmaFreeMemory(m_VmaAllocator,texture->vmaAllocation);
+            vmaFreeMemory(m_VmaAllocator, texture->vmaAllocation);
 
             //vkFreeMemory(m_device, texture->vkMemoryHandle, m_allocatorPtr);
 
@@ -1463,11 +1463,95 @@ namespace Pudu
         }
     }
 
+    
+    void GenerateTangents(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    {
+        ASSERT(indices.size() % 3 == 0, "Indices must be a multiple of 3");
+
+
+        glm::vec3* tan1 = new glm::vec3[vertices.size()* 2];
+        glm::vec3* tan2 = tan1 + vertices.size();
+
+        // std::vector<glm::vec3> tan1;
+        // std::vector<glm::vec3> tan2;
+
+        // tan1.reserve(vertices.size());
+        // tan2.reserve(vertices.size());
+        //
+        // tan1.resize(vertices.size());
+        // tan2.resize(vertices.size());
+
+        memset(tan1, 0, sizeof(glm::vec3) * vertices.size() * 2);
+
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            uint i0 = indices[i];
+            uint i1 = indices[i + 1];
+            uint i2 = indices[i + 2];
+
+            Vertex& v0 = vertices[i0];
+            Vertex& v1 = vertices[i1];
+            Vertex& v2 = vertices[i2];
+
+            float x1 = v1.pos.x - v0.pos.x;
+            float x2 = v2.pos.x - v0.pos.x;
+            float y1 = v1.pos.y - v0.pos.y;
+            float y2 = v2.pos.y - v0.pos.y;
+            float z1 = v1.pos.z - v0.pos.z;
+            float z2 = v2.pos.z - v0.pos.z;
+
+            float s1 = v1.texcoord.x - v0.texcoord.x;
+            float s2 = v2.texcoord.x - v0.texcoord.x;
+            float t1 = v1.texcoord.y - v0.texcoord.y;
+            float t2 = v2.texcoord.y - v0.texcoord.y;
+
+
+            float r = 1.0F / (s1 * t2 - s2 * t1);
+            
+            glm::vec3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
+                    (t2 * z1 - t1 * z2) * r);
+            glm::vec3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
+                    (s1 * z2 - s2 * z1) * r);
+
+            tan1[i0] += sdir;
+            tan1[i1] += sdir;
+            tan1[i2] += sdir;
+
+            tan2[i0] += tdir;
+            tan2[i1] += tdir;
+            tan2[i2] += tdir;
+        }
+
+        // Normalize the tangents for each vertex
+        for (size_t i = 0; i < vertices.size(); i++)
+        {
+            glm::vec3 t = tan1[i];
+
+            // Gram-Schmidt orthogonalize
+            glm::vec3 tangent = normalize(
+                t - vertices[i].normal * dot(
+                    vertices[i].normal, glm::vec3(t.x, t.y, t.z)));
+
+            vertices[i].tangent.x = tangent.x;
+            vertices[i].tangent.y = tangent.y;
+            vertices[i].tangent.z = tangent.z;
+
+            // Calculate handedness
+            vertices[i].tangent.w = (dot(cross(vertices[i].normal, t), tan2[i]) < 0.0F) ? -1.0F : 1.0F;
+        }
+
+        delete[] tan1;
+    }
 
     SPtr<Mesh> PuduGraphics::CreateMesh(MeshCreationData const& data)
     {
         auto vertices = data.Vertices;
         auto indices = data.Indices;
+
+        if (!data.HasTangents)
+        {
+            GenerateTangents(vertices, indices);
+        }
 
         SPtr<GraphicsBuffer> vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
                                                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -2215,7 +2299,7 @@ namespace Pudu
 
         //Allocate cubemap faces
         std::vector<VkBufferImageCopy2> bufferCopyRegions;
-         if (texture->GetTextureType() == TextureType::Texture_Cube)
+        if (texture->GetTextureType() == TextureType::Texture_Cube)
         {
             subresourceRange.levelCount = texture->mipLevels;
             subresourceRange.layerCount = 6;
@@ -2796,12 +2880,13 @@ namespace Pudu
 
     SPtr<TextureCube> PuduGraphics::LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings)
     {
-        ASSERT(fs::exists(filePath), "Trying to load a non-existent texture {}. Did you check the path is correct?", filePath.string());
+        ASSERT(fs::exists(filePath), "Trying to load a non-existent texture {}. Did you check the path is correct?",
+               filePath.string());
 
         creationSettings.textureType = TextureType::Texture2D;
         auto horizonTexture = LoadAndCreateTexture(filePath, creationSettings);
 
-        u32 cubemapResolution = horizonTexture->width/4;
+        u32 cubemapResolution = horizonTexture->width / 4;
         SamplerCreationData samplerData;
         TextureCreationData cubemapRTCreationData{};
         cubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -2818,8 +2903,8 @@ namespace Pudu
         auto envCubemapRTHandle = CreateTexture(cubemapRTCreationData);
         auto cubemapRT = Resources()->GetTexture<Texture>(envCubemapRTHandle);
 
-        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.input",horizonTexture);
-        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.output",cubemapRT);
+        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.input", horizonTexture);
+        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.output", cubemapRT);
 
         DispatchCompute(&m_horizonToCubemapCSRenderer, cubemapResolution / 32, cubemapResolution / 32, 6);
 
@@ -2833,7 +2918,9 @@ namespace Pudu
         cubemapCreationData.layers = 6;
         cubemapCreationData.exposeMipViews = true;
         cubemapCreationData.samplerData = &samplerData;
-        cubemapCreationData.mipmaps = creationSettings.generateMipmaps? Texture::CalculateMipLevels(cubemapResolution,cubemapResolution):1;
+        cubemapCreationData.mipmaps = creationSettings.generateMipmaps
+                                          ? Texture::CalculateMipLevels(cubemapResolution, cubemapResolution)
+                                          : 1;
 
         auto cubemapHandle = CreateTexture(cubemapCreationData);
         auto cubeMap = Resources()->GetTexture<TextureCube>(cubemapHandle);
@@ -2843,7 +2930,7 @@ namespace Pudu
         if (creationSettings.generateMipmaps)
         {
             cubeMap->useAutoGeneratedMipMaps = true;
-            GenerateTextureMipMaps(cubeMap.get(),&cmd);
+            GenerateTextureMipMaps(cubeMap.get(), &cmd);
         }
 
         EndSingleTimeCommands(cmd);
@@ -2873,8 +2960,9 @@ namespace Pudu
             return m_loadedTexturesMap[path];
         }
 
-        ASSERT(fs::exists(path), "Trying to load a non-existent texture {}. Did you check the path is correct?", path.string());
-        ASSERT(settings.name!=nullptr, "Trying to load a texture without a name! Be sure to set settings.name");
+        ASSERT(fs::exists(path), "Trying to load a non-existent texture {}. Did you check the path is correct?",
+               path.string());
+        ASSERT(settings.name != nullptr, "Trying to load a texture without a name! Be sure to set settings.name");
 
         bool isKTX = path.extension() == ".ktx" || path.extension() == ".ktx2";
         void* pixelsData = nullptr;
@@ -2997,7 +3085,7 @@ namespace Pudu
     {
         auto mesh = CreateMesh(data);
 
-        auto material =CreateMaterial();
+        auto material = CreateMaterial();
         material->SetShader(m_defaultStandardShader);
         material->name = data.Name;
         const std::filesystem::path path = data.Material.BaseTexturePath;
@@ -3025,7 +3113,8 @@ namespace Pudu
             normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
             material->SetProperty("material.normalTex", LoadTexture2D(data.Material.NormalMapPath, normalCreation));
-        }else
+        }
+        else
         {
             material->SetProperty("material.normalTex", GetDefaultNormalMapTexture());
         }
@@ -3036,8 +3125,10 @@ namespace Pudu
             metallicRoughnessCreation.name = "Roughness";
             metallicRoughnessCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-            material->SetProperty("material.metallicRoughnessTex", LoadTexture2D(data.Material.MetallicRoughnessPath, metallicRoughnessCreation));
-        }else
+            material->SetProperty("material.metallicRoughnessTex",
+                                  LoadTexture2D(data.Material.MetallicRoughnessPath, metallicRoughnessCreation));
+        }
+        else
         {
             material->SetProperty("material.metallicRoughnessTex", GetDefaultMetallicRoughnessTexture());
         }
