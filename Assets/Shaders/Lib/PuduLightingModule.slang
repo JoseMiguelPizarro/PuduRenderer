@@ -22,13 +22,28 @@ public struct SurfaceInfo {
     public float3 Albedo;
     public float3 Normal;
     public float3 ViewDir;
-    public float3 LightDir;
-    public float3 LightColor;
     public float3 SpecularColor = float3(1, 1, 1);
+    public float3 F0 = float3(.2,.2,.2);
+    public float3 F90 = float3(1,1,1);
+    public float3 Emissive;
     public float Roughness;
     public float Metallic;
     public float ShadowAttenuation;
 };
+
+struct PBRInfo
+{
+    float3 ViewDir;
+    float3 DiffuseColor;
+    float3 SpecularColor;
+    float3 VrN;
+    float LdH;
+    float NdV;
+    float NdL;
+    float NdH;
+    float VdH;
+    float alphaRoughness;
+}
 
 float G_SchlicksmithGGX(
   float NdL, float NdV, float Roughness)
@@ -126,6 +141,45 @@ public float3 BRDF(float Ndv, float Roughness) {
     return Lut / float(K_Num_Samples);
 }
 
+float3 DiffuseLambert(PBRInfo PBR, SurfaceInfo Surface)
+{
+    return PBR.DiffuseColor/PI;
+}
+
+///<summary>From Disney http://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdfhttp://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdf. </summary>
+float3 DiffuseBurley(PBRInfo PBR, SurfaceInfo Surface)
+{
+     float f90 = 2.0 * PBR.LdH * PBR.LdH *
+        PBR.alphaRoughness - 0.5;
+      return (PBR.DiffuseColor / PI) * (1.0 + f90 * pow((1.0 - PBR.NdL), 5.0)) * (1.0 + f90 * pow((1.0 - PBR.NdV), 5.0));
+}
+
+float3 FresnelSpecularReflection(PBRInfo PBR, SurfaceInfo Surface)
+{
+     return Surface.F0 +
+        (Surface.F90 - Surface.F0) *
+         pow(saturate(1.0 - PBR.VdH), 5.0);
+}
+
+float GeometricOcclusion(PBRInfo PBR) {
+  float NdotL = PBR.NdL;
+  float NdotV = PBR.NdV;
+  float rSqr = PBR.alphaRoughness * PBR.alphaRoughness;
+  float attenuationL = 2.0 * NdotL /
+    (NdotL + sqrt(rSqr + (1.0 - rSqr) * (NdotL * NdotL)));
+  float attenuationV = 2.0 * NdotV /
+    (NdotV + sqrt(rSqr + (1.0 - rSqr) * (NdotV * NdotV)));
+  return attenuationL * attenuationV;
+}
+
+float MicrofacetDistribution(PBRInfo PBR) {
+  float roughnessSq = PBR.alphaRoughness * PBR.alphaRoughness;
+  float f = (PBR.NdH * roughnessSq - PBR.NdH) *
+    PBR.NdH + 1.0;
+  return roughnessSq / (PI * f * f);
+}
+
+
 float3 SampleAmbientSpecular(SurfaceInfo Surface) {
     float3 R = reflect(Surface.ViewDir, Surface.Normal);
     return 0;
@@ -135,55 +189,138 @@ float3 SampleAmbientDiffuse(SurfaceInfo Surface) {
     return 0;
 }
 
-float3 BlinnPhongSpecularReflection(SurfaceInfo Surface) {
-    float3 L = Surface.LightDir;
-    float3 N = Surface.Normal;
-    float3 V = Surface.ViewDir;
+// float3 BlinnPhongSpecularReflection(PBRInfo PBR, SurfaceInfo Surface) {
+//     float3 L = Surface.LightDir;
+//     float3 N = Surface.Normal;
+//     float3 V = Surface.ViewDir;
+//
+//     float3 H = normalize(L + V);
+//
+//     float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(N, H)), BlinnPhongSpecularAlpha) * (1. - Surface.Roughness);
+//     S += SampleAmbientSpecular(Surface);
+//
+//     return S;
+// }
+//
+// float3 PhongSpecularReflection(SurfaceInfo Surface) {
+//     float3 L = Surface.LightDir;
+//     float3 N = Surface.Normal;
+//     float3 V = Surface.ViewDir;
+//     float3 R = reflect(Surface.LightDir, Surface.Normal);
+//
+//     float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(V, R)), 5 * (1. - Surface.Roughness));
+//
+//     S = S + SampleAmbientSpecular(Surface);
+//     return S;
+// }
+//
+// float3 LambertDiffuseReflection(SurfaceInfo Surface) {
+//     float3 DirectColor = Surface.LightColor * saturate(dot(Surface.Normal, Surface.LightDir));
+//
+//     return DirectColor * Surface.Albedo + SampleAmbientDiffuse(Surface); // Missing diffuse ambient color here!
+// }
 
-    float3 H = normalize(L + V);
+// float3 LambertBRDF(SurfaceInfo Surface) {
+//     float3 DiffuseReflection = LambertDiffuseReflection(Surface);
+//     float3 SpecularReflection = BlinnPhongSpecularReflection(Surface);
+//
+//     return GLOBALS.IBL_Specular.SampleLevel(Surface.Normal,0).xyz;
+// }
 
-    float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(N, H)), BlinnPhongSpecularAlpha) * (1. - Surface.Roughness);
-    S += SampleAmbientSpecular(Surface);
-
-    return S;
+float2 SampleBRDFLUT(float2 RoughnessNdV)
+{
+    return GLOBALS.BRDF_LUT.Sample(RoughnessNdV).rg;
 }
 
-float3 PhongSpecularReflection(SurfaceInfo Surface) {
-    float3 L = Surface.LightDir;
-    float3 N = Surface.Normal;
-    float3 V = Surface.ViewDir;
-    float3 R = reflect(Surface.LightDir, Surface.Normal);
-
-    float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(V, R)), 5 * (1. - Surface.Roughness));
-
-    S = S + SampleAmbientSpecular(Surface);
-    return S;
+float3 SampleIrradiance(float3 N)
+{
+    return GLOBALS.IBL_Diffuse.Sample(N).rgb;
 }
 
-float3 LambertDiffuseReflection(SurfaceInfo Surface) {
-    float3 DirectColor = Surface.LightColor * saturate(dot(Surface.Normal, Surface.LightDir));
+float3 GetIBLRadianceDiffuse(PBRInfo PBR, SurfaceInfo Surface,float SpecularWeight)
+{
+    float2 brdfSamplePoint = saturate(float2(PBR.NdV,Surface.Roughness));
 
-    return DirectColor * Surface.Albedo + SampleAmbientDiffuse(Surface); // Missing diffuse ambient color here!
+    float3 F0 = Surface.F0;
+    float2 f_ab = SampleBRDFLUT(brdfSamplePoint);
+    float3 irradiance = SampleIrradiance(Surface.Normal);
+    float3 fr = max(1. - Surface.Roughness, Surface.F0) - F0;
+    float3 k_s  = F0 + fr * pow(1. - PBR.NdV,5.);
+    float3 FssEss = SpecularWeight*k_s *f_ab.x + f_ab.y;
+    float Ems = (1. - (f_ab.x + f_ab.y));
+    float3 F_avg = SpecularWeight * (F0 + (1.0 - F0) / 21.0);
+    float3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);
+    float3 k_D = PBR.DiffuseColor * (1.0 - FssEss + FmsEms);
+
+    return (FmsEms + k_D) * irradiance;
 }
 
-float3 LambertBRDF(SurfaceInfo Surface) {
-    float3 DiffuseReflection = LambertDiffuseReflection(Surface);
-    float3 SpecularReflection = BlinnPhongSpecularReflection(Surface);
+float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float SpecularWeight)
+{
+    float3 n = Surface.Normal;
+    float3 v = Surface.ViewDir;
+    float3 VrN = PBR.VrN;
+    float NdV = PBR.NdV;
 
-    return GLOBALS.IBL_Specular.SampleLevel(Surface.Normal,0).xyz;
+    SamplerCube envMap = GLOBALS.IBL_Specular;
+
+    float lod = Surface.Roughness * (GLOBALS.IBL_Levels-1);
+    float2 brdfSamplePoint = float2(NdV,Surface.Roughness);
+    float2 brdf = SampleBRDFLUT(brdfSamplePoint);
+    float3 specularLight = envMap.SampleLevel(VrN,lod).xyz;
+
+    float3 Fr = max(float3(1.0 - Surface.Roughness),
+                    Surface.F0) - Surface.F0;
+      float3 k_S = Surface.F0 + Fr * pow(1.0-NdV, 5.0);
+      float3 FssEss = k_S * brdf.x + brdf.y;
+      return SpecularWeight * specularLight * FssEss;
+}
+
+float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 LightDirection, float3 LightColor)
+{
+      float3 n = Surface.Normal;
+      float3 v = PBR.ViewDir;
+      float3 ld = normalize(LightDirection);
+      float3 h = normalize(ld +  v);
+      float NdotV = PBR.NdV;
+      float NdotL = clamp(dot(n, ld), 0.001, 1.0);
+      float NdotH = saturate(dot(n, h));
+      float LdotH = saturate(dot(ld, h));
+      float VdotH = saturate(dot(v, h));
+      float3 color = float3(0);
+
+        if (NdotL > 0.0 || NdotV > 0.0) {
+          PBR.NdL = NdotL;
+          PBR.NdH = NdotH;
+          PBR.LdH = LdotH;
+          PBR.VdH = VdotH;
+          float3  F = FresnelSpecularReflection(PBR,Surface);
+          float G = GeometricOcclusion(PBR);
+          float D = MicrofacetDistribution(PBR);
+    float3 diffuseContrib =  (1 - F)*DiffuseBurley(PBR,Surface);
+    float3 specContrib = F * G * D / max((4.0 * NdotL * NdotV),0.0001);
+    color = NdotL * LightColor * (diffuseContrib + specContrib);
+  }
+  return color;
 }
 
 public float3 StandardSurface(SurfaceInfo Surface) {
-    float NdV = dot(Surface.Normal, Surface.ViewDir);
-    float3 diffuseColor = Surface.Albedo.rgb * (1.0 - DielectricSpecular) * (1.0 - Surface.Metallic);
-    float3 F0 = lerp(DielectricSpecular.xxx,Surface.Albedo.rgb,Surface.Metallic);
 
-    float2 f_ab = GLOBALS.BRDF_LUT.SampleLevel(float2(NdV,Surface.Roughness),0).xy;
-    float lodLevel = (Surface.Roughness) * GLOBALS.IBL_Levels;
-    float3 radiance = GLOBALS.IBL_Specular.SampleLevel(reflect(-Surface.ViewDir,Surface.Normal),lodLevel).rgb;
-    float3 irradiance = GLOBALS.IBL_Diffuse.SampleLevel(Surface.Normal,0).rgb;
+    PBRInfo PBR;
+    PBR.NdV = dot(Surface.Normal,Surface.ViewDir);
+    PBR.VrN = reflect(-Surface.ViewDir,Surface.Normal);
+    PBR.ViewDir = Surface.ViewDir;
+    PBR.DiffuseColor = lerp(Surface.Albedo,0, Surface.Metallic);
+    PBR.SpecularColor = lerp(Surface.F0, Surface.Albedo,Surface.Metallic);
+    PBR.alphaRoughness = Surface.Roughness * Surface.Roughness;
+    Surface.F0 = float3(0.2,.2,.2);
+    Surface.F90 = float3(.5,.5,.5);
 
-    float3 reflectance = F0 *f_ab.x + f_ab.y;
+    float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
+    float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
 
-    return reflectance*radiance + diffuseColor*irradiance;
+    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(GLOBALS.lightingBuffer.lightDirection.xyz),float3(1,1,1));
+    float3 c = specularColor + diffuseColor + Surface.Emissive + L*Surface.ShadowAttenuation;
+
+    return c;
 }

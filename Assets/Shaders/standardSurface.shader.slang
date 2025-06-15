@@ -12,6 +12,7 @@ struct StandardMaterial
     Sampler2D normalTex;
     Sampler2D metallicRoughnessTex;
     Sampler2D heightTex;
+    Sampler2D emissiveTex;
     float parallax = 0;
 }
 ParameterBlock<StandardMaterial> material;
@@ -51,12 +52,12 @@ float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
     float4 col = 0;
-    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
+    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap));
 
     float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);
     float3 normal = normalize(input.Normal.xyz);
-    float3 bitangent = cross(normal,tangent);
+    float3 bitangent = cross(normal,tangent) * input.Tangent.w;
     float height = material.heightTex.Sample(input.TexCoord.xy).x;
 
     float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
@@ -74,19 +75,18 @@ float4 fragmentMain(VSOut input)
 
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
-    float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
-
+    float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal);
     SurfaceInfo m = {};
     float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).gb; // MetallicRoughnessChannels according to gltf2.0 specs
     m.Albedo = albedo;
-    m.LightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
-    m.LightColor = float3(1,1,1);
     m.SpecularColor = float3(1,1,1);
     m.Normal = normalWS;
     m.Metallic = metallicRoughness.x;
-    m.Roughness = metallicRoughness.y;
+    m.Roughness =1 - metallicRoughness.y;
     m.ViewDir = viewDir;
-    col.rgb = StandardSurface(m);
+    m.ShadowAttenuation = shadow;
+    m.Emissive = material.emissiveTex.Sample(uv).xyz;
 
+    col.xyz = StandardSurface(m);
     return col;
 }
