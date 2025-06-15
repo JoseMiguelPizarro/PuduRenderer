@@ -21,13 +21,14 @@ namespace Pudu
         throw std::invalid_argument("Invalid pipeline type");
     }
 
-    void Material::ApplyProperties()
+    void Material::ApplyProperties(GPUCommands* commands)
     {
         MaterialApplyPropertyGPUTarget target;
         target.graphics = m_gpu;
         target.descriptorProvider = m_descriptorProvider.get();
         target.m_descriptorSetRemap = m_descriptorSetsIndexRemap;
         target.m_descriptorSets = m_descriptorSets;
+        target.commands = commands;
 
         m_propertiesBlock.ApplyProperties(target);
     }
@@ -203,7 +204,7 @@ namespace Pudu
 
         if (field.IsValid())
         {
-            field.Write( request.property.texture, request.property.mipLevel);
+            field.Write( request.property.texture, request.property.mipLevel, target);
             BindPropertyToShaderNode(field.GetNode(), request.property);
         }
         else

@@ -251,11 +251,12 @@ namespace Pudu
                 {
                     auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
 
-                    bool hasBaseTexture, hasNormalMap, hasMetallicRoughnessMap = false;
+                    bool hasBaseTexture, hasNormalMap, hasMetallicRoughnessMap, hasEmissiveMap = false;
 
                     hasBaseTexture = gltfMat.pbrData.baseColorTexture.has_value();
                     hasNormalMap = gltfMat.normalTexture.has_value();
                     hasMetallicRoughnessMap = gltfMat.pbrData.metallicRoughnessTexture.has_value();
+                    hasEmissiveMap = gltfMat.emissiveTexture.has_value();
 
 
                     if (hasBaseTexture)
@@ -273,10 +274,16 @@ namespace Pudu
                         materialCreationData.MetallicRoughnessPath = GetPathFromTextureIndex(
                             gltfAsset, gltfMat.pbrData.metallicRoughnessTexture.value().textureIndex, path);
                     }
+                    if (hasEmissiveMap)
+                    {
+                        materialCreationData.EmissivePath = GetPathFromTextureIndex(
+                            gltfAsset, gltfMat.emissiveTexture.value().textureIndex, path);
+                    }
 
                     materialCreationData.hasBaseTexture = hasBaseTexture;
                     materialCreationData.hasNormalMap = hasNormalMap;
                     materialCreationData.hasMetallicRoughness = hasMetallicRoughnessMap;
+                    materialCreationData.hasEmissiveTexture = hasEmissiveMap;
                 }
 
                 materialCreationData.name = mesh.name;

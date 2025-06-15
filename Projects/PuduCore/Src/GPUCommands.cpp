@@ -791,7 +791,7 @@ namespace Pudu
         VkImageSubresourceRange* rangePtr = range;
         if (range == nullptr)
         {
-            subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, texture->mipLevels, 0, texture->layers};
+            subresourceRange = {texture->GetAspectMask(), 0, texture->mipLevels, 0, texture->layers};
             rangePtr = &subresourceRange;
         }
 

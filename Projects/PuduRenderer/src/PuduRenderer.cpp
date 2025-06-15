@@ -229,7 +229,7 @@ namespace Pudu
         gfx->DestroyTexture(IBL_DiffuseRT);
 
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_SpecularCube);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels - 1);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
     }
 
@@ -389,17 +389,17 @@ namespace Pudu
         material->SetProperty("Data.GrassPos", grassBuffer);
         material->SetProperty("Data.shadowMap", shadowRT);
 
-        drawGrassRP.get()
-                   ->SetMaterial(material)
-                   ->SetOffset(0)
-                   ->SeStride(sizeof(VkDrawIndirectCommand))
-                   ->SetDrawCount(indirectCommands.size())
-                   ->SetIndirectBuffer(indirectBuffer)
-                   ->SetCullMode(CullMode::None)
-                   ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-                   ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-                   ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-                   ->SetName("Grass indirect");
+        // drawGrassRP.get()
+        //            ->SetMaterial(material)
+        //            ->SetOffset(0)
+        //            ->SeStride(sizeof(VkDrawIndirectCommand))
+        //            ->SetDrawCount(indirectCommands.size())
+        //            ->SetIndirectBuffer(indirectBuffer)
+        //            ->SetCullMode(CullMode::None)
+        //            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+        //            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+        //            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+        //            ->SetName("Grass indirect");
 
         m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
         m_postProcessingRenderPass->name = "Postprocessing";
@@ -412,13 +412,13 @@ namespace Pudu
 
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
-        //  AddRenderPass(m_shadowMapRenderPass.get());
-        AddRenderPass(normalRP.get());
+        AddRenderPass(m_shadowMapRenderPass.get());
+      //  AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         // AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());
         AddRenderPass(depthCopyRP.get());
-        //   AddRenderPass(transparentRP.get());
+        AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
 
@@ -441,7 +441,7 @@ namespace Pudu
     void PuduRenderer::OnRender(RenderFrameData& data)
     {
         data.globalPropertiesMaterial = m_globalPropertiesMaterial;
-        m_globalPropertiesMaterial->ApplyProperties();
+        m_globalPropertiesMaterial->ApplyProperties(data.currentCommand.get());
 
         data.descriptorSetOffset = m_globalDescriptorSetLayouts->setsCount;
         isFirstFrame = false;

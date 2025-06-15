@@ -108,7 +108,7 @@ namespace Pudu
         void SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider);
         SPtr<IShaderObject> GetShader() { return m_shader; }
         ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
-        void ApplyProperties();
+        void ApplyProperties(GPUCommands* commands);
         void SetProperty(const std::string_view& name, float value);
         void SetProperty(const std::string& name, glm::vec2 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);

@@ -75,7 +75,7 @@ void Test_PBR::OnInit()
     directionalLight = {};
     directionalLight.Projection = projection;
     directionalLight.GetTransform().SetForward({1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f});
-    directionalLight.GetTransform().SetLocalPosition({20, 20, 20});
+    directionalLight.GetTransform().SetLocalPosition({-20, 20, -20});
     m_scene.directionalLight = &directionalLight;
 
 
@@ -136,7 +136,7 @@ void Test_PBR::OnInit()
     m_arrayQO->SetPtr(m_arrayQO);
 
   //  m_scene.AddEntity(inputQO);
-    m_scene.AddEntity(oq);
+   // m_scene.AddEntity(oq);
     // m_scene.AddEntity(m_arrayQO);
 }
 

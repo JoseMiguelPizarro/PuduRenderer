@@ -17,7 +17,7 @@ namespace Pudu
 
 
         BindPipeline(pipeline, frameData);
-        m_material->ApplyProperties();
+        m_material->ApplyProperties(commands.get());
 
         BindMaterialDescriptorSets(pipeline, m_material, frameData);
 

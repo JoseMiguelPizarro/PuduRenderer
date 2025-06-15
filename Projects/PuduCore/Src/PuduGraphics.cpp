@@ -719,7 +719,7 @@ namespace Pudu
 
         auto material = computeShaderRenderer->GetMaterial();
 
-        material->ApplyProperties();
+        material->ApplyProperties(&cmd);
         cmd.BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle, material->GetDescriptorSets(),
                                      material->GetDescriptorSetsCount());
         cmd.Dispatch(groupCountX, groupCountY, groupCountZ);
@@ -2275,7 +2275,6 @@ namespace Pudu
         memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
         VkImageSubresourceRange subresourceRange = {};
-        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         subresourceRange.baseArrayLayer = 0;
         subresourceRange.baseMipLevel = 0;
         subresourceRange.levelCount = texture->mipLevels;
@@ -2342,11 +2341,14 @@ namespace Pudu
         imageViewInfo.image = texture->vkImageHandle;
         imageViewInfo.viewType = ToVkImageViewType(texture->GetTextureType());
         imageViewInfo.format = texture->format;
+        VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         if (TextureFormat::HasDepthOrStencil(texture->format))
         {
-            subresourceRange.aspectMask = TextureFormat::HasDepth(texture->format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
+            aspectMask = TextureFormat::HasDepth(texture->format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
         }
+
+        subresourceRange.aspectMask = aspectMask;
 
         imageViewInfo.subresourceRange = subresourceRange;
 
@@ -2376,6 +2378,8 @@ namespace Pudu
                 vkCreateImageView(m_device, &imageViewInfo, m_allocatorPtr, &texture->m_mipImageViews[i]);
             }
         }
+
+        texture->m_aspectMask = aspectMask;
 
         LOG("Created Texture {} id: {}", texture->name, texture->Handle().Index());
     }
@@ -3131,6 +3135,21 @@ namespace Pudu
         else
         {
             material->SetProperty("material.metallicRoughnessTex", GetDefaultMetallicRoughnessTexture());
+        }
+
+        if (data.Material.hasEmissiveTexture)
+        {
+            TextureLoadSettings emissiveCreation;
+            emissiveCreation.bindless = true;
+            emissiveCreation.name = "Emissive";
+            emissiveCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+            material->SetProperty("material.emissiveTex",
+                                  LoadTexture2D(data.Material.EmissivePath, emissiveCreation));
+        }
+        else
+        {
+            material->SetProperty("material.emissiveTex", GetDefaultBlackTexture());
         }
 
         material->SetProperty("material.heightTex", GetDefaultBlackTexture());

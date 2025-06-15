@@ -90,7 +90,7 @@ namespace Pudu
         return m_isValid;
     }
 
-    void ShaderCursor::Write(const SPtr<Texture>& texture, u32 mipLevel)
+    void ShaderCursor::Write(const SPtr<Texture>& texture, u32 mipLevel, const MaterialApplyPropertyGPUTarget& gpuTarget)
     {
         if (texture == nullptr)
         {
@@ -106,12 +106,14 @@ namespace Pudu
         }
 
         VkImageLayout layout = (m_descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
-            m_descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
+                                   m_descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                                   ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                   : VK_IMAGE_LAYOUT_GENERAL;
 
         VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageView = mipLevel==0? texture->vkImageViewHandle: texture->GetMipImageView(mipLevel);
+        imageInfo.imageView = mipLevel == 0 ? texture->vkImageViewHandle : texture->GetMipImageView(mipLevel);
         imageInfo.sampler = texture->Sampler.vkHandle;
-        imageInfo.imageLayout =  layout;
+        imageInfo.imageLayout = layout;
 
         VkWriteDescriptorSet imageWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
         imageWrite.descriptorCount = 1;
@@ -124,17 +126,14 @@ namespace Pudu
         //So far there are two possible usages for images on descriptor, either being read on a shader or used as a RW texture on a compute shader
         if (layout != texture->GetImageLayout())
         {
-            //Doing the transition here might not be the best solution. TODO: Consult with Tim or someone who can know more about sync
-            auto cmd = m_target->graphics->BeginSingleTimeCommands();
             VkImageSubresourceRange range{};
-            range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //TODO: GET THE RIGHT ASPECT MASK
+            range.aspectMask = texture->GetAspectMask(); //TODO: GET THE RIGHT ASPECT MASK
             range.baseMipLevel = 0;
             range.levelCount = texture->mipLevels;
             range.baseArrayLayer = 0;
             range.layerCount = texture->layers;
 
-            cmd.TransitionTextureLayout(texture.get(), layout, &range);
-            m_target->graphics->EndSingleTimeCommands(cmd);
+            gpuTarget.commands->TransitionTextureLayout(texture.get(), layout, &range);
         }
 
         m_target->graphics->UpdateDescriptorSet(1, &imageWrite);

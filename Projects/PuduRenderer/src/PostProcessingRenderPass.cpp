@@ -41,7 +41,7 @@ namespace Pudu
 			.renderer = renderData.renderer,
 			});
 
-		m_material->ApplyProperties();
+		m_material->ApplyProperties(command.get());
 		command->BindPipeline(pipeline);
 
 		BindMaterialDescriptorSets(pipeline,m_material,renderData);

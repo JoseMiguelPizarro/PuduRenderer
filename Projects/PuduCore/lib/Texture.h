@@ -47,6 +47,7 @@ namespace Pudu
 
         VkImageView GetMipImageView(u32 mipLevel) const;
         static u32 CalculateMipLevels(u32 width, u32 height);
+        VkImageAspectFlags GetAspectMask() const;
 
 
         Texture()
@@ -66,6 +67,7 @@ namespace Pudu
         bool m_disposed;
         VkImageView m_mipImageViews[K_MAX_MIP_LEVELS];
         VkImageLayout m_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VkImageAspectFlags m_aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         TextureFlags::Enum m_flags = TextureFlags::Default;
     };
 
