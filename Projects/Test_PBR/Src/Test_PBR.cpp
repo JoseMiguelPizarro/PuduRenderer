@@ -8,6 +8,7 @@
 #include "StringUtils.h"
 #include "ImGui/imgui.h"
 #include "ComputeShaderRenderer.h"
+#include "ImGuiUtils.h"
 #include "OverlayQuadEntity.h"
 
 void Test_PBR::OnInit()
@@ -54,6 +55,7 @@ void Test_PBR::OnInit()
 
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
+
     SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D(
         "textures/patched-brickwork/patched-brickwork_Normal-ogl.png", settings);
     SPtr<Texture2d> roughnessTexture = Graphics.LoadTexture2D(
@@ -80,9 +82,10 @@ void Test_PBR::OnInit()
 
 
     //SKYBOX
-    auto sphere = FileManager::LoadGltfScene("models/sphere.gltf");
+    auto spheregltf = FileManager::LoadGltfScene("models/sphere.gltf");
+    auto sphere = spheregltf->GetChildByName<RenderEntity>("Sphere.001");
 
-    const auto skyboxModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/skybox.gltf"));
+    const auto skyboxModel =FileManager::LoadGltfScene("models/skybox.gltf")->GetChildByName<RenderEntity>("Sphere");
 
     auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
     const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
@@ -99,10 +102,10 @@ void Test_PBR::OnInit()
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
-    auto testModel = FileManager::LoadGltfScene("models/damagedHelmet/damagedHelmet.gltf");
+    auto testModel = FileManager::LoadGltfScene("models/antiquecamera/antiquecamera.gltf");
 
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
-    const auto axisModel = std::dynamic_pointer_cast<RenderEntity>(FileManager::LoadGltfScene("models/axis.gltf"));
+    const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf")->GetChildByName<RenderEntity>("OUT_AXIS");
     axisModel->GetTransform().SetLocalPosition({0, 0, 0});
     axisModel->GetTransform().SetUniformLocalScale(0.2f);
     auto& [layer] = axisModel->GetRenderSettings();
@@ -110,12 +113,11 @@ void Test_PBR::OnInit()
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
     testModel->GetTransform().SetLocalPosition({0, 0, 0});
-  //  testModel->GetTransform().SetUniformLocalScale(20);
+    testModel->GetTransform().SetUniformLocalScale(.5);
     // m_scene.AddEntity(sphere);
     m_scene.AddEntity(testModel);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
-
 
     auto inputQO = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
     inputQO->GetMaterial()->SetProperty("material.texture", m_puduRenderer.GetEnvMap());
@@ -165,6 +167,7 @@ void Test_PBR::OnRun()
 
 void Test_PBR::DrawImGUI()
 {
+
     PuduApp::DrawImGUI();
 
     ImGui::Text(StringUtils::Format("FPS: {}", Time.GetFPS()).c_str());
@@ -182,5 +185,58 @@ void Test_PBR::DrawImGUI()
     if (ImGui::SliderInt("Lod", &lod, 0, 11))
     {
         m_arrayQO->SetLOD(lod);
+    }
+
+    using namespace StringUtils;
+    auto entities = m_scene.GetEntities();
+
+    ImGuiUtils::DrawEntityTree(entities);
+
+    auto textures = Graphics.Resources()->GetAllocatedTextures()->GetAllResources();
+
+    if (ImGui::CollapsingHeader("Textures"))
+    {
+        if (ImGui::BeginTable("textures", 2))
+        {
+            for (size_t row = 0; row < textures.size(); row++)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::Text(textures[row]->name.c_str());
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Text("%d", textures[row]->Handle().Index());
+            }
+
+            ImGui::EndTable();
+        }
+    }
+
+    ImGuiUtils::DrawShaderTree(Graphics.Resources()->GetAllocatedShaders()->GetAllResources());
+
+    if (ImGui::CollapsingHeader("Materials"))
+    {
+        const auto materials = Graphics.Resources()->GetAllocatedMaterials()->GetAllResources();
+
+        for (Size row = 0; row < materials.size(); row++)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text(materials[row]->name.c_str());
+            ImGui::TableSetColumnIndex(1);
+            ImGui::Text("%d", materials[row]->Handle().Index());
+        }
+    }
+
+
+    ImGui::Text("Camera");
+    ImGuiUtils::DrawTransform(m_camera.Transform);
+    ImGui::Text("Projection");
+    ImGuiUtils::DrawMat4x4(m_camera.Projection.GetProjectionMatrix());
+
+    ImGui::Text("Light");
+    vec3 forward = directionalLight.GetTransform().GetForward();
+    if (ImGui::InputFloat3("Light Direction", &forward[0]))
+    {
+        directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
     }
 }

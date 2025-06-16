@@ -316,6 +316,9 @@ namespace Pudu
         std::vector<EntitySPtr> entities;
         std::unordered_map<fastgltf::Node*, EntitySPtr> parentEntitiesByNode;
 
+        std::string name = path.stem().string();
+        auto root = EntityManager::AllocateEntity(name);
+
         for (auto& node : asset->nodes)
         {
             LOG("{}", node.name);
@@ -331,7 +334,7 @@ namespace Pudu
                 const auto& meshData = meshCreationData[meshIndex.value()];
                 auto model = PuduGraphics::Instance()->CreateModel(meshData);
 
-                auto renderEntity = EntityManager::AllocateRenderEntity(name, model);
+                auto renderEntity = EntityManager::AllocateRenderEntity(meshData.Name.c_str(), model);
                 auto [layer] = renderEntity->GetRenderSettings();
                 layer = 0;
                 entity = renderEntity;
@@ -365,7 +368,15 @@ namespace Pudu
             }
         }
 
-        return entities[0];
+        for (auto& entity : entities)
+        {
+            if (entity->GetParent() == nullptr)
+            {
+                entity->SetParent(root);
+            }
+        }
+
+        return root;
     }
 
     std::vector<char> FileManager::LoadShader(fs::path const& path)
