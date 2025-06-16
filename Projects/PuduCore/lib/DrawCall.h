@@ -10,12 +10,12 @@ namespace Pudu
 		Model* ModelPtr;
 		SPtr<Mesh> MeshPtr;
 		SPtr<Material> MaterialPtr;
-		mat4 TransformMatrix;
 
 
 		SPtr<Material> GetRenderMaterial();
 		void SetReplacementMaterial(SPtr<Material> material);
 		bool HasReplacementMaterial();
+		mat4 GetModelMatrix();
 
 		DrawCall() {};
 		DrawCall(Model*  model, SPtr<Mesh> mesh, SPtr<Material> material)

@@ -23,6 +23,7 @@ private:
     Scene m_scene;
     PuduRenderer m_puduRenderer;
     SPtr<Shader> standardShader;
+    EntitySPtr m_model;
     Light directionalLight;
     SPtr<OverlayQuadTextureArrayEntity> m_arrayQO;
 };

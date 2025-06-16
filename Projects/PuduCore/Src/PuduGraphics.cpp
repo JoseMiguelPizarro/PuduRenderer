@@ -2651,7 +2651,7 @@ namespace Pudu
     {
         UniformBufferObject ubo{};
 
-        ubo.modelMatrix = drawCall.TransformMatrix;
+        ubo.modelMatrix = drawCall.GetModelMatrix();
         return ubo;
     }
 

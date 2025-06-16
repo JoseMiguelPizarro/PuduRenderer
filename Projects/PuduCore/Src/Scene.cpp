@@ -43,9 +43,8 @@ namespace Pudu {
 				material = model->Materials[0];
 			}
 
-			model->Transform = renderEntity->GetTransform();
+			model->Transform = &renderEntity->GetTransform();
 			DrawCall dc(model, model->Meshes[i], material);
-			dc.TransformMatrix = renderEntity->GetTransform().GetTransformationMatrix();
 
 			AddDrawCall(dc, renderEntity->GetRenderSettings());
 		}

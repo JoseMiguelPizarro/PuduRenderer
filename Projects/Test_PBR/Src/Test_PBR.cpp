@@ -102,7 +102,7 @@ void Test_PBR::OnInit()
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
-    auto testModel = FileManager::LoadGltfScene("models/antiquecamera/antiquecamera.gltf");
+    m_model = FileManager::LoadGltfScene("models/antiquecamera/antiquecamera.gltf");
 
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf")->GetChildByName<RenderEntity>("OUT_AXIS");
@@ -112,10 +112,10 @@ void Test_PBR::OnInit()
     layer = 2;
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
-    testModel->GetTransform().SetLocalPosition({0, 0, 0});
-    testModel->GetTransform().SetUniformLocalScale(.5);
+    m_model->GetTransform().SetLocalPosition({0, 0, 0});
+    m_model->GetTransform().SetUniformLocalScale(.5);
     // m_scene.AddEntity(sphere);
-    m_scene.AddEntity(testModel);
+    m_scene.AddEntity(m_model);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
 
@@ -146,6 +146,7 @@ void Test_PBR::OnInit()
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
+    return;
     static float angle = PI / 4 + PI;
     const float radius = 3.5f;
     const float speed = 0.0001f; // radians per frame
@@ -238,5 +239,12 @@ void Test_PBR::DrawImGUI()
     if (ImGui::InputFloat3("Light Direction", &forward[0]))
     {
         directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
+    }
+
+    static float modelScale = 1.0f;
+    if (ImGui::SliderFloat("Model Scale", &modelScale, 0.0f, 20.0f))
+    {
+        m_model->GetTransform().SetUniformLocalScale(modelScale);
+        m_model->GetTransform().UpdateWorldTransformRecursivelly();
     }
 }
