@@ -304,6 +304,7 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
   return color;
 }
 
+
 public float3 StandardSurface(SurfaceInfo Surface) {
 
     PBRInfo PBR;
@@ -314,13 +315,25 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     PBR.SpecularColor = lerp(Surface.F0, Surface.Albedo,Surface.Metallic);
     PBR.alphaRoughness = Surface.Roughness * Surface.Roughness;
     Surface.F0 = float3(0.2,.2,.2);
-    Surface.F90 = float3(.5,.5,.5);
+    Surface.F90 = float3(1,1.,1.);
 
     float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
 
     float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(GLOBALS.lightingBuffer.lightDirection.xyz),float3(1,1,1));
     float3 c = specularColor + diffuseColor + Surface.Emissive + L*Surface.ShadowAttenuation;
+
+
+    switch(DEBUG_SETTINGS.debug)
+    {
+        case Debug.Albedo:
+            c = float3(1,0,0);
+            break;
+
+        default:
+        break;
+    }
+
 
     return c;
 }

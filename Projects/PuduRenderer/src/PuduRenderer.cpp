@@ -444,6 +444,7 @@ namespace Pudu
         m_globalPropertiesMaterial->ApplyProperties(data.currentCommand.get());
 
         data.descriptorSetOffset = m_globalDescriptorSetLayouts->setsCount;
+        m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.debug",1);
         isFirstFrame = false;
         UpdateLightingBuffer(data);
         UpdateGlobalConstantsBuffer(data);

@@ -110,6 +110,16 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
+    void ShaderPropertiesBlock::SetProperty(const std::string_view& name, int value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Int;
+        request.property.value = glm::vec4(value);
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const glm::vec2 value)
     {
         PropertyUpdateRequest request;
@@ -316,6 +326,11 @@ namespace Pudu
     {
         //For alignment purposes we are treating everything as a vector hehe 🙈
         ApplyVectorValue(request, target);
+    }
+
+    void ShaderPropertiesBlock::ApplyIntValue(const PropertyUpdateRequest& value,
+        const MaterialApplyPropertyGPUTarget& target)
+    {
     }
 
     void ShaderPropertiesBlock::AllocateGPUResourcesFromShaderNode(ShaderNodeResourcesAllocationInfo& allocationInfo)

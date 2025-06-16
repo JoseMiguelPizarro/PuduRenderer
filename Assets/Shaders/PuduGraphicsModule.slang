@@ -40,6 +40,16 @@ public struct Globals
     public ConstantBuffer<GlobalsConstants> constants;
 }
 
+public enum Debug
+{
+   None,Albedo,Diffuse,Normal
+};
+
+public struct DEBUG
+{
+  public Debug debug;
+}
+
 // public struct GlobalsBindless
 // {
 //     public Sampler2D textures[];
@@ -47,6 +57,9 @@ public struct Globals
 
 [Scope("Global")]
 public ParameterBlock<Globals> GLOBALS;
+
+[Scope("Global")]
+public ParameterBlock<DEBUG> DEBUG_SETTINGS;
 
 // [Bindless, Scope("Global")]
 // public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
