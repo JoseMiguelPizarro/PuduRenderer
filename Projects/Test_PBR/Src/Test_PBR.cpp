@@ -3,6 +3,7 @@
 //
 
 #include "Test_PBR.h"
+#include "Renderer.h"
 
 #include "FileManager.h"
 #include "StringUtils.h"
@@ -102,7 +103,7 @@ void Test_PBR::OnInit()
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
-    m_model = FileManager::LoadGltfScene("models/antiquecamera/antiquecamera.gltf");
+    m_model = FileManager::LoadGltfScene("models/damagedHelmet/damagedHelmet.gltf");
 
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf")->GetChildByName<RenderEntity>("OUT_AXIS");
@@ -240,6 +241,16 @@ void Test_PBR::DrawImGUI()
     {
         directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
     }
+
+    static Renderer::Debug currentDebugMode = Renderer::Debug::None;
+    //None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive
+    const char* debugModeNames[] = {"None", "Albedo","Diffuse","Normal", "Metallic", "Roughness", "Emissive", "LightSpecular","LightDiffuse", "ShadowAttenuation", "DirectLight"};
+
+    if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames, IM_ARRAYSIZE(debugModeNames)))
+    {
+        m_puduRenderer.SetDebugMode(currentDebugMode);
+    }
+
 
     static float modelScale = 1.0f;
     if (ImGui::SliderFloat("Model Scale", &modelScale, 0.0f, 20.0f))

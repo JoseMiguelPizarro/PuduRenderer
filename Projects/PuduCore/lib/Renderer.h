@@ -10,9 +10,17 @@ namespace Pudu
     class Pipeline;
     class Shader;
 
+
+
     class Renderer
     {
+
     public:
+        enum class Debug
+        {
+            None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight
+        };
+
         Pipeline* GetOrCreatePipeline(PipelineQueryData query);
 
         Pipeline* CreatePipelineByRenderPassAndShader(RenderPass* renderPass, IShaderObject* shader);

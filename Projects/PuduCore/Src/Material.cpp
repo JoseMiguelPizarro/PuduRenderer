@@ -38,6 +38,16 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, value);
     }
 
+    void Material::SetProperty(const std::string_view& name, int value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
+    void Material::SetProperty(const std::string_view& name, u32 value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
     void Material::SetProperty(const std::string& name, const glm::vec2 value)
     {
         m_propertiesBlock.SetProperty(name, value);
@@ -120,6 +130,15 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
+    void ShaderPropertiesBlock::SetProperty(const std::string_view& name, u32 value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::UInt;
+        request.property.value = glm::vec4(value);
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const glm::vec2 value)
     {
         PropertyUpdateRequest request;
@@ -192,6 +211,14 @@ namespace Pudu
                     ApplyFloatValue(request, target);
                 }
                 break;
+            case ShaderPropertyType::Int:
+                {
+                    ApplyIntValue(request, target);
+                }
+                case ShaderPropertyType::UInt:
+                {
+                    ApplyIntValue(request, target);
+                }
             default:
                 break;
             }
@@ -328,9 +355,35 @@ namespace Pudu
         ApplyVectorValue(request, target);
     }
 
-    void ShaderPropertiesBlock::ApplyIntValue(const PropertyUpdateRequest& value,
+    void ShaderPropertiesBlock::ApplyIntValue(const PropertyUpdateRequest& request,
         const MaterialApplyPropertyGPUTarget& target)
     {
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
+        auto field = shaderCursor.Field(request.property.name.c_str());
+
+        if (field.IsValid())
+        {
+            auto shaderNode = field.GetNode();
+
+            //Fetch float value associated buffer
+            auto cBufferProperty = FetchShaderNodeProperty(shaderNode->parentContainer);
+
+            if (cBufferProperty != nullptr)
+            {
+                int v = static_cast<int>(request.property.value.x);
+                field.Write(cBufferProperty->buffer, &v, shaderNode->offset, shaderNode->size);
+                BindPropertyToShaderNode(field.GetNode(), request.property);
+            }
+            else
+            {
+                LOG_WARNING("Trying to set vector {} value but parent cbuffer has not been bound",
+                            shaderNode->GetFullPath());
+            }
+        }
+        else
+        {
+            LOG_WARNING("Shader property {} not found", request.property.name.c_str());
+        }
     }
 
     void ShaderPropertiesBlock::AllocateGPUResourcesFromShaderNode(ShaderNodeResourcesAllocationInfo& allocationInfo)

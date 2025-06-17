@@ -24,7 +24,8 @@ namespace Pudu
             Buffer,
             TextureArray,
             Float,
-            Int
+            Int,
+            UInt
         };
     };
 
@@ -74,6 +75,7 @@ namespace Pudu
     public:
         void SetProperty(const std::string_view& name, float value);
         void SetProperty(const std::string_view& name, int value);
+        void SetProperty(const std::string_view& name, u32 value);
         void SetProperty(const std::string& name, vec2 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
@@ -113,6 +115,8 @@ namespace Pudu
         ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
         void ApplyProperties(GPUCommands* commands);
         void SetProperty(const std::string_view& name, float value);
+        void SetProperty(const std::string_view& name, int value);
+        void SetProperty(const std::string_view& name, u32 value);
         void SetProperty(const std::string& name, glm::vec2 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);

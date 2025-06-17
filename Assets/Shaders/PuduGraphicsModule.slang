@@ -40,14 +40,14 @@ public struct Globals
     public ConstantBuffer<GlobalsConstants> constants;
 }
 
-public enum Debug
+public enum DebugMode
 {
-   None,Albedo,Diffuse,Normal
+   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular,LightDiffuse, ShadowAttenuation, DirectLight
 };
 
 public struct DEBUG
 {
-  public Debug debug;
+  public DebugMode debugMode;
 }
 
 // public struct GlobalsBindless

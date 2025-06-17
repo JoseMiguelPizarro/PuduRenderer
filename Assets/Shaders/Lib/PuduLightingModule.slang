@@ -249,9 +249,8 @@ float3 GetIBLRadianceDiffuse(PBRInfo PBR, SurfaceInfo Surface,float SpecularWeig
     float3 FssEss = SpecularWeight*k_s *f_ab.x + f_ab.y;
     float Ems = (1. - (f_ab.x + f_ab.y));
     float3 F_avg = SpecularWeight * (F0 + (1.0 - F0) / 21.0);
-    float3 FmsEms = Ems * FssEss * F_avg / (1.0 - F_avg * Ems);
+    float3 FmsEms = Ems * FssEss * F_avg / max(1.0 - F_avg * Ems,0.0001);
     float3 k_D = PBR.DiffuseColor * (1.0 - FssEss + FmsEms);
-
     return (FmsEms + k_D) * irradiance;
 }
 
@@ -323,17 +322,41 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(GLOBALS.lightingBuffer.lightDirection.xyz),float3(1,1,1));
     float3 c = specularColor + diffuseColor + Surface.Emissive + L*Surface.ShadowAttenuation;
 
-
-    switch(DEBUG_SETTINGS.debug)
+    switch(DEBUG_SETTINGS.debugMode)
     {
-        case Debug.Albedo:
-            c = float3(1,0,0);
+        case DebugMode.Albedo:
+            c = Surface.Albedo;
             break;
-
+        case DebugMode.Diffuse:
+            c = PBR.DiffuseColor;
+            break;
+        case DebugMode.Normal:
+            c = Surface.Normal * 0.5 + 0.5;
+            break;
+        case DebugMode.Metallic:
+            c = Surface.Metallic;
+            break;
+        case DebugMode.Roughness:
+            c = Surface.Roughness;
+            break;
+        case DebugMode.Emissive:
+            c = Surface.Emissive;
+            break;
+        case DebugMode.LightDiffuse:
+            c = diffuseColor;
+            break;
+        case DebugMode.LightSpecular:
+            c = specularColor;
+            break;
+        case DebugMode.ShadowAttenuation:
+            c = Surface.ShadowAttenuation;
+            break;
+        case DebugMode.DirectLight:
+            c = L;
+            break;
         default:
         break;
     }
-
 
     return c;
 }
