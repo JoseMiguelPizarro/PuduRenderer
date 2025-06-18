@@ -18,7 +18,7 @@ namespace Pudu
     public:
         enum class Debug
         {
-            None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight
+            None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance
         };
 
         Pipeline* GetOrCreatePipeline(PipelineQueryData query);

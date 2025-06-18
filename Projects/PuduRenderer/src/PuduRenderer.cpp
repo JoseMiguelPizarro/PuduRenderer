@@ -104,7 +104,7 @@ namespace Pudu
 
     void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
     {
-        u32 IBLRTResolution = 256;
+        u32 IBLRTResolution = envMap->width;
         u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
 
         SamplerCreationData samplerData{};
@@ -154,13 +154,14 @@ namespace Pudu
             gfx->DestroyTexture(m_IBL_SpecularCube);
         }
 
+        std::string specularIBLName =  ("IBL_SpecularCube_" + envMap->name);
         TextureCreationData envCubemapCreationData{};
         envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
         envCubemapCreationData.width = IBLRTResolution;
         envCubemapCreationData.height = IBLRTResolution;
         envCubemapCreationData.generateMipmaps = false;
         envCubemapCreationData.textureType = TextureType::Texture_Cube;
-        envCubemapCreationData.name = ("IBL_SpecularCube_" + envMap->name).c_str();
+        envCubemapCreationData.name = specularIBLName.c_str();
         envCubemapCreationData.layers = 6;
         envCubemapCreationData.samplerData = &samplerData;
         envCubemapCreationData.mipmaps = IBLMips;
@@ -211,13 +212,14 @@ namespace Pudu
             gfx->DestroyTexture(m_IBL_SpecularCube);
         }
 
+        std::string diffuseIBLName =  ("IBL_DiffuseCube_" + envMap->name);
         TextureCreationData IBLDiffuseCubeCreationData{};
         IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
         IBLDiffuseCubeCreationData.width = IBLRTResolution;
         IBLDiffuseCubeCreationData.height = IBLRTResolution;
         IBLDiffuseCubeCreationData.generateMipmaps = false;
         IBLDiffuseCubeCreationData.textureType = TextureType::Texture_Cube;
-        IBLDiffuseCubeCreationData.name = ("IBL_DiffuseCube_" + envMap->name).c_str();
+        IBLDiffuseCubeCreationData.name = diffuseIBLName.c_str();
         IBLDiffuseCubeCreationData.layers = 6;
         IBLDiffuseCubeCreationData.samplerData = &samplerData;
 

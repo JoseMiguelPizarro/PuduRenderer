@@ -93,6 +93,45 @@ public MicrofacetDistributionSample DGGX_ImportanceSample(float2 Xi, float Rough
   return ggx;
 }
 
+MicrofacetDistributionSample LambertianImportanceSample(float2 xi) {
+  MicrofacetDistributionSample lambertian;
+
+  // Cosine weighted hemisphere sampling
+  // http://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations.html#Cosine-WeightedHemisphereSampling
+  lambertian.cosTheta = sqrt(1.0 - xi.y);
+  lambertian.sinTheta = sqrt(xi.y); // equivalent to `sqrt(1.0 - cosTheta*cosTheta)`;
+  lambertian.phi = 2.0 * TAU * xi.x;
+
+  lambertian.pdf = lambertian.cosTheta / PI; // evaluation for solid angle, therefore drop the sinTheta
+
+  return lambertian;
+}
+
+public float4 GetLambertianImportanceSample(uint SampleIndex, float3 N,uint SampleCount)
+{
+        float3 irradiance = 0;
+        float weight = 0;
+
+         float3 up = abs(N.z) < 0.999 ?
+         float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+         float3 tangentX = normalize(cross(up, N));
+         float3 tangentY = normalize(cross(N, tangentX));
+
+        float2 xi = HammersleyHemisphere(SampleIndex, SampleCount);
+
+        MicrofacetDistributionSample dist = LambertianImportanceSample(xi);
+        float cosPhi = cos(dist.phi);
+        float sinPhi = sin(dist.phi);
+
+        float3 directionTS = float3(dist.sinTheta * cosPhi,dist.sinTheta*sinPhi,dist.cosTheta);
+
+        float3 H = normalize(tangentX * directionTS.x +
+                                    tangentY * directionTS.y +
+                                      N * directionTS.z);
+
+        return float4(H,dist.pdf);
+}
+
 ///<summary>Returns microfacet H vector using importance sampling with a DGGX PDF</summary>
 public float4 GetDGGXImportanceSample(uint SampleIndex, float3 N, float Roughness, uint SampleCount)
 {
@@ -354,6 +393,9 @@ public float3 StandardSurface(SurfaceInfo Surface) {
         case DebugMode.DirectLight:
             c = L;
             break;
+            case DebugMode.Irradiance:
+                c = SampleIrradiance(Surface.Normal);
+                break;
         default:
         break;
     }

@@ -42,7 +42,7 @@ public struct Globals
 
 public enum DebugMode
 {
-   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular,LightDiffuse, ShadowAttenuation, DirectLight
+   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance
 };
 
 public struct DEBUG

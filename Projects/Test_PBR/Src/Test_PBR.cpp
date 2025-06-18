@@ -244,7 +244,9 @@ void Test_PBR::DrawImGUI()
 
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;
     //None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive
-    const char* debugModeNames[] = {"None", "Albedo","Diffuse","Normal", "Metallic", "Roughness", "Emissive", "LightSpecular","LightDiffuse", "ShadowAttenuation", "DirectLight"};
+    const char* debugModeNames[] = {
+        "None", "Albedo","Diffuse","Normal", "Metallic", "Roughness", "Emissive", "LightSpecular","LightDiffuse", "ShadowAttenuation", "DirectLight","Irradiance",
+        };
 
     if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames, IM_ARRAYSIZE(debugModeNames)))
     {

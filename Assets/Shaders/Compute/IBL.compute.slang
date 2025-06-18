@@ -38,33 +38,26 @@ float ComputeLod(float PDF, uint Width, uint Height, uint SampleCount) {
 
 float3 DiffuseFilteredIBL_ImportanceSampled(SamplerCube EnvMap, float3 N, uint SampleCount)
 {
-    float3 irradiance = 0;
-    float weight = 0;
+        uint width, height;
+        EnvMap.GetDimensions(width,height);
 
-     float3 up = abs(N.z) < 0.999 ?
-     float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-     float3 tangentX = normalize(cross(up, N));
-     float3 tangentY = normalize(cross(N, tangentX));
-    for(uint i = 0; i<SampleCount; i++)
-    {
-        float2 xi = HammersleyHemisphere(i, SampleCount);
+        float3 c = 0.;
 
-        float phi = xi.x * TAU;
+        for(uint i = 0; i<SampleCount;i++)
+        {
+                float4 importanceSample = GetLambertianImportanceSample(i, N, SampleCount);
+                float3 H = importanceSample.xyz;
+                float pdf = importanceSample.w;
 
-        float cosTheta = sqrt(xi.y);
-        float sinTheta = sqrt(1 - xi.y);
-        float sinPhi = sin(phi);
-        float cosPhi = cos(phi);
+                float lod = ComputeLod(pdf,width,height, SampleCount);
 
-        float3 directionTS = float3(sinTheta * cosPhi,sinTheta*sinPhi,cosTheta);
+                float3 sampleColor = EnvMap.SampleLevel(H,lod).xyz;
 
-        float3 H = normalize(tangentX * directionTS.x +
-                                tangentY * directionTS.y +
-                                  N * directionTS.z);
+                c += sampleColor;
+        }
 
-        irradiance += EnvMap.SampleLevel(H,0).xyz;
-    }
-    return irradiance/SampleCount;
+        c /=SampleCount;
+        return c;
 }
 
 float3 DiffuseFilteredIBL_BruteForce(SamplerCube EnvMap, float3 N, uint EnvMapResolution)
