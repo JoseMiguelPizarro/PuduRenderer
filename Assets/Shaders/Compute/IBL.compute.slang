@@ -108,7 +108,7 @@ float3 SpecularFilteredIBL(SamplerCube EnvMap, float3 N, float Roughness, uint S
             float3 H = importanceSample.xyz;
             float pdf = importanceSample.w;
 
-            float lod = ComputeLod(pdf,width,height, SampleCount);
+            float lod = ComputeLod(pdf,width,height, SampleCount); //LOD here is playing the role of the PDF divide
             //GGX Distribution
             float3 V = N;
             float3 L = normalize(reflect(-V,H));

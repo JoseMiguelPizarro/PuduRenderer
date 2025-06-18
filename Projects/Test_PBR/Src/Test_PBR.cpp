@@ -12,6 +12,8 @@
 #include "ImGuiUtils.h"
 #include "OverlayQuadEntity.h"
 
+
+
 void Test_PBR::OnInit()
 {
     AntialiasingSettings antialiasingSettings{};
@@ -147,18 +149,31 @@ void Test_PBR::OnInit()
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
-    return;
+
+    m_camRadius -= Input::GetMouseWheelDelta()/10.f;
     static float angle = PI / 4 + PI;
-    const float radius = 3.5f;
+
+    static float phi = 0.f;
+    static float theta = 0.f;
+    if (Input::IsMouseButtonPressed(MouseButton::Left))
+    {
+        const auto mousePos = Input::GetMousePosition();
+        const auto mousePosNormalized = mousePos /glm::vec2{Graphics.WindowWidth, Graphics.WindowHeight};
+        const auto mousePosNormalized2 = mousePosNormalized * 2.f - 1.f;
+
+        phi+= mousePosNormalized2.x * 0.01f;
+        theta += mousePosNormalized2.y * 0.01f;
+    }
+
+    const float radius = m_camRadius;
     const float speed = 0.0001f; // radians per frame
 
     // Update the angle based on speed
-    angle += speed * Time.DeltaTime();
 
     // Calculate the new position of the camera
-    float x = radius * cos(angle);
-    float z = radius * sin(angle);
-    float y = sin(angle) * radius;
+    float x = radius * cos(phi);
+    float z = radius * sin(phi);
+    float y = sin(theta) * radius;
 
     // Set the camera position and keep it above the XZ plane (upper hemisphere)
     m_camera.Transform.SetLocalPosition({x, y, z});

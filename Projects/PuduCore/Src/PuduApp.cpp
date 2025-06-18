@@ -18,6 +18,7 @@ namespace Pudu
 		settings.resolution.y = 1024;
 		settings.presentMode = PresentMode::FIFO;
 		Graphics.Init(settings);
+		Input::Init(Graphics.WindowPtr);
 
 		OnInit();
 
@@ -59,6 +60,8 @@ namespace Pudu
 			try {
 
 				OnRun();
+
+				Input::ResetDelta();
 			}
 			catch (std::exception& e) {
 				std::printf(e.what());

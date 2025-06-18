@@ -19,6 +19,7 @@ public:
     void DrawImGUI() override;
 
 private:
+    float m_camRadius = 10.0f;
     Camera m_camera;
     Scene m_scene;
     PuduRenderer m_puduRenderer;

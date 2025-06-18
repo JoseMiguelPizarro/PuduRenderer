@@ -115,6 +115,7 @@ namespace Pudu
 		void DrawFrame(RenderFrameData& frameData);
 		SPtr<Texture> GetMultisampledColorTexture();
 		SPtr<Texture> GetMultisampledDepthTexture();
+		GLFWwindow* GetWindow() { return WindowPtr; }
 
 		PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR{ VK_NULL_HANDLE };
 
