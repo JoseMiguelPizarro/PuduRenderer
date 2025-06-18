@@ -121,6 +121,7 @@ namespace Pudu
         IBLRTCreationData.mipmaps = IBLMips;
         IBLRTCreationData.samplerData = &samplerData;
 
+
         auto IBLRTHandle = gfx->CreateTexture(IBLRTCreationData);
         m_IBL = gfx->Resources()->GetTexture<Texture>(IBLRTHandle);
 
@@ -152,21 +153,19 @@ namespace Pudu
         {
             gfx->DestroyTexture(m_IBL_SpecularCube);
         }
-        else
-        {
-            TextureCreationData envCubemapCreationData{};
-            envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-            envCubemapCreationData.width = IBLRTResolution;
-            envCubemapCreationData.height = IBLRTResolution;
-            envCubemapCreationData.generateMipmaps = false;
-            envCubemapCreationData.textureType = TextureType::Texture_Cube;
-            envCubemapCreationData.name = ("IBL_SpecularCube_" + envMap->name).c_str();
-            envCubemapCreationData.layers = 6;
-            envCubemapCreationData.samplerData = &samplerData;
-            envCubemapCreationData.mipmaps = IBLMips;
-            auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
-            m_IBL_SpecularCube = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
-        }
+
+        TextureCreationData envCubemapCreationData{};
+        envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        envCubemapCreationData.width = IBLRTResolution;
+        envCubemapCreationData.height = IBLRTResolution;
+        envCubemapCreationData.generateMipmaps = false;
+        envCubemapCreationData.textureType = TextureType::Texture_Cube;
+        envCubemapCreationData.name = ("IBL_SpecularCube_" + envMap->name).c_str();
+        envCubemapCreationData.layers = 6;
+        envCubemapCreationData.samplerData = &samplerData;
+        envCubemapCreationData.mipmaps = IBLMips;
+        auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
+        m_IBL_SpecularCube = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
 
         auto cmd = gfx->BeginSingleTimeCommands();
         cmd.Blit(m_IBL, m_IBL_SpecularCube);
@@ -211,21 +210,19 @@ namespace Pudu
         {
             gfx->DestroyTexture(m_IBL_SpecularCube);
         }
-        else
-        {
-            TextureCreationData IBLDiffuseCubeCreationData{};
-            IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-            IBLDiffuseCubeCreationData.width = IBLRTResolution;
-            IBLDiffuseCubeCreationData.height = IBLRTResolution;
-            IBLDiffuseCubeCreationData.generateMipmaps = false;
-            IBLDiffuseCubeCreationData.textureType = TextureType::Texture_Cube;
-            IBLDiffuseCubeCreationData.name = ("IBL_DiffuseCube_" + envMap->name).c_str();
-            IBLDiffuseCubeCreationData.layers = 6;
-            IBLDiffuseCubeCreationData.samplerData = &samplerData;
 
-            auto IBLDiffuseCubeHandle = gfx->CreateTexture(IBLDiffuseCubeCreationData);
-            m_IBL_DiffuseCube = gfx->Resources()->GetTexture<Texture>(IBLDiffuseCubeHandle);
-        }
+        TextureCreationData IBLDiffuseCubeCreationData{};
+        IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        IBLDiffuseCubeCreationData.width = IBLRTResolution;
+        IBLDiffuseCubeCreationData.height = IBLRTResolution;
+        IBLDiffuseCubeCreationData.generateMipmaps = false;
+        IBLDiffuseCubeCreationData.textureType = TextureType::Texture_Cube;
+        IBLDiffuseCubeCreationData.name = ("IBL_DiffuseCube_" + envMap->name).c_str();
+        IBLDiffuseCubeCreationData.layers = 6;
+        IBLDiffuseCubeCreationData.samplerData = &samplerData;
+
+        auto IBLDiffuseCubeHandle = gfx->CreateTexture(IBLDiffuseCubeCreationData);
+        m_IBL_DiffuseCube = gfx->Resources()->GetTexture<Texture>(IBLDiffuseCubeHandle);
 
         cmd.Blit(IBL_DiffuseRT, m_IBL_DiffuseCube);
         gfx->EndSingleTimeCommands(cmd);
@@ -417,7 +414,7 @@ namespace Pudu
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-      //  AddRenderPass(normalRP.get());
+        //  AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         // AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());

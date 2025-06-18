@@ -8,18 +8,18 @@ struct Input
     RWTexture2DArray<float4> output;
     SamplerCube input;
     float roughness;
-    float sampleCount;
-    float inputResolution;
-    float outputResolution;
+    uint sampleCount;
+    uint inputResolution;
+    uint outputResolution;
 }
 
 struct IBLDiffuseData
 {
     SamplerCube input;
     RWTexture2DArray<float4> output;
-    float inputResolution;
-    float outputResolution;
-    float sampleCount;
+    uint inputResolution;
+    uint outputResolution;
+    uint sampleCount;
 }
 
 ParameterBlock<Input> material;
