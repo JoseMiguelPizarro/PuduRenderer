@@ -67,6 +67,11 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.debugMode", static_cast<int>(mode));
     }
 
+    void PuduRenderer::SetRoughnessScale(float scale)
+    {
+        m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.roughnessScale", scale);
+    }
+
     void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
     {
         u32 brdfLUTResolution = 256;

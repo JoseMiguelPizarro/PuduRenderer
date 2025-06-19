@@ -42,12 +42,13 @@ public struct Globals
 
 public enum DebugMode
 {
-   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance
+   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance, BRDFLUT
 };
 
 public struct DEBUG
 {
   public DebugMode debugMode;
+  public float roughnessScale = 1;
 }
 
 // public struct GlobalsBindless

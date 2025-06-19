@@ -346,13 +346,15 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
 public float3 StandardSurface(SurfaceInfo Surface) {
 
     PBRInfo PBR;
+    Surface.Roughness *= DEBUG_SETTINGS.roughnessScale;
+
     PBR.NdV = dot(Surface.Normal,Surface.ViewDir);
     PBR.VrN = reflect(-Surface.ViewDir,Surface.Normal);
     PBR.ViewDir = Surface.ViewDir;
     PBR.DiffuseColor = lerp(Surface.Albedo,0, Surface.Metallic);
     PBR.SpecularColor = lerp(Surface.F0, Surface.Albedo,Surface.Metallic);
     PBR.alphaRoughness = Surface.Roughness * Surface.Roughness;
-    Surface.F0 = float3(0.2,.2,.2);
+    Surface.F0 = float3(0.1,.1,.1);
     Surface.F90 = float3(1,1.,1.);
 
     float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
@@ -396,6 +398,9 @@ public float3 StandardSurface(SurfaceInfo Surface) {
             case DebugMode.Irradiance:
                 c = SampleIrradiance(Surface.Normal);
                 break;
+        case DebugMode.BRDFLUT:
+            c= float3( SampleBRDFLUT({Surface.Roughness,PBR.NdV}),0);
+            break;
         default:
         break;
     }

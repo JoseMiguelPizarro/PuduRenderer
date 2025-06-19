@@ -141,9 +141,7 @@ void Test_PBR::OnInit()
     m_arrayQO->SetLOD(0);
     m_arrayQO->SetPtr(m_arrayQO);
 
-  //  m_scene.AddEntity(inputQO);
-   // m_scene.AddEntity(oq);
-    // m_scene.AddEntity(m_arrayQO);
+   m_scene.AddEntity(oq);
 }
 
 void Test_PBR::OnRun()
@@ -161,21 +159,18 @@ void Test_PBR::OnRun()
         const auto mousePosNormalized = mousePos /glm::vec2{Graphics.WindowWidth, Graphics.WindowHeight};
         const auto mousePosNormalized2 = mousePosNormalized * 2.f - 1.f;
 
-        phi+= mousePosNormalized2.x * 0.01f;
-        theta += mousePosNormalized2.y * 0.01f;
+        auto delta = Input::GetMousePositionDelta();
+        phi+= delta.x * 0.01f;
+        theta += delta.y * 0.01f;
     }
 
     const float radius = m_camRadius;
-    const float speed = 0.0001f; // radians per frame
 
-    // Update the angle based on speed
 
-    // Calculate the new position of the camera
     float x = radius * cos(phi);
     float z = radius * sin(phi);
     float y = sin(theta) * radius;
 
-    // Set the camera position and keep it above the XZ plane (upper hemisphere)
     m_camera.Transform.SetLocalPosition({x, y, z});
 
     // Make the camera look at the origin
@@ -260,7 +255,7 @@ void Test_PBR::DrawImGUI()
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;
     //None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive
     const char* debugModeNames[] = {
-        "None", "Albedo","Diffuse","Normal", "Metallic", "Roughness", "Emissive", "LightSpecular","LightDiffuse", "ShadowAttenuation", "DirectLight","Irradiance",
+        "None", "Albedo","Diffuse","Normal", "Metallic", "Roughness", "Emissive", "LightSpecular","LightDiffuse", "ShadowAttenuation", "DirectLight","Irradiance","BRDFLUT"
         };
 
     if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames, IM_ARRAYSIZE(debugModeNames)))
@@ -268,6 +263,11 @@ void Test_PBR::DrawImGUI()
         m_puduRenderer.SetDebugMode(currentDebugMode);
     }
 
+    static float roughnessScale = 1.0f;
+    if (ImGui::SliderFloat("Roughness Scale", &roughnessScale, 0.0f, 10.0f))
+    {
+        m_puduRenderer.SetRoughnessScale(roughnessScale);
+    }
 
     static float modelScale = 1.0f;
     if (ImGui::SliderFloat("Model Scale", &modelScale, 0.0f, 20.0f))

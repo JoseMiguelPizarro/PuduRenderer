@@ -22,6 +22,7 @@ namespace Pudu
         SPtr<RenderTexture> GetDepthCopyRT() const;
         SPtr<RenderTexture> GetColorCopyRT() const;
         void SetDebugMode(Renderer::Debug mode);
+        void SetRoughnessScale(float scale);
 
     protected:
         void OnInit(PuduGraphics* graphics, PuduApp* app) override;
