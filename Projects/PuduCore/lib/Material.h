@@ -20,6 +20,8 @@ namespace Pudu
         enum Enum
         {
             Vec2,
+            Vec3,
+            Vec4,
             Texture,
             Buffer,
             TextureArray,
@@ -77,6 +79,8 @@ namespace Pudu
         void SetProperty(const std::string_view& name, int value);
         void SetProperty(const std::string_view& name, u32 value);
         void SetProperty(const std::string& name, vec2 value);
+        void SetProperty(const std::string& name, vec3 value);
+        void SetProperty(const std::string& name, vec4 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
@@ -118,6 +122,8 @@ namespace Pudu
         void SetProperty(const std::string_view& name, int value);
         void SetProperty(const std::string_view& name, u32 value);
         void SetProperty(const std::string& name, glm::vec2 value);
+        void SetProperty(const std::string& name, glm::vec3 value);
+        void SetProperty(const std::string& name, glm::vec4 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);

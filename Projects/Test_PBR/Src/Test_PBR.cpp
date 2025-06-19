@@ -95,14 +95,6 @@ void Test_PBR::OnInit()
     skyboxMaterial->name = "Skybox";
     skyboxMaterial->SetShader(skyboxShader);
 
-    auto sphereEntity = std::dynamic_pointer_cast<RenderEntity>(sphere);
-    auto material = sphereEntity->GetModel()->Materials[0];
-    material->SetShader(standardShader);
-    material->SetProperty("material.albedoTex", silverAlbedoTexture);
-    material->SetProperty("material.normalTex", Graphics.GetDefaultNormalMapTexture());
-    material->SetProperty("material.metallicRoughnessTex", Graphics.GetDefaultMetallicRoughnessTexture());
-    material->SetProperty("material.heightTex", silverHeightTexture);
-
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
     m_model = FileManager::LoadGltfScene("models/damagedHelmet/damagedHelmet.gltf");
@@ -261,6 +253,19 @@ void Test_PBR::DrawImGUI()
     if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames, IM_ARRAYSIZE(debugModeNames)))
     {
         m_puduRenderer.SetDebugMode(currentDebugMode);
+    }
+
+    static vec3 F0 = {0.04f, 0.04f, 0.04f};
+    static vec3 F90 = {0.5f, 0.5f, 0.5f};
+    if (ImGui::InputFloat3("F0", &F0[0]))
+    {
+        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0];
+        modelMat->SetProperty("material.F0",F0);
+    }
+    if (ImGui::InputFloat3("F90", &F90[0]))
+    {
+        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0];
+        modelMat->SetProperty("material.F90",F90);
     }
 
     static float roughnessScale = 1.0f;

@@ -53,6 +53,16 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, value);
     }
 
+    void Material::SetProperty(const std::string& name, glm::vec3 value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
+    void Material::SetProperty(const std::string& name, glm::vec4 value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
     void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
         m_propertiesBlock.SetProperty(name, texture, mipLevel);
@@ -149,6 +159,26 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, vec3 value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Vec3;
+        request.property.value = glm::vec4(value.x, value.y, value.z, 0.0f);
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, vec4 value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Vec4;
+        request.property.value = value;
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
         PropertyUpdateRequest updateRequest{};
@@ -202,6 +232,8 @@ namespace Pudu
                 }
                 break;
             case ShaderPropertyType::Vec2:
+            case ShaderPropertyType::Vec3:
+            case ShaderPropertyType::Vec4:
                 {
                     ApplyVectorValue(request, target);
                 }

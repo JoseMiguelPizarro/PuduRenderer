@@ -13,6 +13,8 @@ struct StandardMaterial
     Sampler2D metallicRoughnessTex;
     Sampler2D heightTex;
     Sampler2D emissiveTex;
+    float3 F0 = {0.04f, 0.04f, 0.04f};
+    float3 F90 = {0.5f, 0.5f, 0.5f};
     float parallax = 0;
 }
 ParameterBlock<StandardMaterial> material;
@@ -85,6 +87,8 @@ float4 fragmentMain(VSOut input)
     m.Roughness = metallicRoughness.y;
     m.ViewDir = viewDir;
     m.ShadowAttenuation = shadow;
+    m.F0 = material.F0.xyz;
+    m.F90 = material.F90.xyz;
     m.Emissive = material.emissiveTex.Sample(uv).xyz;
 
     col.xyz = StandardSurface(m);

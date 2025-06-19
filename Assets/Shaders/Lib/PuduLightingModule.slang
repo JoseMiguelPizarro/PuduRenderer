@@ -354,8 +354,6 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     PBR.DiffuseColor = lerp(Surface.Albedo,0, Surface.Metallic);
     PBR.SpecularColor = lerp(Surface.F0, Surface.Albedo,Surface.Metallic);
     PBR.alphaRoughness = Surface.Roughness * Surface.Roughness;
-    Surface.F0 = float3(0.1,.1,.1);
-    Surface.F90 = float3(1,1.,1.);
 
     float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
