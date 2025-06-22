@@ -38,7 +38,7 @@ namespace Pudu
 
         TextureFlags::Enum GetFlags() { return m_flags; }
 
-        GPUResourceType::Type Type() { return GPUResourceType::Texture; }
+        GPUResourceType Type() { return GPUResourceType::Texture; }
         virtual TextureType::Enum GetTextureType() { return TextureType::Texture2D; }
         void SetImageLayout(VkImageLayout layout);
         TextureSampleCount GetSampleCount() const { return m_sampleCount; }

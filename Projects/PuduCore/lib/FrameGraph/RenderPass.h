@@ -22,7 +22,7 @@ namespace Pudu
 		VkClearValue clearValue;
 		VkImageLayout layout;
 		VkImageLayout finalLayout;
-		GPUResourceType::Type type = GPUResourceType::Texture;
+		GPUResourceType type = GPUResourceType::Texture;
 		AttachmentAccessUsage usage = AttachmentAccessUsage::Write;
 		ResourceUsage resourceUsage;
 		TextureSampleCount sampleCount  = TextureSampleCount::One;

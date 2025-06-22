@@ -1,5 +1,4 @@
 #pragma once
-#include <concepts>
 #include <string>
 #include "PuduConstants.h"
 #include "PuduCore.h"
@@ -8,16 +7,28 @@ namespace Pudu
 {
 	class PuduGraphics;
 
-	class GPUResourceType
+	enum class GPUResourceType
 	{
-	public:
-		enum Type
-		{
-			Texture,
-			Buffer,
-			RenderPass,
-			UNINITIALIZED
-		};
+		UNDEFINED,
+		Texture,
+		Texture2D,
+		TextureCube,
+		Texture2DArray,
+		RenderPass,
+		Framebuffer,
+		Pipeline,
+		ShaderState,
+		DescriptorSetLayout,
+		Shader,
+		Mesh,
+		Material,
+		ComputeShader,
+		Buffer,
+		Semaphore,
+		GPUCommands,
+		RenderTexture,
+		CommandPool,
+		DescriptorPool,
 	};
 
 	struct GPUResourceHandleBase
@@ -27,6 +38,8 @@ namespace Pudu
 		friend class GPUResourcesManager;
 		void SetIndex(uint32_t index) { m_Index = index; }
 		uint32_t m_Index = k_INVALID_HANDLE;
+		GPUResourceType m_underlyingType = GPUResourceType::UNDEFINED;
+		GPUResourcesManager* m_provider = nullptr;
 
 		bool IsValid() { return m_Index != k_INVALID_HANDLE; }
 
@@ -87,6 +100,10 @@ namespace Pudu
 		{
 			return this->m_Index == other.m_Index;
 		}
+
+
+	private:
+
 	};
 
 
@@ -97,7 +114,7 @@ namespace Pudu
 		GPUResourceHandle<T> Handle() { return m_handle; }
 
 
-		virtual GPUResourceType::Type Type() { return GPUResourceType::UNINITIALIZED; };
+		virtual GPUResourceType Type() { return GPUResourceType::UNDEFINED; };
 		virtual ~GPUResource() = default;
 
 	protected:
