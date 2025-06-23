@@ -2,34 +2,12 @@
 #include <string>
 #include "PuduConstants.h"
 #include "PuduCore.h"
+#include "Resources/IGPUResourceProvider.h"
+#include "Resources/ResourceType.h"
 
 namespace Pudu
 {
 	class PuduGraphics;
-
-	enum class GPUResourceType
-	{
-		UNDEFINED,
-		Texture,
-		Texture2D,
-		TextureCube,
-		Texture2DArray,
-		RenderPass,
-		Framebuffer,
-		Pipeline,
-		ShaderState,
-		DescriptorSetLayout,
-		Shader,
-		Mesh,
-		Material,
-		ComputeShader,
-		Buffer,
-		Semaphore,
-		GPUCommands,
-		RenderTexture,
-		CommandPool,
-		DescriptorPool,
-	};
 
 	struct GPUResourceHandleBase
 	{
@@ -39,7 +17,7 @@ namespace Pudu
 		void SetIndex(uint32_t index) { m_Index = index; }
 		uint32_t m_Index = k_INVALID_HANDLE;
 		GPUResourceType m_underlyingType = GPUResourceType::UNDEFINED;
-		GPUResourcesManager* m_provider = nullptr;
+		IGPUResourceProvider* m_provider = nullptr;
 
 		bool IsValid() { return m_Index != k_INVALID_HANDLE; }
 
@@ -95,17 +73,16 @@ namespace Pudu
 	//requires(std::convertible_to<T, GPUResourceBase>)
 	struct GPUResourceHandle : public GPUResourceHandleBase
 	{
-	public:
 		bool IsEqual(const GPUResourceHandle& other)
 		{
 			return this->m_Index == other.m_Index;
 		}
 
-
-	private:
-
+		SPtr<T> Get()
+		{
+			return std::dynamic_pointer_cast<T>(m_provider->GetResource(m_Index,m_underlyingType));
+		}
 	};
-
 
 	template <typename T>
 	class GPUResource : public GPUResourceBase
