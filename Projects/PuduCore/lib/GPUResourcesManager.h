@@ -27,7 +27,7 @@ namespace Pudu
 
     namespace fs = std::filesystem;
 
-    class GPUResourcesManager
+    class GPUResourcesManager:public IGPUResourceProvider
     {
     public:
         void Init(PuduGraphics* graphics);
@@ -118,6 +118,7 @@ namespace Pudu
         ResourcePool<SPtr<Texture>>* GetAllocatedTextures() { return &m_textures; }
         ResourcePool<SPtr<Material>>* GetAllocatedMaterials() { return &m_materials; }
         ResourcePool<SPtr<Shader>>* GetAllocatedShaders() { return &m_shaders; }
+        void* GetResource(u32 id, GPUResourceType type) override;
 
     private:
         friend class PuduGraphics;
