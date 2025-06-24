@@ -217,11 +217,12 @@ namespace Pudu
 		void DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY, u32 groupCountZ);
 		void EndDrawFrame();
 		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
-		//SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
+
 		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
 		SPtr<Material> CreateMaterial();
+		void ReloadShader(SPtr<Shader> shader);
 
 		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);

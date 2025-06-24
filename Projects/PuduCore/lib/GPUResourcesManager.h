@@ -94,13 +94,15 @@ namespace Pudu
         }
 
         template <typename T, typename poolType, typename... Args>
-        //	requires(std::convertible_to < T, GPUResource<T>>)
         SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool, Args&&... args)
         {
             uint32_t resourceIndex = {static_cast<uint32_t>(pool.Size())};
             SPtr<T> resourcePtr = std::make_shared<T>(args...);
 
             resourcePtr->m_handle.m_Index = resourceIndex;
+            resourcePtr->m_handle.m_underlyingType = resourcePtr->Type();
+
+            resourcePtr->m_handle.m_provider = this;
 
             pool.AddResource(resourcePtr);
 
@@ -118,7 +120,10 @@ namespace Pudu
         ResourcePool<SPtr<Texture>>* GetAllocatedTextures() { return &m_textures; }
         ResourcePool<SPtr<Material>>* GetAllocatedMaterials() { return &m_materials; }
         ResourcePool<SPtr<Shader>>* GetAllocatedShaders() { return &m_shaders; }
-        void* GetResource(u32 id, GPUResourceType type) override;
+
+#pragma region GPUResourceProvider
+        SPtr<void> GetResource(u32 id, GPUResourceType type) override;
+#pragma endregion
 
     private:
         friend class PuduGraphics;

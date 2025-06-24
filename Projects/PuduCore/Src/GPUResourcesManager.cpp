@@ -250,38 +250,38 @@ namespace Pudu
         }
     }
 
-    void* GPUResourcesManager::GetResource(u32 id, GPUResourceType type)
+    SPtr<void> GPUResourcesManager::GetResource(u32 id, GPUResourceType type)
     {
         switch (type)
         {
         case GPUResourceType::Texture:
-            return m_textures.GetResource(id).get();
+            return m_textures.GetResource(id);
         case GPUResourceType::RenderPass:
-            return m_renderPasses.GetResource(id).get();
+            return m_renderPasses.GetResource(id);
         case GPUResourceType::Framebuffer:
-            return m_frameBuffers.GetResource(id).get();
+            return m_frameBuffers.GetResource(id);
         case GPUResourceType::Pipeline:
-            return m_pipelines.GetResource(id).get();
+            return m_pipelines.GetResource(id);
         case GPUResourceType::ShaderState:
-            return m_shaderStates.GetResource(id).get();
+            return m_shaderStates.GetResource(id);
         case GPUResourceType::DescriptorSetLayout:
-            return m_descriptorSetLayouts.GetResource(id).get();
+            return m_descriptorSetLayouts.GetResource(id);
         case GPUResourceType::Shader:
-            return m_shaders.GetResource(id).get();
+            return m_shaders.GetResource(id);
         case GPUResourceType::Mesh:
-            return m_meshes.GetResource(id).get();
+            return m_meshes.GetResource(id);
         case GPUResourceType::ComputeShader:
-            return m_computeShaders.GetResource(id).get();
+            return m_computeShaders.GetResource(id);
         case GPUResourceType::Buffer:
-            return m_graphicsBuffers.GetResource(id).get();
+            return m_graphicsBuffers.GetResource(id);
         case GPUResourceType::Semaphore:
-            return m_semaphores.GetResource(id).get();
+            return m_semaphores.GetResource(id);
         case GPUResourceType::GPUCommands:
-            return m_commandBuffers.GetResource(id).get();
+            return m_commandBuffers.GetResource(id);
         case GPUResourceType::CommandPool:
-            return m_commandPools.GetResource(id).get();
+            return m_commandPools.GetResource(id);
         case GPUResourceType::DescriptorPool:
-            return m_descriptorPools.GetResource(id).get();
+            return m_descriptorPools.GetResource(id);
         default:
             ASSERT(false, "Invalid GPU resource type {}", ToString(type));
             return nullptr;

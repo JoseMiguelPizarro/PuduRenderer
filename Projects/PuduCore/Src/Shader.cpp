@@ -108,7 +108,7 @@ namespace Pudu
 		creationData.multiSampled = renderPass->IsMultisampled();
 
 		auto handle = graphics->CreateGraphicsPipeline(creationData);
-		auto pipeline = graphics->Resources()->GetPipeline(handle);
+		auto pipeline = handle.Get();
 
 		return pipeline;
 	}

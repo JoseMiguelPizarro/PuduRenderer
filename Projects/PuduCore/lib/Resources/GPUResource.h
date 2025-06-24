@@ -68,10 +68,9 @@ namespace Pudu
 	};
 
 
-
 	template <typename T>
 	//requires(std::convertible_to<T, GPUResourceBase>)
-	struct GPUResourceHandle : public GPUResourceHandleBase
+	struct GPUResourceHandle : GPUResourceHandleBase
 	{
 		bool IsEqual(const GPUResourceHandle& other)
 		{
@@ -80,7 +79,7 @@ namespace Pudu
 
 		SPtr<T> Get()
 		{
-			return std::dynamic_pointer_cast<T>(m_provider->GetResource(m_Index,m_underlyingType));
+			return std::static_pointer_cast<T>(m_provider->GetResource(m_Index,m_underlyingType));
 		}
 	};
 

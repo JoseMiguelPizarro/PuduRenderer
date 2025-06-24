@@ -11,6 +11,6 @@ namespace Pudu
     {
     public:
         virtual ~IGPUResourceProvider() = default;
-        virtual void* GetResource(u32 id, GPUResourceType type){throw std::exception("Not implemented");};
+        virtual SPtr<void> GetResource(u32 id, GPUResourceType type){throw std::exception("Not implemented");};
     };
 }

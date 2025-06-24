@@ -1798,6 +1798,10 @@ namespace Pudu
         vkDestroyShaderModule(m_device, shader->GetModule(), m_allocatorPtr);
     }
 
+    void PuduGraphics::ReloadShader(SPtr<Shader> shader)
+    {
+
+    }
 
     SPtr<RenderTexture> PuduGraphics::GetRenderTexture()
     {
