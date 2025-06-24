@@ -1,7 +1,6 @@
 #pragma once
 #pragma once
 #include <filesystem>
-#include <memory.h>
 #include <concepts>
 
 #include "PuduCore.h"
@@ -12,10 +11,8 @@
 #include "Resources/ResourcesPool.h"
 #include "FrameGraph/RenderPass.h"
 #include "Shader.h"
-#include "Resources/FrameBufferCreationData.h"
 #include "ComputeShader.h"
 #include "Pipeline.h"
-#include "Logger.h"
 #include <Semaphore.h>
 #include <Resources/GPUResource.h>
 #include "Resources/CommandPool.h"

@@ -19,11 +19,14 @@ namespace Pudu
         {
             return &m_compilationObject.descriptorsData;
         };
-        virtual SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass) = 0;
+        SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass);
         virtual VkShaderModule GetModule() { return m_module; }
         virtual void SetName(const char* name) = 0;
         virtual const char* GetName() = 0;
         u32 GetActiveLayoutCount() const { return numActiveLayouts; }
+        bool NeedsPipelineRebuild() { return m_needsPipelineRebuild; }
+        std::vector<GPUResourceHandle<Pipeline>>* GetPipelines() { return &m_pipelines; }
+
 
 #pragma region DescriptorProvider
         std::vector<SPtr<DescriptorSetLayout>>* GetDescriptorSetLayouts() override { return &descriptorSetLayouts; };
@@ -33,6 +36,8 @@ namespace Pudu
 
     protected:
         friend class PuduGraphics;
+        virtual SPtr<Pipeline> OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) =0;
+
 
         void SetCompilationObject(const ShaderCompilationObject& compilationObject)
         {
@@ -56,6 +61,8 @@ namespace Pudu
         std::vector<SPtr<DescriptorSetLayout>> descriptorSetLayouts;
         std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
         std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
+        std::vector<GPUResourceHandle<Pipeline>> m_pipelines;
+        bool m_needsPipelineRebuild = false;
 
         u32 numActiveLayouts;
     };

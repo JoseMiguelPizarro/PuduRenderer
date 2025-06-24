@@ -11,7 +11,7 @@ namespace Pudu
 	{
 		m_propertiesBlock.SetProperty(name, buffer);
 	}
-	SPtr<Pipeline> ComputeShader::CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass)
+	SPtr<Pipeline> ComputeShader::OnCreatePipeline(PuduGraphics* graphics, RenderPass* renderPass)
 	{
 		if (m_pipelineHandle.IsValid())
 		{

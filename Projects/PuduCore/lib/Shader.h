@@ -28,7 +28,7 @@ namespace Pudu
 		const u32* GetFragmentData() const { return m_fragmentData; }
 		const u32* GetVertexData() const { return m_vertexData; }
 		Size GetVertexDataSize() const { return m_vertexDataSize; }
-		Size GetFragmentDataSize() const { return m_fragmentDataSize; }
+		Size GetFragmentDataSize() const { return m_fragmentDataSize;}
 
 		bool HasFragmentData() const { return m_hasFragmentData; }
 		bool HasVertexData() const { return m_hasVertexData; }
@@ -37,10 +37,14 @@ namespace Pudu
 		const char* GetVertexEntryPoint() const { return m_vertexEntryPoint.c_str(); }
 
 		void SetName(const char* name) override { this->name = name; };
-		const char* GetName() override { return this->name.c_str(); };
+		const char* GetName() override { return this->name.c_str(); }
+
+	protected:
+		SPtr<Pipeline> OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
+
+	public:;
 
 
-		SPtr<Pipeline> CreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
 	private:
 		friend class PuduGraphics;

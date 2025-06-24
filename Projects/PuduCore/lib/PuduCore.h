@@ -13,6 +13,9 @@ namespace Pudu
 {
     template <typename T>
     using SPtr = std::shared_ptr<T>;
+    template <typename T>
+    using UPtr = std::unique_ptr<T>;
+
     using Handle = uint32_t;
 
     using u8 = uint8_t;

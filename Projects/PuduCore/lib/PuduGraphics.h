@@ -219,10 +219,11 @@ namespace Pudu
 		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
+		void ReloadShader(SPtr<Shader> shader);
 
 		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
 		SPtr<Material> CreateMaterial();
-		void ReloadShader(SPtr<Shader> shader);
+
 
 		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);
@@ -259,6 +260,7 @@ namespace Pudu
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
+		PipelineCreationData GetPipelineCreationData(Shader* shader, RenderPass* renderPass);
 
 #pragma region DefaultResources
 		SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
@@ -291,6 +293,7 @@ namespace Pudu
 		void SubmitComputeWork(RenderFrameData& frameData);
 		void InitDefaultResources();
 		void InitDefaultTextures();
+		void CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData);
 
 		void InitDebugUtilsObjectName();
 

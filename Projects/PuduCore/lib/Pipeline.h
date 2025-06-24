@@ -52,6 +52,9 @@ namespace Pudu
         bool bindlessUpdated;
         PipelineType::Type pipelineType;
 
+        GPUResourceHandle<RenderPass> m_renderPass;
+        GPUResourceHandle<IShaderObject> m_shader;
+
         bool graphicsPipeline = true;
 
         //Set when the pipeline needs to be rebuild due to hot-reloading. The renderer can use this flag for its renderpass/shader cache
