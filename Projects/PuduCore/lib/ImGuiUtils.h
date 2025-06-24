@@ -5,6 +5,7 @@
 #include "ShaderCompilation/ShaderLayout.h"
 #include "Shader.h"
 #include "glm/matrix.hpp"
+#include "PuduGraphics.h"
 
 namespace Pudu
 {
@@ -154,7 +155,7 @@ namespace Pudu
             }
         }
 
-        static void DrawShaderTree(std::vector<SPtr<Shader>> const& shaders)
+        static void DrawShaderTree(PuduGraphics* gfx, std::vector<SPtr<Shader>> const& shaders)
         {
             if (shaders.size() == 0)
                 return;
@@ -165,6 +166,11 @@ namespace Pudu
                 {
                     if (ImGui::TreeNode(shader->GetName()))
                     {
+                        if (ImGui::Button("Reload"))
+                        {
+                            gfx->ReloadShader(shader.get());
+                        }
+
                         auto rootNode = shader->GetShaderLayout();
                         DrawShaderNode(rootNode);
                         ImGui::TreePop();
