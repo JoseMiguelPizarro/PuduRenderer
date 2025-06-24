@@ -2181,7 +2181,7 @@ namespace Pudu
         auto pipeline = m_resources.AllocatePipeline();
         auto renderPass = creationData.renderPassHandle.Get();
         pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
-
+        pipeline->m_renderPass = creationData.renderPassHandle;
 
         CreateVKGraphicsPipeline(pipeline.get(), creationData);
 
@@ -2796,6 +2796,7 @@ namespace Pudu
         shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
         shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
         shader->SetName(name);
+        shader->m_shaderPath = shaderPath;
         shader->m_compilationObject = compileData;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
@@ -2854,6 +2855,7 @@ namespace Pudu
         shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, creationData.name.c_str());
         shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
+        shader->m_shaderPath = creationData.shaderPath;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
                                  shader->m_descriptorSetLayoutHandles);

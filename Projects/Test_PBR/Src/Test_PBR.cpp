@@ -215,7 +215,7 @@ void Test_PBR::DrawImGUI()
         }
     }
 
-    ImGuiUtils::DrawShaderTree(Graphics.Resources()->GetAllocatedShaders()->GetAllResources());
+    ImGuiUtils::DrawShaderTree(&Graphics, Graphics.Resources()->GetAllocatedShaders()->GetAllResources());
 
     if (ImGui::CollapsingHeader("Materials"))
     {

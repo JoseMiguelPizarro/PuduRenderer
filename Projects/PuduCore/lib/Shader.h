@@ -38,18 +38,14 @@ namespace Pudu
 
 		void SetName(const char* name) override { this->name = name; };
 		const char* GetName() override { return this->name.c_str(); }
+		GPUResourceType Type() override {return GPUResourceType::Shader;}
 
 	protected:
 		SPtr<Pipeline> OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
 
-	public:;
-
-
-
 	private:
 		friend class PuduGraphics;
 
-		std::filesystem::path m_shaderPath;
 		bool m_hasFragmentData;
 		bool m_hasVertexData;
 		std::string m_fragmentEntryPoint;
