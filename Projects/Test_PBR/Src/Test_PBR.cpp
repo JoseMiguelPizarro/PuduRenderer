@@ -13,7 +13,6 @@
 #include "OverlayQuadEntity.h"
 
 
-
 void Test_PBR::OnInit()
 {
     AntialiasingSettings antialiasingSettings{};
@@ -88,7 +87,7 @@ void Test_PBR::OnInit()
     auto spheregltf = FileManager::LoadGltfScene("models/sphere.gltf");
     auto sphere = spheregltf->GetChildByName<RenderEntity>("Sphere.001");
 
-    const auto skyboxModel =FileManager::LoadGltfScene("models/skybox.gltf")->GetChildByName<RenderEntity>("Sphere");
+    const auto skyboxModel = FileManager::LoadGltfScene("models/skybox.gltf")->GetChildByName<RenderEntity>("Sphere");
 
     auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
     const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
@@ -133,14 +132,14 @@ void Test_PBR::OnInit()
     m_arrayQO->SetLOD(0);
     m_arrayQO->SetPtr(m_arrayQO);
 
-   m_scene.AddEntity(oq);
+    m_scene.AddEntity(oq);
 }
 
 void Test_PBR::OnRun()
 {
     m_puduRenderer.Render(&m_scene);
 
-    m_camRadius -= Input::GetMouseWheelDelta()/10.f;
+    m_camRadius -= Input::GetMouseWheelDelta() / 10.f;
     static float angle = PI / 4 + PI;
 
     static float phi = 0.f;
@@ -148,11 +147,11 @@ void Test_PBR::OnRun()
     if (Input::IsMouseButtonPressed(MouseButton::Left))
     {
         const auto mousePos = Input::GetMousePosition();
-        const auto mousePosNormalized = mousePos /glm::vec2{Graphics.WindowWidth, Graphics.WindowHeight};
+        const auto mousePosNormalized = mousePos / glm::vec2{Graphics.WindowWidth, Graphics.WindowHeight};
         const auto mousePosNormalized2 = mousePosNormalized * 2.f - 1.f;
 
         auto delta = Input::GetMousePositionDelta();
-        phi+= delta.x * 0.01f;
+        phi += delta.x * 0.01f;
         theta += delta.y * 0.01f;
     }
 
@@ -171,7 +170,6 @@ void Test_PBR::OnRun()
 
 void Test_PBR::DrawImGUI()
 {
-
     PuduApp::DrawImGUI();
 
     ImGui::Text(StringUtils::Format("FPS: {}", Time.GetFPS()).c_str());
@@ -247,10 +245,12 @@ void Test_PBR::DrawImGUI()
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;
     //None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive
     const char* debugModeNames[] = {
-        "None", "Albedo","Diffuse","Normal", "Metallic", "Roughness", "Emissive", "LightSpecular","LightDiffuse", "ShadowAttenuation", "DirectLight","Irradiance","BRDFLUT"
-        };
+        "None", "Albedo", "Diffuse", "Normal", "Metallic", "Roughness", "Emissive", "LightSpecular", "LightDiffuse",
+        "ShadowAttenuation", "DirectLight", "Irradiance", "BRDFLUT"
+    };
 
-    if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames, IM_ARRAYSIZE(debugModeNames)))
+    if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames,
+                     IM_ARRAYSIZE(debugModeNames)))
     {
         m_puduRenderer.SetDebugMode(currentDebugMode);
     }
@@ -259,13 +259,15 @@ void Test_PBR::DrawImGUI()
     static vec3 F90 = {0.5f, 0.5f, 0.5f};
     if (ImGui::InputFloat3("F0", &F0[0]))
     {
-        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0];
-        modelMat->SetProperty("material.F0",F0);
+        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->
+                                 Materials[0];
+        modelMat->SetProperty("material.F0", F0);
     }
     if (ImGui::InputFloat3("F90", &F90[0]))
     {
-        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0];
-        modelMat->SetProperty("material.F90",F90);
+        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->
+                                 Materials[0];
+        modelMat->SetProperty("material.F90", F90);
     }
 
     static float roughnessScale = 1.0f;

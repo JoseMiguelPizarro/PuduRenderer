@@ -219,7 +219,7 @@ namespace Pudu
 		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
-		void ReloadShader(SPtr<Shader> shader);
+		void ReloadShader(Shader* shader);
 
 		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
 		SPtr<Material> CreateMaterial();
@@ -298,6 +298,8 @@ namespace Pudu
 		void InitDebugUtilsObjectName();
 
 		GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
+		void CreateVKShaderState(ShaderState* shaderState, ShaderStateCreationData const& creation);
+
 		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
 		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
 		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
@@ -335,6 +337,7 @@ namespace Pudu
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
 			VkFormatFeatureFlags features);
 
+		void ReloadPendingShaders();
 		
 
 		void CleanupSwapChain();
@@ -393,6 +396,7 @@ namespace Pudu
 		VkDevice m_device;
 		PuduGraphicsSettings m_settings;
 
+		std::vector<GPUResourceHandle<Shader>> m_shadersToReload;
 		GPUResourcesManager m_resources;
 		SPtr<Semaphore> m_graphicsTimelineSemaphore;
 		SPtr<Semaphore> m_computeTimelineSemaphore;
