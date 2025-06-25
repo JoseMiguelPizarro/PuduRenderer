@@ -347,8 +347,6 @@ namespace Pudu
 
     void PuduGraphics::DrawFrame(RenderFrameData& frameData)
     {
-
-
         auto frameGraph = frameData.frameGraph;
         Frame frame = m_Frames[m_currentFrameIndex];
 
@@ -368,8 +366,6 @@ namespace Pudu
 
             vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
         }
-
-        ReloadPendingShaders();
 
         ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
         //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
@@ -623,9 +619,7 @@ namespace Pudu
     {
         auto renderPass = creationData.renderPassHandle.Get();
 
-
         auto shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
-        pipeline->shaderState = shaderStateHandle;
         auto shaderState = shaderStateHandle.Get();
 
         auto& renderPassOutput = renderPass->attachments;
@@ -1662,19 +1656,7 @@ namespace Pudu
     GPUResourceHandle<ShaderState> PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
     {
         auto shaderState = m_resources.AllocateShaderState();
-        shaderState->graphicsPipeline = true;
-        shaderState->activeShaders = creation.stageCount;
-        shaderState->name = creation.name;
 
-        CreateVKShaderState(shaderState.get(), creation);
-
-        return shaderState->Handle();
-    }
-
-    void PuduGraphics::
-    CreateVKShaderState(ShaderState* shaderState,
-                        ShaderStateCreationData const& creation)
-    {
         uint32_t compiledShaders = 0;
 
         shaderState->graphicsPipeline = true;
@@ -1692,6 +1674,8 @@ namespace Pudu
             shaderStageInfo.pName = stage.entryPointName;
             shaderStageInfo.module = CreateShaderModule(stage.code, stage.codeSize, shaderState->name.c_str());
         }
+
+        return shaderState->Handle();
     }
 
     void PuduGraphics::DestroyTexture(SPtr<Texture> texture)
@@ -2197,7 +2181,7 @@ namespace Pudu
         auto pipeline = m_resources.AllocatePipeline();
         auto renderPass = creationData.renderPassHandle.Get();
         pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
-        pipeline->m_renderPass = renderPass->Handle();
+        pipeline->m_renderPass = creationData.renderPassHandle;
 
         CreateVKGraphicsPipeline(pipeline.get(), creationData);
 
@@ -2812,8 +2796,8 @@ namespace Pudu
         shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
         shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
         shader->SetName(name);
-        shader->m_compilationObject = compileData;
         shader->m_shaderPath = shaderPath;
+        shader->m_compilationObject = compileData;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
                                  shader->m_descriptorSetLayoutHandles);
@@ -2832,10 +2816,30 @@ namespace Pudu
         return shader;
     }
 
-    void PuduGraphics::ReloadShader(Shader* shader)
+    void PuduGraphics::ReloadShader(SPtr<Shader> shader)
     {
-        m_shadersToReload.push_back(shader->m_handle);
+        const char* fragmentEntryPoint = "fragmentMain";
+        const char* vertexEntryPoint = "vertexMain";
 
+        const std::vector<const char*> entryPoints = {fragmentEntryPoint, vertexEntryPoint};
+        auto compileData = m_shaderCompiler.Compile(shader->m_shaderPath.string().c_str(), entryPoints);
+
+        auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
+        auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
+
+        shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
+        shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
+        shader->m_compilationObject = compileData;
+
+        for (auto& pipelineHandle : shader->m_pipelines)
+        {
+            auto pipeline = pipelineHandle.Get();
+            auto renderPass = pipeline->m_renderPass.Get();
+
+            auto newPipelineData = GetPipelineCreationData(shader.get(), renderPass.get());
+
+            CreateVKGraphicsPipeline(pipeline.get(), newPipelineData);
+        }
     }
 
     SPtr<ComputeShader> PuduGraphics::CreateComputeShader(ComputeShaderCreationData& creationData)
@@ -2851,6 +2855,7 @@ namespace Pudu
         shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, creationData.name.c_str());
         shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
+        shader->m_shaderPath = creationData.shaderPath;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
                                  shader->m_descriptorSetLayoutHandles);
@@ -3313,47 +3318,6 @@ namespace Pudu
         LOG_ERROR("Failed to find supported format!");
 
         return VK_FORMAT_UNDEFINED;
-    }
-
-    void PuduGraphics::ReloadPendingShaders()
-    {
-        for (auto shaderHandle : m_shadersToReload)
-        {
-            auto shader = shaderHandle.Get();
-
-            const char* fragmentEntryPoint = "fragmentMain";
-            const char* vertexEntryPoint = "vertexMain";
-
-            const std::vector entryPoints = {fragmentEntryPoint, vertexEntryPoint};
-            auto compileData = m_shaderCompiler.Compile(shader->m_shaderPath.string().c_str(), entryPoints);
-
-            auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
-            auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
-
-            shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
-            shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
-            shader->m_compilationObject = compileData;
-
-            for (auto& pipelineHandle : shader->m_pipelines)
-            {
-                auto pipeline = pipelineHandle.Get();
-                auto renderPass = pipeline->m_renderPass.Get();
-
-                auto shaderState = pipeline->shaderState.Get();
-
-                for (Size i = 0; i < shaderState->activeShaders; i++)
-                {
-                    vkDestroyShaderModule(m_device, shaderState->shaderStageInfo[i].module, nullptr);
-                }
-
-                vkDestroyPipeline(m_device, pipeline->vkHandle, nullptr);
-
-                auto newPipelineData = GetPipelineCreationData(shader.get(), renderPass.get());
-                CreateVKGraphicsPipeline(pipeline.get(), newPipelineData);
-            }
-        }
-
-        m_shadersToReload.clear();
     }
 
     GPUCommands PuduGraphics::BeginSingleTimeCommands()
