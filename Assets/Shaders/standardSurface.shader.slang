@@ -93,6 +93,5 @@ float4 fragmentMain(VSOut input)
 
     col.xyz = StandardSurface(m);
 
-    col.xyz = float3(1,0,0);
     return col;
 }

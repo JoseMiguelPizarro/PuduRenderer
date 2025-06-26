@@ -347,8 +347,6 @@ namespace Pudu
 
     void PuduGraphics::DrawFrame(RenderFrameData& frameData)
     {
-
-
         auto frameGraph = frameData.frameGraph;
         Frame frame = m_Frames[m_currentFrameIndex];
 
@@ -368,7 +366,7 @@ namespace Pudu
 
             vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
         }
-
+        //If any shader needs to be reloaded, must be done after the GPU finish its current workload, hence the semaphore
         ReloadPendingShaders();
 
         ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
