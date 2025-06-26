@@ -62,7 +62,6 @@ namespace Pudu
         std::vector<GPUResourceHandle<DescriptorSetLayout>> m_descriptorSetLayoutHandles;
         std::vector<VkDescriptorSetLayout> m_VkDescriptorSetLayouts;
         std::vector<GPUResourceHandle<Pipeline>> m_pipelines;
-        fs::path m_shaderPath;
         bool m_needsPipelineRebuild = false;
 
         u32 numActiveLayouts;

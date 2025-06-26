@@ -2,7 +2,6 @@
 #include <ImGui/imgui.h>
 #include "Transform.h"
 #include "Entity.h"
-#include "PuduGraphics.h"
 #include "ShaderCompilation/ShaderLayout.h"
 #include "Shader.h"
 #include "glm/matrix.hpp"
@@ -169,8 +168,9 @@ namespace Pudu
                     {
                         if (ImGui::Button("Reload"))
                         {
-                            gfx->ReloadShader(shader);
+                            gfx->ReloadShader(shader.get());
                         }
+
                         auto rootNode = shader->GetShaderLayout();
                         DrawShaderNode(rootNode);
                         ImGui::TreePop();
