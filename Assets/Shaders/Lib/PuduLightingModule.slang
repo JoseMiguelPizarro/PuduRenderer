@@ -312,6 +312,7 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
       float3 k_S = Surface.F0 + Fr * pow(1.0-NdV, 5.0);
       float3 FssEss = k_S * brdf.x + brdf.y;
       return SpecularWeight * specularLight * FssEss;
+
 }
 
 float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 LightDirection, float3 LightColor)
@@ -360,6 +361,7 @@ public float3 StandardSurface(SurfaceInfo Surface) {
 
     float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(GLOBALS.lightingBuffer.lightDirection.xyz),float3(1,1,1));
     float3 c = specularColor + diffuseColor + Surface.Emissive + L*Surface.ShadowAttenuation;
+
 
     switch(DEBUG_SETTINGS.debugMode)
     {

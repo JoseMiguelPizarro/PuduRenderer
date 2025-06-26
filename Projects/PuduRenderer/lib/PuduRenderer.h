@@ -23,6 +23,7 @@ namespace Pudu
         SPtr<RenderTexture> GetColorCopyRT() const;
         void SetDebugMode(Renderer::Debug mode);
         void SetRoughnessScale(float scale);
+        void EnablePostProcessing(bool enable) const;
 
     protected:
         void OnInit(PuduGraphics* graphics, PuduApp* app) override;

@@ -72,6 +72,11 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.roughnessScale", scale);
     }
 
+    void PuduRenderer::EnablePostProcessing(bool enable) const
+    {
+        m_postProcessingRenderPass->isEnabled = enable;
+    }
+
     void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
     {
         u32 brdfLUTResolution = 256;
@@ -239,6 +244,7 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_SpecularCube);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
+        SetRoughnessScale(1.);
     }
 
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)

@@ -34,7 +34,7 @@ public struct Globals
     public SamplerCube skybox;
     public SamplerCube IBL_Specular; //Convoluted image based lighting env map
     public SamplerCube IBL_Diffuse;
-    public float IBL_Levels;
+    public uint IBL_Levels;
     public Sampler2D BRDF_LUT;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;

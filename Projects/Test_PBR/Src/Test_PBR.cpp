@@ -2,6 +2,9 @@
 // Created by Administrator on 4/12/2025.
 //
 
+// Forward declare post processing functions
+void SetPostProcessingEnabled(bool enabled);
+
 #include "Test_PBR.h"
 #include "Renderer.h"
 
@@ -234,6 +237,11 @@ void Test_PBR::DrawImGUI()
     ImGuiUtils::DrawTransform(m_camera.Transform);
     ImGui::Text("Projection");
     ImGuiUtils::DrawMat4x4(m_camera.Projection.GetProjectionMatrix());
+
+    static bool postProcessingEnabled = true;
+    if (ImGui::Checkbox("Post Processing", &postProcessingEnabled))
+        m_puduRenderer.EnablePostProcessing(postProcessingEnabled);
+
 
     ImGui::Text("Light");
     vec3 forward = directionalLight.GetTransform().GetForward();
