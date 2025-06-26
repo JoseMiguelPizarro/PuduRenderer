@@ -290,4 +290,10 @@ void Test_PBR::DrawImGUI()
         m_model->GetTransform().SetUniformLocalScale(modelScale);
         m_model->GetTransform().UpdateWorldTransformRecursivelly();
     }
+
+    static float gamma = 2.2f;
+    if (ImGui::SliderFloat("Gamma", &gamma, 1.0f, 3.0f))
+    {
+        m_puduRenderer.SetGamma(gamma);
+    }
 }

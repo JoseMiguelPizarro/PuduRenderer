@@ -31,6 +31,7 @@ VSOut vertexMain(VertexInput in, uint vertexId: SV_VertexID)
 float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
+
     Sampler2D screenColorTex = Data.colorTex;
 
     float2 baseUV = input.TexCoord.xy;
@@ -50,8 +51,12 @@ float4 fragmentMain(VSOut input)
     float g = ToneMap_Reinhard(screenColorTex.Sample(lerp(baseUV, baseUV + float2(0.005, 0.005)*chromatic, mask)),exposure).y;
     float b = ToneMap_Reinhard(screenColorTex.Sample(lerp(baseUV, baseUV + float2(0.01, 0.01)*chromatic, mask)),exposure).z;
 
-    //Fog
     float d =  saturate(1. - exp(-depth/40));
 
-    return float4(r,g,b,0) * vignette;
+    float4 c = float4(r,g,b,0) * vignette;
+
+//GAMMA CORRECT
+    c.rgb = GammaCorrect(c.rgb,GLOBALS.gamma);
+
+    return c;
 }

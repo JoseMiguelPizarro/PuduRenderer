@@ -38,6 +38,7 @@ public struct Globals
     public Sampler2D BRDF_LUT;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
+    public float gamma = 2.2;
 }
 
 public enum DebugMode

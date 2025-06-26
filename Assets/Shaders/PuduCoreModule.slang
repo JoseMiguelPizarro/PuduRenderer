@@ -234,3 +234,8 @@ public float3 ToneMap_Reinhard(float4 color, float exposure)
 {
     return ToneMap_Reinhard(color.xyz,exposure);
 }
+
+public float3 GammaCorrect(float3 color, float gamma)
+{
+    return pow(color,1./gamma);
+}

@@ -24,6 +24,7 @@ namespace Pudu
         void SetDebugMode(Renderer::Debug mode);
         void SetRoughnessScale(float scale);
         void EnablePostProcessing(bool enable) const;
+        void SetGamma(float gamma);
 
     protected:
         void OnInit(PuduGraphics* graphics, PuduApp* app) override;
@@ -40,6 +41,7 @@ namespace Pudu
         void InitBRDF_LUT(PuduGraphics* gfx);
         void InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap);
 
+        float m_gamma = 2.2;
 
         SPtr<Texture> m_BRDF_LUT;
         SPtr<Texture> m_skybox;

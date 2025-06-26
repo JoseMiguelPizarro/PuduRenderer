@@ -77,6 +77,12 @@ namespace Pudu
         m_postProcessingRenderPass->isEnabled = enable;
     }
 
+    void PuduRenderer::SetGamma(float gamma)
+    {
+        m_gamma = gamma;
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.gamma", m_gamma);
+    }
+
     void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
     {
         u32 brdfLUTResolution = 256;
@@ -244,7 +250,6 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_SpecularCube);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
-        SetRoughnessScale(1.);
     }
 
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -448,6 +453,9 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
+
+        SetRoughnessScale(1.);
+        SetGamma(2.2);
     }
 
     static bool isFirstFrame = true;
