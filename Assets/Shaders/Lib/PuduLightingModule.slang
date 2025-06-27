@@ -265,6 +265,7 @@ float3 SampleIrradiance(float3 N)
     return GLOBALS.IBL_Diffuse.Sample(N).rgb;
 }
 
+//Multi-scattering from https://www.jcgt.org/published/0008/01/03/paper.pdf
 float3 GetIBLRadianceDiffuse(PBRInfo PBR, SurfaceInfo Surface,float SpecularWeight)
 {
     float2 brdfSamplePoint = saturate(float2(PBR.NdV,Surface.Roughness));
@@ -272,16 +273,17 @@ float3 GetIBLRadianceDiffuse(PBRInfo PBR, SurfaceInfo Surface,float SpecularWeig
     float3 F0 = Surface.F0;
     float2 f_ab = SampleBRDFLUT(brdfSamplePoint);
     float3 irradiance = SampleIrradiance(Surface.Normal);
-    float3 fr = max(1. - Surface.Roughness, Surface.F0) - F0;
-    float3 k_s  = F0 + fr * pow(1. - PBR.NdV,5.);
-    float3 FssEss = SpecularWeight*k_s *f_ab.x + f_ab.y;
-    float Ems = (1. - (f_ab.x + f_ab.y));
-    float3 F_avg = SpecularWeight * (F0 + (1.0 - F0) / 21.0);
+    float3 fr = max(1. - Surface.Roughness, Surface.F0) - F0; //Reflectance
+    float3 k_s  = F0 + fr * pow(1. - PBR.NdV,5.); //kulla split sum
+    float3 FssEss = SpecularWeight*k_s *f_ab.x + f_ab.y; //Fss: single scattering reflectance Ess:single scattering directional albedo
+    float Ems = (1. - (f_ab.x + f_ab.y)); //multiscattering albedo
+    float3 F_avg = SpecularWeight * (F0 + (1.0 - F0) / 21.0); //reflectance average. Derived from F_Schlick integration
     float3 FmsEms = Ems * FssEss * F_avg / max(1.0 - F_avg * Ems,0.0001);
     float3 k_D = PBR.DiffuseColor * (1.0 - FssEss + FmsEms);
     return (FmsEms + k_D) * irradiance;
 }
 
+//Multi-scattering specular from //Multi-scattering from https://www.jcgt.org/published/0008/01/03/paper.pdf
 float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float SpecularWeight)
 {
     float3 n = Surface.Normal;

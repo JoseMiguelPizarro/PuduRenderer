@@ -99,9 +99,10 @@ void Test_PBR::OnInit()
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
-    // LoadGameboyModel();
-
+    // LoadModel();
     m_model = FileManager::LoadGltfScene("models/damagedHelmet/damagedHelmet.gltf");
+    m_model->GetTransform().SetLocalPosition({0, 0, 0});
+    m_model->GetTransform().SetUniformLocalScale(.5);
 
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf")->GetChildByName<RenderEntity>("OUT_AXIS");
@@ -111,9 +112,6 @@ void Test_PBR::OnInit()
     layer = 2;
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
-    m_model->GetTransform().SetLocalPosition({0, 0, 0});
-    m_model->GetTransform().SetUniformLocalScale(.5);
-    // m_scene.AddEntity(sphere);
     m_scene.AddEntity(m_model);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
