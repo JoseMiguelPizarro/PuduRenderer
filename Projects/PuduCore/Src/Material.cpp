@@ -247,10 +247,12 @@ namespace Pudu
                 {
                     ApplyIntValue(request, target);
                 }
-                case ShaderPropertyType::UInt:
+                break;
+            case ShaderPropertyType::UInt:
                 {
                     ApplyIntValue(request, target);
                 }
+                break;
             default:
                 break;
             }
@@ -273,7 +275,7 @@ namespace Pudu
 
         if (field.IsValid())
         {
-            field.Write( request.property.texture, request.property.mipLevel, target);
+            field.Write(request.property.texture, request.property.mipLevel, target);
             BindPropertyToShaderNode(field.GetNode(), request.property);
         }
         else
@@ -338,7 +340,9 @@ namespace Pudu
 
             VkDescriptorImageInfo& descriptorImageInfo = imageInfos[currentWriteIndex];
             descriptorImageInfo.sampler = textureSampler.vkHandle;
-            descriptorImageInfo.imageView = request.property.mipLevel==0? texture->vkImageViewHandle: texture->GetMipImageView(request.property.mipLevel);
+            descriptorImageInfo.imageView = request.property.mipLevel == 0
+                                                ? texture->vkImageViewHandle
+                                                : texture->GetMipImageView(request.property.mipLevel);
             descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             descriptorWrite.pImageInfo = &descriptorImageInfo;
@@ -388,7 +392,7 @@ namespace Pudu
     }
 
     void ShaderPropertiesBlock::ApplyIntValue(const PropertyUpdateRequest& request,
-        const MaterialApplyPropertyGPUTarget& target)
+                                              const MaterialApplyPropertyGPUTarget& target)
     {
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
         auto field = shaderCursor.Field(request.property.name.c_str());
@@ -514,7 +518,7 @@ namespace Pudu
         m_descriptorSetCount = descriptorSetCount;
         //TODO: STORE A SHADER ROOT NODE THAT PARENTS ALL THE CHILD SHADERNODES? Since set number is cached on the shaderNode itself, this will need recompute it each time or recache it
 
-//TODO: What to do with already allocated descriptor sets??
+        //TODO: What to do with already allocated descriptor sets??
         m_gpu->CreateDescriptorSets(m_descriptorSets, descriptorSetsToCreate.size(),
                                     descriptorSetsToCreate.data());
 

@@ -59,4 +59,9 @@ namespace Pudu
 		command->TransitionTextureLayout(m_screenColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		command->TransitionTextureLayout(frameColor, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
+
+	void PostProcessingRenderPass::SetExposure(float exposure)
+	{
+		m_material->SetProperty("Data.exposure", exposure);
+	}
 }

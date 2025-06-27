@@ -25,6 +25,7 @@ namespace Pudu
 		void Initialize(PuduGraphics* gpu) override;
 		void Render(RenderFrameData& renderData) override;
 		void PreRender(RenderFrameData& renderData) override;
+		void SetExposure(float exposure);
 
 	private:
 		SPtr<Mesh> m_quadMesh;

@@ -99,6 +99,8 @@ void Test_PBR::OnInit()
 
     skyboxModel->GetTransform().SetUniformLocalScale(80);
 
+    // LoadGameboyModel();
+
     m_model = FileManager::LoadGltfScene("models/damagedHelmet/damagedHelmet.gltf");
 
     const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
@@ -115,27 +117,6 @@ void Test_PBR::OnInit()
     m_scene.AddEntity(m_model);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
-
-    auto inputQO = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
-    inputQO->GetMaterial()->SetProperty("material.texture", m_puduRenderer.GetEnvMap());
-    float qoSize = 0.15;
-
-    inputQO->SetPositionAndSize(0.0, 0.0, qoSize * 2., qoSize);
-    inputQO->SetPtr(inputQO);
-
-    auto oq = std::make_shared<OverlayQuadEntity>(OverlayQuadEntity(&Graphics));
-    oq->GetMaterial()->SetProperty("material.texture", m_puduRenderer.GetBRDF_LUT());
-    oq->SetPositionAndSize(0.0, qoSize * 1.1, 0.15, 0.15);
-    oq->SetPtr(oq);
-
-    m_arrayQO = std::make_shared<OverlayQuadTextureArrayEntity>(OverlayQuadTextureArrayEntity(&Graphics));
-    m_arrayQO->GetMaterial()->SetProperty("material.texture", m_puduRenderer.GetIBLDiffuse());
-    m_arrayQO->SetPositionAndSize(qoSize * 1.1, qoSize * 1.1, .15, .15);
-    m_arrayQO->SetTextureIndex(0);
-    m_arrayQO->SetLOD(0);
-    m_arrayQO->SetPtr(m_arrayQO);
-
-    m_scene.AddEntity(oq);
 }
 
 void Test_PBR::OnRun()
@@ -242,6 +223,17 @@ void Test_PBR::DrawImGUI()
     if (ImGui::Checkbox("Post Processing", &postProcessingEnabled))
         m_puduRenderer.EnablePostProcessing(postProcessingEnabled);
 
+    static bool toneMappingEnabled = true;
+    if (ImGui::Checkbox("Tone Mapping", &toneMappingEnabled))
+    {
+        m_puduRenderer.EnableToneMapping(toneMappingEnabled);
+    }
+
+    static float exposure = 1.0f;
+    if (ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f))
+    {
+        m_puduRenderer.SetExposure(exposure);
+    }
 
     ImGui::Text("Light");
     vec3 forward = directionalLight.GetTransform().GetForward();

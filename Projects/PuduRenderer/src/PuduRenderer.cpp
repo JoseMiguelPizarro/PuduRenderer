@@ -83,6 +83,16 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.gamma", m_gamma);
     }
 
+    void PuduRenderer::EnableToneMapping(bool enable) const
+    {
+        m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.toneMapping", enable);
+    }
+
+    void PuduRenderer::SetExposure(float value) const
+    {
+        m_postProcessingRenderPass->SetExposure(value);
+    }
+
     void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
     {
         u32 brdfLUTResolution = 256;
@@ -456,6 +466,8 @@ namespace Pudu
 
         SetRoughnessScale(1.);
         SetGamma(2.2);
+        EnableToneMapping(true);
+        SetExposure(2.0);
     }
 
     static bool isFirstFrame = true;

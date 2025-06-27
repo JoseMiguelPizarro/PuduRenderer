@@ -49,6 +49,7 @@ public enum DebugMode
 public struct DEBUG
 {
   public DebugMode debugMode;
+  public bool toneMapping = false;
   public float roughnessScale = 1;
 }
 

@@ -7,6 +7,7 @@
 #include "ShadowMapRenderPass.h"
 #include <PuduApp.h>
 #include "ImguiRenderPass.h"
+#include "PostProcessingRenderPass.h"
 
 namespace Pudu
 {
@@ -25,6 +26,8 @@ namespace Pudu
         void SetRoughnessScale(float scale);
         void EnablePostProcessing(bool enable) const;
         void SetGamma(float gamma);
+        void EnableToneMapping(bool enable) const;
+        void SetExposure(float value) const;
 
     protected:
         void OnInit(PuduGraphics* graphics, PuduApp* app) override;
@@ -54,7 +57,7 @@ namespace Pudu
         SPtr<RenderPass> m_depthRenderPass;
         SPtr<RenderPass> m_forwardRenderPass;
         SPtr<RenderPass> m_shadowMapRenderPass;
-        SPtr<RenderPass> m_postProcessingRenderPass;
+        SPtr<PostProcessingRenderPass> m_postProcessingRenderPass;
         SPtr<ImguiRenderPass> m_imguiRenderPass;
         SPtr<GraphicsBuffer> m_lightingBuffer;
         SPtr<GraphicsBuffer> m_globalConstantsBuffer;

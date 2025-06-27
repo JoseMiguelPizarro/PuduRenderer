@@ -298,9 +298,9 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
 
     float3 Fr = max(float3(1.0 - Surface.Roughness),
                     PBR.F0) - PBR.F0;
-      float3 k_S = PBR.F0 + Fr * pow(1.0-NdV, 5.0);
-      float3 FssEss = k_S * brdf.x + brdf.y;
-      return SpecularWeight * specularLight * FssEss * PBR.SpecularColor;
+    float3 k_S = PBR.F0 + Fr * pow(1.0-NdV, 5.0);
+    float3 FssEss = k_S * brdf.x + brdf.y;
+    return SpecularWeight * specularLight * FssEss;
 }
 
 float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 LightDirection, float3 LightColor)
@@ -344,7 +344,7 @@ PBRInfo GetPBRInputs(SurfaceInfo Surface)
     // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflectance to 0%.
     float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
     float3 specularEnvironmentR0 = specularColor.rgb;
-    float3 specularEnvironmentR90 = float3(reflectance90);
+    float3 specularEnvironmentR90 = reflectance90 * Surface.F90;
 
     PBR.NdV = dot(Surface.Normal,Surface.ViewDir);
     PBR.VrN = reflect(-Surface.ViewDir,Surface.Normal);
@@ -370,7 +370,7 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
 
     float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(GLOBALS.lightingBuffer.lightDirection.xyz),float3(1,1,1));
-    float3 c = specularColor + diffuseColor + Surface.Emissive + L*Surface.ShadowAttenuation;
+    float3 c = (specularColor + diffuseColor + L)*lerp(.1,1,Surface.ShadowAttenuation) + Surface.Emissive ;
 
 
     switch(DEBUG_SETTINGS.debugMode)
