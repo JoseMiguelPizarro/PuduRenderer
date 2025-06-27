@@ -1,5 +1,6 @@
 #include "Lib/DefaultVertexInput.hlsl"
 
+import PuduCoreModule;
 import PuduGraphicsModule;
 
 //Coordinates and size in NDC
@@ -42,5 +43,5 @@ VSOut vertexMain(VertexInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOut input) : SV_Target
 {
-    return material.texture.SampleLevel(input.TexCoord.xy,material.mipLevel);
+    return float4(GammaCorrect( material.texture.SampleLevel(input.TexCoord.xy,material.mipLevel).rgb,2.2),0);
 }

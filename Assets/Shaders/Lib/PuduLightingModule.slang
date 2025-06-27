@@ -45,6 +45,20 @@ struct PBRInfo
     float alphaRoughness;
 }
 
+float G_SmithGGXCorrelated(float NdL, float NdV, float AlphaRoughness) {
+    float a2 = AlphaRoughness * AlphaRoughness;
+    float GGXV = NdL * sqrt(NdV * NdV * (1.0 - a2) + a2);
+    float GGXL = NdV * sqrt(NdL * NdL * (1.0 - a2) + a2);
+    return 0.5 / (GGXV + GGXL);
+}
+
+float G_SmithGGXCorrelatedFast(float NdL, float NdV, float roughness) {
+    float a = roughness;
+    float GGXV = NdL * (NdV * (1.0 - a) + a);
+    float GGXL = NdV * (NdL * (1.0 - a) + a);
+    return 0.5 / (GGXV + GGXL);
+}
+
 float G_SchlicksmithGGX(
   float NdL, float NdV, float Roughness)
 {
@@ -54,9 +68,37 @@ float G_SchlicksmithGGX(
   return GL * GV;
 };
 
-float D_GGX(float NdotH, float roughness) {
-  float a = NdotH * roughness;
-  float k = roughness / (1.0 - NdotH * NdotH + a * a);
+float3 F_Schlick(PBRInfo PBR, SurfaceInfo Surface)
+{
+     return Surface.F0 +
+        (Surface.F90 - Surface.F0) *
+         pow(saturate(1.0 - PBR.VdH), 5.0);
+}
+
+//This functions gives more smoother results than g correlated
+float G_SmithGGX(PBRInfo PBR) {
+  float NdL = PBR.NdL;
+  float NdV = PBR.NdV;
+  float rSqr = PBR.alphaRoughness * PBR.alphaRoughness;
+  float attenuationL = 2.0 * NdL /
+    (NdL + sqrt(rSqr + (1.0 - rSqr) * (NdL * NdL)));
+  float attenuationV = 2.0 * NdV /
+    (NdV + sqrt(rSqr + (1.0 - rSqr) * (NdV * NdV)));
+  return attenuationL * attenuationV;
+}
+
+float MicrofacetDistribution(PBRInfo PBR) {
+  float roughnessSq = PBR.alphaRoughness * PBR.alphaRoughness;
+  float f = (PBR.NdH * roughnessSq - PBR.NdH) *
+    PBR.NdH + 1.0;
+  return roughnessSq / (PI * f * f);
+}
+
+
+//GGX Microfacet distribution
+float D_GGX(float NdH, float Roughness) {
+  float a = NdH * Roughness;
+  float k = Roughness / (1.0 - NdH * NdH + a * a);
   return k * k * (1.0 / PI);
 }
 
@@ -193,30 +235,8 @@ float3 DiffuseBurley(PBRInfo PBR, SurfaceInfo Surface)
       return (PBR.DiffuseColor / PI) * (1.0 + f90 * pow((1.0 - PBR.NdL), 5.0)) * (1.0 + f90 * pow((1.0 - PBR.NdV), 5.0));
 }
 
-float3 FresnelSpecularReflection(PBRInfo PBR, SurfaceInfo Surface)
-{
-     return Surface.F0 +
-        (Surface.F90 - Surface.F0) *
-         pow(saturate(1.0 - PBR.VdH), 5.0);
-}
 
-float GeometricOcclusion(PBRInfo PBR) {
-  float NdotL = PBR.NdL;
-  float NdotV = PBR.NdV;
-  float rSqr = PBR.alphaRoughness * PBR.alphaRoughness;
-  float attenuationL = 2.0 * NdotL /
-    (NdotL + sqrt(rSqr + (1.0 - rSqr) * (NdotL * NdotL)));
-  float attenuationV = 2.0 * NdotV /
-    (NdotV + sqrt(rSqr + (1.0 - rSqr) * (NdotV * NdotV)));
-  return attenuationL * attenuationV;
-}
 
-float MicrofacetDistribution(PBRInfo PBR) {
-  float roughnessSq = PBR.alphaRoughness * PBR.alphaRoughness;
-  float f = (PBR.NdH * roughnessSq - PBR.NdH) *
-    PBR.NdH + 1.0;
-  return roughnessSq / (PI * f * f);
-}
 
 
 float3 SampleAmbientSpecular(SurfaceInfo Surface) {
@@ -228,43 +248,10 @@ float3 SampleAmbientDiffuse(SurfaceInfo Surface) {
     return 0;
 }
 
-// float3 BlinnPhongSpecularReflection(PBRInfo PBR, SurfaceInfo Surface) {
-//     float3 L = Surface.LightDir;
-//     float3 N = Surface.Normal;
-//     float3 V = Surface.ViewDir;
-//
-//     float3 H = normalize(L + V);
-//
-//     float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(N, H)), BlinnPhongSpecularAlpha) * (1. - Surface.Roughness);
-//     S += SampleAmbientSpecular(Surface);
-//
-//     return S;
-// }
-//
-// float3 PhongSpecularReflection(SurfaceInfo Surface) {
-//     float3 L = Surface.LightDir;
-//     float3 N = Surface.Normal;
-//     float3 V = Surface.ViewDir;
-//     float3 R = reflect(Surface.LightDir, Surface.Normal);
-//
-//     float3 S = pow(Surface.SpecularColor * Surface.LightColor * saturate(dot(V, R)), 5 * (1. - Surface.Roughness));
-//
-//     S = S + SampleAmbientSpecular(Surface);
-//     return S;
-// }
-//
-// float3 LambertDiffuseReflection(SurfaceInfo Surface) {
-//     float3 DirectColor = Surface.LightColor * saturate(dot(Surface.Normal, Surface.LightDir));
-//
-//     return DirectColor * Surface.Albedo + SampleAmbientDiffuse(Surface); // Missing diffuse ambient color here!
-// }
-
-// float3 LambertBRDF(SurfaceInfo Surface) {
-//     float3 DiffuseReflection = LambertDiffuseReflection(Surface);
-//     float3 SpecularReflection = BlinnPhongSpecularReflection(Surface);
-//
-//     return GLOBALS.IBL_Specular.SampleLevel(Surface.Normal,0).xyz;
-// }
+float3 F_Schlick(float3 f0, float3 f90, float u)
+{
+    return f0 + ( f90 - f0 ) * pow (1. - u , 5.) ;
+}
 
 float2 SampleBRDFLUT(float2 RoughnessNdV)
 {
@@ -312,7 +299,6 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
       float3 k_S = Surface.F0 + Fr * pow(1.0-NdV, 5.0);
       float3 FssEss = k_S * brdf.x + brdf.y;
       return SpecularWeight * specularLight * FssEss;
-
 }
 
 float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 LightDirection, float3 LightColor)
@@ -333,9 +319,10 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
           PBR.NdH = NdotH;
           PBR.LdH = LdotH;
           PBR.VdH = VdotH;
-          float3  F = FresnelSpecularReflection(PBR,Surface);
-          float G = GeometricOcclusion(PBR);
-          float D = MicrofacetDistribution(PBR);
+          float3  F = F_Schlick(PBR,Surface);
+          float G = G_SmithGGX(PBR);
+          float D = D_GGX(PBR.NdH,Surface.Roughness);
+//float D = MicrofacetDistribution(PBR);
     float3 diffuseContrib =  (1 - F)*DiffuseBurley(PBR,Surface);
     float3 specContrib = F * G * D / max((4.0 * NdotL * NdotV),0.0001);
     color = NdotL * LightColor * (diffuseContrib + specContrib);
@@ -347,6 +334,9 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
 public float3 StandardSurface(SurfaceInfo Surface) {
 
     PBRInfo PBR;
+    //Compensate surface F0 based on roughness
+    Surface.F0 = lerp(Surface.F0, Surface.F0*2,Surface.Roughness);
+
     Surface.Roughness *= DEBUG_SETTINGS.roughnessScale;
 
     PBR.NdV = dot(Surface.Normal,Surface.ViewDir);
