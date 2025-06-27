@@ -239,3 +239,7 @@ public float3 GammaCorrect(float3 color, float gamma)
 {
     return pow(color,1./gamma);
 }
+
+public inline float Max3(float3 v){
+    return max(max(v.x,v.y),v.z);
+}

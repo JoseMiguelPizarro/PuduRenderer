@@ -43,6 +43,8 @@ struct PBRInfo
     float NdH;
     float VdH;
     float alphaRoughness;
+    float3 F0;
+    float3 F90;
 }
 
 float G_SmithGGXCorrelated(float NdL, float NdV, float AlphaRoughness) {
@@ -295,10 +297,10 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
     float3 specularLight = envMap.SampleLevel(VrN,lod).xyz;
 
     float3 Fr = max(float3(1.0 - Surface.Roughness),
-                    Surface.F0) - Surface.F0;
-      float3 k_S = Surface.F0 + Fr * pow(1.0-NdV, 5.0);
+                    PBR.F0) - PBR.F0;
+      float3 k_S = PBR.F0 + Fr * pow(1.0-NdV, 5.0);
       float3 FssEss = k_S * brdf.x + brdf.y;
-      return SpecularWeight * specularLight * FssEss;
+      return SpecularWeight * specularLight * FssEss * PBR.SpecularColor;
 }
 
 float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 LightDirection, float3 LightColor)
@@ -331,20 +333,38 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
 }
 
 
-public float3 StandardSurface(SurfaceInfo Surface) {
-
+PBRInfo GetPBRInputs(SurfaceInfo Surface)
+{
     PBRInfo PBR;
-    //Compensate surface F0 based on roughness
-    Surface.F0 = lerp(Surface.F0, Surface.F0*2,Surface.Roughness);
 
-    Surface.Roughness *= DEBUG_SETTINGS.roughnessScale;
+    float3 specularColor = lerp(Surface.F0, Surface.Albedo,Surface.Metallic);
+
+    float reflectance = Max3(specularColor);
+    //For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
+    // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflectance to 0%.
+    float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
+    float3 specularEnvironmentR0 = specularColor.rgb;
+    float3 specularEnvironmentR90 = float3(reflectance90);
 
     PBR.NdV = dot(Surface.Normal,Surface.ViewDir);
     PBR.VrN = reflect(-Surface.ViewDir,Surface.Normal);
     PBR.ViewDir = Surface.ViewDir;
     PBR.DiffuseColor = lerp(Surface.Albedo,0, Surface.Metallic);
-    PBR.SpecularColor = lerp(Surface.F0, Surface.Albedo,Surface.Metallic);
+    PBR.SpecularColor = specularColor;
     PBR.alphaRoughness = Surface.Roughness * Surface.Roughness;
+    PBR.F0 = specularEnvironmentR0;
+    PBR.F90 = specularEnvironmentR90;
+
+    return PBR;
+}
+
+public float3 StandardSurface(SurfaceInfo Surface) {
+    Surface.Roughness *= DEBUG_SETTINGS.roughnessScale;
+
+    //Compensate surface F0 based on roughness
+    Surface.F0 = lerp(Surface.F0, Surface.F0*2,Surface.Roughness);
+
+    PBRInfo PBR = GetPBRInputs(Surface);
 
     float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
