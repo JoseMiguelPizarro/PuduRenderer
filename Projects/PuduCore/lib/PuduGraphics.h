@@ -407,7 +407,6 @@ namespace Pudu
 		Swapchain m_currentSwapchain;
 		Swapchain m_oldSwapchain;
 		
-		VkSwapchainKHR m_swapChain;
 		VkInstance m_vkInstance;
 		VkSurfaceKHR m_surface;
 		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;

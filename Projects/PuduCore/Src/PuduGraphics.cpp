@@ -372,7 +372,7 @@ namespace Pudu
         ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
         //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-        VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, *frame.ImageAvailableSemaphore,
+        VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX, *frame.ImageAvailableSemaphore,
                                                 VK_NULL_HANDLE, &frameData.frameIndex);
 
         frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
@@ -941,7 +941,7 @@ namespace Pudu
         presentInfo.pWaitSemaphores = presentWaitSemaphores;
 
 
-        VkSwapchainKHR swapChains[] = {m_swapChain};
+        VkSwapchainKHR swapChains[] = {m_currentSwapchain.swapchainHandle};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &frameData.frameIndex;
@@ -1436,11 +1436,11 @@ namespace Pudu
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VKCheck(vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_swapChain),
+        VKCheck(vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_currentSwapchain.swapchainHandle),
                 "failed to create swap chain!");
 
-        vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
-        vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, swapchain.images);
+        vkGetSwapchainImagesKHR(m_device, m_currentSwapchain.swapchainHandle, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(m_device, m_currentSwapchain.swapchainHandle, &imageCount, swapchain.images);
 
         m_imageCount = imageCount;
         m_swapChainImageFormat = surfaceFormat.format;
@@ -3678,7 +3678,7 @@ namespace Pudu
 
     void PuduGraphics::CleanupSwapChain(Swapchain& swapchain)
     {
-        vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+        vkDestroySwapchainKHR(m_device, swapchain.swapchainHandle, nullptr);
 
         for (Size i = 0; i < swapchain.imageCount; i++)
         {
