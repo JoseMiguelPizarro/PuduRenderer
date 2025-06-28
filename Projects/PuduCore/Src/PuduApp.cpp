@@ -17,7 +17,6 @@ namespace Pudu
 		settings.resolution.x = 1024;
 		settings.resolution.y = 1024;
 		settings.presentMode = PresentMode::FIFO;
-		// settings.surfaceFormat = VK_FORMAT_B8G8R8A8_UNORM;
 		Graphics.Init(settings);
 		Input::Init(Graphics.WindowPtr);
 
