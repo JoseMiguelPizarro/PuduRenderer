@@ -130,7 +130,7 @@ namespace Pudu
 
     void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
     {
-        u32 IBLRTResolution = envMap->width;
+        u32 IBLRTResolution = envMap->width >> 2;
         u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
 
         SamplerCreationData samplerData{};
@@ -180,7 +180,7 @@ namespace Pudu
             gfx->DestroyTexture(m_IBL_SpecularCube);
         }
 
-        std::string specularIBLName =  ("IBL_SpecularCube_" + envMap->name);
+        std::string specularIBLName = ("IBL_SpecularCube_" + envMap->name);
         TextureCreationData envCubemapCreationData{};
         envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
         envCubemapCreationData.width = IBLRTResolution;
@@ -238,7 +238,7 @@ namespace Pudu
             gfx->DestroyTexture(m_IBL_SpecularCube);
         }
 
-        std::string diffuseIBLName =  ("IBL_DiffuseCube_" + envMap->name);
+        std::string diffuseIBLName = ("IBL_DiffuseCube_" + envMap->name);
         TextureCreationData IBLDiffuseCubeCreationData{};
         IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
         IBLDiffuseCubeCreationData.width = IBLRTResolution;

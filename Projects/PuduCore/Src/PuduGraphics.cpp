@@ -372,7 +372,8 @@ namespace Pudu
         ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
         //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-        VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX, *frame.ImageAvailableSemaphore,
+        VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX,
+                                                *frame.ImageAvailableSemaphore,
                                                 VK_NULL_HANDLE, &frameData.frameIndex);
 
         frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
@@ -503,6 +504,7 @@ namespace Pudu
 
         m_defaultStandardShader = CreateShader("standardSurface.shader.slang", "Default StandardSurface");
         m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
+        m_defaultErrorShader = CreateShader(k_DEFAULT_ERROR_SHADER_PATH, "ErrorShader");
 
         m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
 
@@ -2797,6 +2799,8 @@ namespace Pudu
     SPtr<Shader> PuduGraphics::CreateShader(const fs::path& shaderPath, const char* name)
     {
         auto shader = m_resources.AllocateShader();
+        shader->SetName(name);
+        shader->m_shaderPath = shaderPath;
 
         const char* fragmentEntryPoint = "fragmentMain";
         const char* vertexEntryPoint = "vertexMain";
@@ -2804,13 +2808,16 @@ namespace Pudu
         const std::vector<const char*> entryPoints = {fragmentEntryPoint, vertexEntryPoint};
         auto compileData = m_shaderCompiler.Compile(shaderPath.string().c_str(), entryPoints);
 
+        if (compileData.result == ShaderCompilationResult::Failed)
+        {
+            compileData = m_shaderCompiler.Compile(k_DEFAULT_ERROR_SHADER_PATH.string().c_str(), entryPoints);
+        }
+
         auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
         auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
         shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
         shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
-        shader->SetName(name);
         shader->m_compilationObject = compileData;
-        shader->m_shaderPath = shaderPath;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
                                  shader->m_descriptorSetLayoutHandles);
@@ -3322,6 +3329,11 @@ namespace Pudu
 
             const std::vector entryPoints = {fragmentEntryPoint, vertexEntryPoint};
             auto compileData = m_shaderCompiler.Compile(shader->m_shaderPath.string().c_str(), entryPoints);
+
+            if (compileData.result == ShaderCompilationResult::Failed)
+            {
+                compileData = m_shaderCompiler.Compile(k_DEFAULT_ERROR_SHADER_PATH.string().c_str(), entryPoints);
+            }
 
             auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
             auto vertexKernel = compileData.GetKernel(vertexEntryPoint);

@@ -1,4 +1,3 @@
-
 #include <vulkan/vulkan_core.h>
 #include "ShaderCompilation/ShaderObjectLayoutBuilder.h"
 #include "ShaderCompilation/ShaderCompiler.h"
@@ -6,184 +5,198 @@
 
 #include "Logger.h"
 
-namespace Pudu {
-	void ShaderCompiler::Init()
-	{
-		createGlobalSession(m_globalSession.writeRef());
+namespace Pudu
+{
+    void ShaderCompiler::Init()
+    {
+        createGlobalSession(m_globalSession.writeRef());
 
-		TargetDesc targetDesc;
-		targetDesc.profile = m_globalSession->findProfile("spirv_1_6");
-		targetDesc.format = SLANG_SPIRV;
+        TargetDesc targetDesc;
+        targetDesc.profile = m_globalSession->findProfile("spirv_1_6");
+        targetDesc.format = SLANG_SPIRV;
 
-		const char* searchPaths[] = { "Shaders" };
+        const char* searchPaths[] = {"Shaders"};
 
-		SessionDesc sessionDesc;
-		sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
-		sessionDesc.targetCount = 1;
-		sessionDesc.targets = &targetDesc;
-		sessionDesc.searchPathCount = 1;
-		sessionDesc.searchPaths = searchPaths;
+        SessionDesc sessionDesc;
+        sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+        sessionDesc.targetCount = 1;
+        sessionDesc.targets = &targetDesc;
+        sessionDesc.searchPathCount = 1;
+        sessionDesc.searchPaths = searchPaths;
 
-		slang::CompilerOptionEntry useEntryPointNameOption;
-		useEntryPointNameOption.name = slang::CompilerOptionName::VulkanUseEntryPointName;
-		useEntryPointNameOption.value = { slang::CompilerOptionValueKind::Int,1, 0, nullptr, nullptr };
+        slang::CompilerOptionEntry useEntryPointNameOption;
+        useEntryPointNameOption.name = slang::CompilerOptionName::VulkanUseEntryPointName;
+        useEntryPointNameOption.value = {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr};
 
-		std::array<slang::CompilerOptionEntry, 1> options =
-		{
-			useEntryPointNameOption
-		};
+        std::array<slang::CompilerOptionEntry, 1> options =
+        {
+            useEntryPointNameOption
+        };
 
-		sessionDesc.compilerOptionEntries = options.data();
-		sessionDesc.compilerOptionEntryCount = options.size();
+        sessionDesc.compilerOptionEntries = options.data();
+        sessionDesc.compilerOptionEntryCount = options.size();
 
-		m_globalSession->createSession(sessionDesc, m_session.writeRef());
-	}
+        m_globalSession->createSession(sessionDesc, m_session.writeRef());
+    }
 
-	void PrintDiagnostics(Slang::ComPtr<IBlob> diagnostics)
-	{
-		if (diagnostics)
-		{
-			fprintf(stderr, "%s\n", static_cast<const char*>(diagnostics->getBufferPointer()));
-		}
-	}
+    bool PrintDiagnostics(Slang::ComPtr<IBlob> diagnostics)
+    {
+        if (diagnostics)
+        {
+            LOG_ERROR_NO_BREAK("Shader compilation error: {}",
+                               static_cast<const char*>(diagnostics->getBufferPointer()));
 
-	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, const std::vector<const char*>& entryPoints, bool compute) const
-	{
-		Slang::ComPtr<IBlob> diagnostics;
+            return true;
+        }
 
-		//TODO: This is a kinda dirty solution, it will increase shader compilation time but so far, recreating the session has been the only way i've found to do hot reloading
-		TargetDesc targetDesc;
-		targetDesc.profile = m_globalSession->findProfile("spirv_1_6");
-		targetDesc.format = SLANG_SPIRV;
+        return false;
+    }
 
-		const char* searchPaths[] = { "Shaders" };
+    ShaderCompilationObject GetFailedCompilationObject()
+    {
+        ShaderCompilationObject emptyData{};
+        emptyData.result = ShaderCompilationResult::Failed;
+        return emptyData;
+    }
 
-		SessionDesc sessionDesc;
-		sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
-		sessionDesc.targetCount = 1;
-		sessionDesc.targets = &targetDesc;
-		sessionDesc.searchPathCount = 1;
-		sessionDesc.searchPaths = searchPaths;
+    ShaderCompilationObject ShaderCompiler::Compile(const char* path, const std::vector<const char*>& entryPoints,
+                                                    bool compute) const
+    {
+        Slang::ComPtr<IBlob> diagnostics;
 
-		slang::CompilerOptionEntry useEntryPointNameOption;
-		useEntryPointNameOption.name = slang::CompilerOptionName::VulkanUseEntryPointName;
-		useEntryPointNameOption.value = { slang::CompilerOptionValueKind::Int,1, 0, nullptr, nullptr };
+        //TODO: This is a kinda dirty solution, it will increase shader compilation time but so far, recreating the session has been the only way i've found to do hot reloading
+        TargetDesc targetDesc;
+        targetDesc.profile = m_globalSession->findProfile("spirv_1_6");
+        targetDesc.format = SLANG_SPIRV;
 
-		std::array<slang::CompilerOptionEntry, 1> options =
-		{
-			useEntryPointNameOption
-		};
+        const char* searchPaths[] = {"Shaders"};
 
-		sessionDesc.compilerOptionEntries = options.data();
-		sessionDesc.compilerOptionEntryCount = options.size();
+        SessionDesc sessionDesc;
+        sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+        sessionDesc.targetCount = 1;
+        sessionDesc.targets = &targetDesc;
+        sessionDesc.searchPathCount = 1;
+        sessionDesc.searchPaths = searchPaths;
 
-		Slang::ComPtr<ISession> session;
-		m_globalSession->createSession(sessionDesc,session.writeRef());
-		
-		IModule* coreModule = session->loadModule("PuduCoreModule", diagnostics.writeRef());
-		IModule* baseModule = session->loadModule("PuduGraphicsModule", diagnostics.writeRef());
+        slang::CompilerOptionEntry useEntryPointNameOption;
+        useEntryPointNameOption.name = slang::CompilerOptionName::VulkanUseEntryPointName;
+        useEntryPointNameOption.value = {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr};
 
-		PrintDiagnostics(diagnostics);
+        std::array<slang::CompilerOptionEntry, 1> options =
+        {
+            useEntryPointNameOption
+        };
 
-		IModule* module = session->loadModule(path, diagnostics.writeRef());
+        sessionDesc.compilerOptionEntries = options.data();
+        sessionDesc.compilerOptionEntryCount = options.size();
 
-		PrintDiagnostics(diagnostics);
+        Slang::ComPtr<ISession> session;
+        m_globalSession->createSession(sessionDesc, session.writeRef());
 
-		std::vector<Slang::ComPtr<IEntryPoint>> slangEntryPoints;
+        IModule* coreModule = session->loadModule("PuduCoreModule", diagnostics.writeRef());
+        IModule* baseModule = session->loadModule("PuduGraphicsModule", diagnostics.writeRef());
 
-		for (auto entryPoint : entryPoints) {
-			Slang::ComPtr<IEntryPoint> e;
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
-			module->findEntryPointByName(entryPoint, e.writeRef());
+        IModule* module = session->loadModule(path, diagnostics.writeRef());
 
-			slangEntryPoints.push_back(e);
-		}
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
-		std::vector<IComponentType*> components = {};
-		components.push_back(coreModule);
+        std::vector<Slang::ComPtr<IEntryPoint>> slangEntryPoints;
+
+        for (auto entryPoint : entryPoints)
+        {
+            Slang::ComPtr<IEntryPoint> e;
+
+            module->findEntryPointByName(entryPoint, e.writeRef());
+
+            slangEntryPoints.push_back(e);
+        }
+
+        std::vector<IComponentType*> components = {};
+        components.push_back(coreModule);
 
 
-		ASSERT(baseModule!=nullptr, "Base module is null for {}", path);
-		//Base module has global descriptor sets which are not relevant for compute
-		if (!compute)
-			components.push_back(baseModule);
+        ASSERT(baseModule != nullptr, "Base module is null for {}", path);
+        //Base module has global descriptor sets which are not relevant for compute
+        if (!compute)
+            components.push_back(baseModule);
 
-		components.push_back(module);
+        components.push_back(module);
 
-		components.append_range(slangEntryPoints);
+        components.append_range(slangEntryPoints);
 
-		Slang::ComPtr<IComponentType> program;
-		session->createCompositeComponentType(components.data(), components.size(), program.writeRef(), diagnostics.writeRef());
+        Slang::ComPtr<IComponentType> program;
+        session->createCompositeComponentType(components.data(), components.size(), program.writeRef(),
+                                              diagnostics.writeRef());
 
-		PrintDiagnostics(diagnostics);
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
-		slang::ProgramLayout* layout = program->getLayout();
+        slang::ProgramLayout* layout = program->getLayout();
 
-		Slang::ComPtr<IComponentType> linkedProgram;
-		program->link(linkedProgram.writeRef(), diagnostics.writeRef());
+        Slang::ComPtr<IComponentType> linkedProgram;
+        program->link(linkedProgram.writeRef(), diagnostics.writeRef());
 
-		PrintDiagnostics(diagnostics);
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
-		//Global
-		ShaderCompilationObject compiledData;
-		ShaderObjectLayoutBuilder layoutBuilder;
-		layoutBuilder.m_globalSession = m_globalSession;
-		layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
+        //Global
+        ShaderCompilationObject compiledData;
+        ShaderObjectLayoutBuilder layoutBuilder;
+        layoutBuilder.m_globalSession = m_globalSession;
+        layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
 
-		PrintDiagnostics(diagnostics);
+        for (size_t i = 0; i < entryPoints.size(); i++)
+        {
+            Slang::ComPtr<IBlob> kernel;
+            linkedProgram->getEntryPointCode(i, 0, kernel.writeRef(), diagnostics.writeRef());
 
-		for (size_t i = 0; i < entryPoints.size(); i++)
-		{
-			Slang::ComPtr<IBlob> kernel;
-			linkedProgram->getEntryPointCode(i, 0, kernel.writeRef(), diagnostics.writeRef());
+            ShaderKernel kernelData;
+            kernelData.codeSize = kernel->getBufferSize();
 
-			ShaderKernel kernelData;
-			kernelData.codeSize = kernel->getBufferSize();
+            const auto codePtr = malloc(kernelData.codeSize);
+            memcpy(codePtr, kernel->getBufferPointer(), kernelData.codeSize);
 
-			const auto codePtr = malloc(kernelData.codeSize);
-			memcpy(codePtr, kernel->getBufferPointer(), kernelData.codeSize);
+            kernelData.code = static_cast<const uint32_t*>(codePtr);
+            compiledData.AddKernel(entryPoints[i], kernelData);
+            if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
+        }
 
-			kernelData.code = static_cast<const uint32_t*>(codePtr);
-			compiledData.AddKernel(entryPoints[i], kernelData);
-			PrintDiagnostics(diagnostics);
-		}
+        session->release();
+        return compiledData;
+    }
 
-		session->release();
-		return compiledData;
-	}
+    ShaderCompilationObject ShaderCompiler::CompileModule(const fs::path& path)
+    {
+        ASSERT(!path.empty(), "Cannot compile module. Path is empty");
+        Slang::ComPtr<IBlob> diagnostics;
+        IModule* module = m_session->loadModule(path.string().c_str(), diagnostics.writeRef());
 
-	ShaderCompilationObject ShaderCompiler::CompileModule(const fs::path& path)
-	{
-		ASSERT(!path.empty(),"Cannot compile module. Path is empty");
-		Slang::ComPtr<IBlob> diagnostics;
-		IModule* module = m_session->loadModule(path.string().c_str(), diagnostics.writeRef());
+        PrintDiagnostics(diagnostics);
 
-		PrintDiagnostics(diagnostics);
+        std::vector<IComponentType*> components = {};
 
-		std::vector<IComponentType*> components = {};
+        components.push_back(module);
 
-		components.push_back(module);
+        Slang::ComPtr<IComponentType> program;
+        m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(),
+                                                diagnostics.writeRef());
 
-		Slang::ComPtr<IComponentType> program;
-		m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(), diagnostics.writeRef());
+        PrintDiagnostics(diagnostics);
 
-		PrintDiagnostics(diagnostics);
+        slang::ProgramLayout* layout = program->getLayout();
 
-		slang::ProgramLayout* layout = program->getLayout();
+        Slang::ComPtr<IComponentType> linkedProgram;
+        program->link(linkedProgram.writeRef(), diagnostics.writeRef());
 
-		Slang::ComPtr<IComponentType> linkedProgram;
-		program->link(linkedProgram.writeRef(), diagnostics.writeRef());
+        PrintDiagnostics(diagnostics);
+        //Global
+        ShaderCompilationObject compiledData;
+        ShaderObjectLayoutBuilder layoutBuilder;
+        layoutBuilder.m_globalSession = m_globalSession;
+        layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
 
-		PrintDiagnostics(diagnostics);
-		//Global
-		ShaderCompilationObject compiledData;
-		ShaderObjectLayoutBuilder layoutBuilder;
-		layoutBuilder.m_globalSession = m_globalSession;
-		layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
+        PrintDiagnostics(diagnostics);
 
-		PrintDiagnostics(diagnostics);
-
-		return compiledData;
-	}
+        return compiledData;
+    }
 }
-

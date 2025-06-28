@@ -275,6 +275,9 @@ namespace Pudu
 
 	private:
 		friend class GPUResourcesManager;
+
+		const fs::path k_DEFAULT_ERROR_SHADER_PATH = "error.shader.slang";
+
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
 		void InitVulkan();
 		void InitVMA();
@@ -382,6 +385,7 @@ namespace Pudu
 		SPtr<Shader> m_defaultOverlayShader;
 		SPtr<Shader> m_defaultOverlayTextureArrayShader;
 		SPtr<Shader> m_defaultStandardShader;
+		SPtr<Shader> m_defaultErrorShader;
 		SPtr<ComputeShader> m_horizonToCubeCompute;
 
 		ComputeShaderRenderer m_horizonToCubemapCSRenderer;

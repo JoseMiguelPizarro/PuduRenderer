@@ -35,8 +35,7 @@ namespace Pudu
     {
         auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
 
-        std::printf(std::format("{}🐞Error 👉👈: {} {}", k_red, formattedMessage, k_reset).c_str());
-        std::printf("\n");
+        std::printf(std::format("{}🐞Error 👉👈: {} {} \n", k_red, formattedMessage, k_reset).c_str());
 
 #if defined(_MSC_VER)
         __debugbreak();
@@ -46,12 +45,19 @@ namespace Pudu
     }
 
     template <typename... Args>
+       void LOG_ERROR_NO_BREAK(const std::format_string<Args...> fmt, Args&&... args)
+    {
+        auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
+
+        std::printf(std::format("{}🐞Error 👉👈: {} {} \n", k_red, formattedMessage, k_reset).c_str());
+    }
+
+    template <typename... Args>
     void LOG_WARNING(const std::format_string<Args...> fmt, Args&&... args)
     {
         auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
 
-        std::printf(std::format("{}⚠️: {}{}",k_yellow,formattedMessage,k_reset).c_str());
-        std::printf("\n");
+        std::printf(std::format("{}⚠️: {}{} \n",k_yellow,formattedMessage,k_reset).c_str());
     }
 
     // Assert function to validate expressions
@@ -61,8 +67,7 @@ namespace Pudu
         if (!condition)
         {
             auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
-            std::printf(std::format("{}Assertion failed 🫤: {}{}", k_red, formattedMessage, k_reset).c_str());
-            std::printf("\n");
+            std::printf(std::format("{}Assertion failed 🫤: {}{} \n", k_red, formattedMessage, k_reset).c_str());
 
 #if defined(_MSC_VER)
             __debugbreak();

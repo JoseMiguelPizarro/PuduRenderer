@@ -1,9 +1,6 @@
 //
-// Created by Administrator on 4/12/2025.
+// Created by Hojaverde on 4/12/2025.
 //
-
-// Forward declare post processing functions
-void SetPostProcessingEnabled(bool enabled);
 
 #include "Test_PBR.h"
 #include "Renderer.h"
@@ -11,7 +8,6 @@ void SetPostProcessingEnabled(bool enabled);
 #include "FileManager.h"
 #include "StringUtils.h"
 #include "ImGui/imgui.h"
-#include "ComputeShaderRenderer.h"
 #include "ImGuiUtils.h"
 #include "OverlayQuadEntity.h"
 
