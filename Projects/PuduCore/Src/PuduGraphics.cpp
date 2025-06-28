@@ -80,8 +80,8 @@ namespace Pudu
         CreateLogicalDevice();
         InitDebugUtilsObjectName();
         InitVMA();
-        CreateSwapChain();
-        CreateSwapchainImageViews();
+        CreateSwapChain(m_currentSwapchain);
+        CreateSwapchainImageViews(m_currentSwapchain);
 
         CreateBindlessDescriptorPool();
 
@@ -375,7 +375,7 @@ namespace Pudu
         VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, *frame.ImageAvailableSemaphore,
                                                 VK_NULL_HANDLE, &frameData.frameIndex);
 
-        frameData.currentSwapChain = m_swapChainTextures[frameData.frameIndex];
+        frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -407,12 +407,12 @@ namespace Pudu
 
         frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
                                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        frameData.currentCommand->TransitionTextureLayout(m_swapChainTextures[frameData.frameIndex],
+        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
                                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex],
+        frameData.currentCommand->Blit(frameData.activeRenderTarget, m_currentSwapchain.textures[frameData.frameIndex],
                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        frameData.currentCommand->TransitionTextureLayout(m_swapChainTextures[frameData.frameIndex],
+        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
                                                           VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
@@ -1389,7 +1389,7 @@ namespace Pudu
         }
     }
 
-    void PuduGraphics::CreateSwapChain()
+    void PuduGraphics::CreateSwapChain(Swapchain& swapchain)
     {
         LOG("CreateSwapChain");
 
@@ -1398,7 +1398,7 @@ namespace Pudu
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        u32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
         if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
         {
             imageCount = swapChainSupport.capabilities.maxImageCount;
@@ -1416,7 +1416,7 @@ namespace Pudu
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
         QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
-        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+        u32 queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily)
         {
@@ -1439,56 +1439,54 @@ namespace Pudu
         VKCheck(vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_swapChain),
                 "failed to create swap chain!");
 
-        m_swapChainImages.resize(imageCount);
         vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
-        vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+        vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, swapchain.images);
 
         m_imageCount = imageCount;
         m_swapChainImageFormat = surfaceFormat.format;
         m_swapChainExtent = extent;
 
+        swapchain.imageCount = imageCount;
 
-        for (uint32_t i = 0; i < m_swapChainImages.size(); i++)
+        for (u32 i = 0; i < imageCount; i++)
         {
-            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (uint64_t)m_swapChainImages[i],
+            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (u64)swapchain.images[i],
                             fmt::format("Swapchain Image {}", i).c_str());
         }
 
         LOG("Swap chain images created!");
     }
 
-    void PuduGraphics::CreateSwapchainImageViews()
+    void PuduGraphics::CreateSwapchainImageViews(Swapchain& swapchain)
     {
         LOG("Create Swapchain Images Views");
-        m_swapChainImagesViews.resize(m_swapChainImages.size());
-        m_swapChainTextures.resize(m_swapChainImages.size());
 
-        for (size_t i = 0; i < m_swapChainImages.size(); i++)
+        for (size_t i = 0; i < swapchain.imageCount; i++)
         {
             ImageViewCreateData createData;
-            createData.image = m_swapChainImages[i];
+            createData.image = swapchain.images[i];
             createData.format = m_swapChainImageFormat;
             createData.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
             createData.name = fmt::format("Swapchain Image View {}", i).c_str();
 
             auto imageView = CreateImageView(createData);
 
-            m_swapChainImagesViews[i] = imageView;
+            swapchain.imageViews[i] = imageView;
 
-            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i],
+            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (u64)swapchain.imageViews[i],
                             fmt::format("Swapchain Image View {}", i).c_str());
 
             auto handle = m_resources.AllocateRenderTexture();
             auto texture = m_resources.GetTexture<RenderTexture>(handle->Handle());
 
             texture->vkImageViewHandle = imageView;
-            texture->vkImageHandle = m_swapChainImages[i];
+            texture->vkImageHandle = swapchain.images[i];
             texture->format = m_swapChainImageFormat;
             texture->width = m_swapChainExtent.width;
             texture->height = m_swapChainExtent.height;
             texture->isSwapChain = true;
 
-            m_swapChainTextures[i] = texture;
+            swapchain.textures[i] = texture;
         }
 
         LOG("Swapchain images created");
@@ -2740,10 +2738,10 @@ namespace Pudu
 
         vkDeviceWaitIdle(m_device);
 
-        CleanupSwapChain();
+        CleanupSwapChain(m_currentSwapchain);
 
-        CreateSwapChain();
-        CreateSwapchainImageViews();
+        CreateSwapChain(m_currentSwapchain);
+        CreateSwapchainImageViews(m_currentSwapchain);
     }
 
     void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
@@ -3648,7 +3646,7 @@ namespace Pudu
         {
             return;
         }
-        CleanupSwapChain();
+        CleanupSwapChain(m_currentSwapchain);
 
         m_resources.DestroyAllResources(this);
 
@@ -3678,16 +3676,16 @@ namespace Pudu
         m_initialized = false;
     }
 
-    void PuduGraphics::CleanupSwapChain()
+    void PuduGraphics::CleanupSwapChain(Swapchain& swapchain)
     {
         vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
 
-        for (auto sc : m_swapChainImagesViews)
+        for (Size i = 0; i < swapchain.imageCount; i++)
         {
-            vkDestroyImageView(m_device, sc, m_allocatorPtr);
+            vkDestroyImageView(m_device, swapchain.imageViews[i], m_allocatorPtr);
         }
 
-        m_swapChainImagesViews.clear();
+        swapchain.imageCount = 0;
     }
 
     void PuduGraphics::DestroyMesh(SPtr<Mesh> mesh)

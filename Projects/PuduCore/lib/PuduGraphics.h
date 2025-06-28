@@ -150,9 +150,7 @@ namespace Pudu
 		VkInstance GetVkInstance() { return m_vkInstance; }
 		VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
 		VkDevice GetDevice() { return m_device; }
-		std::vector<VkImageView>* GetSwapchainImageViews() {
-			return &m_swapChainImagesViews;
-		}
+
 		int2 GetResolution() const;
 		QueueFamilyIndices GetQueueFamiliesIndex();
 
@@ -251,7 +249,6 @@ namespace Pudu
 		/// </summary>
 		/// <returns></returns>
 		VkFormat GetSurfaceFormat() { return m_settings.surfaceFormat; }
-		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
 		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
@@ -285,8 +282,8 @@ namespace Pudu
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateSurface();
-		void CreateSwapChain();
-		void CreateSwapchainImageViews();
+		void CreateSwapChain(Swapchain& swapchain);
+		void CreateSwapchainImageViews(Swapchain& swapchain);
 		void SetResourceName(VkObjectType type, u64 handle, const char* name);
 		/// <summary>
 		/// Setup and dispatch compute workload for the frame
@@ -341,7 +338,7 @@ namespace Pudu
 		void ReloadPendingShaders();
 		
 
-		void CleanupSwapChain();
+		void CleanupSwapChain(Swapchain& swapchain);
 
 		VkImageView CreateImageView(ImageViewCreateData data);
 
@@ -404,7 +401,6 @@ namespace Pudu
 		std::unordered_map<fs::path, SPtr<Texture>> m_loadedTexturesMap;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
-		std::vector<VkImageView> m_swapChainImagesViews;
 		VkFormat m_swapChainImageFormat;
 		VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
 
@@ -419,8 +415,6 @@ namespace Pudu
 		VkQueue m_presentationQueue;
 		VkQueue m_computeQueue;
 		VkExtent2D m_swapChainExtent;
-		std::vector<VkImage> m_swapChainImages;
-		std::vector<SPtr<RenderTexture>> m_swapChainTextures;
 
 		SPtr<CommandPool> m_commandPool;
 		SPtr<RenderTexture> m_multisampledColorTexture;
