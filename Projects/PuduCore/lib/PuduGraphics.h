@@ -50,6 +50,7 @@
 #include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
 #include "ShaderCompilation/ShaderCompiler.h"
+#include "Swapchain.h"
 
 namespace Pudu
 {
@@ -406,6 +407,10 @@ namespace Pudu
 		std::vector<VkImageView> m_swapChainImagesViews;
 		VkFormat m_swapChainImageFormat;
 		VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
+
+		Swapchain m_currentSwapchain;
+		Swapchain m_oldSwapchain;
+		
 		VkSwapchainKHR m_swapChain;
 		VkInstance m_vkInstance;
 		VkSurfaceKHR m_surface;

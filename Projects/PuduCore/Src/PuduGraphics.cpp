@@ -1461,6 +1461,7 @@ namespace Pudu
     {
         LOG("Create Swapchain Images Views");
         m_swapChainImagesViews.resize(m_swapChainImages.size());
+        m_swapChainTextures.resize(m_swapChainImages.size());
 
         for (size_t i = 0; i < m_swapChainImages.size(); i++)
         {
@@ -1487,7 +1488,7 @@ namespace Pudu
             texture->height = m_swapChainExtent.height;
             texture->isSwapChain = true;
 
-            m_swapChainTextures.push_back(texture);
+            m_swapChainTextures[i] = texture;
         }
 
         LOG("Swapchain images created");
@@ -2833,7 +2834,6 @@ namespace Pudu
     void PuduGraphics::ReloadShader(Shader* shader)
     {
         m_shadersToReload.push_back(shader->m_handle);
-
     }
 
     SPtr<ComputeShader> PuduGraphics::CreateComputeShader(ComputeShaderCreationData& creationData)
@@ -3686,6 +3686,8 @@ namespace Pudu
         {
             vkDestroyImageView(m_device, sc, m_allocatorPtr);
         }
+
+        m_swapChainImagesViews.clear();
     }
 
     void PuduGraphics::DestroyMesh(SPtr<Mesh> mesh)
