@@ -13,6 +13,11 @@ namespace Pudu
 		auto shader = query.shader;
 		auto renderPass = query.renderPass;
 
+		if (shader->NeedsPipelineRebuild())
+		{
+
+		}
+
 		if (m_pipelinesByRenderPass.contains(renderPass))
 		{
 			auto renderPassPipelines = m_pipelinesByRenderPass.find(renderPass);

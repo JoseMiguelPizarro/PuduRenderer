@@ -36,7 +36,6 @@ namespace Pudu {
 		sessionDesc.compilerOptionEntries = options.data();
 		sessionDesc.compilerOptionEntryCount = options.size();
 
-
 		m_globalSession->createSession(sessionDesc, m_session.writeRef());
 	}
 
@@ -51,12 +50,42 @@ namespace Pudu {
 	ShaderCompilationObject	ShaderCompiler::Compile(const char* path, const std::vector<const char*>& entryPoints, bool compute) const
 	{
 		Slang::ComPtr<IBlob> diagnostics;
-		IModule* baseModule = m_session->loadModule("PuduGraphicsModule.slang", diagnostics.writeRef());
-		IModule* coreModule = m_session->loadModule("PuduCoreModule.slang", diagnostics.writeRef());
+
+		//TODO: This is a kinda dirty solution, it will increase shader compilation time but so far, recreating the session has been the only way i've found to do hot reloading
+		TargetDesc targetDesc;
+		targetDesc.profile = m_globalSession->findProfile("spirv_1_6");
+		targetDesc.format = SLANG_SPIRV;
+
+		const char* searchPaths[] = { "Shaders" };
+
+		SessionDesc sessionDesc;
+		sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+		sessionDesc.targetCount = 1;
+		sessionDesc.targets = &targetDesc;
+		sessionDesc.searchPathCount = 1;
+		sessionDesc.searchPaths = searchPaths;
+
+		slang::CompilerOptionEntry useEntryPointNameOption;
+		useEntryPointNameOption.name = slang::CompilerOptionName::VulkanUseEntryPointName;
+		useEntryPointNameOption.value = { slang::CompilerOptionValueKind::Int,1, 0, nullptr, nullptr };
+
+		std::array<slang::CompilerOptionEntry, 1> options =
+		{
+			useEntryPointNameOption
+		};
+
+		sessionDesc.compilerOptionEntries = options.data();
+		sessionDesc.compilerOptionEntryCount = options.size();
+
+		Slang::ComPtr<ISession> session;
+		m_globalSession->createSession(sessionDesc,session.writeRef());
+		
+		IModule* coreModule = session->loadModule("PuduCoreModule", diagnostics.writeRef());
+		IModule* baseModule = session->loadModule("PuduGraphicsModule", diagnostics.writeRef());
 
 		PrintDiagnostics(diagnostics);
 
-		IModule* module = m_session->loadModule(path, diagnostics.writeRef());
+		IModule* module = session->loadModule(path, diagnostics.writeRef());
 
 		PrintDiagnostics(diagnostics);
 
@@ -73,6 +102,8 @@ namespace Pudu {
 		std::vector<IComponentType*> components = {};
 		components.push_back(coreModule);
 
+
+		ASSERT(baseModule!=nullptr, "Base module is null for {}", path);
 		//Base module has global descriptor sets which are not relevant for compute
 		if (!compute)
 			components.push_back(baseModule);
@@ -82,7 +113,7 @@ namespace Pudu {
 		components.append_range(slangEntryPoints);
 
 		Slang::ComPtr<IComponentType> program;
-		m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(), diagnostics.writeRef());
+		session->createCompositeComponentType(components.data(), components.size(), program.writeRef(), diagnostics.writeRef());
 
 		PrintDiagnostics(diagnostics);
 
@@ -117,6 +148,7 @@ namespace Pudu {
 			PrintDiagnostics(diagnostics);
 		}
 
+		session->release();
 		return compiledData;
 	}
 

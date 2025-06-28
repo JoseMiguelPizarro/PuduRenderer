@@ -1,8 +1,7 @@
-﻿#include "Lib/Lighting.hlsl"
-import  PuduCoreModule;
-import "Lib/LightingModule.slang";
+﻿import  PuduCoreModule;
+#include "Lib/Lighting.hlsl"
 
-module PuduGraphics;
+module PuduGraphicsModule;
 
 [__AttributeUsage(_AttributeTargets.Var)]
 struct BindlessAttribute
@@ -28,13 +27,30 @@ public struct GlobalsConstants
 
 public struct Globals
 {
-    float myFloatValue;
     public Sampler2D shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;
+    public SamplerCube skybox;
+    public SamplerCube IBL_Specular; //Convoluted image based lighting env map
+    public SamplerCube IBL_Diffuse;
+    public uint IBL_Levels;
+    public Sampler2D BRDF_LUT;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
+    public float gamma = 2.2;
+}
+
+public enum DebugMode
+{
+   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance, BRDFLUT
+};
+
+public struct DEBUG
+{
+  public DebugMode debugMode;
+  public bool toneMapping = false;
+  public float roughnessScale = 1;
 }
 
 // public struct GlobalsBindless
@@ -44,6 +60,9 @@ public struct Globals
 
 [Scope("Global")]
 public ParameterBlock<Globals> GLOBALS;
+
+[Scope("Global")]
+public ParameterBlock<DEBUG> DEBUG_SETTINGS;
 
 // [Bindless, Scope("Global")]
 // public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;

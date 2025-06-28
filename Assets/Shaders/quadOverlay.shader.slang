@@ -1,5 +1,6 @@
 #include "Lib/DefaultVertexInput.hlsl"
 
+import PuduCoreModule;
 import PuduGraphicsModule;
 
 //Coordinates and size in NDC
@@ -13,6 +14,7 @@ struct OverlayData{
 struct Material
 {
     Sampler2D texture;
+    float mipLevel;
 };
 
 ParameterBlock<OverlayData> overlayData;
@@ -25,14 +27,14 @@ VSOut vertexMain(VertexInput input)
 
     float2 pos = float2(input.Position.xz) + float2(0.5, 0.5f); //move pivot to bottom left corner;
 
-//Convert screen coordinates to NDC
+    //Convert screen coordinates to NDC
     pos = float2(overlayData.x,overlayData.y)*2 -1 + pos*float2(overlayData.width,overlayData.height)*2;
 
     float4 posCS = float4(pos,0, 1);
 
     output.PosCS = posCS;
     output.Color = float4(input.Color, 1.0);
-    output.TexCoord = float4(input.TexCoord, 0, 0);
+    output.TexCoord = float4(input.TexCoord.x,1-input.TexCoord.y, 0, 0);
     output.Normal = float4(input.Normal, 0.);
     output.PosOS = float4(input.Position, 0.);
     return output;
@@ -41,5 +43,5 @@ VSOut vertexMain(VertexInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOut input) : SV_Target
 {
-    return material.texture.Sample(input.TexCoord.xy);
+    return float4(GammaCorrect( material.texture.SampleLevel(input.TexCoord.xy,material.mipLevel).rgb,2.2),0);
 }

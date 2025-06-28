@@ -1632,15 +1632,14 @@ namespace Pudu
                     width = texture->width;
                     height = texture->height;
 
-                    const auto previousUsage = GetTextureUsage(inputResource.resource->Handle());
+                    // //We don't care about setting the correct layout since resource is going to be cleared and layout set during clearing
+                    // if (inputResource.loadOperation == VK_ATTACHMENT_LOAD_OP_CLEAR)
+                    //     continue;
 
-                    //We don't care about setting the correct layout since resource is going to be cleared and layout set during clearing
-                    if (inputResource.loadOperation == VK_ATTACHMENT_LOAD_OP_CLEAR)
-                        continue;
-
-                    if (previousUsage != inputResource.resourceUsage)
+                    auto targetLayout = VkImageLayoutFromUsage(inputResource.resourceUsage);
+                    if (texture->GetImageLayout() != targetLayout)
                     {
-                        commands->TransitionTextureLayout(texture,VkImageLayoutFromUsage(inputResource.resourceUsage));
+                        commands->TransitionTextureLayout(texture,targetLayout);
 
                         SetTextureUsage(inputResource.resource->Handle(), inputResource.resourceUsage);
                     }

@@ -22,6 +22,7 @@ namespace Pudu
         std::vector<Vertex> Vertices;
         std::vector<uint32_t> Indices;
         std::vector<ModelLayout> ModelLayouts;
+        bool HasTangents;
         MaterialCreationData Material;
     };
 }

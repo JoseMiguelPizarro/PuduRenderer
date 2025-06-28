@@ -11,21 +11,16 @@ ParameterBlock<Input> material;
 
 
 [shader("compute")]
-[numthreads(1, 1, 1)]
-void computeMain(uint3 gId: SV_GroupID)
+[numthreads(32, 32, 1)]
+void computeMain(uint3 ThreadID:SV_DispatchThreadID, uint3 GroupID: SV_GroupID)
 {
- //   material.output[gId.xy] = material.input[gId.xy] * float4(1,0.2,0.3,1.);
+    uint width, height, arraySize;
+    material.output.GetDimensions(width, height, arraySize);
 
-    uint size = 512;
-
-    float2 uv = (gId.xy)/float(size);
+    float2 uv = (ThreadID.xy)/float2(width,height);
     uv = uv * 2 - 1.;
 
-
-    [ForceUnroll]
-    for(uint i =0;i<6;i++)
-    {
-        float2 longLat = DirToLongitudeLatitude(CubeCoordToDir(uv.x,uv.y,i));
-        material.output[uint3(gId.xy,i)] = material.input.SampleLevel(longLat,0.);
-    }
+    uint face = GroupID.z;
+    float2 longLat = DirToLongitudeLatitude(CubeCoordToDir(uv.x,uv.y,face));
+    material.output[uint3(ThreadID.xy,face)] = material.input.SampleLevel(longLat,0.);
 }

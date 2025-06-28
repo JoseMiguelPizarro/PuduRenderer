@@ -8,6 +8,10 @@ namespace Pudu
     void ShadowMapRenderPass::Initialize(PuduGraphics* gfx)
     {
         m_renderCamera = {};
+        m_depthShader = gfx->CreateShader(K_DepthShaderPath, "Depth");
+        m_depthMaterial = gfx->CreateMaterial();
+        m_depthMaterial->SetShader(m_depthShader);
+        m_depthMaterial->name = "ShadowmapMaterial";
     }
 
     void ShadowMapRenderPass::PreRender(RenderFrameData& renderData)

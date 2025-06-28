@@ -13,6 +13,9 @@ namespace Pudu
 {
     template <typename T>
     using SPtr = std::shared_ptr<T>;
+    template <typename T>
+    using UPtr = std::unique_ptr<T>;
+
     using Handle = uint32_t;
 
     using u8 = uint8_t;
@@ -39,4 +42,15 @@ namespace Pudu
     using int4 = glm::ivec4;
 
     namespace fs = std::filesystem;
+
+//I KNOW MACROS ARE EVIL BUT THIS ONE IS QUITE HANDY!
+#define ENUM_STRING(enumName, ...) \
+        enum class enumName { __VA_ARGS__ }; \
+        inline const char* ToString(enumName value) { \
+            static const char* enumStrings[] = { #__VA_ARGS__ }; \
+            size_t index = static_cast<size_t>(value); \
+            return index < sizeof(enumStrings)/sizeof(enumStrings[0]) ? enumStrings[index] : "Unknown"; \
+        }
 }
+
+

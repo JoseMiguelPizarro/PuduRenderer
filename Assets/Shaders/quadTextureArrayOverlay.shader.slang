@@ -14,6 +14,7 @@ struct Material
 {
     Sampler2DArray texture;
     float index;
+    float mipLevel;
 };
 
 ParameterBlock<OverlayData> overlayData;
@@ -42,5 +43,5 @@ VSOut vertexMain(VertexInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOut input) : SV_Target
 {
-    return material.texture.Sample(float3(input.TexCoord.xy,material.index));
+    return material.texture.SampleLevel(float3(input.TexCoord.xy,material.index),material.mipLevel);
 }

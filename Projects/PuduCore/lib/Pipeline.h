@@ -5,48 +5,59 @@
 
 namespace Pudu
 {
-	class IShaderObject;
-	class RenderPass;
-	class Renderer;
+    class IShaderObject;
+    class RenderPass;
+    class Renderer;
 
-	struct PipelineQueryData {
-		RenderPass* renderPass;
-		IShaderObject* shader;
-		Renderer* renderer;
-	};
+    struct PipelineQueryData
+    {
+        RenderPass* renderPass;
+        IShaderObject* shader;
+        Renderer* renderer;
+    };
 
-	namespace PipelineType {
-		enum Type {
-			Graphics,
-			Compute
-		};
-	};
+    namespace PipelineType
+    {
+        enum Type
+        {
+            Graphics,
+            Compute
+        };
+    };
 
-	class Pipeline :public GPUResource<Pipeline>
-	{
-	public:
-		std::string name;
-		VkPipeline vkHandle;
-		VkPipelineLayout vkPipelineLayoutHandle;
+    class Pipeline : public GPUResource<Pipeline>
+    {
+    public:
+        GPUResourceType Type() override { return GPUResourceType::Pipeline; };
 
-		VkPipelineBindPoint vkPipelineBindPoint;
-		VkDescriptorSet vkDescriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS];//Just 1 for now, bindless
+        std::string name;
+        VkPipeline vkHandle;
+        VkPipelineLayout vkPipelineLayoutHandle;
 
-		uint32_t numDescriptorSets = 0;
+        VkPipelineBindPoint vkPipelineBindPoint;
+        VkDescriptorSet vkDescriptorSets[K_MAX_DESCRIPTOR_SET_LAYOUTS]; //Just 1 for now, bindless
 
-		VkFormat depthStencilFormat;
+        uint32_t numDescriptorSets = 0;
 
-		GPUResourceHandle<ShaderState> shaderState;
+        VkFormat depthStencilFormat;
 
-		uint32_t numActiveLayouts = 0;
+        GPUResourceHandle<ShaderState> shaderState;
 
-		DepthStencilCreation depthStencil;
-		BlendStateCreation blendState;
-		RasterizationCreation rasterization;
+        uint32_t numActiveLayouts = 0;
 
-		bool bindlessUpdated;
-		PipelineType::Type pipelineType;
+        DepthStencilCreation depthStencil;
+        BlendStateCreation blendState;
+        RasterizationCreation rasterization;
 
-		bool graphicsPipeline = true;
-	}; // struct Pipeline
+        bool bindlessUpdated;
+        PipelineType::Type pipelineType;
+
+        GPUResourceHandle<RenderPass> m_renderPass;
+        GPUResourceHandle<IShaderObject> m_shader;
+
+        bool graphicsPipeline = true;
+
+        //Set when the pipeline needs to be rebuild due to hot-reloading. The renderer can use this flag for its renderpass/shader cache
+        bool isDirty = true;
+    }; // struct Pipeline
 }

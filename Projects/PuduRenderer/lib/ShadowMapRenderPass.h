@@ -7,16 +7,19 @@ namespace Pudu
 {
 	class ShadowMapRenderPass :public RenderPass
 	{
+	public:
 		const char* K_SHADOWMAP_NAME = "shadowmap";
 
 		virtual void Initialize(PuduGraphics* gfx) override;
 		virtual void PreRender(RenderFrameData& renderData) override;
 		virtual void AfterRender(RenderFrameData& renderData) override;
 		virtual void Render(RenderFrameData& frameData) override;
-
+		void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;
 
 	private:
-
+		const std::filesystem::path K_DepthShaderPath = "depth.shader.slang";
+		SPtr<Shader> m_depthShader;
+		SPtr<Material> m_depthMaterial;
 
 		uint16_t m_resolution = 2048;
 		float m_depthConstantBias = 2.25f;
@@ -26,5 +29,10 @@ namespace Pudu
 		glm::vec3 m_camOriginalPos;
 		glm::vec3 m_camOriginalDir;
 	};
+
+	inline void ShadowMapRenderPass::BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall)
+	{
+		drawcall.SetReplacementMaterial(m_depthMaterial);
+	}
 }
 

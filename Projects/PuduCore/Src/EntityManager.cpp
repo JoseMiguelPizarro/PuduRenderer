@@ -32,7 +32,7 @@ namespace Pudu {
 		return e;
 	}
 
-	RenderEntitySPtr EntityManager::AllocateRenderEntity(std::string& name)
+	RenderEntitySPtr EntityManager::AllocateRenderEntity(const char* name)
 	{
 		auto e = AllocateRenderEntity();
 		e->SetName(name);
@@ -48,7 +48,7 @@ namespace Pudu {
 		return e;
 	}
 
-	RenderEntitySPtr EntityManager::AllocateRenderEntity(std::string& name, Model model)
+	RenderEntitySPtr EntityManager::AllocateRenderEntity(const char* name, Model model)
 	{
 		auto e = AllocateRenderEntity(name);
 		e->SetModel(model);

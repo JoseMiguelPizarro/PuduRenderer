@@ -4,16 +4,18 @@
 import PuduGraphicsModule;
 import PuduCoreModule;
 
-import "Lib/LightingModule.slang";
+import "Lib/PuduLightingModule.slang";
 
 struct StandardMaterial
 {
     Sampler2D albedoTex;
     Sampler2D normalTex;
-    Sampler2D roughnessTex;
-    Sampler2D metallicTex;
+    Sampler2D metallicRoughnessTex;
     Sampler2D heightTex;
-    SamplerCube skybox; //Placeholder for environment
+    Sampler2D emissiveTex;
+    float3 F0 = {0.04f, 0.04f, 0.04f};
+    float3 F90 = {0.5f, 0.5f, 0.5f};
+    float parallax = 0;
 }
 ParameterBlock<StandardMaterial> material;
 
@@ -52,37 +54,44 @@ float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
     float4 col = 0;
-    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
+    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap));
 
     float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);
     float3 normal = normalize(input.Normal.xyz);
-    float3 bitangent = cross(normal,tangent);
+    float3 bitangent = cross(normal,tangent) * input.Tangent.w;
     float height = material.heightTex.Sample(input.TexCoord.xy).x;
 
     float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
     float3 lightDirTS = WorldToTangent(GLOBALS.lightingBuffer.lightDirection.xyz,tangent,bitangent,normal);
-    let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,lightDirTS,0.08);
-    shadow *= pom.shadow;
-    float2 uv = pom.uv;
+    float2 uv = input.TexCoord.xy;
+
+    if(material.parallax>0)
+    {
+        let pom = ParallaxOcclusionMapping_Shadow(material.heightTex,input.TexCoord.xy,tangentView,lightDirTS,0.08);
+        shadow *= pom.shadow;
+        uv = pom.uv;
+     }
 
     float3 albedo = material.albedoTex.Sample(uv).rgb;
 
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
-    float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal) * input.Tangent.w;
-
+    float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal);
     SurfaceInfo m = {};
-    m.albedo = albedo;
-    m.lightDir = normalize(GLOBALS.lightingBuffer.lightDirection.xyz);
-    m.lightColor = float3(1,1,1);
-    m.specularColor = float3(1,1,1);
-    m.normal = normalWS;
-    m.glossiness =1. - material.roughnessTex.Sample(uv).x;
-    m.viewDir = viewDir;
-    m.ambientSampler = material.skybox;
+    float2 metallicRoughness = material.metallicRoughnessTex.Sample(uv).bg; // MetallicRoughnessChannels according to gltf2.0 specs
+    m.Albedo = albedo;
+    m.SpecularColor = float3(1,1,1);
+    m.Normal = normalWS;
+    m.Metallic = metallicRoughness.x;
+    m.Roughness = metallicRoughness.y;
+    m.ViewDir = viewDir;
+    m.ShadowAttenuation = shadow;
+    m.F0 = material.F0.xyz;
+    m.F90 = material.F90.xyz;
+    m.Emissive = material.emissiveTex.Sample(uv).xyz;
 
-    col.rgb = StandardSurface(m);
+    col.xyz = StandardSurface(m);
 
     return col;
 }

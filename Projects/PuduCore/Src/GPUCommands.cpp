@@ -132,7 +132,8 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::UploadBufferData(GraphicsBuffer* buffer, const byte* data, const Size size, const Size offset) const
+    void GPUCommands::UploadBufferData(GraphicsBuffer* buffer, const byte* data, const Size size,
+                                       const Size offset) const
     {
         ASSERT(size % 4 == 0, "Buffer {} Size must be a multiple of 4", buffer->name);
         ASSERT(offset % 4 == 0, "Buffer {} Offset must be a multiple of 4", buffer->name);
@@ -142,11 +143,11 @@ namespace Pudu
     }
 
     void GPUCommands::BufferBarrier(GraphicsBuffer* buffer, Size size, Size offset, VkAccessFlags srcAccessMask,
-        VkAccessFlags dstAccessMask, u32 srcQueueIndex, u32 dstQueueIndex)
+                                    VkAccessFlags dstAccessMask, u32 srcQueueIndex, u32 dstQueueIndex)
     {
         VkBufferMemoryBarrier2 bufferBarrier{};
         bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
-        bufferBarrier.srcAccessMask =  VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; //Hardcoded for now
+        bufferBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; //Hardcoded for now
         bufferBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
         bufferBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         bufferBarrier.dstStageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
@@ -160,8 +161,8 @@ namespace Pudu
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.pNext = nullptr;
         dependencyInfo.bufferMemoryBarrierCount = 1;
-        dependencyInfo.pBufferMemoryBarriers =& bufferBarrier;
-        vkCmdPipelineBarrier2(vkHandle,&dependencyInfo);
+        dependencyInfo.pBufferMemoryBarriers = &bufferBarrier;
+        vkCmdPipelineBarrier2(vkHandle, &dependencyInfo);
     }
 
     void GPUCommands::BegingRenderingPass(const VkRenderingInfo& renderInfo)
@@ -258,8 +259,106 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst)
+    {
+        if (dst->GetImageLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            TransitionTextureLayout(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        }
 
-    void GPUCommands::Blit(SPtr<Texture> source, SPtr<Texture> dst, VkImageLayout srcLayout, VkImageLayout dstLayout)
+        Blit(src, dst, VK_FILTER_LINEAR);
+    }
+
+    void GPUCommands::BlitMips(const SPtr<Texture>& src, const SPtr<Texture>& dst)
+    {
+        // Ensure the source texture is in the correct layout for reading
+        if (dst->GetImageLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            TransitionTextureLayout(dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        }
+
+        for (uint32_t mipLevel = 1; mipLevel < dst->mipLevels; ++mipLevel)
+        {
+            VkImageBlit2 blitRegion = {};
+            blitRegion.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+
+            blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //Assuming color aspect
+            blitRegion.srcSubresource.mipLevel = mipLevel - 1; // Previous mip level
+            blitRegion.srcSubresource.baseArrayLayer = 0;
+            blitRegion.srcSubresource.layerCount = src->layers;
+
+            blitRegion.srcOffsets[0] = {0, 0, 0};
+            blitRegion.srcOffsets[1] = {
+                static_cast<int32_t>(max(1U, src->width >> (mipLevel - 1))),
+                static_cast<int32_t>(max(1U, src->height >> (mipLevel - 1))),
+                1
+            };
+
+            blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //Assuming color aspect
+            blitRegion.dstSubresource.mipLevel = mipLevel; // Current mip level
+            blitRegion.dstSubresource.baseArrayLayer = 0;
+            blitRegion.dstSubresource.layerCount = src->layers;
+
+            blitRegion.dstOffsets[0] = {0, 0, 0};
+            blitRegion.dstOffsets[1] = {
+                static_cast<int32_t>(max(1U, dst->width >> mipLevel)),
+                static_cast<int32_t>(max(1U, dst->height >> mipLevel)),
+                1
+            };
+
+            Blit(src, dst, VK_FILTER_LINEAR, src->GetImageLayout(),
+                 dst->GetImageLayout(), &blitRegion, 1);
+        }
+    }
+
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter)
+    {
+        static VkImageBlit2 s_blitRegions[K_MAX_MIP_LEVELS];
+
+        for (uint32_t mipLevel = 0; mipLevel < src->mipLevels; ++mipLevel)
+        {
+            VkImageBlit2* blitRegion = &s_blitRegions[mipLevel];
+            blitRegion->sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+
+            blitRegion->srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //Assuming color aspect
+            blitRegion->srcSubresource.baseArrayLayer = 0;
+            blitRegion->srcSubresource.mipLevel = mipLevel;
+            blitRegion->srcSubresource.layerCount = src->layers;
+
+            blitRegion->srcOffsets[0] = {0, 0, 0};
+            blitRegion->srcOffsets[1] = {
+                static_cast<int32_t>(max(1U, src->width >> (mipLevel))),
+                static_cast<int32_t>(max(1U, src->height >> (mipLevel))),
+                1
+            };
+
+            blitRegion->dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //Assuming color aspect
+            blitRegion->dstSubresource.mipLevel = mipLevel;
+            blitRegion->dstSubresource.baseArrayLayer = 0;
+            blitRegion->dstSubresource.layerCount = src->layers;
+
+            blitRegion->dstOffsets[0] = {0, 0, 0};
+            blitRegion->dstOffsets[1] = {
+                static_cast<int32_t>(max(1U, dst->width >> mipLevel)),
+                static_cast<int32_t>(max(1U, dst->height >> mipLevel)),
+                1
+            };
+        }
+
+        Blit(src, dst, filter, src->GetImageLayout(),
+             dst->GetImageLayout(), s_blitRegions, src->mipLevels);
+    }
+
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter,
+                           VkImageBlit2* blitRegion)
+    {
+        Blit(src, dst, filter, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+             blitRegion, 1);
+    }
+
+
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkImageLayout srcLayout,
+                           VkImageLayout dstLayout)
     {
         VkBlitImageInfo2 blitInfo{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};
         VkImageBlit2 blitRegion{VK_STRUCTURE_TYPE_IMAGE_BLIT_2};
@@ -275,13 +374,13 @@ namespace Pudu
         dstSubresource.baseArrayLayer = 0;
 
         blitRegion.dstOffsets[0] = {0, 0, 0};
-        blitRegion.dstOffsets[1] = {(int)dst->width, (int)dst->height, 1};
+        blitRegion.dstOffsets[1] = {static_cast<int>(dst->width), static_cast<int>(dst->height), 1};
         blitRegion.srcOffsets[0] = {0, 0, 0};
-        blitRegion.srcOffsets[1] = {(int)source->width, (int)source->height, 1};
+        blitRegion.srcOffsets[1] = {static_cast<int>(src->width), static_cast<int>(src->height), 1};
         blitRegion.dstSubresource = dstSubresource;
         blitRegion.srcSubresource = dstSubresource;
 
-        blitInfo.srcImage = source->vkImageHandle;
+        blitInfo.srcImage = src->vkImageHandle;
         blitInfo.srcImageLayout = srcLayout;
         blitInfo.dstImage = dst->vkImageHandle;
         blitInfo.dstImageLayout = dstLayout;
@@ -294,16 +393,17 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::Blit(SPtr<Texture> source, SPtr<Texture> dst, VkFilter filter, VkImageLayout srcLayout,
-        VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
+    void GPUCommands::Blit(const SPtr<Texture>& src, const SPtr<Texture>& dst, VkFilter filter, VkImageLayout srcLayout,
+                           VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
     {
-        Blit(source.get(), dst.get(), filter, srcLayout, dstLayout, regions, regionCount);
+        Blit(src.get(), dst.get(), filter, srcLayout, dstLayout, regions, regionCount);
     }
 
-    void GPUCommands::Blit(Texture* source, Texture* dst,VkFilter filter,  VkImageLayout srcLayout, VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
+    void GPUCommands::Blit(const Texture* src, const Texture* dst, VkFilter filter, VkImageLayout srcLayout,
+                           VkImageLayout dstLayout, VkImageBlit2* regions, Size regionCount) const
     {
         VkBlitImageInfo2 blitInfo{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};
-        blitInfo.srcImage = source->vkImageHandle;
+        blitInfo.srcImage = src->vkImageHandle;
         blitInfo.srcImageLayout = srcLayout;
         blitInfo.dstImage = dst->vkImageHandle;
         blitInfo.dstImageLayout = dstLayout;
@@ -322,7 +422,7 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::DispatchIndirect(GraphicsBuffer* paramsBuffer, uint64_t offset)
+    void GPUCommands::DispatchIndirect(const GraphicsBuffer* paramsBuffer, uint64_t offset)
     {
         vkCmdDispatchIndirect(vkHandle, paramsBuffer->vkHandle, offset);
     }
@@ -390,7 +490,8 @@ namespace Pudu
 
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        }else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
         {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -582,11 +683,13 @@ namespace Pudu
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        }else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout ==VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -602,11 +705,12 @@ namespace Pudu
             sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
-        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout ==VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
         {
             return;
         }
-        else if (oldLayout ==VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout ==
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
@@ -614,13 +718,15 @@ namespace Pudu
             sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
-        else if (oldLayout ==VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout ==
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT; //TODO: JUST USE THE PROPER MASK, WE NEED MORE USAGE CONTEXT HERE
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT; //TODO: JUST USE THE PROPER MASK, WE NEED MORE USAGE CONTEXT HERE
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL)
         {
@@ -630,19 +736,38 @@ namespace Pudu
             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         }
-        else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout ==
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             //Both are shader reads so is safe to just not transition them at all
             return;
         }
         //This case is mostly expected when transitioning a texture from a compute shader render target to a shader read
-        else if (oldLayout== VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
             sourceStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
         else
         {
@@ -655,14 +780,22 @@ namespace Pudu
     }
 
     void GPUCommands::TransitionTextureLayout(const SPtr<Texture>& texture, VkImageLayout layout,
-        VkImageSubresourceRange* range)
+                                              VkImageSubresourceRange* range)
     {
         TransitionTextureLayout(texture.get(), layout, range);
     }
 
     void GPUCommands::TransitionTextureLayout(Texture* texture, VkImageLayout layout, VkImageSubresourceRange* range)
     {
-        TransitionImageLayout(texture->vkImageHandle,texture->format, texture->GetImageLayout(), layout,range);
+        VkImageSubresourceRange subresourceRange;
+        VkImageSubresourceRange* rangePtr = range;
+        if (range == nullptr)
+        {
+            subresourceRange = {texture->GetAspectMask(), 0, texture->mipLevels, 0, texture->layers};
+            rangePtr = &subresourceRange;
+        }
+
+        TransitionImageLayout(texture->vkImageHandle, texture->format, texture->GetImageLayout(), layout, rangePtr);
 
         texture->SetImageLayout(layout);
     }

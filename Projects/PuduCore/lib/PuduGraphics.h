@@ -50,6 +50,7 @@
 #include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
 #include "ShaderCompilation/ShaderCompiler.h"
+#include "Swapchain.h"
 
 namespace Pudu
 {
@@ -115,6 +116,7 @@ namespace Pudu
 		void DrawFrame(RenderFrameData& frameData);
 		SPtr<Texture> GetMultisampledColorTexture();
 		SPtr<Texture> GetMultisampledDepthTexture();
+		GLFWwindow* GetWindow() { return WindowPtr; }
 
 		PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR{ VK_NULL_HANDLE };
 
@@ -148,9 +150,7 @@ namespace Pudu
 		VkInstance GetVkInstance() { return m_vkInstance; }
 		VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
 		VkDevice GetDevice() { return m_device; }
-		std::vector<VkImageView>* GetSwapchainImageViews() {
-			return &m_swapChainImagesViews;
-		}
+
 		int2 GetResolution() const;
 		QueueFamilyIndices GetQueueFamiliesIndex();
 
@@ -216,14 +216,19 @@ namespace Pudu
 		void DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY, u32 groupCountZ);
 		void EndDrawFrame();
 		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
-		//SPtr<Shader> CreateShader(fs::path fragmentPath, fs::path vertexPath, const char* name);
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
-		SPtr<ComputeShader> CreateComputeShader(fs::path shaderPath, const char* name);
+		void ReloadShader(Shader* shader);
+
+		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
+		SPtr<Material> CreateMaterial();
+
 
 		SPtr<RenderTexture> GetRenderTexture();
 		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);
 		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureLoadSettings& creationSettings);
+		//<summary>Loads a texture as a horizonmap and converts it to a cubemap</summary>
+		SPtr<TextureCube> LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings);
 		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
 		void CreateVKTexture(Texture* texture);
 		void CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler);
@@ -244,7 +249,6 @@ namespace Pudu
 		/// </summary>
 		/// <returns></returns>
 		VkFormat GetSurfaceFormat() { return m_settings.surfaceFormat; }
-		std::vector<SPtr<RenderTexture>>* GetSwapchainTextures() { return &m_swapChainTextures; };
 		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
 		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
 		GPUCommands BeginSingleTimeCommands();
@@ -254,10 +258,21 @@ namespace Pudu
 		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
 		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
 		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
+		PipelineCreationData GetPipelineCreationData(Shader* shader, RenderPass* renderPass);
+
+#pragma region DefaultResources
+		SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
 		SPtr<Texture> GetDefaultWhiteTexture();
+		SPtr<Texture> GetDefaultBlackTexture();
+		SPtr<Texture> GetDefaultNormalMapTexture();
+		SPtr<Texture> GetDefaultMetallicRoughnessTexture();
+		
 		SPtr<Shader> GetDefaultOverlayShader();
 		SPtr<Shader> GetDefaultOverlayTextureArrayShader();
+		SPtr<Shader> GetDefaultStandardShader();
 		SPtr<Mesh> GetDefaultQuad();
+#pragma endregion
+
 	private:
 		friend class GPUResourcesManager;
 		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
@@ -267,19 +282,22 @@ namespace Pudu
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateSurface();
-		void CreateSwapChain();
-		void CreateSwapchainImageViews();
+		void CreateSwapChain(Swapchain& swapchain);
+		void CreateSwapchainImageViews(Swapchain& swapchain);
 		void SetResourceName(VkObjectType type, u64 handle, const char* name);
 		/// <summary>
 		/// Setup and dispatch compute workload for the frame
 		/// </summary>
 		void SubmitComputeWork(RenderFrameData& frameData);
-		void InitializeDefaultResources();
-		void InitializeDefaultTextures();
+		void InitDefaultResources();
+		void InitDefaultTextures();
+		void CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData);
 
 		void InitDebugUtilsObjectName();
 
 		GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
+		void CreateVKShaderState(ShaderState* shaderState, ShaderStateCreationData const& creation);
+
 		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
 		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
 		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
@@ -317,9 +335,10 @@ namespace Pudu
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
 			VkFormatFeatureFlags features);
 
+		void ReloadPendingShaders();
 		
 
-		void CleanupSwapChain();
+		void CleanupSwapChain(Swapchain& swapchain);
 
 		VkImageView CreateImageView(ImageViewCreateData data);
 
@@ -355,10 +374,17 @@ namespace Pudu
 
 #pragma region DefaultResources
 		GPUResourceHandle<Texture> m_defaultWhiteTexture;
+		GPUResourceHandle<Texture> m_defaultBlackTexture;
+		GPUResourceHandle<Texture> m_defaultNormalmapTexture;
+		GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
 		SPtr<Mesh> m_defaultQuad;
 		SPtr<Mesh> m_defaultPlane;
 		SPtr<Shader> m_defaultOverlayShader;
 		SPtr<Shader> m_defaultOverlayTextureArrayShader;
+		SPtr<Shader> m_defaultStandardShader;
+		SPtr<ComputeShader> m_horizonToCubeCompute;
+
+		ComputeShaderRenderer m_horizonToCubemapCSRenderer;
 
 #pragma endregion
 		static PuduGraphics* s_instance;
@@ -368,15 +394,19 @@ namespace Pudu
 		VkDevice m_device;
 		PuduGraphicsSettings m_settings;
 
+		std::vector<GPUResourceHandle<Shader>> m_shadersToReload;
 		GPUResourcesManager m_resources;
 		SPtr<Semaphore> m_graphicsTimelineSemaphore;
 		SPtr<Semaphore> m_computeTimelineSemaphore;
+		std::unordered_map<fs::path, SPtr<Texture>> m_loadedTexturesMap;
 
 		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
-		std::vector<VkImageView> m_swapChainImagesViews;
 		VkFormat m_swapChainImageFormat;
 		VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
-		VkSwapchainKHR m_swapChain;
+
+		Swapchain m_currentSwapchain;
+		Swapchain m_oldSwapchain;
+		
 		VkInstance m_vkInstance;
 		VkSurfaceKHR m_surface;
 		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
@@ -384,8 +414,6 @@ namespace Pudu
 		VkQueue m_presentationQueue;
 		VkQueue m_computeQueue;
 		VkExtent2D m_swapChainExtent;
-		std::vector<VkImage> m_swapChainImages;
-		std::vector<SPtr<RenderTexture>> m_swapChainTextures;
 
 		SPtr<CommandPool> m_commandPool;
 		SPtr<RenderTexture> m_multisampledColorTexture;
@@ -415,6 +443,11 @@ namespace Pudu
 
 		AntialiasingSettings m_antialiasingSettings;
 	};
+
+	inline SPtr<Material> PuduGraphics::CreateMaterial()
+	{
+		return m_resources.AllocateMaterial();
+	}
 
 
 	void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)

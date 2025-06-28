@@ -1,7 +1,6 @@
 #pragma once
 #pragma once
 #include <filesystem>
-#include <memory.h>
 #include <concepts>
 
 #include "PuduCore.h"
@@ -12,10 +11,8 @@
 #include "Resources/ResourcesPool.h"
 #include "FrameGraph/RenderPass.h"
 #include "Shader.h"
-#include "Resources/FrameBufferCreationData.h"
 #include "ComputeShader.h"
 #include "Pipeline.h"
-#include "Logger.h"
 #include <Semaphore.h>
 #include <Resources/GPUResource.h>
 #include "Resources/CommandPool.h"
@@ -27,7 +24,7 @@ namespace Pudu
 
     namespace fs = std::filesystem;
 
-    class GPUResourcesManager
+    class GPUResourcesManager:public IGPUResourceProvider
     {
     public:
         void Init(PuduGraphics* graphics);
@@ -94,13 +91,15 @@ namespace Pudu
         }
 
         template <typename T, typename poolType, typename... Args>
-        //	requires(std::convertible_to < T, GPUResource<T>>)
         SPtr<T> AllocateGPUResource(ResourcePool<SPtr<poolType>>& pool, Args&&... args)
         {
             uint32_t resourceIndex = {static_cast<uint32_t>(pool.Size())};
             SPtr<T> resourcePtr = std::make_shared<T>(args...);
 
             resourcePtr->m_handle.m_Index = resourceIndex;
+            resourcePtr->m_handle.m_underlyingType = resourcePtr->Type();
+
+            resourcePtr->m_handle.m_provider = this;
 
             pool.AddResource(resourcePtr);
 
@@ -118,6 +117,10 @@ namespace Pudu
         ResourcePool<SPtr<Texture>>* GetAllocatedTextures() { return &m_textures; }
         ResourcePool<SPtr<Material>>* GetAllocatedMaterials() { return &m_materials; }
         ResourcePool<SPtr<Shader>>* GetAllocatedShaders() { return &m_shaders; }
+
+#pragma region GPUResourceProvider
+        SPtr<void> GetResource(u32 id, GPUResourceType type) override;
+#pragma endregion
 
     private:
         friend class PuduGraphics;

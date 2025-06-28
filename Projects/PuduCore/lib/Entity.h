@@ -28,7 +28,7 @@ namespace Pudu {
 		EntitySPtr GetRoot() const;
 		std::vector<EntitySPtr> GetChildren();
 
-		EntitySPtr GetChildByName(std::string_view const& name);
+		EntitySPtr GetChildByName(const char* name);
 
 		template <Derived<Entity> T>
 		SPtr<T> GetChildByName(std::string const& name);
@@ -53,7 +53,7 @@ namespace Pudu {
 	template <Derived<Entity> T>
 	SPtr<T> Entity::GetChildByName(std::string const& name)
 	{
-		return std::dynamic_pointer_cast<T>(GetChildByName(name));
+		return std::dynamic_pointer_cast<T>(GetChildByName(name.c_str()));
 	}
 
 	typedef std::shared_ptr<Entity> EntitySPtr;

@@ -19,6 +19,39 @@
 
 namespace Pudu
 {
+    void PuduRenderer::SetSkyBox(SPtr<Texture> skybox)
+    {
+        m_skybox = skybox;
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox", skybox);
+
+        InitIBL(graphics, m_skybox);
+    }
+
+    SPtr<Texture> PuduRenderer::GetSkybox()
+    {
+        return m_skybox;
+    }
+
+    SPtr<Texture> PuduRenderer::GetEnvMap()
+    {
+        return m_envMap;
+    }
+
+    SPtr<Texture> PuduRenderer::GetBRDF_LUT()
+    {
+        return m_BRDF_LUT;
+    }
+
+    SPtr<Texture> PuduRenderer::GetIBL()
+    {
+        return m_IBL;
+    }
+
+    SPtr<Texture> PuduRenderer::GetIBLDiffuse()
+    {
+        return m_IBL_DiffuseCube;
+    }
+
     SPtr<RenderTexture> PuduRenderer::GetDepthCopyRT() const
     {
         return m_depthCopyRT;
@@ -27,6 +60,206 @@ namespace Pudu
     SPtr<RenderTexture> PuduRenderer::GetColorCopyRT() const
     {
         return m_colorCopyRT;
+    }
+
+    void PuduRenderer::SetDebugMode(Debug mode)
+    {
+        m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.debugMode", static_cast<int>(mode));
+    }
+
+    void PuduRenderer::SetRoughnessScale(float scale)
+    {
+        m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.roughnessScale", scale);
+    }
+
+    void PuduRenderer::EnablePostProcessing(bool enable) const
+    {
+        m_postProcessingRenderPass->isEnabled = enable;
+    }
+
+    void PuduRenderer::SetGamma(float gamma)
+    {
+        m_gamma = gamma;
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.gamma", m_gamma);
+    }
+
+    void PuduRenderer::EnableToneMapping(bool enable) const
+    {
+        m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.toneMapping", enable);
+    }
+
+    void PuduRenderer::SetExposure(float value) const
+    {
+        m_postProcessingRenderPass->SetExposure(value);
+    }
+
+    void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
+    {
+        u32 brdfLUTResolution = 256;
+        SamplerCreationData brdfLUTSamplerCreationData{};
+        brdfLUTSamplerCreationData.wrap = false;
+        TextureCreationData BRDF_LUTCreationData;
+        BRDF_LUTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        BRDF_LUTCreationData.width = brdfLUTResolution;
+        BRDF_LUTCreationData.height = brdfLUTResolution;
+        BRDF_LUTCreationData.generateMipmaps = false;
+        BRDF_LUTCreationData.textureType = TextureType::Texture2D;
+        BRDF_LUTCreationData.name = "BRDF_LUT";
+        BRDF_LUTCreationData.flags = TextureFlags::UnorderedAccess;
+        BRDF_LUTCreationData.samplerData = &brdfLUTSamplerCreationData;
+        BRDF_LUTCreationData.layers = 1;
+
+        auto BRDF_LUTHandle = gfx->CreateTexture(BRDF_LUTCreationData);
+        m_BRDF_LUT = gfx->Resources()->GetTexture<Texture>(BRDF_LUTHandle);
+
+        ComputeShaderCreationData BRDF_LUT_CS_Data{"Compute/brdfLUT.compute.slang", "BRDF_LUT"};
+        auto BRDF_LUTCS = gfx->CreateComputeShader(BRDF_LUT_CS_Data);
+        auto BRDF_LUTMat = gfx->Resources()->AllocateMaterial();
+
+        BRDF_LUTMat->SetShader(BRDF_LUTCS);
+        BRDF_LUTMat->SetProperty("material.output", m_BRDF_LUT);
+
+        ComputeShaderRenderer brdfLutCSRenderer;
+        brdfLutCSRenderer.SetShader(BRDF_LUTCS);
+        brdfLutCSRenderer.SetMaterial(BRDF_LUTMat);
+
+        gfx->DispatchCompute(&brdfLutCSRenderer, brdfLUTResolution / 32, brdfLUTResolution / 32, 1);
+
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.BRDF_LUT", m_BRDF_LUT);
+    }
+
+    void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
+    {
+        u32 IBLRTResolution = envMap->width;
+        u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
+
+        SamplerCreationData samplerData{};
+        TextureCreationData IBLRTCreationData{};
+        IBLRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        IBLRTCreationData.width = IBLRTResolution;
+        IBLRTCreationData.height = IBLRTResolution;
+        IBLRTCreationData.textureType = TextureType::Texture_2D_Array;
+        IBLRTCreationData.generateMipmaps = false;
+        IBLRTCreationData.name = "IBLRT";
+        IBLRTCreationData.flags = TextureFlags::UnorderedAccess;
+        IBLRTCreationData.layers = 6;
+        IBLRTCreationData.exposeMipViews = true;
+        IBLRTCreationData.mipmaps = IBLMips;
+        IBLRTCreationData.samplerData = &samplerData;
+
+
+        auto IBLRTHandle = gfx->CreateTexture(IBLRTCreationData);
+        m_IBL = gfx->Resources()->GetTexture<Texture>(IBLRTHandle);
+
+        ComputeShaderCreationData IBL_ComputeData{"Compute/IBL.compute.slang", "IBL"};
+        ComputeShaderRenderer IBL_CSRenderer;
+        auto IBLCS = gfx->CreateComputeShader(IBL_ComputeData);
+        auto IBLMaterial = gfx->Resources()->AllocateMaterial();
+        IBLMaterial->SetShader(IBLCS);
+        IBLMaterial->SetProperty("material.input", envMap);
+        IBLMaterial->SetProperty("material.inputResolution", envMap->width);
+        IBL_CSRenderer.SetShader(IBLCS);
+        IBL_CSRenderer.SetMaterial(IBLMaterial);
+
+        for (int mip = 0; mip < m_IBL->mipLevels; mip++)
+        {
+            uint resolution = m_IBL->width >> mip; //Assuming power of 2 hehe
+
+            float roughness = static_cast<float>(mip) / (m_IBL->mipLevels - 1);
+            IBLMaterial->SetProperty("material.output", m_IBL, mip);
+            IBLMaterial->SetProperty("material.roughness", roughness);
+            IBLMaterial->SetProperty("material.sampleCount", 1024);
+            IBLMaterial->SetProperty("material.outputResolution", resolution);
+
+            gfx->DispatchCompute(&IBL_CSRenderer, resolution / 32, resolution / 32, 6);
+        }
+
+        if (m_IBL_SpecularCube != nullptr &&
+            (m_IBL_SpecularCube->width != IBLRTResolution || m_IBL_SpecularCube->height != IBLRTResolution))
+        {
+            gfx->DestroyTexture(m_IBL_SpecularCube);
+        }
+
+        std::string specularIBLName =  ("IBL_SpecularCube_" + envMap->name);
+        TextureCreationData envCubemapCreationData{};
+        envCubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        envCubemapCreationData.width = IBLRTResolution;
+        envCubemapCreationData.height = IBLRTResolution;
+        envCubemapCreationData.generateMipmaps = false;
+        envCubemapCreationData.textureType = TextureType::Texture_Cube;
+        envCubemapCreationData.name = specularIBLName.c_str();
+        envCubemapCreationData.layers = 6;
+        envCubemapCreationData.samplerData = &samplerData;
+        envCubemapCreationData.mipmaps = IBLMips;
+        auto envCubemapHandle = gfx->CreateTexture(envCubemapCreationData);
+        m_IBL_SpecularCube = gfx->Resources()->GetTexture<Texture>(envCubemapHandle);
+
+        auto cmd = gfx->BeginSingleTimeCommands();
+        cmd.Blit(m_IBL, m_IBL_SpecularCube);
+
+        TextureCreationData IBLDiffuseRTCreationData{};
+        IBLDiffuseRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        IBLDiffuseRTCreationData.width = IBLRTResolution;
+        IBLDiffuseRTCreationData.height = IBLRTResolution;
+        IBLDiffuseRTCreationData.generateMipmaps = false;
+        IBLDiffuseRTCreationData.textureType = TextureType::Texture_2D_Array;
+        IBLDiffuseRTCreationData.name = "IBL_RT";
+        IBLDiffuseRTCreationData.flags = TextureFlags::UnorderedAccess;
+        IBLDiffuseRTCreationData.layers = 6;
+        IBLDiffuseRTCreationData.samplerData = &samplerData;
+
+        auto IBL_DiffuseRT = gfx->Resources()->GetTexture<Texture>(gfx->CreateTexture(IBLDiffuseRTCreationData));
+
+        ComputeShaderCreationData IBLDiffuse_ComputeData{
+            "Compute/IBL.compute.slang", "IBL_Diffuse", "Kernel_DiffuseIBL"
+        };
+        auto IBL_DiffuseCS = gfx->CreateComputeShader(IBLDiffuse_ComputeData);
+        auto IBL_DiffuseMaterial = gfx->Resources()->AllocateMaterial();
+        IBL_DiffuseMaterial->SetShader(IBL_DiffuseCS);
+
+        uint skyboxMip = max(1u, static_cast<uint>(std::log2(envMap->width / IBLRTResolution)) + 1);
+
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.input", envMap, skyboxMip);
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.output", IBL_DiffuseRT);
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.outputResolution", IBLRTResolution);
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.inputResolution", m_skybox->width);
+        IBL_DiffuseMaterial->SetProperty("materialDiffuse.sampleCount", 1024);
+
+        ComputeShaderRenderer IBL_DiffuseCSRenderer;
+        IBL_DiffuseCSRenderer.SetShader(IBL_DiffuseCS);
+        IBL_DiffuseCSRenderer.SetMaterial(IBL_DiffuseMaterial);
+
+        gfx->DispatchCompute(&IBL_DiffuseCSRenderer, IBLRTResolution / 32, IBLRTResolution / 32, 6);
+
+
+        if (m_IBL_DiffuseCube != nullptr &&
+            (m_IBL_DiffuseCube->width != IBLRTResolution || m_IBL_DiffuseCube->height != IBLRTResolution))
+        {
+            gfx->DestroyTexture(m_IBL_SpecularCube);
+        }
+
+        std::string diffuseIBLName =  ("IBL_DiffuseCube_" + envMap->name);
+        TextureCreationData IBLDiffuseCubeCreationData{};
+        IBLDiffuseCubeCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        IBLDiffuseCubeCreationData.width = IBLRTResolution;
+        IBLDiffuseCubeCreationData.height = IBLRTResolution;
+        IBLDiffuseCubeCreationData.generateMipmaps = false;
+        IBLDiffuseCubeCreationData.textureType = TextureType::Texture_Cube;
+        IBLDiffuseCubeCreationData.name = diffuseIBLName.c_str();
+        IBLDiffuseCubeCreationData.layers = 6;
+        IBLDiffuseCubeCreationData.samplerData = &samplerData;
+
+        auto IBLDiffuseCubeHandle = gfx->CreateTexture(IBLDiffuseCubeCreationData);
+        m_IBL_DiffuseCube = gfx->Resources()->GetTexture<Texture>(IBLDiffuseCubeHandle);
+
+        cmd.Blit(IBL_DiffuseRT, m_IBL_DiffuseCube);
+        gfx->EndSingleTimeCommands(cmd);
+
+        gfx->DestroyTexture(IBL_DiffuseRT);
+
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_SpecularCube);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
     }
 
     void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
@@ -45,6 +278,7 @@ namespace Pudu
 
         InitLightingBuffer(graphics);
         InitConstantsBuffer(graphics);
+        InitBRDF_LUT(graphics);
 
         auto depthRT = graphics->GetRenderTexture();
         depthRT->depth = 1;
@@ -95,7 +329,7 @@ namespace Pudu
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
         m_depthRenderPass->name = "DepthPrepassRenderPass";
         m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Clear)
-        ->SetMultisampled(true);
+                         ->SetMultisampled(true);
 
 
         m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
@@ -142,23 +376,15 @@ namespace Pudu
 
         const uint32_t grassCount = 1;
 
-        auto computeRP = graphics->GetRenderPass<ComputeRenderPass>();
-        computeRP.get()->SetName("Grass Compute");
-        auto compute = graphics->CreateComputeShader("testCompute.compute.slang", "Test Compute");
-
 
         auto grassPointCloud = FileManager::LoadPointCloud("models/Diorama_Cat/CatDiorama_Grass.xyz");
         const uint32_t instances = grassPointCloud.size();
-        auto groupSize = ceil(sqrt(instances / (32 * 32)));
-        computeRP->SetGroupSize(groupSize, groupSize, 1);
 
         auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
-        computeRP->SetShader(compute);
-        computeRP->AddBufferAttachment(grassBuffer, AttachmentAccessUsage::Write);
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         forwardColorCopyRP->SetBlitTargets(colorRT, m_colorCopyRT);
@@ -192,17 +418,17 @@ namespace Pudu
         material->SetProperty("Data.GrassPos", grassBuffer);
         material->SetProperty("Data.shadowMap", shadowRT);
 
-        drawGrassRP.get()
-                   ->SetMaterial(material)
-                   ->SetOffset(0)
-                   ->SeStride(sizeof(VkDrawIndirectCommand))
-                   ->SetDrawCount(indirectCommands.size())
-                   ->SetIndirectBuffer(indirectBuffer)
-                   ->SetCullMode(CullMode::None)
-                   ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-                   ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-                   ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-                   ->SetName("Grass indirect");
+        // drawGrassRP.get()
+        //            ->SetMaterial(material)
+        //            ->SetOffset(0)
+        //            ->SeStride(sizeof(VkDrawIndirectCommand))
+        //            ->SetDrawCount(indirectCommands.size())
+        //            ->SetIndirectBuffer(indirectBuffer)
+        //            ->SetCullMode(CullMode::None)
+        //            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+        //            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+        //            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+        //            ->SetName("Grass indirect");
 
         m_postProcessingRenderPass = graphics->GetRenderPass<PostProcessingRenderPass>();
         m_postProcessingRenderPass->name = "Postprocessing";
@@ -215,13 +441,13 @@ namespace Pudu
 
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
-      //  AddRenderPass(m_shadowMapRenderPass.get());
-        AddRenderPass(normalRP.get());
+        AddRenderPass(m_shadowMapRenderPass.get());
+        //  AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
-       // AddRenderPass(drawGrassRP.get());
+        // AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());
         AddRenderPass(depthCopyRP.get());
-     //   AddRenderPass(transparentRP.get());
+        AddRenderPass(transparentRP.get());
         AddRenderPass(m_postProcessingRenderPass.get());
         AddRenderPass(overlayRP.get());
 
@@ -237,6 +463,11 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
+
+        SetRoughnessScale(1.);
+        SetGamma(2.2);
+        EnableToneMapping(true);
+        SetExposure(2.0);
     }
 
     static bool isFirstFrame = true;
@@ -244,9 +475,10 @@ namespace Pudu
     void PuduRenderer::OnRender(RenderFrameData& data)
     {
         data.globalPropertiesMaterial = m_globalPropertiesMaterial;
-        m_globalPropertiesMaterial->ApplyProperties();
+        m_globalPropertiesMaterial->ApplyProperties(data.currentCommand.get());
 
         data.descriptorSetOffset = m_globalDescriptorSetLayouts->setsCount;
+
         isFirstFrame = false;
         UpdateLightingBuffer(data);
         UpdateGlobalConstantsBuffer(data);

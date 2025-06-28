@@ -171,6 +171,7 @@ namespace Pudu
         for (auto& mesh : gltfAsset->meshes)
         {
             LOG("Processing mesh {} primitives: {}\n", mesh.name, mesh.primitives.size());
+            bool hasTangents = false;
             for (auto& primitive : mesh.primitives)
             {
                 if (!primitive.indicesAccessor.has_value())
@@ -191,6 +192,7 @@ namespace Pudu
 
                 auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->accessorIndex];
                 vertices.resize(positionsAccessor.count);
+
 
                 for (auto& attribute : primitive.attributes)
                 {
@@ -237,6 +239,8 @@ namespace Pudu
                         {
                             vertices[idx++].tangent = v;
                         });
+
+                        hasTangents = true;
                     }
                 }
 
@@ -247,10 +251,12 @@ namespace Pudu
                 {
                     auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
 
-                    bool hasBaseTexture, hasNormalMap = false;
+                    bool hasBaseTexture, hasNormalMap, hasMetallicRoughnessMap, hasEmissiveMap = false;
 
                     hasBaseTexture = gltfMat.pbrData.baseColorTexture.has_value();
                     hasNormalMap = gltfMat.normalTexture.has_value();
+                    hasMetallicRoughnessMap = gltfMat.pbrData.metallicRoughnessTexture.has_value();
+                    hasEmissiveMap = gltfMat.emissiveTexture.has_value();
 
 
                     if (hasBaseTexture)
@@ -263,9 +269,21 @@ namespace Pudu
                         materialCreationData.NormalMapPath = GetPathFromTextureIndex(
                             gltfAsset, gltfMat.normalTexture.value().textureIndex, path);
                     }
+                    if (hasMetallicRoughnessMap)
+                    {
+                        materialCreationData.MetallicRoughnessPath = GetPathFromTextureIndex(
+                            gltfAsset, gltfMat.pbrData.metallicRoughnessTexture.value().textureIndex, path);
+                    }
+                    if (hasEmissiveMap)
+                    {
+                        materialCreationData.EmissivePath = GetPathFromTextureIndex(
+                            gltfAsset, gltfMat.emissiveTexture.value().textureIndex, path);
+                    }
 
                     materialCreationData.hasBaseTexture = hasBaseTexture;
                     materialCreationData.hasNormalMap = hasNormalMap;
+                    materialCreationData.hasMetallicRoughness = hasMetallicRoughnessMap;
+                    materialCreationData.hasEmissiveTexture = hasEmissiveMap;
                 }
 
                 materialCreationData.name = mesh.name;
@@ -274,6 +292,7 @@ namespace Pudu
                 meshCreationData.Vertices = vertices;
                 meshCreationData.Material = materialCreationData;
                 meshCreationData.Name = mesh.name;
+                meshCreationData.HasTangents = hasTangents;
                 creationData.push_back(meshCreationData);
             }
         }
@@ -297,6 +316,9 @@ namespace Pudu
         std::vector<EntitySPtr> entities;
         std::unordered_map<fastgltf::Node*, EntitySPtr> parentEntitiesByNode;
 
+        std::string name = path.stem().string();
+        auto root = EntityManager::AllocateEntity(name);
+
         for (auto& node : asset->nodes)
         {
             LOG("{}", node.name);
@@ -312,7 +334,7 @@ namespace Pudu
                 const auto& meshData = meshCreationData[meshIndex.value()];
                 auto model = PuduGraphics::Instance()->CreateModel(meshData);
 
-                auto renderEntity = EntityManager::AllocateRenderEntity(name, model);
+                auto renderEntity = EntityManager::AllocateRenderEntity(meshData.Name.c_str(), model);
                 auto [layer] = renderEntity->GetRenderSettings();
                 layer = 0;
                 entity = renderEntity;
@@ -346,7 +368,15 @@ namespace Pudu
             }
         }
 
-        return entities[0];
+        for (auto& entity : entities)
+        {
+            if (entity->GetParent() == nullptr)
+            {
+                entity->SetParent(root);
+            }
+        }
+
+        return root;
     }
 
     std::vector<char> FileManager::LoadShader(fs::path const& path)

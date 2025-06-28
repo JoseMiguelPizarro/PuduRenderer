@@ -1,5 +1,5 @@
-//Windows defines a min max func that messes up std funcs :') 
-#define NOMINMAX 
+//Windows defines a min max func that messes up std funcs :')
+#define NOMINMAX
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -10,7 +10,9 @@
 #include <limits>
 
 #include "PuduGraphics.h"
-#include <PuduGlobals.h>
+#include "PuduGlobals.h"
+
+
 #include <stdexcept>
 #include <algorithm>
 #include <Logger.h>
@@ -63,7 +65,7 @@ namespace Pudu
 
         InitWindow();
         InitVulkan();
-        InitializeDefaultResources();
+        InitDefaultResources();
 
         m_initialized = true;
     }
@@ -78,8 +80,8 @@ namespace Pudu
         CreateLogicalDevice();
         InitDebugUtilsObjectName();
         InitVMA();
-        CreateSwapChain();
-        CreateSwapchainImageViews();
+        CreateSwapChain(m_currentSwapchain);
+        CreateSwapchainImageViews(m_currentSwapchain);
 
         CreateBindlessDescriptorPool();
 
@@ -364,14 +366,16 @@ namespace Pudu
 
             vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
         }
+        //If any shader needs to be reloaded, must be done after the GPU finish its current workload, hence the semaphore
+        ReloadPendingShaders();
 
         ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
         //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-        VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, *frame.ImageAvailableSemaphore,
+        VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX, *frame.ImageAvailableSemaphore,
                                                 VK_NULL_HANDLE, &frameData.frameIndex);
 
-        frameData.currentSwapChain = m_swapChainTextures[frameData.frameIndex];
+        frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -403,12 +407,12 @@ namespace Pudu
 
         frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
                                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        frameData.currentCommand->TransitionTextureLayout(m_swapChainTextures[frameData.frameIndex],
+        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
                                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        frameData.currentCommand->Blit(frameData.activeRenderTarget, m_swapChainTextures[frameData.frameIndex],
+        frameData.currentCommand->Blit(frameData.activeRenderTarget, m_currentSwapchain.textures[frameData.frameIndex],
                                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        frameData.currentCommand->TransitionTextureLayout(m_swapChainTextures[frameData.frameIndex],
+        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
                                                           VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
@@ -482,28 +486,38 @@ namespace Pudu
         vkQueueSubmit2(m_computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
-    void PuduGraphics::InitializeDefaultResources()
+    void PuduGraphics::InitDefaultResources()
     {
         MeshCreationData defaultQuadMeshData;
         defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
         defaultQuadMeshData.Vertices = {
-            Vertex({-.5, 0, -0.5}, {1, 1, 1}, {0, 0}, {0, 1, 0},{1,0,0,1}),
-            Vertex({0.5, 0, -0.5}, {1, 1, 1}, {1., 0}, {0, 1, 0},{1,0,0,1}),
-            Vertex({-.5, 0, 0.5}, {1, 1, 1}, {0, 1}, {0, 1, 0},{1,0,0,1}),
-            Vertex({0.5, 0, 0.5}, {1, 1, 1}, {1, 1}, {0, 1, 0},{1,0,0,1})
+            Vertex({-.5, 0, -0.5}, {1, 1, 1}, {0, 0}, {0, 1, 0}, {1, 0, 0, 1}),
+            Vertex({0.5, 0, -0.5}, {1, 1, 1}, {1., 0}, {0, 1, 0}, {1, 0, 0, 1}),
+            Vertex({-.5, 0, 0.5}, {1, 1, 1}, {0, 1}, {0, 1, 0}, {1, 0, 0, 1}),
+            Vertex({0.5, 0, 0.5}, {1, 1, 1}, {1, 1}, {0, 1, 0}, {1, 0, 0, 1})
         };
 
         defaultQuadMeshData.Name = "DefaultQuad";
 
         m_defaultQuad = CreateMesh(defaultQuadMeshData);
 
+        m_defaultStandardShader = CreateShader("standardSurface.shader.slang", "Default StandardSurface");
         m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
+
         m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
 
-        InitializeDefaultTextures();
+        ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
+        m_horizonToCubeCompute = CreateComputeShader(envToCubemapCS_Data);
+        auto horizonToCubemapMat = CreateMaterial();
+        horizonToCubemapMat->SetShader(m_horizonToCubeCompute);
+
+        m_horizonToCubemapCSRenderer.SetShader(m_horizonToCubeCompute);
+        m_horizonToCubemapCSRenderer.SetMaterial(horizonToCubemapMat);
+
+        InitDefaultTextures();
     }
 
-    void PuduGraphics::InitializeDefaultTextures()
+    void PuduGraphics::InitDefaultTextures()
     {
         TextureCreationData textureCreationData;
         textureCreationData.height = 2;
@@ -531,6 +545,327 @@ namespace Pudu
         textureCreationData.samplerData = &samplerCreationData;
 
         m_defaultWhiteTexture = CreateTexture(textureCreationData);
+
+        std::byte metallicRoughnessData[] = {
+            b{0}, b{128}, b{0}, b{128}, // R = 0, G = 0.5 (128 in byte value), A = 0
+            b{0}, b{128}, b{0}, b{128}, // G
+        };
+
+        std::byte normalData[] = {
+            b{128}, b{128}, b{255}, b{255},
+            b{128}, b{128}, b{255}, b{255},
+            b{128}, b{128}, b{255}, b{255},
+            b{128}, b{128}, b{255}, b{255}
+        };
+
+        std::byte blackData[] = {
+            b{0}, b{0}, b{0}, b{255},
+            b{0}, b{0}, b{0}, b{255},
+            b{0}, b{0}, b{0}, b{255},
+            b{0}, b{0}, b{0}, b{255}
+        };
+
+        TextureCreationData blackTextureData;
+        blackTextureData.height = 2;
+        blackTextureData.width = 2;
+        blackTextureData.format = VK_FORMAT_R8G8B8A8_UNORM; // Format for RGBA
+        blackTextureData.depth = 1;
+        blackTextureData.layers = 1;
+        blackTextureData.bindless = true;
+        blackTextureData.name = "DefaultBlack";
+        blackTextureData.flags = TextureFlags::Sample;
+        blackTextureData.pixels = blackData;
+        blackTextureData.dataSize = sizeof(blackData);
+
+        SamplerCreationData blackSamplerData{true};
+        blackTextureData.samplerData = &blackSamplerData;
+
+        m_defaultBlackTexture = CreateTexture(blackTextureData);
+
+        TextureCreationData normalTextureData;
+        normalTextureData.height = 2;
+        normalTextureData.width = 2;
+        normalTextureData.format = VK_FORMAT_R8G8B8A8_UNORM; // Four channels, R, G, B, A
+        normalTextureData.depth = 1;
+        normalTextureData.layers = 1;
+        normalTextureData.bindless = true;
+        normalTextureData.name = "DefaultNormal";
+        normalTextureData.flags = TextureFlags::Sample;
+        normalTextureData.pixels = normalData;
+        normalTextureData.dataSize = sizeof(normalData);
+
+        SamplerCreationData normalSamplerData{true};
+        normalTextureData.samplerData = &normalSamplerData;
+
+        m_defaultNormalmapTexture = CreateTexture(normalTextureData);
+
+        TextureCreationData metallicRoughnessTextureData;
+        metallicRoughnessTextureData.height = 2;
+        metallicRoughnessTextureData.width = 2;
+        metallicRoughnessTextureData.format = VK_FORMAT_R8G8_UNORM; // Two channels: R and G
+        metallicRoughnessTextureData.depth = 1;
+        metallicRoughnessTextureData.layers = 1;
+        metallicRoughnessTextureData.bindless = true;
+        metallicRoughnessTextureData.name = "DefaultMetallicRoughness";
+        metallicRoughnessTextureData.flags = TextureFlags::Sample;
+        metallicRoughnessTextureData.pixels = metallicRoughnessData;
+        metallicRoughnessTextureData.dataSize = sizeof(metallicRoughnessData);
+
+        SamplerCreationData metallicRoughnessSamplerData{true};
+        metallicRoughnessTextureData.samplerData = &metallicRoughnessSamplerData;
+
+        m_defaultMetallicRoughnessTexture = CreateTexture(metallicRoughnessTextureData);
+    }
+
+    void PuduGraphics::CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData)
+    {
+        auto renderPass = creationData.renderPassHandle.Get();
+
+
+        auto shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
+        pipeline->shaderState = shaderStateHandle;
+        auto shaderState = shaderStateHandle.Get();
+
+        auto& renderPassOutput = renderPass->attachments;
+        auto outputCount = renderPassOutput.colorAttachmentVkCount;
+
+        pipeline->shaderState = shaderStateHandle;
+        pipeline->depthStencilFormat = renderPassOutput.depthStencilFormat;
+        pipeline->pipelineType = PipelineType::Graphics;
+
+        VkPushConstantRange pushConstant{};
+        pushConstant.offset = 0;
+        pushConstant.size = sizeof(UniformBufferObject);
+        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        //Push contants support
+        VkPushConstantRange constants[1]{pushConstant};
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = creationData.activeLayouts;
+        pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout;
+        pipelineLayoutInfo.pPushConstantRanges = constants;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+
+        VkPipelineLayout pipelineLayout;
+        vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
+
+        pipeline->vkPipelineLayoutHandle = pipelineLayout;
+
+        if (shaderState->graphicsPipeline)
+        {
+            VkGraphicsPipelineCreateInfo graphicsPipelineInfo{};
+            graphicsPipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+            graphicsPipelineInfo.pStages = shaderState->shaderStageInfo;
+            graphicsPipelineInfo.stageCount = shaderState->activeShaders;
+
+            graphicsPipelineInfo.layout = pipelineLayout;
+
+            //Vertex input
+            VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+            vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+            //Vertex attributes
+            std::vector<VkVertexInputAttributeDescription> vertexAttributes(
+                creationData.vertexInput.numVertexAttributes);
+
+            uint32_t vertexAttribsCount = creationData.vertexInput.numVertexAttributes;
+
+            for (size_t i = 0; i < vertexAttribsCount; i++)
+            {
+                VkVertexInputAttributeDescription& vertexAttribute = vertexAttributes[i];
+                vertexAttribute = {};
+
+                auto inputVertexAttrib = creationData.vertexInput.vertexAttributes[i];
+                vertexAttribute.location = inputVertexAttrib.location;
+                vertexAttribute.binding = inputVertexAttrib.binding;
+                vertexAttribute.offset = inputVertexAttrib.offset;
+                vertexAttribute.format = inputVertexAttrib.GetVkFormat();
+            }
+
+            vertexInputInfo.vertexAttributeDescriptionCount = vertexAttribsCount;
+            vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes.data();
+
+            uint32_t vertexStreamsCount = creationData.vertexInput.numVertexStreams;
+
+
+            //Vertex Bindings
+            std::vector<VkVertexInputBindingDescription> vertexBindings(vertexStreamsCount);
+            if (vertexStreamsCount)
+            {
+                for (size_t i = 0; i < vertexStreamsCount; i++)
+                {
+                    VertexStream const& vertexStream = creationData.vertexInput.vertexStreams[i];
+                    VkVertexInputBindingDescription binding{};
+                    binding.binding = vertexStream.binding;
+                    binding.inputRate = vertexStream.GetVkInputRate();
+                    binding.stride = vertexStream.stride;
+
+                    vertexBindings[i] = binding;
+                }
+
+                vertexInputInfo.vertexBindingDescriptionCount = vertexBindings.size();
+                vertexInputInfo.pVertexBindingDescriptions = vertexBindings.data();
+            }
+
+            graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
+
+            //Input assembly
+            VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+            inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            inputAssemblyInfo.topology = creationData.topology;
+            inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+            graphicsPipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+
+
+            //Blending
+            size_t blendCount = creationData.blendState.activeStatesCount;
+            std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+
+            if (blendCount)
+            {
+                colorBlendAttachments.resize(blendCount);
+                for (size_t i = 0; i < blendCount; i++)
+                {
+                    auto& attachment = colorBlendAttachments[i];
+
+                    auto blendState = creationData.blendState.blendStates[i];
+
+                    attachment.blendEnable = blendState.blendEnabled;
+                    attachment.colorWriteMask = blendState.colorWriteMask;
+                    attachment.srcColorBlendFactor = blendState.sourceColorFactor;
+                    attachment.dstColorBlendFactor = blendState.destinationColorFactor;
+                    attachment.colorBlendOp = blendState.colorBlendOperation;
+                    attachment.srcAlphaBlendFactor = blendState.sourceAlphaFactor;
+                    attachment.dstAlphaBlendFactor = blendState.destinationAlphaFactor;
+                }
+            }
+            else
+            {
+                colorBlendAttachments.resize(outputCount);
+                for (u32 i = 0; i < outputCount; ++i)
+                {
+                    colorBlendAttachments[i] = {};
+                    colorBlendAttachments[i].blendEnable = VK_FALSE;
+                    colorBlendAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+                }
+            }
+
+            VkPipelineColorBlendStateCreateInfo colorBlendingInfo{};
+            colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            colorBlendingInfo.logicOpEnable = VK_FALSE;
+            colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
+            colorBlendingInfo.attachmentCount = blendCount ? (uint32_t)blendCount : outputCount;
+            colorBlendingInfo.pAttachments = colorBlendAttachments.data();
+
+            graphicsPipelineInfo.pColorBlendState = &colorBlendingInfo;
+
+            //Depth Stencil
+
+            VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
+            auto const& depthStencilState = creationData.depthStencil;
+
+            depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+            depthStencilInfo.depthWriteEnable = depthStencilState.isDepthWriteEnable;
+            depthStencilInfo.stencilTestEnable = false;
+            depthStencilInfo.depthTestEnable = depthStencilState.isDepthEnabled;
+            depthStencilInfo.depthCompareOp = depthStencilState.depthComparison;
+            depthStencilInfo.front = depthStencilState.GetVkFront();
+            depthStencilInfo.back = depthStencilState.GetVkBack();
+
+            graphicsPipelineInfo.pDepthStencilState = &depthStencilInfo;
+
+            //Multisample
+            VkPipelineMultisampleStateCreateInfo multisamplingInfo = {};
+            multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+            multisamplingInfo.rasterizationSamples = creationData.multiSampled
+                                                         ? static_cast<VkSampleCountFlagBits>(m_antialiasingSettings.
+                                                             sampleCount)
+                                                         : VK_SAMPLE_COUNT_1_BIT;
+            multisamplingInfo.sampleShadingEnable = VK_FALSE;
+            multisamplingInfo.minSampleShading = 1.0f; // Optional
+            multisamplingInfo.pSampleMask = nullptr; // Optional
+            multisamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
+            multisamplingInfo.alphaToOneEnable = VK_FALSE; // Optional
+
+            graphicsPipelineInfo.pMultisampleState = &multisamplingInfo;
+
+            //Rasterizer
+            VkPipelineRasterizationStateCreateInfo rasterizer{
+                VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO
+            };
+            rasterizer.rasterizerDiscardEnable = VK_FALSE;
+            rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+            rasterizer.lineWidth = 1.0f;
+            rasterizer.cullMode = creationData.rasterization.cullMode;
+            rasterizer.frontFace = creationData.rasterization.front;
+            rasterizer.depthBiasEnable = VK_TRUE; //TODO: This should be enabled only on shadowmapping pass
+            //rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+            //rasterizer.depthClampEnable = VK_FALSE;
+            //rasterizer.depthBiasClamp = 0.0f; // Optional
+            //rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+
+            graphicsPipelineInfo.pRasterizationState = &rasterizer;
+
+            //// Viewport state
+            VkViewport viewport = {};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = (float)m_swapChainExtent.width;
+            viewport.height = (float)m_swapChainExtent.height;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor = {};
+            scissor.offset = {0, 0};
+            scissor.extent = {m_swapChainExtent.width, m_swapChainExtent.height};
+
+            VkPipelineViewportStateCreateInfo viewportStateInfo{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+            viewportStateInfo.viewportCount = 1;
+            viewportStateInfo.pViewports = &viewport;
+            viewportStateInfo.scissorCount = 1;
+            viewportStateInfo.pScissors = &scissor;
+
+            graphicsPipelineInfo.pViewportState = &viewportStateInfo;
+
+            //RenderPass
+            VkPipelineRenderingCreateInfoKHR pipelineRenderingInfo{};
+            pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+            pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentVkCount;
+            pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.GetColorAttachmentsFormat();
+            pipelineRenderingInfo.depthAttachmentFormat = renderPass->attachments.depthStencilFormat;
+            pipelineRenderingInfo.stencilAttachmentFormat = renderPass->attachments.GetStencilFormat();
+
+            graphicsPipelineInfo.renderPass = nullptr;
+            graphicsPipelineInfo.pNext = &pipelineRenderingInfo;
+            // Dynamic states
+            VkDynamicState dynamicStates[] = {
+                VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS
+            };
+            VkPipelineDynamicStateCreateInfo dynamic_state{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+            dynamic_state.dynamicStateCount = 3;
+            dynamic_state.pDynamicStates = dynamicStates;
+
+            graphicsPipelineInfo.pDynamicState = &dynamic_state;
+
+            vkCreateGraphicsPipelines(m_device, nullptr, 1, &graphicsPipelineInfo, m_allocatorPtr, &pipeline->vkHandle);
+            pipeline->vkPipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+            //TODO: ADD SUPPORT FOR COMPUTE
+            pipeline->bindlessUpdated = false;
+        }
+
+        if (creationData.activeLayouts > 0)
+        {
+            //Create pipeline descriptor set, only handling bindless for now
+            CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
+                                 creationData.activeLayouts, creationData.vkDescriptorSetLayout);
+
+            pipeline->numActiveLayouts = creationData.activeLayouts;
+        }
     }
 
     void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
@@ -606,7 +941,7 @@ namespace Pudu
         presentInfo.pWaitSemaphores = presentWaitSemaphores;
 
 
-        VkSwapchainKHR swapChains[] = {m_swapChain};
+        VkSwapchainKHR swapChains[] = {m_currentSwapchain.swapchainHandle};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &frameData.frameIndex;
@@ -628,7 +963,7 @@ namespace Pudu
 
     //Do a one-shot compute dispatch. WARNING: This will stall the CPU till the computation is done. For for sequential CS executions prefer to use a compute renderpass
     void PuduGraphics::DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY,
-        u32 groupCountZ)
+                                       u32 groupCountZ)
     {
         auto cmd = BeginSingleTimeCommands();
         auto pipeline = m_resources.GetPipeline(computeShaderRenderer->GetShader()->GetPipelineHandle());
@@ -637,11 +972,12 @@ namespace Pudu
 
         auto material = computeShaderRenderer->GetMaterial();
 
-        material->ApplyProperties();
-        cmd.BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle,material->GetDescriptorSets(),material->GetDescriptorSetsCount());
+        material->ApplyProperties(&cmd);
+        cmd.BindDescriptorSetCompute(pipeline->vkPipelineLayoutHandle, material->GetDescriptorSets(),
+                                     material->GetDescriptorSetsCount());
         cmd.Dispatch(groupCountX, groupCountY, groupCountZ);
 
-       EndSingleTimeComputeCommands(cmd);
+        EndSingleTimeComputeCommands(cmd);
     }
 
 
@@ -948,6 +1284,9 @@ namespace Pudu
 
         queueCreateInfo.pQueuePriorities = &queuePriority;
 
+        VkPhysicalDeviceVulkan11Features featuresVulkan11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+        featuresVulkan11.shaderDrawParameters = VK_TRUE;
+
         VkPhysicalDeviceVulkan12Features featuresVulkan12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
         featuresVulkan12.timelineSemaphore = VK_TRUE;
         featuresVulkan12.descriptorIndexing = VK_TRUE;
@@ -961,8 +1300,6 @@ namespace Pudu
         featuresVulkan12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
-
-
 
         VkPhysicalDeviceFeatures2 deviceFeatures{};
         deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -978,7 +1315,6 @@ namespace Pudu
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES
         };
         dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
-
 
 
         deviceFeatures.pNext = &syncFeatures;
@@ -999,6 +1335,9 @@ namespace Pudu
 
         featuresVulkan12.pNext = currentPNext;
         currentPNext = &featuresVulkan12;
+
+        featuresVulkan11.pNext = currentPNext;
+        currentPNext = &featuresVulkan11;
 
         createInfo.enabledExtensionCount = static_cast<uint32_t>(DeviceExtensions.size());
         createInfo.ppEnabledExtensionNames = DeviceExtensions.data();
@@ -1050,7 +1389,7 @@ namespace Pudu
         }
     }
 
-    void PuduGraphics::CreateSwapChain()
+    void PuduGraphics::CreateSwapChain(Swapchain& swapchain)
     {
         LOG("CreateSwapChain");
 
@@ -1059,7 +1398,7 @@ namespace Pudu
         VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        u32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
         if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
         {
             imageCount = swapChainSupport.capabilities.maxImageCount;
@@ -1077,7 +1416,7 @@ namespace Pudu
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
         QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
-        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+        u32 queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily)
         {
@@ -1097,58 +1436,57 @@ namespace Pudu
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VKCheck(vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_swapChain),
+        VKCheck(vkCreateSwapchainKHR(m_device, &createInfo, m_allocatorPtr, &m_currentSwapchain.swapchainHandle),
                 "failed to create swap chain!");
 
-        m_swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, nullptr);
-        vkGetSwapchainImagesKHR(m_device, m_swapChain, &imageCount, m_swapChainImages.data());
+        vkGetSwapchainImagesKHR(m_device, m_currentSwapchain.swapchainHandle, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(m_device, m_currentSwapchain.swapchainHandle, &imageCount, swapchain.images);
 
         m_imageCount = imageCount;
         m_swapChainImageFormat = surfaceFormat.format;
         m_swapChainExtent = extent;
 
+        swapchain.imageCount = imageCount;
 
-        for (uint32_t i = 0; i < m_swapChainImages.size(); i++)
+        for (u32 i = 0; i < imageCount; i++)
         {
-            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (uint64_t)m_swapChainImages[i],
+            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (u64)swapchain.images[i],
                             fmt::format("Swapchain Image {}", i).c_str());
         }
 
         LOG("Swap chain images created!");
     }
 
-    void PuduGraphics::CreateSwapchainImageViews()
+    void PuduGraphics::CreateSwapchainImageViews(Swapchain& swapchain)
     {
         LOG("Create Swapchain Images Views");
-        m_swapChainImagesViews.resize(m_swapChainImages.size());
 
-        for (size_t i = 0; i < m_swapChainImages.size(); i++)
+        for (size_t i = 0; i < swapchain.imageCount; i++)
         {
             ImageViewCreateData createData;
-            createData.image = m_swapChainImages[i];
+            createData.image = swapchain.images[i];
             createData.format = m_swapChainImageFormat;
             createData.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
             createData.name = fmt::format("Swapchain Image View {}", i).c_str();
 
             auto imageView = CreateImageView(createData);
 
-            m_swapChainImagesViews[i] = imageView;
+            swapchain.imageViews[i] = imageView;
 
-            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)m_swapChainImagesViews[i],
+            SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (u64)swapchain.imageViews[i],
                             fmt::format("Swapchain Image View {}", i).c_str());
 
             auto handle = m_resources.AllocateRenderTexture();
             auto texture = m_resources.GetTexture<RenderTexture>(handle->Handle());
 
             texture->vkImageViewHandle = imageView;
-            texture->vkImageHandle = m_swapChainImages[i];
+            texture->vkImageHandle = swapchain.images[i];
             texture->format = m_swapChainImageFormat;
             texture->width = m_swapChainExtent.width;
             texture->height = m_swapChainExtent.height;
             texture->isSwapChain = true;
 
-            m_swapChainTextures.push_back(texture);
+            swapchain.textures[i] = texture;
         }
 
         LOG("Swapchain images created");
@@ -1321,7 +1659,19 @@ namespace Pudu
     GPUResourceHandle<ShaderState> PuduGraphics::CreateShaderState(ShaderStateCreationData const& creation)
     {
         auto shaderState = m_resources.AllocateShaderState();
+        shaderState->graphicsPipeline = true;
+        shaderState->activeShaders = creation.stageCount;
+        shaderState->name = creation.name;
 
+        CreateVKShaderState(shaderState.get(), creation);
+
+        return shaderState->Handle();
+    }
+
+    void PuduGraphics::
+    CreateVKShaderState(ShaderState* shaderState,
+                        ShaderStateCreationData const& creation)
+    {
         uint32_t compiledShaders = 0;
 
         shaderState->graphicsPipeline = true;
@@ -1339,8 +1689,6 @@ namespace Pudu
             shaderStageInfo.pName = stage.entryPointName;
             shaderStageInfo.module = CreateShaderModule(stage.code, stage.codeSize, shaderState->name.c_str());
         }
-
-        return shaderState->Handle();
     }
 
     void PuduGraphics::DestroyTexture(SPtr<Texture> texture)
@@ -1356,7 +1704,9 @@ namespace Pudu
             vkDestroyImageView(m_device, texture->vkImageViewHandle, m_allocatorPtr);
             vkDestroySampler(m_device, texture->Sampler.vkHandle, m_allocatorPtr);
 
-            vkFreeMemory(m_device, texture->vkMemoryHandle, m_allocatorPtr);
+            vmaFreeMemory(m_VmaAllocator, texture->vmaAllocation);
+
+            //vkFreeMemory(m_device, texture->vkMemoryHandle, m_allocatorPtr);
 
             texture->Destroy();
         }
@@ -1376,10 +1726,94 @@ namespace Pudu
     }
 
 
+    void GenerateTangents(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+    {
+        ASSERT(indices.size() % 3 == 0, "Indices must be a multiple of 3");
+
+
+        glm::vec3* tan1 = new glm::vec3[vertices.size() * 2];
+        glm::vec3* tan2 = tan1 + vertices.size();
+
+        // std::vector<glm::vec3> tan1;
+        // std::vector<glm::vec3> tan2;
+
+        // tan1.reserve(vertices.size());
+        // tan2.reserve(vertices.size());
+        //
+        // tan1.resize(vertices.size());
+        // tan2.resize(vertices.size());
+
+        memset(tan1, 0, sizeof(glm::vec3) * vertices.size() * 2);
+
+        for (size_t i = 0; i < indices.size(); i += 3)
+        {
+            uint i0 = indices[i];
+            uint i1 = indices[i + 1];
+            uint i2 = indices[i + 2];
+
+            Vertex& v0 = vertices[i0];
+            Vertex& v1 = vertices[i1];
+            Vertex& v2 = vertices[i2];
+
+            float x1 = v1.pos.x - v0.pos.x;
+            float x2 = v2.pos.x - v0.pos.x;
+            float y1 = v1.pos.y - v0.pos.y;
+            float y2 = v2.pos.y - v0.pos.y;
+            float z1 = v1.pos.z - v0.pos.z;
+            float z2 = v2.pos.z - v0.pos.z;
+
+            float s1 = v1.texcoord.x - v0.texcoord.x;
+            float s2 = v2.texcoord.x - v0.texcoord.x;
+            float t1 = v1.texcoord.y - v0.texcoord.y;
+            float t2 = v2.texcoord.y - v0.texcoord.y;
+
+
+            float r = 1.0F / (s1 * t2 - s2 * t1);
+
+            glm::vec3 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
+                           (t2 * z1 - t1 * z2) * r);
+            glm::vec3 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
+                           (s1 * z2 - s2 * z1) * r);
+
+            tan1[i0] += sdir;
+            tan1[i1] += sdir;
+            tan1[i2] += sdir;
+
+            tan2[i0] += tdir;
+            tan2[i1] += tdir;
+            tan2[i2] += tdir;
+        }
+
+        // Normalize the tangents for each vertex
+        for (size_t i = 0; i < vertices.size(); i++)
+        {
+            glm::vec3 t = tan1[i];
+
+            // Gram-Schmidt orthogonalize
+            glm::vec3 tangent = normalize(
+                t - vertices[i].normal * dot(
+                    vertices[i].normal, glm::vec3(t.x, t.y, t.z)));
+
+            vertices[i].tangent.x = tangent.x;
+            vertices[i].tangent.y = tangent.y;
+            vertices[i].tangent.z = tangent.z;
+
+            // Calculate handedness
+            vertices[i].tangent.w = (dot(cross(vertices[i].normal, t), tan2[i]) < 0.0F) ? -1.0F : 1.0F;
+        }
+
+        delete[] tan1;
+    }
+
     SPtr<Mesh> PuduGraphics::CreateMesh(MeshCreationData const& data)
     {
         auto vertices = data.Vertices;
         auto indices = data.Indices;
+
+        if (!data.HasTangents)
+        {
+            GenerateTangents(vertices, indices);
+        }
 
         SPtr<GraphicsBuffer> vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
                                                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -1571,9 +2005,114 @@ namespace Pudu
         CreateDescriptorSets(m_bindlessDescriptorPool, descriptorSet, setsCount, layouts);
     }
 
+    PipelineCreationData PuduGraphics::GetPipelineCreationData(Shader* shader, RenderPass* renderPass)
+    {
+        PipelineCreationData creationData;
+        creationData.vertexShaderData = shader->m_vertexData;
+        creationData.fragmentShaderData = shader->m_fragmentData;
+        creationData.name = renderPass->name.c_str();
+
+        BlendStateCreation blendStateCreation;
+
+        if (shader->HasFragmentData())
+        {
+            auto renderPassBlendState = renderPass->GetBlendState();
+            blendStateCreation.AddBlendState()
+                              .SetAlphaBlending(renderPassBlendState->sourceAlphaFactor,
+                                                renderPassBlendState->destinationAlphaFactor,
+                                                renderPassBlendState->alphaBlendOperation)
+                              .SetColorBlending(renderPassBlendState->sourceColorFactor,
+                                                renderPassBlendState->destinationColorFactor,
+                                                renderPassBlendState->colorBlendOperation)
+                              .SetColorWriteMask(ColorWriteEnabled::All_mask);
+        }
+
+        RasterizationCreation rasterizationCreation;
+        rasterizationCreation.cullMode = ToVk(renderPass->GetCullMode());
+        rasterizationCreation.fill = FillMode::Solid;
+        rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+        DepthStencilCreation depthStencilCreation;
+        depthStencilCreation.SetDepth(renderPass->writeDepth, VK_COMPARE_OP_LESS_OR_EQUAL);
+
+        VertexInputCreation vertexInputCreation;
+        auto attribDescriptions = Vertex::GetAttributeDescriptions();
+        auto bindingDescriptions = Vertex::GetBindingDescription();
+
+        for (auto attrib : attribDescriptions)
+        {
+            VertexAttribute a;
+            a.binding = attrib.binding;
+            a.format = attrib.format;
+            a.location = attrib.location;
+            a.offset = attrib.offset;
+
+            vertexInputCreation.AddVertexAttribute(a);
+        }
+
+        VertexStream vertexStream;
+        vertexStream.binding = bindingDescriptions.binding;
+        vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
+        vertexStream.stride = bindingDescriptions.stride;
+
+        vertexInputCreation.AddVertexStream(vertexStream);
+
+        ShaderStateCreationData shaderData;
+        shaderData.SetName(shader->name.c_str());
+
+        creationData.pushConstants = shader->m_compilationObject.GetPushConstantsInfo();
+
+        if (shader->HasFragmentData())
+        {
+            shaderData.AddStage(shader->m_fragmentData, "fragmentMain", shader->m_fragmentDataSize,
+                                VK_SHADER_STAGE_FRAGMENT_BIT);
+        }
+
+        if (shader->HasVertexData())
+        {
+            shaderData.AddStage(shader->m_vertexData, "vertexMain", shader->m_vertexDataSize,
+                                VK_SHADER_STAGE_VERTEX_BIT);
+        }
+
+        creationData.blendState = blendStateCreation;
+        creationData.rasterization = rasterizationCreation;
+        creationData.depthStencil = depthStencilCreation;
+        creationData.vertexInput = vertexInputCreation;
+        creationData.shadersStateCreationData = shaderData;
+
+        creationData.renderPassHandle = renderPass->Handle();
+
+        creationData.descriptorSetLayouts = &shader->descriptorSetLayouts;
+        creationData.activeLayouts = shader->numActiveLayouts;
+        creationData.vkDescriptorSetLayout = shader->GetVkDescriptorSetLayouts();
+        creationData.multiSampled = renderPass->IsMultisampled();
+
+        return creationData;
+    }
+
+    SPtr<ComputeShader> PuduGraphics::GetHorizonMapToCubeComputeShader()
+    {
+        return m_horizonToCubeCompute;
+    }
+
     SPtr<Texture> PuduGraphics::GetDefaultWhiteTexture()
     {
         return m_resources.GetTexture<Texture>(m_defaultWhiteTexture);
+    }
+
+    SPtr<Texture> PuduGraphics::GetDefaultBlackTexture()
+    {
+        return m_resources.GetTexture<Texture>(m_defaultBlackTexture);
+    }
+
+    SPtr<Texture> PuduGraphics::GetDefaultNormalMapTexture()
+    {
+        return m_resources.GetTexture<Texture>(m_defaultNormalmapTexture);
+    }
+
+    SPtr<Texture> PuduGraphics::GetDefaultMetallicRoughnessTexture()
+    {
+        return m_resources.GetTexture<Texture>(m_defaultMetallicRoughnessTexture);
     }
 
     SPtr<Shader> PuduGraphics::GetDefaultOverlayShader()
@@ -1584,6 +2123,11 @@ namespace Pudu
     SPtr<Shader> PuduGraphics::GetDefaultOverlayTextureArrayShader()
     {
         return m_defaultOverlayTextureArrayShader;
+    }
+
+    SPtr<Shader> PuduGraphics::GetDefaultStandardShader()
+    {
+        return m_defaultStandardShader;
     }
 
     SPtr<Mesh> PuduGraphics::GetDefaultQuad()
@@ -1644,259 +2188,16 @@ namespace Pudu
     GPUResourceHandle<Pipeline> PuduGraphics::CreateGraphicsPipeline(PipelineCreationData& creationData)
     {
         LOG("CreateGraphicsPipeline Renderpass: {} Shader: {}",
-            m_resources.GetRenderPass(creationData.renderPassHandle)->name.c_str(),
+            creationData.renderPassHandle.Get()->name.c_str(),
             creationData.shadersStateCreationData.name.c_str());
 
         auto pipeline = m_resources.AllocatePipeline();
-
-        auto shaderStateHandle = CreateShaderState(creationData.shadersStateCreationData);
-        auto shaderState = m_resources.GetShaderState(shaderStateHandle);
-
-        auto renderPass = m_resources.GetRenderPass(creationData.renderPassHandle);
-        auto& renderPassOutput = renderPass->attachments;
-        auto outputCount = renderPassOutput.colorAttachmentVkCount;
-
+        auto renderPass = creationData.renderPassHandle.Get();
         pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
-        pipeline->shaderState = shaderStateHandle;
-        pipeline->depthStencilFormat = renderPassOutput.depthStencilFormat;
-        pipeline->pipelineType = PipelineType::Graphics;
+        pipeline->m_renderPass = renderPass->Handle();
 
-        VkPushConstantRange pushConstant{};
-        pushConstant.offset = 0;
-        pushConstant.size = sizeof(UniformBufferObject);
-        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        CreateVKGraphicsPipeline(pipeline.get(), creationData);
 
-        //Push contants support
-        VkPushConstantRange constants[1]{pushConstant};
-
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = creationData.activeLayouts;
-        pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout;
-        pipelineLayoutInfo.pPushConstantRanges = constants;
-        pipelineLayoutInfo.pushConstantRangeCount = 1;
-
-        VkPipelineLayout pipelineLayout;
-        vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
-
-        pipeline->vkPipelineLayoutHandle = pipelineLayout;
-
-        if (shaderState->graphicsPipeline)
-        {
-            VkGraphicsPipelineCreateInfo graphicsPipelineInfo{};
-            graphicsPipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-
-            graphicsPipelineInfo.pStages = shaderState->shaderStageInfo;
-            graphicsPipelineInfo.stageCount = shaderState->activeShaders;
-
-            graphicsPipelineInfo.layout = pipelineLayout;
-
-            //Vertex input
-            VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-            vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-            //Vertex attributes
-            std::vector<VkVertexInputAttributeDescription> vertexAttributes(
-                creationData.vertexInput.numVertexAttributes);
-
-            uint32_t vertexAttribsCount = creationData.vertexInput.numVertexAttributes;
-
-            for (size_t i = 0; i < vertexAttribsCount; i++)
-            {
-                VkVertexInputAttributeDescription& vertexAttribute = vertexAttributes[i];
-                vertexAttribute = {};
-
-                auto inputVertexAttrib = creationData.vertexInput.vertexAttributes[i];
-                vertexAttribute.location = inputVertexAttrib.location;
-                vertexAttribute.binding = inputVertexAttrib.binding;
-                vertexAttribute.offset = inputVertexAttrib.offset;
-                vertexAttribute.format = inputVertexAttrib.GetVkFormat();
-            }
-
-            vertexInputInfo.vertexAttributeDescriptionCount = vertexAttribsCount;
-            vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes.data();
-
-            uint32_t vertexStreamsCount = creationData.vertexInput.numVertexStreams;
-
-
-            //Vertex Bindings
-            std::vector<VkVertexInputBindingDescription> vertexBindings(vertexStreamsCount);
-            if (vertexStreamsCount)
-            {
-                for (size_t i = 0; i < vertexStreamsCount; i++)
-                {
-                    VertexStream const& vertexStream = creationData.vertexInput.vertexStreams[i];
-                    VkVertexInputBindingDescription binding{};
-                    binding.binding = vertexStream.binding;
-                    binding.inputRate = vertexStream.GetVkInputRate();
-                    binding.stride = vertexStream.stride;
-
-                    vertexBindings[i] = binding;
-                }
-
-                vertexInputInfo.vertexBindingDescriptionCount = vertexBindings.size();
-                vertexInputInfo.pVertexBindingDescriptions = vertexBindings.data();
-            }
-
-            graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
-
-            //Input assembly
-            VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
-            inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-            inputAssemblyInfo.topology = creationData.topology;
-            inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
-
-            graphicsPipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
-
-
-            //Blending
-            size_t blendCount = creationData.blendState.activeStatesCount;
-            std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-
-            if (blendCount)
-            {
-                colorBlendAttachments.resize(blendCount);
-                for (size_t i = 0; i < blendCount; i++)
-                {
-                    auto& attachment = colorBlendAttachments[i];
-
-                    auto blendState = creationData.blendState.blendStates[i];
-
-                    attachment.blendEnable = blendState.blendEnabled;
-                    attachment.colorWriteMask = blendState.colorWriteMask;
-                    attachment.srcColorBlendFactor = blendState.sourceColorFactor;
-                    attachment.dstColorBlendFactor = blendState.destinationColorFactor;
-                    attachment.colorBlendOp = blendState.colorBlendOperation;
-                    attachment.srcAlphaBlendFactor = blendState.sourceAlphaFactor;
-                    attachment.dstAlphaBlendFactor = blendState.destinationAlphaFactor;
-                }
-            }
-            else
-            {
-                colorBlendAttachments.resize(outputCount);
-                for (u32 i = 0; i < outputCount; ++i)
-                {
-                    colorBlendAttachments[i] = {};
-                    colorBlendAttachments[i].blendEnable = VK_FALSE;
-                    colorBlendAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-                }
-            }
-
-            VkPipelineColorBlendStateCreateInfo colorBlendingInfo{};
-            colorBlendingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-            colorBlendingInfo.logicOpEnable = VK_FALSE;
-            colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY;
-            colorBlendingInfo.attachmentCount = blendCount ? (uint32_t)blendCount : outputCount;
-            colorBlendingInfo.pAttachments = colorBlendAttachments.data();
-
-            graphicsPipelineInfo.pColorBlendState = &colorBlendingInfo;
-
-            //Depth Stencil
-
-            VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
-            auto const& depthStencilState = creationData.depthStencil;
-
-            depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-            depthStencilInfo.depthWriteEnable = depthStencilState.isDepthWriteEnable;
-            depthStencilInfo.stencilTestEnable = false;
-            depthStencilInfo.depthTestEnable = depthStencilState.isDepthEnabled;
-            depthStencilInfo.depthCompareOp = depthStencilState.depthComparison;
-            depthStencilInfo.front = depthStencilState.GetVkFront();
-            depthStencilInfo.back = depthStencilState.GetVkBack();
-
-            graphicsPipelineInfo.pDepthStencilState = &depthStencilInfo;
-
-            //Multisample
-            VkPipelineMultisampleStateCreateInfo multisamplingInfo = {};
-            multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-            multisamplingInfo.rasterizationSamples = creationData.multiSampled
-                                                         ? static_cast<VkSampleCountFlagBits>(m_antialiasingSettings.
-                                                             sampleCount)
-                                                         : VK_SAMPLE_COUNT_1_BIT;
-            multisamplingInfo.sampleShadingEnable = VK_FALSE;
-            multisamplingInfo.minSampleShading = 1.0f; // Optional
-            multisamplingInfo.pSampleMask = nullptr; // Optional
-            multisamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
-            multisamplingInfo.alphaToOneEnable = VK_FALSE; // Optional
-
-            graphicsPipelineInfo.pMultisampleState = &multisamplingInfo;
-
-            //Rasterizer
-            VkPipelineRasterizationStateCreateInfo rasterizer{
-                VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO
-            };
-            rasterizer.rasterizerDiscardEnable = VK_FALSE;
-            rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-            rasterizer.lineWidth = 1.0f;
-            rasterizer.cullMode = creationData.rasterization.cullMode;
-            rasterizer.frontFace = creationData.rasterization.front;
-            rasterizer.depthBiasEnable = VK_TRUE; //TODO: This should be enabled only on shadowmapping pass
-            //rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-            //rasterizer.depthClampEnable = VK_FALSE;
-            //rasterizer.depthBiasClamp = 0.0f; // Optional
-            //rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
-
-            graphicsPipelineInfo.pRasterizationState = &rasterizer;
-
-            //// Viewport state
-            VkViewport viewport = {};
-            viewport.x = 0.0f;
-            viewport.y = 0.0f;
-            viewport.width = (float)m_swapChainExtent.width;
-            viewport.height = (float)m_swapChainExtent.height;
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-
-            VkRect2D scissor = {};
-            scissor.offset = {0, 0};
-            scissor.extent = {m_swapChainExtent.width, m_swapChainExtent.height};
-
-            VkPipelineViewportStateCreateInfo viewportStateInfo{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
-            viewportStateInfo.viewportCount = 1;
-            viewportStateInfo.pViewports = &viewport;
-            viewportStateInfo.scissorCount = 1;
-            viewportStateInfo.pScissors = &scissor;
-
-            graphicsPipelineInfo.pViewportState = &viewportStateInfo;
-
-            //RenderPass
-            VkPipelineRenderingCreateInfoKHR pipelineRenderingInfo{};
-            pipelineRenderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-            pipelineRenderingInfo.colorAttachmentCount = renderPass->attachments.colorAttachmentVkCount;
-            pipelineRenderingInfo.pColorAttachmentFormats = renderPass->attachments.GetColorAttachmentsFormat();
-            pipelineRenderingInfo.depthAttachmentFormat = renderPass->attachments.depthStencilFormat;
-            pipelineRenderingInfo.stencilAttachmentFormat = renderPass->attachments.GetStencilFormat();
-
-            graphicsPipelineInfo.renderPass = nullptr;
-            graphicsPipelineInfo.pNext = &pipelineRenderingInfo;
-            // Dynamic states
-            VkDynamicState dynamicStates[] = {
-                VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS
-            };
-            VkPipelineDynamicStateCreateInfo dynamic_state{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-            dynamic_state.dynamicStateCount = 3;
-            dynamic_state.pDynamicStates = dynamicStates;
-
-            graphicsPipelineInfo.pDynamicState = &dynamic_state;
-
-            vkCreateGraphicsPipelines(m_device, nullptr, 1, &graphicsPipelineInfo, m_allocatorPtr, &pipeline->vkHandle);
-            pipeline->vkPipelineBindPoint = VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS;
-            //TODO: ADD SUPPORT FOR COMPUTE
-            pipeline->bindlessUpdated = false;
-        }
-
-        if (creationData.activeLayouts > 0)
-        {
-            //Create pipeline descriptor set, only handling bindless for now
-            CreateDescriptorSets(m_bindlessDescriptorPool, pipeline->vkDescriptorSets,
-                                 creationData.activeLayouts, creationData.vkDescriptorSetLayout);
-
-            pipeline->numActiveLayouts = creationData.activeLayouts;
-        }
-
-        LOG("Create Pipeline End");
         return pipeline->Handle();
     }
 
@@ -1993,6 +2294,7 @@ namespace Pudu
         texture->sourceData = creationData.sourceData;
         texture->m_flags = creationData.flags;
         texture->bindless = creationData.bindless;
+        texture->exposeMipViews = creationData.exposeMipViews;
         texture->useAutoGeneratedMipMaps = creationData.generateMipmaps;
 
         u32 dataSize = creationData.dataSize;
@@ -2039,9 +2341,9 @@ namespace Pudu
             usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         imageCreateInfo.usage = usage;
-        imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT: 0;
+        imageCreateInfo.usage |= isComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT : 0;
 
-        imageCreateInfo.usage ^= texture->IsMultisampled()? VK_IMAGE_USAGE_STORAGE_BIT : 0;
+        imageCreateInfo.usage ^= texture->IsMultisampled() ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
 
         if (TextureFormat::HasDepthOrStencil(texture->format))
         {
@@ -2063,7 +2365,7 @@ namespace Pudu
             imageCreateInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         }*/
 
-        if (texture->GetFlags() & TextureFlags::Sample)
+        if (texture->GetFlags() & TextureFlags::Sample || texture->GetFlags() & TextureFlags::Default)
         {
             imageCreateInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
@@ -2077,7 +2379,6 @@ namespace Pudu
         memoryInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
         VkImageSubresourceRange subresourceRange = {};
-        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         subresourceRange.baseArrayLayer = 0;
         subresourceRange.baseMipLevel = 0;
         subresourceRange.levelCount = texture->mipLevels;
@@ -2106,7 +2407,7 @@ namespace Pudu
             subresourceRange.levelCount = texture->mipLevels;
             subresourceRange.layerCount = 6;
 
-            if (texture->sourceData== nullptr)
+            if (texture->sourceData == nullptr)
                 goto outCubemap;
 
             uint32_t offset = 0;
@@ -2135,7 +2436,7 @@ namespace Pudu
                 }
             }
         }
-        outCubemap:
+    outCubemap:
 
 
         //Image view
@@ -2144,11 +2445,14 @@ namespace Pudu
         imageViewInfo.image = texture->vkImageHandle;
         imageViewInfo.viewType = ToVkImageViewType(texture->GetTextureType());
         imageViewInfo.format = texture->format;
+        VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         if (TextureFormat::HasDepthOrStencil(texture->format))
         {
-            subresourceRange.aspectMask = TextureFormat::HasDepth(texture->format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
+            aspectMask = TextureFormat::HasDepth(texture->format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
         }
+
+        subresourceRange.aspectMask = aspectMask;
 
         imageViewInfo.subresourceRange = subresourceRange;
 
@@ -2165,6 +2469,21 @@ namespace Pudu
         {
             UploadTextureData(texture, texture->pixels, subresourceRange, &bufferCopyRegions);
         }
+
+        //Exposed mipmap views
+        if (texture->exposeMipViews)
+        {
+            texture->m_mipImageViews[0] = texture->vkImageViewHandle;
+            for (int i = 1; i < texture->mipLevels; i++)
+            {
+                subresourceRange.baseMipLevel = i;
+                subresourceRange.levelCount = texture->mipLevels - i;
+                imageViewInfo.subresourceRange = subresourceRange;
+                vkCreateImageView(m_device, &imageViewInfo, m_allocatorPtr, &texture->m_mipImageViews[i]);
+            }
+        }
+
+        texture->m_aspectMask = aspectMask;
 
         LOG("Created Texture {} id: {}", texture->name, texture->Handle().Index());
     }
@@ -2217,7 +2536,7 @@ namespace Pudu
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.layerCount = texture->layers;
         barrier.subresourceRange.levelCount = 1;
 
         for (u32 i = 1; i < texture->mipLevels; i++)
@@ -2249,7 +2568,7 @@ namespace Pudu
             blit.srcOffsets[1] = {static_cast<i32>(mipWidth), static_cast<i32>(mipHeight), 1};
             blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
+            blit.srcSubresource.layerCount = texture->layers;
             blit.srcSubresource.mipLevel = srcMip;
 
             mipWidth = std::max(mipWidth / 2, 1u);
@@ -2259,7 +2578,7 @@ namespace Pudu
             blit.dstOffsets[1] = {static_cast<i32>(mipWidth), static_cast<i32>(mipHeight), 1};
             blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
+            blit.dstSubresource.layerCount = texture->layers;
             blit.dstSubresource.mipLevel = dstMip;
 
             cmd->Blit(texture, texture, VK_FILTER_LINEAR, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -2291,7 +2610,8 @@ namespace Pudu
         m_multisampledColorTexture->width = resolution.x;
         m_multisampledColorTexture->height = resolution.y;
         m_multisampledColorTexture->name = "Multisampled Texture";
-        m_multisampledColorTexture->format = VK_FORMAT_R8G8B8A8_UNORM; //TODO: GET A CLEVER WAY OF GETTING THIS FORMAT SINCE MUST MATCH WHATEVER IS GOING TO BE USED ON THE RENDERPASS, SWAPCHAIN FORMAT IS A GOOD CANDIDATE
+        m_multisampledColorTexture->format = VK_FORMAT_R8G8B8A8_UNORM;
+        //TODO: GET A CLEVER WAY OF GETTING THIS FORMAT SINCE MUST MATCH WHATEVER IS GOING TO BE USED ON THE RENDERPASS, SWAPCHAIN FORMAT IS A GOOD CANDIDATE
         m_multisampledColorTexture->SetUsage(ResourceUsage::RENDER_TARGET);
         m_multisampledColorTexture->Create(this);
 
@@ -2418,10 +2738,10 @@ namespace Pudu
 
         vkDeviceWaitIdle(m_device);
 
-        CleanupSwapChain();
+        CleanupSwapChain(m_currentSwapchain);
 
-        CreateSwapChain();
-        CreateSwapchainImageViews();
+        CreateSwapChain(m_currentSwapchain);
+        CreateSwapchainImageViews(m_currentSwapchain);
     }
 
     void PuduGraphics::UpdateUniformBuffer(uint32_t currentImage)
@@ -2435,7 +2755,7 @@ namespace Pudu
     {
         UniformBufferObject ubo{};
 
-        ubo.modelMatrix = drawCall.TransformMatrix;
+        ubo.modelMatrix = drawCall.GetModelMatrix();
         return ubo;
     }
 
@@ -2490,6 +2810,7 @@ namespace Pudu
         shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
         shader->SetName(name);
         shader->m_compilationObject = compileData;
+        shader->m_shaderPath = shaderPath;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
                                  shader->m_descriptorSetLayoutHandles);
@@ -2508,16 +2829,22 @@ namespace Pudu
         return shader;
     }
 
-    SPtr<ComputeShader> PuduGraphics::CreateComputeShader(fs::path shaderPath, const char* name)
+    void PuduGraphics::ReloadShader(Shader* shader)
     {
-        LOG("Creating Compute Shader {}:", name);
+        m_shadersToReload.push_back(shader->m_handle);
+    }
+
+    SPtr<ComputeShader> PuduGraphics::CreateComputeShader(ComputeShaderCreationData& creationData)
+    {
+        LOG("Creating Compute Shader {}:", creationData.name);
         auto shader = m_resources.AllocateComputeShader();
 
-        auto compiledShader = m_shaderCompiler.Compile(shaderPath.string().c_str(), {"computeMain"}, true);
+        auto compiledShader = m_shaderCompiler.Compile(creationData.shaderPath.string().c_str(),
+                                                       {creationData.kernel.c_str()}, true);
 
-        const char* kernelName = "computeMain";
+        const char* kernelName = creationData.kernel.c_str();
         auto kernel = compiledShader.GetKernel(kernelName);
-        shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, name);
+        shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, creationData.name.c_str());
         shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
 
@@ -2665,6 +2992,70 @@ namespace Pudu
         return std::dynamic_pointer_cast<TextureCube>(LoadAndCreateTexture(filePath, settings));
     }
 
+    SPtr<TextureCube> PuduGraphics::LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings)
+    {
+        ASSERT(fs::exists(filePath), "Trying to load a non-existent texture {}. Did you check the path is correct?",
+               filePath.string());
+
+        creationSettings.textureType = TextureType::Texture2D;
+        auto horizonTexture = LoadAndCreateTexture(filePath, creationSettings);
+
+        u32 cubemapResolution = horizonTexture->width / 4;
+        SamplerCreationData samplerData;
+        TextureCreationData cubemapRTCreationData{};
+        cubemapRTCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        cubemapRTCreationData.width = cubemapResolution;
+        cubemapRTCreationData.height = cubemapResolution;
+        cubemapRTCreationData.textureType = TextureType::Texture_2D_Array;
+        cubemapRTCreationData.generateMipmaps = false;
+        cubemapRTCreationData.name = "EnvCubeRT";
+        cubemapRTCreationData.flags = TextureFlags::UnorderedAccess;
+        cubemapRTCreationData.layers = 6;
+
+        cubemapRTCreationData.samplerData = &samplerData;
+
+        auto envCubemapRTHandle = CreateTexture(cubemapRTCreationData);
+        auto cubemapRT = Resources()->GetTexture<Texture>(envCubemapRTHandle);
+
+        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.input", horizonTexture);
+        m_horizonToCubemapCSRenderer.GetMaterial()->SetProperty("material.output", cubemapRT);
+
+        DispatchCompute(&m_horizonToCubemapCSRenderer, cubemapResolution / 32, cubemapResolution / 32, 6);
+
+        TextureCreationData cubemapCreationData{};
+        cubemapCreationData.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        cubemapCreationData.width = cubemapResolution;
+        cubemapCreationData.height = cubemapResolution;
+        cubemapCreationData.generateMipmaps = false;
+        cubemapCreationData.textureType = TextureType::Texture_Cube;
+        cubemapCreationData.name = horizonTexture->name.c_str();
+        cubemapCreationData.layers = 6;
+        cubemapCreationData.exposeMipViews = true;
+        cubemapCreationData.samplerData = &samplerData;
+        cubemapCreationData.mipmaps = creationSettings.generateMipmaps
+                                          ? Texture::CalculateMipLevels(cubemapResolution, cubemapResolution)
+                                          : 1;
+
+        auto cubemapHandle = CreateTexture(cubemapCreationData);
+        auto cubeMap = Resources()->GetTexture<TextureCube>(cubemapHandle);
+        auto cmd = BeginSingleTimeCommands();
+
+        cmd.Blit(cubemapRT, cubeMap);
+        if (creationSettings.generateMipmaps)
+        {
+            cubeMap->useAutoGeneratedMipMaps = true;
+            GenerateTextureMipMaps(cubeMap.get(), &cmd);
+        }
+
+        EndSingleTimeCommands(cmd);
+
+
+        DestroyTexture(horizonTexture);
+        DestroyTexture(cubemapRT);
+
+        return cubeMap;
+    }
+
 
     void PuduGraphics::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height,
                                          std::vector<VkBufferImageCopy2>* regions)
@@ -2678,6 +3069,15 @@ namespace Pudu
 
     SPtr<Texture> PuduGraphics::LoadAndCreateTexture(fs::path path, TextureLoadSettings& settings)
     {
+        if (m_loadedTexturesMap.contains(path))
+        {
+            return m_loadedTexturesMap[path];
+        }
+
+        ASSERT(fs::exists(path), "Trying to load a non-existent texture {}. Did you check the path is correct?",
+               path.string());
+        ASSERT(settings.name != nullptr, "Trying to load a texture without a name! Be sure to set settings.name");
+
         bool isKTX = path.extension() == ".ktx" || path.extension() == ".ktx2";
         void* pixelsData = nullptr;
         void* sourceData = nullptr;
@@ -2725,7 +3125,7 @@ namespace Pudu
         {
             levels = settings.mipLevels > 0
                          ? settings.mipLevels
-                         : static_cast<u32>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+                         : Texture::CalculateMipLevels(texWidth, texHeight);
         }
 
         TextureCreationData creationData;
@@ -2756,7 +3156,11 @@ namespace Pudu
             stbi_image_free(pixelsData);
         }
 
-        return m_resources.GetTexture<Texture>(textureHandle);
+
+        auto texture = m_resources.GetTexture<Texture>(textureHandle);
+        m_loadedTexturesMap[path] = texture;
+
+        return texture;
     }
 
     int2 PuduGraphics::GetResolution() const
@@ -2795,7 +3199,8 @@ namespace Pudu
     {
         auto mesh = CreateMesh(data);
 
-        auto material = m_resources.AllocateMaterial();
+        auto material = CreateMaterial();
+        material->SetShader(m_defaultStandardShader);
         material->name = data.Name;
         const std::filesystem::path path = data.Material.BaseTexturePath;
         if (data.Material.hasBaseTexture)
@@ -2805,11 +3210,11 @@ namespace Pudu
             settings.name = "Albedo";
             settings.samplerData.wrap = true;
 
-            material->SetProperty("material.baseColorTex", LoadTexture2D(path, settings));
+            material->SetProperty("material.albedoTex", LoadTexture2D(path, settings));
         }
         else
         {
-            material->SetProperty("material.baseColorTex", GetDefaultWhiteTexture());
+            material->SetProperty("material.albedoTex", GetDefaultWhiteTexture());
         }
 
         if (data.Material.hasNormalMap)
@@ -2821,8 +3226,43 @@ namespace Pudu
             normalCreation.name = "Normal";
             normalCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-            material->SetProperty("material.normalTex", LoadTexture2D(path, normalCreation));
+            material->SetProperty("material.normalTex", LoadTexture2D(data.Material.NormalMapPath, normalCreation));
         }
+        else
+        {
+            material->SetProperty("material.normalTex", GetDefaultNormalMapTexture());
+        }
+        if (data.Material.hasMetallicRoughness)
+        {
+            TextureLoadSettings metallicRoughnessCreation;
+            metallicRoughnessCreation.bindless = true;
+            metallicRoughnessCreation.name = "Roughness";
+            metallicRoughnessCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+            material->SetProperty("material.metallicRoughnessTex",
+                                  LoadTexture2D(data.Material.MetallicRoughnessPath, metallicRoughnessCreation));
+        }
+        else
+        {
+            material->SetProperty("material.metallicRoughnessTex", GetDefaultMetallicRoughnessTexture());
+        }
+
+        if (data.Material.hasEmissiveTexture)
+        {
+            TextureLoadSettings emissiveCreation;
+            emissiveCreation.bindless = true;
+            emissiveCreation.name = "Emissive";
+            emissiveCreation.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+            material->SetProperty("material.emissiveTex",
+                                  LoadTexture2D(data.Material.EmissivePath, emissiveCreation));
+        }
+        else
+        {
+            material->SetProperty("material.emissiveTex", GetDefaultBlackTexture());
+        }
+
+        material->SetProperty("material.heightTex", GetDefaultBlackTexture());
 
         auto m = CreateModel(mesh, material);
         m.Name = data.Name;
@@ -2869,6 +3309,47 @@ namespace Pudu
         LOG_ERROR("Failed to find supported format!");
 
         return VK_FORMAT_UNDEFINED;
+    }
+
+    void PuduGraphics::ReloadPendingShaders()
+    {
+        for (auto shaderHandle : m_shadersToReload)
+        {
+            auto shader = shaderHandle.Get();
+
+            const char* fragmentEntryPoint = "fragmentMain";
+            const char* vertexEntryPoint = "vertexMain";
+
+            const std::vector entryPoints = {fragmentEntryPoint, vertexEntryPoint};
+            auto compileData = m_shaderCompiler.Compile(shader->m_shaderPath.string().c_str(), entryPoints);
+
+            auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
+            auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
+
+            shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
+            shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
+            shader->m_compilationObject = compileData;
+
+            for (auto& pipelineHandle : shader->m_pipelines)
+            {
+                auto pipeline = pipelineHandle.Get();
+                auto renderPass = pipeline->m_renderPass.Get();
+
+                auto shaderState = pipeline->shaderState.Get();
+
+                for (Size i = 0; i < shaderState->activeShaders; i++)
+                {
+                    vkDestroyShaderModule(m_device, shaderState->shaderStageInfo[i].module, nullptr);
+                }
+
+                vkDestroyPipeline(m_device, pipeline->vkHandle, nullptr);
+
+                auto newPipelineData = GetPipelineCreationData(shader.get(), renderPass.get());
+                CreateVKGraphicsPipeline(pipeline.get(), newPipelineData);
+            }
+        }
+
+        m_shadersToReload.clear();
     }
 
     GPUCommands PuduGraphics::BeginSingleTimeCommands()
@@ -2960,8 +3441,7 @@ namespace Pudu
         waitInfo.pSemaphores = semaphores;
         waitInfo.pValues = timelineValues;
 
-        vkWaitSemaphores(m_device, &waitInfo, 1e+8); //Hardcoded timeout 100ms
-
+        vkWaitSemaphores(m_device, &waitInfo, UINT64_MAX);
         vkFreeCommandBuffers(m_device, m_commandPool->vkHandle, 1, &commandBuffer.vkHandle);
     }
 
@@ -3166,7 +3646,7 @@ namespace Pudu
         {
             return;
         }
-        CleanupSwapChain();
+        CleanupSwapChain(m_currentSwapchain);
 
         m_resources.DestroyAllResources(this);
 
@@ -3196,14 +3676,16 @@ namespace Pudu
         m_initialized = false;
     }
 
-    void PuduGraphics::CleanupSwapChain()
+    void PuduGraphics::CleanupSwapChain(Swapchain& swapchain)
     {
-        vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+        vkDestroySwapchainKHR(m_device, swapchain.swapchainHandle, nullptr);
 
-        for (auto sc : m_swapChainImagesViews)
+        for (Size i = 0; i < swapchain.imageCount; i++)
         {
-            vkDestroyImageView(m_device, sc, m_allocatorPtr);
+            vkDestroyImageView(m_device, swapchain.imageViews[i], m_allocatorPtr);
         }
+
+        swapchain.imageCount = 0;
     }
 
     void PuduGraphics::DestroyMesh(SPtr<Mesh> mesh)

@@ -21,13 +21,14 @@ namespace Pudu
         throw std::invalid_argument("Invalid pipeline type");
     }
 
-    void Material::ApplyProperties()
+    void Material::ApplyProperties(GPUCommands* commands)
     {
         MaterialApplyPropertyGPUTarget target;
         target.graphics = m_gpu;
         target.descriptorProvider = m_descriptorProvider.get();
         target.m_descriptorSetRemap = m_descriptorSetsIndexRemap;
         target.m_descriptorSets = m_descriptorSets;
+        target.commands = commands;
 
         m_propertiesBlock.ApplyProperties(target);
     }
@@ -37,14 +38,34 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, value);
     }
 
+    void Material::SetProperty(const std::string_view& name, int value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
+    void Material::SetProperty(const std::string_view& name, u32 value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
     void Material::SetProperty(const std::string& name, const glm::vec2 value)
     {
         m_propertiesBlock.SetProperty(name, value);
     }
 
-    void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture)
+    void Material::SetProperty(const std::string& name, glm::vec3 value)
     {
-        m_propertiesBlock.SetProperty(name, texture);
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
+    void Material::SetProperty(const std::string& name, glm::vec4 value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
+    void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
+    {
+        m_propertiesBlock.SetProperty(name, texture, mipLevel);
     }
 
     void Material::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)
@@ -109,6 +130,25 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
+    void ShaderPropertiesBlock::SetProperty(const std::string_view& name, int value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Int;
+        request.property.value = glm::vec4(value);
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
+    void ShaderPropertiesBlock::SetProperty(const std::string_view& name, u32 value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::UInt;
+        request.property.value = glm::vec4(value);
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const glm::vec2 value)
     {
         PropertyUpdateRequest request;
@@ -119,11 +159,32 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
-    void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture)
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, vec3 value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Vec3;
+        request.property.value = glm::vec4(value.x, value.y, value.z, 0.0f);
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, vec4 value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Vec4;
+        request.property.value = value;
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
         PropertyUpdateRequest updateRequest{};
         updateRequest.property.texture = texture;
         updateRequest.property.name = name;
+        updateRequest.property.mipLevel = mipLevel;
         updateRequest.property.type = ShaderPropertyType::Texture;
 
         m_descriptorUpdateRequests.push_back(updateRequest);
@@ -171,6 +232,8 @@ namespace Pudu
                 }
                 break;
             case ShaderPropertyType::Vec2:
+            case ShaderPropertyType::Vec3:
+            case ShaderPropertyType::Vec4:
                 {
                     ApplyVectorValue(request, target);
                 }
@@ -178,6 +241,16 @@ namespace Pudu
             case ShaderPropertyType::Float:
                 {
                     ApplyFloatValue(request, target);
+                }
+                break;
+            case ShaderPropertyType::Int:
+                {
+                    ApplyIntValue(request, target);
+                }
+                break;
+            case ShaderPropertyType::UInt:
+                {
+                    ApplyIntValue(request, target);
                 }
                 break;
             default:
@@ -202,7 +275,7 @@ namespace Pudu
 
         if (field.IsValid())
         {
-            field.Write(request.property.texture);
+            field.Write(request.property.texture, request.property.mipLevel, target);
             BindPropertyToShaderNode(field.GetNode(), request.property);
         }
         else
@@ -267,7 +340,9 @@ namespace Pudu
 
             VkDescriptorImageInfo& descriptorImageInfo = imageInfos[currentWriteIndex];
             descriptorImageInfo.sampler = textureSampler.vkHandle;
-            descriptorImageInfo.imageView = texture->vkImageViewHandle;
+            descriptorImageInfo.imageView = request.property.mipLevel == 0
+                                                ? texture->vkImageViewHandle
+                                                : texture->GetMipImageView(request.property.mipLevel);
             descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             descriptorWrite.pImageInfo = &descriptorImageInfo;
@@ -314,6 +389,37 @@ namespace Pudu
     {
         //For alignment purposes we are treating everything as a vector hehe 🙈
         ApplyVectorValue(request, target);
+    }
+
+    void ShaderPropertiesBlock::ApplyIntValue(const PropertyUpdateRequest& request,
+                                              const MaterialApplyPropertyGPUTarget& target)
+    {
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
+        auto field = shaderCursor.Field(request.property.name.c_str());
+
+        if (field.IsValid())
+        {
+            auto shaderNode = field.GetNode();
+
+            //Fetch float value associated buffer
+            auto cBufferProperty = FetchShaderNodeProperty(shaderNode->parentContainer);
+
+            if (cBufferProperty != nullptr)
+            {
+                int v = static_cast<int>(request.property.value.x);
+                field.Write(cBufferProperty->buffer, &v, shaderNode->offset, shaderNode->size);
+                BindPropertyToShaderNode(field.GetNode(), request.property);
+            }
+            else
+            {
+                LOG_WARNING("Trying to set vector {} value but parent cbuffer has not been bound",
+                            shaderNode->GetFullPath());
+            }
+        }
+        else
+        {
+            LOG_WARNING("Shader property {} not found", request.property.name.c_str());
+        }
     }
 
     void ShaderPropertiesBlock::AllocateGPUResourcesFromShaderNode(ShaderNodeResourcesAllocationInfo& allocationInfo)
@@ -382,6 +488,9 @@ namespace Pudu
 
     void Material::SetShader(const SPtr<IShaderObject>& shader)
     {
+        if (shader == m_shader)
+            return;
+
         m_shader = shader;
 
         SetDescriptorProvider(std::dynamic_pointer_cast<IDescriptorProvider>(shader));
@@ -389,8 +498,6 @@ namespace Pudu
 
     void Material::SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider)
     {
-        ASSERT(m_descriptorProvider == nullptr, "Descriptor provider already set");
-
         m_descriptorProvider = descriptorProvider;
 
         std::vector<VkDescriptorSetLayout> descriptorSetsToCreate;
@@ -411,6 +518,7 @@ namespace Pudu
         m_descriptorSetCount = descriptorSetCount;
         //TODO: STORE A SHADER ROOT NODE THAT PARENTS ALL THE CHILD SHADERNODES? Since set number is cached on the shaderNode itself, this will need recompute it each time or recache it
 
+        //TODO: What to do with already allocated descriptor sets??
         m_gpu->CreateDescriptorSets(m_descriptorSets, descriptorSetsToCreate.size(),
                                     descriptorSetsToCreate.data());
 

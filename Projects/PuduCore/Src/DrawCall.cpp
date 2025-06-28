@@ -21,4 +21,9 @@ namespace Pudu
 	{
 		return m_replacementMaterial != nullptr;
 	}
+
+	mat4 DrawCall::GetModelMatrix()
+	{
+		return ModelPtr->Transform->GetTransformationMatrix();
+	}
 }

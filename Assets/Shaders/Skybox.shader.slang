@@ -4,13 +4,6 @@
 
 import PuduGraphicsModule;
 
-struct SkyboxMaterial
-{
-    SamplerCube skyboxTex;
-}
-
-ParameterBlock<SkyboxMaterial> material;
-
 float linearDepth(float d, float near, float far)
 {
     return near * far / (far + d * (near - far));
@@ -47,7 +40,7 @@ float4 fragmentMain(VSOut input)
 {
     var viewDir = normalize(input.viewDir);
 
-    var col = material.skyboxTex.Sample(viewDir);
+    var col = GLOBALS.skybox.Sample(viewDir);
 
     return col;
 }

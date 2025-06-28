@@ -1,10 +1,12 @@
 module PuduCore;
 
+
+
 public static const float PI = 3.14159265358979f;
-static constexpr float PI_HALF = PI/2;
-static constexpr float TAU = PI*2;
-static constexpr float PI_INVERSE = 1./PI;
-static constexpr float PI_INVERSE_HALF = PI_INVERSE*0.5f;
+public static constexpr float PI_HALF = PI/2;
+public static constexpr float TAU = PI*2;
+public static constexpr float PI_INVERSE = 1./PI;
+public static constexpr float PI_INVERSE_HALF = PI_INVERSE*0.5f;
 
 
 public float LinearizeDepth(float d,float zNear,float zFar)
@@ -23,6 +25,24 @@ public float3 DecodeNormal(float2 n)
 public float3 TangentToWorld(float3 v, float3 t, float3 bt, float3 n)
 {
     return normalize( v.x*t + v.y*bt + v.z*n);
+}
+
+//<summary> TBN generates a tangent bitangent normal coordinate frame from the normal (the normal must be normalized)</summary>
+public float3x3 GenerateTBN(float3 Normal) {
+  float3 bitangent = float3(0.0, 1.0, 0.0);
+
+  float NdotUp = dot(Normal, float3(0.0, 1.0, 0.0));
+  float epsilon = 0.0000001;
+  if (1.0 - abs(NdotUp) <= epsilon) {
+    // Sampling +Y or -Y, so we need a more robust bitangent.
+    bitangent = (NdotUp > 0.0) ? float3(0.0, 0.0, 1.0) : float3(0.0, 0.0, -1.0);
+  }
+
+  float3 tangent = normalize(cross(bitangent, Normal));
+  bitangent = cross(Normal, tangent);
+
+    //PUDU RENDERER IS IN COLUMN MAJOR SO WE NEED TO TRANSPOSE IT
+  return transpose(float3x3(tangent, bitangent, Normal));
 }
 
 public float3 WorldToTangent(float3 v, float3 t, float3 bt, float3 n)
@@ -166,11 +186,12 @@ public POMS_OUT ParallaxOcclusionMapping_Shadow(Sampler2D heightMap, float2 uv, 
 //       | -Y |
 //       | +Z |
 //       +----+
+// Coordinates are remapped by "looking" at the given face
 public float3 CubeCoordToDir(float u, float v, uint faceID)
 {
      float3 d = 0.0001;
      if (faceID == 0) d = float3(   1.,-v,-u);
-     if (faceID == 1) d =  float3(1.,    -v,u);
+     if (faceID == 1) d =  float3(-1.,    -v,u);
      if (faceID == 2) d =  float3(    u, 1.,v);
      if (faceID == 3) d =  float3(u,-1.f,-v);
      if (faceID == 4) d =  float3(u,-v,1.f);
@@ -184,4 +205,41 @@ public float2 DirToLongitudeLatitude(float3 dir)
     float phi = acos(dir.y);
 
     return float2(theta*PI_INVERSE_HALF + 0.5, phi * PI_INVERSE);
+}
+
+
+//<summary>Converts spherical coordinates (phi, theta) to Cartesian coordinates (x,y,z). Phi represents azimuthal angle and theta represents polar (zenit) angle</summary>
+public float3 SphericalToCartesian(float2 phiTheta)
+{
+    float x = cos(phiTheta.x);
+    float z = sin(phiTheta.x);
+    float y = cos(phiTheta.y);
+
+    return float3(x,y,z);
+}
+
+//<summary>Converts spherical coordinates (phi, theta) to Cartesian coordinates (x,y,z). Phi represents azimuthal angle and theta represents polar (zenit) angle</summary>
+public float3 SphericalToCartesian(float phi, float theta)
+{
+    return SphericalToCartesian({phi,theta});
+}
+
+public float3 ToneMap_Reinhard(float3 color, float exposure)
+{
+    color *= exposure;
+    return color / (color + float3(1.0)); // Basic Reinhard tonemapping
+}
+
+public float3 ToneMap_Reinhard(float4 color, float exposure)
+{
+    return ToneMap_Reinhard(color.xyz,exposure);
+}
+
+public float3 GammaCorrect(float3 color, float gamma)
+{
+    return pow(color,1./gamma);
+}
+
+public inline float Max3(float3 v){
+    return max(max(v.x,v.y),v.z);
 }

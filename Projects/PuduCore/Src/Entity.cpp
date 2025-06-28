@@ -1,5 +1,7 @@
 #include "Entity.h"
 
+#include "Logger.h"
+
 namespace Pudu {
 	Entity::Entity(std::string& name) :m_name(name) {}
 
@@ -41,13 +43,16 @@ namespace Pudu {
 		return m_children;
 	}
 
-	EntitySPtr Entity::GetChildByName(std::string_view const& name)
+	EntitySPtr Entity::GetChildByName(const char* name)
 	{
 		for (auto& child : m_children)
 		{
-			if (child->GetName() == name)
+			const char* childName = child->GetName().c_str();
+			if (strcmp(childName, name) == 0)
 				return child;
 		}
+
+		ASSERT(false, "Child not found");
 		return nullptr;
 	}
 

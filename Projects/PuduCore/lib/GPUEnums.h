@@ -26,7 +26,7 @@ namespace Pudu
 		None
 	};
 
-	enum PresentMode
+	enum class PresentMode
 	{
 		IMMEDIATE = 0,
 		MAILBOX = 1,

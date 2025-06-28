@@ -13,9 +13,9 @@ namespace Pudu {
 		static EntitySPtr AllocateEntity(std::string& name);
 
 		static RenderEntitySPtr AllocateRenderEntity();
-		static RenderEntitySPtr AllocateRenderEntity(std::string& name);
+		static RenderEntitySPtr AllocateRenderEntity(const char*  name);
 		static RenderEntitySPtr AllocateRenderEntity(Model model);
-		static RenderEntitySPtr AllocateRenderEntity(std::string& name, Model model);
+		static RenderEntitySPtr AllocateRenderEntity(const char* name, Model model);
 		static void DestroyEntity(RenderEntitySPtr entity);
 
 	private:

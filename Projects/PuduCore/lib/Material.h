@@ -20,10 +20,14 @@ namespace Pudu
         enum Enum
         {
             Vec2,
+            Vec3,
+            Vec4,
             Texture,
             Buffer,
             TextureArray,
-            Float
+            Float,
+            Int,
+            UInt
         };
     };
 
@@ -31,6 +35,7 @@ namespace Pudu
     {
         std::string name;
         ShaderPropertyType::Enum type;
+        u32 mipLevel = 0;
         vec4 value;
         SPtr<Texture> texture;
         Size arrayIndex;
@@ -71,8 +76,12 @@ namespace Pudu
     {
     public:
         void SetProperty(const std::string_view& name, float value);
+        void SetProperty(const std::string_view& name, int value);
+        void SetProperty(const std::string_view& name, u32 value);
         void SetProperty(const std::string& name, vec2 value);
-        void SetProperty(const std::string& name, const SPtr<Texture>& texture);
+        void SetProperty(const std::string& name, vec3 value);
+        void SetProperty(const std::string& name, vec4 value);
+        void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         void ApplyProperties(const MaterialApplyPropertyGPUTarget& target);
@@ -89,6 +98,7 @@ namespace Pudu
         void ApplyTextureArray(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& target);
         void ApplyVectorValue(const PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
         void ApplyFloatValue(const PropertyUpdateRequest& value, const MaterialApplyPropertyGPUTarget& target);
+        void ApplyIntValue(const PropertyUpdateRequest& value, const MaterialApplyPropertyGPUTarget& target);
 
         //Recursively allocates resources present in the shader node layout
         void AllocateGPUResourcesFromShaderNode(ShaderNodeResourcesAllocationInfo& allocationInfo);
@@ -107,10 +117,14 @@ namespace Pudu
         void SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider);
         SPtr<IShaderObject> GetShader() { return m_shader; }
         ShaderPropertiesBlock* GetPropertiesBlock() { return &m_propertiesBlock; }
-        void ApplyProperties();
+        void ApplyProperties(GPUCommands* commands);
         void SetProperty(const std::string_view& name, float value);
+        void SetProperty(const std::string_view& name, int value);
+        void SetProperty(const std::string_view& name, u32 value);
         void SetProperty(const std::string& name, glm::vec2 value);
-        void SetProperty(const std::string& name, const SPtr<Texture>& texture);
+        void SetProperty(const std::string& name, glm::vec3 value);
+        void SetProperty(const std::string& name, glm::vec4 value);
+        void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         Material* SetScope(const char* scope);

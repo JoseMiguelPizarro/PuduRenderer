@@ -22,7 +22,7 @@ namespace Pudu
 		m_screenColor->width = gpu->WindowWidth;
 		m_screenColor->height = gpu->WindowHeight;
 		m_screenColor->depth = 1;
-		m_screenColor->format = gpu->GetSurfaceFormat();
+		m_screenColor->format = VK_FORMAT_R8G8B8A8_UNORM;
 		m_screenColor->Create(gpu);
 
 		m_postProcessingShader = gpu->CreateShader(m_shaderPath, "Postprocessing");
@@ -41,7 +41,7 @@ namespace Pudu
 			.renderer = renderData.renderer,
 			});
 
-		m_material->ApplyProperties();
+		m_material->ApplyProperties(command.get());
 		command->BindPipeline(pipeline);
 
 		BindMaterialDescriptorSets(pipeline,m_material,renderData);
@@ -58,5 +58,10 @@ namespace Pudu
 		command->Blit(attachments.colorAttachments[0].resource, m_screenColor, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 		command->TransitionTextureLayout(m_screenColor, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		command->TransitionTextureLayout(frameColor, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	}
+
+	void PostProcessingRenderPass::SetExposure(float exposure)
+	{
+		m_material->SetProperty("Data.exposure", exposure);
 	}
 }

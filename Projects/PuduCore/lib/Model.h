@@ -12,7 +12,7 @@ namespace Pudu {
 	{
 	public:
 		std::string Name;
-		Transform Transform;
+		Transform* Transform;
 		std::vector<std::shared_ptr<Mesh>> Meshes;
 		std::vector<SPtr<Material>> Materials;
 	};

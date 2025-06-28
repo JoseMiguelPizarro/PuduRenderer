@@ -295,7 +295,7 @@ namespace Pudu
 
             for (const auto& mat : model->Materials)
             {
-                mat->ApplyProperties();
+                mat->ApplyProperties(commands.get());
             }
 
             BindMaterialDescriptorSets(pipeline, material, frameData);
