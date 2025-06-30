@@ -37,10 +37,14 @@
 #include "FileManager.h"
 #include "RenderFrameData.h"
 #include <vk_mem_alloc.h>
+#include <FileWatch.hpp>
 
 namespace Pudu
 {
     const char* SHADER_ENTRY_POINT = "main";
+
+    std::unordered_map<fs::path, GPUResourceHandle<Shader>> LoadedShaders;
+    std::unordered_map<fs::path, std::unique_ptr<filewatch::FileWatch<std::string>>> watchedFiles;
 
     class FrameGraph;
 
@@ -2832,6 +2836,22 @@ namespace Pudu
         shader->SetDescriptorSetLayouts(layouts);
 
         shader->numActiveLayouts = layouts.size();
+
+        if (!LoadedShaders.contains(shaderPath))
+        {
+            LoadedShaders[shaderPath] = shader->Handle();
+            auto absolutePath = fs::absolute("shaders" / shaderPath);
+
+            watchedFiles[absolutePath] = std::make_unique<filewatch::FileWatch<std::string>>(
+                absolutePath.string().c_str(), [this](const std::string& path, filewatch::Event event)
+                {
+                    if (event == filewatch::Event::modified)
+                    {
+                        LOG("Shader {} has been modified", fs::path(path).filename().string());
+                        ReloadShader(LoadedShaders[fs::path(path)].Get().get());
+                    }
+                });
+        }
 
         return shader;
     }

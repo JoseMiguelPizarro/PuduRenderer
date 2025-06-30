@@ -33,6 +33,7 @@ set(INCLUDE_DIRS
     lib/GLFW/include
     lib/fmt/include
     lib/tiny_obj_loader
+    lib/FileWatch
     Projects/PuduCore/lib
     Projects/PuduRenderer/lib
         Projects/CatDiorama/lib
