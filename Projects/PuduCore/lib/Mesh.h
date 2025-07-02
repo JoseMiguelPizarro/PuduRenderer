@@ -41,6 +41,5 @@ namespace Pudu
 		std::vector<Vertex> m_vertices;
 		std::vector<uint32_t> m_indices;
 		bool m_disposed;
-		std::string m_name;
 	};
 }

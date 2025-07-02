@@ -270,7 +270,11 @@ namespace Pudu
 		SPtr<Shader> GetDefaultOverlayShader();
 		SPtr<Shader> GetDefaultOverlayTextureArrayShader();
 		SPtr<Shader> GetDefaultStandardShader();
+		SPtr<Material> GetDefaultStandardMaterial();
+
 		SPtr<Mesh> GetDefaultQuad();
+		SPtr<Mesh> GetDefaultCube();
+		SPtr<Mesh> GetDefaultSphere();
 #pragma endregion
 
 	private:
@@ -381,7 +385,10 @@ namespace Pudu
 		GPUResourceHandle<Texture> m_defaultNormalmapTexture;
 		GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
 		SPtr<Mesh> m_defaultQuad;
+		SPtr<Mesh> m_defaultCube;
+		SPtr<Mesh> m_defaultSphere;
 		SPtr<Mesh> m_defaultPlane;
+		SPtr<Material> m_defaultStandardMaterial;
 		SPtr<Shader> m_defaultOverlayShader;
 		SPtr<Shader> m_defaultOverlayTextureArrayShader;
 		SPtr<Shader> m_defaultStandardShader;

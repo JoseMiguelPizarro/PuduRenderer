@@ -161,7 +161,7 @@ namespace Pudu
             if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
         }
 
-        session->release();
+        // session->release();
         return compiledData;
     }
 

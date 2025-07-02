@@ -25,7 +25,8 @@ float FilterPCF(float4 sc, Sampler2D shadowMap)
 {
     int2 texDim;
     shadowMap.GetDimensions(texDim.x, texDim.y);
-    float scale = 1.5;
+    texDim = int2(2048,2048);
+    float scale = .5;
     float dx = scale * 1.0 / float(texDim.x);
     float dy = scale * 1.0 / float(texDim.y);
 

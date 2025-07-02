@@ -82,6 +82,7 @@ namespace Pudu
         void SetProperty(const std::string& name, vec3 value);
         void SetProperty(const std::string& name, vec4 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
+        void SetProperty(const std::string& name, GPUResourceHandle<Texture> texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         void ApplyProperties(const MaterialApplyPropertyGPUTarget& target);
@@ -125,6 +126,7 @@ namespace Pudu
         void SetProperty(const std::string& name, glm::vec3 value);
         void SetProperty(const std::string& name, glm::vec4 value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
+        void SetProperty(const std::string& name, const GPUResourceHandle<Texture> texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         Material* SetScope(const char* scope);

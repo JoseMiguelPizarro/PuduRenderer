@@ -74,12 +74,12 @@ void Test_PBR::OnInit()
     SPtr<Texture2d> silverHeightTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_height.png", settings);
 
     projection.nearPlane = 5;
-    projection.farPlane = 50;
-    directionalLight = {};
-    directionalLight.Projection = projection;
-    directionalLight.GetTransform().SetForward({1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f});
-    directionalLight.GetTransform().SetLocalPosition({-20, 20, -20});
-    m_scene.directionalLight = &directionalLight;
+    projection.farPlane = 20;
+    m_directionalLight = {};
+    m_directionalLight.Projection = projection;
+    m_directionalLight.GetTransform().SetForward({1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f});
+    m_directionalLight.GetTransform().SetLocalPosition({-m_lightDistance, m_lightDistance, -m_lightDistance});
+    m_scene.directionalLight = &m_directionalLight;
 
 
     //SKYBOX
@@ -108,7 +108,14 @@ void Test_PBR::OnInit()
     layer = 2;
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
-    m_scene.AddEntity(m_model);
+    Model sphereModel;
+    sphereModel.Meshes.push_back(Graphics.GetDefaultSphere());
+    sphereModel.Materials.push_back(Graphics.GetDefaultStandardMaterial());
+    auto sphereEntity = EntityManager::AllocateRenderEntity(sphereModel);
+
+
+    m_scene.AddEntity(sphereEntity);
+    //m_scene.AddEntity(m_model);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
 }
@@ -230,10 +237,15 @@ void Test_PBR::DrawImGUI()
     }
 
     ImGui::Text("Light");
-    vec3 forward = directionalLight.GetTransform().GetForward();
+    vec3 forward = m_directionalLight.GetTransform().GetForward();
     if (ImGui::InputFloat3("Light Direction", &forward[0]))
     {
-        directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
+        m_directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
+    }
+
+    if (ImGui::SliderFloat("Light Distance", &m_lightDistance, 0.1f, 30.0f))
+    {
+        m_directionalLight.GetTransform().SetLocalPosition({-m_lightDistance, m_lightDistance, -m_lightDistance});
     }
 
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;
@@ -282,4 +294,16 @@ void Test_PBR::DrawImGUI()
     {
         m_puduRenderer.SetGamma(gamma);
     }
+
+    ImGui::Text("Shadows");
+    static float shadowBias;
+    static float shadowSlopeBias;
+    if (ImGui::SliderFloat("ShadowBias", &shadowBias, 0.0f, 10.f)
+        || ImGui::SliderFloat("ShadowSlopeBias", &shadowSlopeBias, 0.0f, 10.f))
+    {
+        m_puduRenderer.SetShadowBias(shadowSlopeBias, shadowBias);
+    }
+
+    ImGui::SliderFloat("Near", &m_directionalLight.Projection.nearPlane, 0.0f, 100.f);
+    ImGui::SliderFloat("Far", &m_directionalLight.Projection.farPlane, 0.0f, 100.f);
 }

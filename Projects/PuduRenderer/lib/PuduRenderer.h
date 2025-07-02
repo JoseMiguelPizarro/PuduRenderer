@@ -28,6 +28,7 @@ namespace Pudu
         void SetGamma(float gamma);
         void EnableToneMapping(bool enable) const;
         void SetExposure(float value) const;
+        void SetShadowBias(float slope, float bias);
 
     protected:
         void OnInit(PuduGraphics* graphics, PuduApp* app) override;
@@ -56,7 +57,7 @@ namespace Pudu
         SPtr<RenderTexture> m_colorCopyRT;
         SPtr<RenderPass> m_depthRenderPass;
         SPtr<RenderPass> m_forwardRenderPass;
-        SPtr<RenderPass> m_shadowMapRenderPass;
+        SPtr<ShadowMapRenderPass> m_shadowMapRenderPass;
         SPtr<PostProcessingRenderPass> m_postProcessingRenderPass;
         SPtr<ImguiRenderPass> m_imguiRenderPass;
         SPtr<GraphicsBuffer> m_lightingBuffer;

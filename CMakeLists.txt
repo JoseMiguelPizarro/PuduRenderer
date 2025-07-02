@@ -26,7 +26,6 @@ set(INCLUDE_DIRS
     ${VULKAN_SDK}/Include/vma
     lib/fastgltf/include
     lib/simdjson/include
-    lib/boolinq
     lib/stb
     lib/GLFW/include
     lib/FileWatch

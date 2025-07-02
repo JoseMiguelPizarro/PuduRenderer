@@ -68,6 +68,11 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, texture, mipLevel);
     }
 
+    void Material::SetProperty(const std::string& name, const GPUResourceHandle<Texture> texture, u32 mipLevel)
+    {
+        m_propertiesBlock.SetProperty(name, texture, mipLevel);
+    }
+
     void Material::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)
     {
         m_propertiesBlock.SetProperty(name, buffer);
@@ -188,6 +193,12 @@ namespace Pudu
         updateRequest.property.type = ShaderPropertyType::Texture;
 
         m_descriptorUpdateRequests.push_back(updateRequest);
+    }
+
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, const GPUResourceHandle<Texture> texture,
+        u32 mipLevel)
+    {
+        SetProperty(name,texture.Get(),mipLevel);
     }
 
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)

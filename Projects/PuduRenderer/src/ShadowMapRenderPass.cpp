@@ -38,4 +38,14 @@ namespace Pudu
         frameData.currentCommand->SetDepthBias(m_depthBiasSlope, m_depthConstantBias);
         RenderPass::Render(frameData);
     }
+
+    void ShadowMapRenderPass::SetDepthBiasSlope(float slope)
+    {
+        m_depthBiasSlope = slope;
+    }
+
+    void ShadowMapRenderPass::SetDepthConstantBias(float bias)
+    {
+        m_depthConstantBias = bias;
+    }
 }

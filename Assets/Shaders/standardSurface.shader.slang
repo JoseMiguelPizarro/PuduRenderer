@@ -44,8 +44,6 @@ VSOut vertexMain(VertexInput input)
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.ShadowCoords = GetShadowCoord(lightingBuffer.shadowMatrix, lightingBuffer.lightMatrix, output.PosWS);
 
-
-
     return output;
 }
 

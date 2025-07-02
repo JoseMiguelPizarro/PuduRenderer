@@ -79,7 +79,7 @@ namespace Pudu
             return this->m_Index == other.m_Index;
         }
 
-        SPtr<T> Get()
+        SPtr<T> Get() const
         {
             ASSERT(m_Index != k_INVALID_HANDLE, "Trying to get resource [{}] with invalid handle",
                    ToString(m_underlyingType));

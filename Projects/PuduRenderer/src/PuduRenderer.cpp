@@ -92,6 +92,12 @@ namespace Pudu
         m_postProcessingRenderPass->SetExposure(value);
     }
 
+    void PuduRenderer::SetShadowBias(float slope, float bias)
+    {
+        m_shadowMapRenderPass->SetDepthBiasSlope(slope);
+        m_shadowMapRenderPass->SetDepthConstantBias(bias);
+    }
+
     void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
     {
         u32 brdfLUTResolution = 256;
