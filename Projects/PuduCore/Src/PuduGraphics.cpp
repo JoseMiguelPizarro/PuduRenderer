@@ -3,9 +3,6 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include <fmt/core.h>
-
-#include "VmaUsage.h"
 
 #include <limits>
 
@@ -18,11 +15,9 @@
 #include <Logger.h>
 #include <set>
 #include "UniformBufferObject.h"
-#include <chrono>
 
 #include "DrawCall.h"
 
-#include "SPIRVParser.h"
 #include "Frame.h"
 #include "FrameGraph/FrameGraph.h"
 
@@ -1457,7 +1452,7 @@ namespace Pudu
         for (u32 i = 0; i < imageCount; i++)
         {
             SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (u64)swapchain.images[i],
-                            fmt::format("Swapchain Image {}", i).c_str());
+                            std::format("Swapchain Image {}", i).c_str());
         }
 
         LOG("Swap chain images created!");
@@ -1473,14 +1468,14 @@ namespace Pudu
             createData.image = swapchain.images[i];
             createData.format = m_swapChainImageFormat;
             createData.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-            createData.name = fmt::format("Swapchain Image View {}", i).c_str();
+            createData.name = std::format("Swapchain Image View {}", i).c_str();
 
             auto imageView = CreateImageView(createData);
 
             swapchain.imageViews[i] = imageView;
 
             SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (u64)swapchain.imageViews[i],
-                            fmt::format("Swapchain Image View {}", i).c_str());
+                            std::format("Swapchain Image View {}", i).c_str());
 
             auto handle = m_resources.AllocateRenderTexture();
             auto texture = m_resources.GetTexture<RenderTexture>(handle->Handle());
@@ -1978,7 +1973,7 @@ namespace Pudu
             for (size_t i = 0; i < commands.size(); i++)
             {
                 SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commands[i]->vkHandle,
-                                fmt::format("{} {}", name, i).c_str());
+                                std::format("{} {}", name, i).c_str());
             }
         }
 
@@ -2199,7 +2194,7 @@ namespace Pudu
 
         auto pipeline = m_resources.AllocatePipeline();
         auto renderPass = creationData.renderPassHandle.Get();
-        pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
+        pipeline->name = std::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
         pipeline->m_renderPass = renderPass->Handle();
 
         CreateVKGraphicsPipeline(pipeline.get(), creationData);
@@ -2699,9 +2694,9 @@ namespace Pudu
             frame.ComputeCommandBuffer = buffers[i * 2 + 1];
 
             SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.CommandBuffer->vkHandle,
-                            fmt::format("Frame {} cmd: graphics queue", i).c_str());
+                            std::format("Frame {} cmd: graphics queue", i).c_str());
             SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.ComputeCommandBuffer->vkHandle,
-                            fmt::format("Frame {} cmd: compute queue", i).c_str());
+                            std::format("Frame {} cmd: compute queue", i).c_str());
         }
 
         LOG("Created command buffer");
@@ -2718,8 +2713,8 @@ namespace Pudu
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(fmt::format("Image available {}", i).c_str());
-            m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(fmt::format("Render Finished {}", i).c_str());
+            m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(std::format("Image available {}", i).c_str());
+            m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(std::format("Render Finished {}", i).c_str());
             vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence);
         }
 

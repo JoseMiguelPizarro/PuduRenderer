@@ -24,15 +24,11 @@ find_package(KTX REQUIRED)
 set(INCLUDE_DIRS
     ${VULKAN_SDK}/Include
     ${VULKAN_SDK}/Include/vma
-    lib/dxc/include
     lib/fastgltf/include
     lib/simdjson/include
     lib/boolinq
-    lib/SPIRV_Reflect/Include
     lib/stb
     lib/GLFW/include
-    lib/fmt/include
-    lib/tiny_obj_loader
     lib/FileWatch
     Projects/PuduCore/lib
     Projects/PuduRenderer/lib
@@ -43,12 +39,9 @@ include_directories(${INCLUDE_DIRS})
 # Library directories
 set(LIB_DIRS
     ${VULKAN_SDK}/Lib
-    lib/dxc/lib
     lib/fastgltf/${CMAKE_BUILD_TYPE}
     lib/simdjson/${CMAKE_BUILD_TYPE}
-    lib/SPIRV_Reflect/${CMAKE_BUILD_TYPE}
     lib/GLFW/Lib
-    lib/fmt/${CMAKE_BUILD_TYPE}
     lib/ktx/lib
 )
 link_directories(${LIB_DIRS})
@@ -56,11 +49,8 @@ link_directories(${LIB_DIRS})
 # Libraries
 set(LIBS
     vulkan-1
-    dxcompiler
     fastgltf
-    SPIRV-Reflect
     glfw3
-    fmtd
 )
 
 set(SLANG_VERSION "2025.10")

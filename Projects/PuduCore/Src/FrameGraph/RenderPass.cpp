@@ -4,7 +4,6 @@
 #include "Scene.h"
 #include "PuduGraphics.h"
 #include "Resources/Resources.h"
-#include "SPIRVParser.h"
 #include <GPUCommands.h>
 
 #include "Material.h"

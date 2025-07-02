@@ -7,10 +7,6 @@
 #include "Logger.h"
 #include "PuduGraphics.h"
 
-#ifndef TINYOBJLOADER_IMPLEMENTATION
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-#endif
 #include <MaterialCreationData.h>
 #include <EntityManager.h>
 
@@ -75,55 +71,6 @@ namespace Pudu
         root = root / path;
 
         return ReadFile(fs::absolute(root));
-    }
-
-    MeshCreationData FileManager::LoadModelObj(std::string const& assetPath)
-    {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-        std::string warn, err;
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
-
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, GetAssetPath(assetPath).string().c_str()))
-        {
-            LOG_ERROR("{} {}", warn, err);
-        }
-        for (auto& shape : shapes)
-        {
-            for (const auto& index : shape.mesh.indices)
-            {
-                Vertex vertex{};
-
-                vertex.pos = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2],
-                };
-
-                vertex.texcoord = {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-                    //Obj assumes bottom left corner to be 0. vulkan upload images from (0,-1)
-                };
-
-                vertex.color =
-                {
-                    attrib.colors[3 * index.vertex_index + 0], attrib.colors[3 * index.vertex_index + 1],
-                    attrib.colors[3 * index.vertex_index + 2]
-                };
-
-                vertices.push_back(vertex);
-                indices.push_back(static_cast<uint32_t>(indices.size()));
-            }
-        }
-
-        MeshCreationData data;
-        data.Vertices = vertices;
-        data.Indices = indices;
-
-        return data;
     }
 
     fs::path GetPathFromTextureIndex(fg::Expected<fastgltf::Asset>& asset, uint16_t index, fs::path const& path)
