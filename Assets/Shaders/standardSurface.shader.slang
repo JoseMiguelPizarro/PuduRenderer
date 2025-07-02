@@ -17,6 +17,7 @@ struct StandardMaterial
     float3 F90 = {0.5f, 0.5f, 0.5f};
     float parallax = 0;
 }
+
 ParameterBlock<StandardMaterial> material;
 
 // struct SkyboxAmbientSampler:IDiffuseAmbientSampler
@@ -28,6 +29,8 @@ ParameterBlock<StandardMaterial> material;
 //         return m_skybox.Sample(n).xyz;
 //     }
 // }
+
+
 
 [shader("vertex")]
 VSOut vertexMain(VertexInput input)
@@ -52,7 +55,9 @@ float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
     float4 col = 0;
-    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap));
+
+
+    float shadow = saturate(FilterPCF(input.ShadowCoords, GLOBALS.shadowMap));
 
     float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);

@@ -304,8 +304,8 @@ namespace Pudu
 
         auto shadowRT = graphics->GetRenderTexture();
         shadowRT->depth = 1;
-        shadowRT->width = graphics->WindowWidth;
-        shadowRT->height = graphics->WindowHeight;
+        shadowRT->width = 2048; //TODO: HARDCODED SHADOW RESOLUTION
+        shadowRT->height = 2048;
         shadowRT->format = VK_FORMAT_D16_UNORM;
         shadowRT->name = "ShadowMap";
 

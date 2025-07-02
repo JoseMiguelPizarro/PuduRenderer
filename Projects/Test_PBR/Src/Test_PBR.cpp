@@ -77,8 +77,10 @@ void Test_PBR::OnInit()
     projection.farPlane = 20;
     m_directionalLight = {};
     m_directionalLight.Projection = projection;
-    m_directionalLight.GetTransform().SetForward({1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f});
-    m_directionalLight.GetTransform().SetLocalPosition({-m_lightDistance, m_lightDistance, -m_lightDistance});
+    m_directionalLight.GetTransform().SetForward({1.0f,-1, 1}, {0.0f, 1.0f, 0.0f});
+    glm::vec3 lightDirection = -m_directionalLight.GetTransform().GetForward();
+
+    m_directionalLight.GetTransform().SetLocalPosition( {lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance});
     m_scene.directionalLight = &m_directionalLight;
 
 
@@ -114,8 +116,8 @@ void Test_PBR::OnInit()
     auto sphereEntity = EntityManager::AllocateRenderEntity(sphereModel);
 
 
-    m_scene.AddEntity(sphereEntity);
-    //m_scene.AddEntity(m_model);
+    // m_scene.AddEntity(sphereEntity);
+    m_scene.AddEntity(m_model);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
 }
@@ -245,7 +247,8 @@ void Test_PBR::DrawImGUI()
 
     if (ImGui::SliderFloat("Light Distance", &m_lightDistance, 0.1f, 30.0f))
     {
-        m_directionalLight.GetTransform().SetLocalPosition({-m_lightDistance, m_lightDistance, -m_lightDistance});
+        auto lightDirection = -m_directionalLight.GetTransform().GetForward();
+        m_directionalLight.GetTransform().SetLocalPosition( {lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance});
     }
 
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;

@@ -15,7 +15,7 @@ namespace Pudu
 		return Pudu::LookAtInverse(m_transform.GetLocalPosition(), forward, {0, 1, 0});
 	}
 
-	glm::vec3 Light::Direction() 
+	glm::vec3 Light::Direction()
 	{
 		return { m_transform.GetForward()};
 	}
