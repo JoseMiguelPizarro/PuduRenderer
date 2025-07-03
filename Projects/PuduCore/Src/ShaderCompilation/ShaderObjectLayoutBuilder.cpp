@@ -12,7 +12,6 @@
 #include "vulkan/vk_enum_string_helper.h"
 #define VK_USE_PLATFORM_WIN32_KHR
 
-#include <boolinq.h>
 #include <map>
 #include <fastgltf/types.hpp>
 
@@ -250,8 +249,8 @@ namespace Pudu
                         {
                             Size stringSize = 0;
                             scope = scopeAttribute->getArgumentValueString(0, &stringSize);
-                            if (stringSize > 0)
-                                scope = scope.substr(1, stringSize - 2);
+                            // if (stringSize > 0)
+                            //     scope = scope.substr(1, stringSize - 2);
 
                             //Hack since Slang API doen'st return the real string but the whole code
 
@@ -338,6 +337,7 @@ namespace Pudu
 
         ///Here we should push a binding
         case TypeReflection::Kind::Resource:
+        case TypeReflection::Kind::SamplerState:
             {
                 accessPath.cumulativeOffset->PushIndex();
 
@@ -415,7 +415,9 @@ namespace Pudu
             }
             break;
 
-        default: break;
+        default:
+            ASSERT(false, "Unknown type layout kind");
+            break;
         }
         m_indentation--;
     }

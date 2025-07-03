@@ -378,9 +378,7 @@ namespace Pudu
         normalRP->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load);
         normalRP->SetReplacementMaterial(normalMaterial);
 
-
         const uint32_t grassCount = 1;
-
 
         auto grassPointCloud = FileManager::LoadPointCloud("models/Diorama_Cat/CatDiorama_Grass.xyz");
         const uint32_t instances = grassPointCloud.size();
@@ -390,11 +388,9 @@ namespace Pudu
                                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
-
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         forwardColorCopyRP->SetBlitTargets(colorRT, m_colorCopyRT);
         forwardColorCopyRP->SetName("ForwardColorCopy");
-
 
         auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         depthCopyRP->SetBlitTargets(depthRT, m_depthCopyRT);

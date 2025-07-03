@@ -18,7 +18,6 @@ struct StandardMaterial
     float parallax = 0;
 }
 
-
 ParameterBlock<StandardMaterial> material;
 
 // struct SkyboxAmbientSampler:IDiffuseAmbientSampler

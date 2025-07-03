@@ -36,6 +36,7 @@ public struct Globals
     public SamplerCube IBL_Diffuse;
     public uint IBL_Levels;
     public Sampler2D BRDF_LUT;
+    public SamplerState LinearSampler;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
     public float gamma = 2.2;
