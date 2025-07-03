@@ -27,7 +27,7 @@ public struct GlobalsConstants
 
 public struct Globals
 {
-    public Sampler2D shadowMap;
+    public Sampler2DShadow shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;

@@ -58,7 +58,7 @@ void CatDiorama::OnInit()
 
     m_puduRenderer.Init(&Graphics, this);
 
-    standardShader = Graphics.CreateShader("standard.shader.slang", "standard");
+    standardShader = Graphics.CreateShader("standardSurface.shader.slang", "standard");
 
     projection.nearPlane = 5;
     projection.farPlane = 50;

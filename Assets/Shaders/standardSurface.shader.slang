@@ -1,5 +1,5 @@
 #include "Lib/DefaultVertexInput.hlsl"
-#include "lib/Shadowmap.slang"
+#include "lib/PuduShadowModule.slang"
 
 import PuduGraphicsModule;
 import PuduCoreModule;
@@ -17,6 +17,7 @@ struct StandardMaterial
     float3 F90 = {0.5f, 0.5f, 0.5f};
     float parallax = 0;
 }
+
 
 ParameterBlock<StandardMaterial> material;
 
@@ -93,6 +94,7 @@ float4 fragmentMain(VSOut input)
     m.F0 = material.F0.xyz;
     m.F90 = material.F90.xyz;
     m.Emissive = material.emissiveTex.Sample(uv).xyz;
+
 
     col.xyz = StandardSurface(m);
     return col;

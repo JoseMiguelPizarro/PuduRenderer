@@ -306,7 +306,7 @@ namespace Pudu
         shadowRT->depth = 1;
         shadowRT->width = 2048; //TODO: HARDCODED SHADOW RESOLUTION
         shadowRT->height = 2048;
-        shadowRT->format = VK_FORMAT_D16_UNORM;
+        shadowRT->format = VK_FORMAT_D32_SFLOAT;
         shadowRT->name = "ShadowMap";
 
         auto colorRT = graphics->GetRenderTexture();
