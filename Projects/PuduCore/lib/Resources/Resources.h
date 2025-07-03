@@ -373,6 +373,7 @@ namespace Pudu
     {
         bool wrap = true;
         uint32_t maxLOD = 1;
+        std::string name;
     };
 
 
@@ -416,6 +417,7 @@ namespace Pudu
 
     struct Framebuffer : GPUResource<Framebuffer>
     {
+        GPUResourceType Type() override { return GPUResourceType::Framebuffer; }
         VkFramebuffer vkHandle;
 
         GPUResourceHandle<RenderPass> renderPassHandle;

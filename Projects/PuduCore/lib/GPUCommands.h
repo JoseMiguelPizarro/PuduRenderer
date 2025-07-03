@@ -27,7 +27,6 @@ namespace Pudu
         };
 
     public:
-
         GPUCommands() = default;
         /// <summary>
         /// Creates a new GPU command buffer with specified handle and graphics context
@@ -221,7 +220,8 @@ namespace Pudu
         /// <param name="dstLayout">Destination texture layout</param>
         /// <param name="regions">Array of blit regions</param>
         /// <param name="regionCount">Number of regions to blit</param>
-        void Blit(const Texture* src, const Texture* dst, VkFilter filter, VkImageLayout srcLayout, VkImageLayout dstLayout,
+        void Blit(const Texture* src, const Texture* dst, VkFilter filter, VkImageLayout srcLayout,
+                  VkImageLayout dstLayout,
                   VkImageBlit2* regions, Size regionCount = 1) const;
         /// <summary>
         /// Dispatches compute work
@@ -325,6 +325,7 @@ namespace Pudu
         VkCommandBuffer vkHandle;
         Framebuffer* currentFramebuffer;
         bool HasRecordedCommand() { return m_hasRecordedCommand; }
+        GPUResourceType Type() override { return GPUResourceType::GPUCommands; };
 
     private:
         friend class PuduGraphics;

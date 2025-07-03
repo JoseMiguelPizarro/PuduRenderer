@@ -34,6 +34,7 @@ namespace Pudu {
 	//Represents an allocated descriptor set layout
 	struct DescriptorSetLayout :GPUResource<DescriptorSetLayout>
 	{
+		GPUResourceType Type() override{ return GPUResourceType::DescriptorSetLayout;}
 		std::string name;
 		std::string scope;
 		VkDescriptorSetLayout vkHandle;

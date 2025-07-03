@@ -395,6 +395,12 @@ namespace Pudu
         auto depthCopyRP = graphics->GetRenderPass<BlitRenderPass>();
         depthCopyRP->SetBlitTargets(depthRT, m_depthCopyRT);
 
+        SamplerCreationData samplerData{};
+        samplerData.wrap = true;
+        samplerData.name = "sampler_linear";
+
+        auto linerSampler = graphics->CreateSampler(samplerData);
+
         std::array<VkDrawIndirectCommand, grassCount> indirectCommands{};
         for (size_t i = 0; i < grassCount; i++)
         {
@@ -464,6 +470,7 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.linearSampler", linerSampler.Get());
 
         SetRoughnessScale(1.);
         SetGamma(2.2);

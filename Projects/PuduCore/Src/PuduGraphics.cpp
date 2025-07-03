@@ -2449,6 +2449,15 @@ namespace Pudu
         return texture->Handle();
     }
 
+    GPUResourceHandle<TextureSampler> PuduGraphics::CreateSampler(const SamplerCreationData& creationData)
+    {
+        auto sampler = m_resources.AllocateSampler();
+
+        CreateVKTextureSampler(creationData, sampler->vkHandle);
+
+        return sampler->Handle();
+    }
+
     void PuduGraphics::CreateVKTexture(Texture* texture)
     {
         VkImageCreateInfo imageCreateInfo{};
@@ -2770,7 +2779,7 @@ namespace Pudu
         texture2d.vkImageViewHandle = CreateImageView(createData);
     }
 
-    void PuduGraphics::CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler)
+    void PuduGraphics::CreateVKTextureSampler(const SamplerCreationData& data, VkSampler& sampler)
     {
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

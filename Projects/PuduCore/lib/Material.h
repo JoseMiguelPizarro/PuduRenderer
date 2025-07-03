@@ -23,6 +23,7 @@ namespace Pudu
             Vec3,
             Vec4,
             Texture,
+            Sampler,
             Buffer,
             TextureArray,
             Float,
@@ -38,6 +39,7 @@ namespace Pudu
         u32 mipLevel = 0;
         vec4 value;
         SPtr<Texture> texture;
+        SPtr<TextureSampler> sampler;
         Size arrayIndex;
         SPtr<GraphicsBuffer> buffer;
         std::vector<SPtr<Texture>>* textureArray;
@@ -60,6 +62,7 @@ namespace Pudu
         VkDescriptorSet* m_descriptorSets;
         //Remap absolute layout index to material allocated layout index
         Size* m_descriptorSetRemap = nullptr;
+
     private:
         friend class Material;
         friend class Shader;
@@ -81,13 +84,13 @@ namespace Pudu
         void SetProperty(const std::string& name, vec2 value);
         void SetProperty(const std::string& name, vec3 value);
         void SetProperty(const std::string& name, vec4 value);
+        void SetProperty(const std::string& name, SPtr<TextureSampler> value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, GPUResourceHandle<Texture> texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);
         void SetProperty(const std::string& name, std::vector<SPtr<Texture>>* textureArray);
         void ApplyProperties(const MaterialApplyPropertyGPUTarget& target);
         std::vector<SPtr<GPUResourceBase>>* GetAllocatedResources();
-
 
     private:
         friend class Material;
@@ -96,6 +99,7 @@ namespace Pudu
 
         void ApplyTexture(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
         void ApplyBuffer(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
+        void ApplyTextureSampler(const PropertyUpdateRequest& value, const MaterialApplyPropertyGPUTarget& target);
         void ApplyTextureArray(PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& target);
         void ApplyVectorValue(const PropertyUpdateRequest& request, const MaterialApplyPropertyGPUTarget& settings);
         void ApplyFloatValue(const PropertyUpdateRequest& value, const MaterialApplyPropertyGPUTarget& target);
@@ -113,6 +117,7 @@ namespace Pudu
     class Material final : public GPUResource<Material>
     {
     public:
+        GPUResourceType Type() override { return GPUResourceType::Material; }
         explicit Material(PuduGraphics* graphics);
         void SetShader(const SPtr<IShaderObject>& shader);
         void SetDescriptorProvider(const SPtr<IDescriptorProvider>& descriptorProvider);
@@ -125,6 +130,7 @@ namespace Pudu
         void SetProperty(const std::string& name, glm::vec2 value);
         void SetProperty(const std::string& name, glm::vec3 value);
         void SetProperty(const std::string& name, glm::vec4 value);
+        void SetProperty(const std::string& name, SPtr<TextureSampler> value);
         void SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const GPUResourceHandle<Texture> texture, u32 mipLevel = 0);
         void SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer);

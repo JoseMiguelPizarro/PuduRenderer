@@ -25,6 +25,11 @@ namespace Pudu
 	private:
 		friend PuduGraphics;
 		void Destroy();
+
+	public:
+		GPUResourceType Type() override {return GPUResourceType::Buffer;}
+
+	private:
 		bool m_disposed;
 	};
 };

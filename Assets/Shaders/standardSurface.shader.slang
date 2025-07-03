@@ -77,7 +77,6 @@ float4 fragmentMain(VSOut input)
      }
 
     float3 albedo = material.albedoTex.Sample(uv).rgb;
-
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal);

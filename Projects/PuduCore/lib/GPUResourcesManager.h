@@ -33,7 +33,8 @@ namespace Pudu
         SPtr<Texture> GetTextureByName(const char* name);
         SPtr<Texture2d> AllocateTexture2D();
         SPtr<TextureCube> AllocateTextureCube();
-        std::shared_ptr<Texture2DArray> AllocateTexture2DArray();
+        SPtr<Texture2DArray> AllocateTexture2DArray();
+        SPtr<TextureSampler> AllocateSampler();
 
 
         SPtr<RenderPass> GetRenderPass(GPUResourceHandle<RenderPass> handle);
@@ -128,6 +129,7 @@ namespace Pudu
 
         PuduGraphics* m_graphics = nullptr;
         ResourcePool<SPtr<Texture>> m_textures;
+        ResourcePool<SPtr<TextureSampler>> m_samplers;
         ResourcePool<SPtr<Shader>> m_shaders;
         ResourcePool<SPtr<ShaderState>> m_shaderStates;
         ResourcePool<SPtr<Mesh>> m_meshes;

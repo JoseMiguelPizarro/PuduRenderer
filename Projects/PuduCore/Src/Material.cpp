@@ -63,6 +63,11 @@ namespace Pudu
         m_propertiesBlock.SetProperty(name, value);
     }
 
+    void Material::SetProperty(const std::string& name, SPtr<TextureSampler> value)
+    {
+        m_propertiesBlock.SetProperty(name, value);
+    }
+
     void Material::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
         m_propertiesBlock.SetProperty(name, texture, mipLevel);
@@ -184,6 +189,16 @@ namespace Pudu
         m_descriptorUpdateRequests.push_back(request);
     }
 
+    void ShaderPropertiesBlock::SetProperty(const std::string& name, SPtr<TextureSampler> value)
+    {
+        PropertyUpdateRequest request;
+        request.property.name = name;
+        request.property.type = ShaderPropertyType::Sampler;
+        request.property.sampler = value;
+
+        m_descriptorUpdateRequests.push_back(request);
+    }
+
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<Texture>& texture, u32 mipLevel)
     {
         PropertyUpdateRequest updateRequest{};
@@ -230,6 +245,11 @@ namespace Pudu
             case ShaderPropertyType::Texture:
                 {
                     ApplyTexture(request, target);
+                    break;
+                }
+            case ShaderPropertyType::Sampler:
+                {
+                    ApplyTextureSampler(request, target);
                     break;
                 }
             case ShaderPropertyType::Buffer:
@@ -309,6 +329,18 @@ namespace Pudu
         }
         else
             LOG_WARNING("Buffer {} not found", request.property.name.c_str());
+    }
+
+    void ShaderPropertiesBlock::ApplyTextureSampler(const PropertyUpdateRequest& value,
+        const MaterialApplyPropertyGPUTarget& target)
+    {
+        auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
+        auto field = shaderCursor.Field(value.property.name.c_str());
+
+        if (field.IsValid())
+        {
+            field.Write(value.property.sampler);
+        }
     }
 
     void ShaderPropertiesBlock::ApplyTextureArray(PropertyUpdateRequest& request,

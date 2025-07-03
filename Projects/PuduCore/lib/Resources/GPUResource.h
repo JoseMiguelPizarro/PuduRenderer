@@ -94,7 +94,11 @@ namespace Pudu
         GPUResourceHandle<T> Handle() { return m_handle; }
 
 
-        virtual GPUResourceType Type() { return GPUResourceType::UNDEFINED; };
+        virtual GPUResourceType Type()
+        {
+            ASSERT(false, "UNDEFINED TYPE. Did you forget to override Type() on child GPUResource class?");
+            return GPUResourceType::UNDEFINED;
+        };
         virtual ~GPUResource() = default;
 
     protected:
