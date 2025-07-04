@@ -92,6 +92,9 @@ extern "C" int __getdirentries64(int, char *, int, long *);
 #endif // FILEWATCH_PLATFORM_MAC
 
 namespace filewatch {
+
+
+
 	enum class Event {
 		added,
 		removed,
@@ -161,6 +164,15 @@ namespace filewatch {
             return path == "." || path == "..";
       }
 
+	template<class StringType>
+	struct CallbackInformation
+      {
+      	StringType file;
+      	Event event;
+      	StringType fullPath;
+      };
+
+
 	/**
 	* \class FileWatch
 	*
@@ -178,7 +190,7 @@ namespace filewatch {
 
 	public:
 
-		FileWatch(StringType path, UnderpinningRegex pattern, std::function<void(const StringType& file, const Event event_type)> callback) :
+		FileWatch(StringType path, UnderpinningRegex pattern, std::function<void(CallbackInformation<StringType>)> callback) :
 			_path(absolute_path_of(path)),
 			_pattern(pattern),
 			_callback(callback),
@@ -187,7 +199,7 @@ namespace filewatch {
 			init();
 		}
 
-		FileWatch(StringType path, std::function<void(const StringType& file, const Event event_type)> callback) :
+		FileWatch(StringType path, std::function<void(CallbackInformation<StringType>)> callback) :
 			FileWatch<StringType>(path, UnderpinningRegex(_regex_all), callback) {}
 
 		~FileWatch() {
@@ -228,16 +240,17 @@ namespace filewatch {
 
 		static constexpr std::size_t _buffer_size = { 1024 * 256 };
 
+
 		// only used if watch a single file
 		StringType _filename;
 
-		std::function<void(const StringType& file, const Event event_type)> _callback;
+		std::function<void(CallbackInformation<StringType>)> _callback;
 
 		std::thread _watch_thread;
 
 		std::condition_variable _cv;
 		std::mutex _callback_mutex;
-		std::vector<std::pair<StringType, Event>> _callback_information;
+		std::vector<CallbackInformation<StringType>> _callback_information;
 		std::thread _callback_thread;
 
 		std::promise<void> _running;
@@ -555,7 +568,11 @@ namespace filewatch {
 				//dispatch callbacks
 				{
 					std::lock_guard<std::mutex> lock(_callback_mutex);
-					_callback_information.insert(_callback_information.end(), parsed_information.begin(), parsed_information.end());
+					for (auto info: parsed_information)
+					{
+
+						_callback_information.push_back({info.first, info.second});
+					}
 				}
 				_cv.notify_all();
 			} while (_destory == false);
@@ -651,7 +668,10 @@ namespace filewatch {
 					//dispatch callbacks
 					{
 						std::lock_guard<std::mutex> lock(_callback_mutex);
-						_callback_information.insert(_callback_information.end(), parsed_information.begin(), parsed_information.end());
+						for (auto info: parsed_information)
+						{
+							_callback_information.push_back({info.first, info.second});
+						}
 					}
 					_cv.notify_all();
 				}
@@ -1229,7 +1249,12 @@ namespace filewatch {
 					if (_callback) {
 						try
 						{
-							_callback(file.first, file.second);
+							CallbackInformation<StringType> callback_info;
+							callback_info.file = file.file;
+							callback_info.event = file.event;
+							callback_info.fullPath = _path;
+
+							_callback(callback_info);
 						}
 						catch (const std::exception&)
 						{

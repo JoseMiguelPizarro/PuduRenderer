@@ -63,6 +63,8 @@ namespace Pudu
                                                     bool compute) const
     {
         Slang::ComPtr<IBlob> diagnostics;
+        ShaderCompilationObject compiledData;
+
 
         //TODO: This is a kinda dirty solution, it will increase shader compilation time but so far, recreating the session has been the only way i've found to do hot reloading
         TargetDesc targetDesc;
@@ -98,7 +100,16 @@ namespace Pudu
 
         if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
-        IModule* module = session->loadModule(path, diagnostics.writeRef());
+        IModule* shaderModule = session->loadModule(path, diagnostics.writeRef());
+        auto dependenciesCount = shaderModule->getDependencyFileCount();
+
+        compiledData.m_dependencies.push_back(path);
+        for (auto i = 0; i < dependenciesCount; i++)
+        {
+            auto dependencyPath = fs::path(shaderModule->getDependencyFilePath(i));
+        //    std::ranges::transform(dependencyPath, dependencyPath.begin(), ::tolower);
+            compiledData.m_dependencies.push_back(dependencyPath);
+        }
 
         if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
@@ -108,7 +119,7 @@ namespace Pudu
         {
             Slang::ComPtr<IEntryPoint> e;
 
-            module->findEntryPointByName(entryPoint, e.writeRef());
+            shaderModule->findEntryPointByName(entryPoint, e.writeRef());
 
             slangEntryPoints.push_back(e);
         }
@@ -122,7 +133,7 @@ namespace Pudu
         if (!compute)
             components.push_back(baseModule);
 
-        components.push_back(module);
+        components.push_back(shaderModule);
 
         components.append_range(slangEntryPoints);
 
@@ -140,7 +151,6 @@ namespace Pudu
         if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         //Global
-        ShaderCompilationObject compiledData;
         ShaderObjectLayoutBuilder layoutBuilder;
         layoutBuilder.m_globalSession = m_globalSession;
         layoutBuilder.ParseShaderProgramLayout(layout, compiledData);

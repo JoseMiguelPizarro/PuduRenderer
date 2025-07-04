@@ -3,7 +3,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
+#include <algorithm>
 #include <limits>
 
 #include "PuduGraphics.h"
@@ -11,7 +11,6 @@
 
 
 #include <stdexcept>
-#include <algorithm>
 #include <Logger.h>
 #include <set>
 #include "UniformBufferObject.h"
@@ -38,7 +37,7 @@ namespace Pudu
 {
     const char* SHADER_ENTRY_POINT = "main";
 
-    std::unordered_map<fs::path, GPUResourceHandle<Shader>> LoadedShaders;
+    std::unordered_map<fs::path, std::vector<GPUResourceHandle<Shader>>> LoadedShaders;
     std::unordered_map<fs::path, std::unique_ptr<filewatch::FileWatch<std::string>>> watchedFiles;
 
     class FrameGraph;
@@ -611,9 +610,12 @@ namespace Pudu
             m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
             m_defaultErrorShader = CreateShader(k_DEFAULT_ERROR_SHADER_PATH, "ErrorShader");
 
-            m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
+            m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang",
+                                                              "QuadArrayOverlay");
 
-            ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
+            ComputeShaderCreationData envToCubemapCS_Data{
+                "Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"
+            };
             m_horizonToCubeCompute = CreateComputeShader(envToCubemapCS_Data);
             auto horizonToCubemapMat = CreateMaterial();
             horizonToCubemapMat->SetShader(m_horizonToCubeCompute);
@@ -632,7 +634,6 @@ namespace Pudu
         m_defaultStandardMaterial->SetProperty("material.metallicRoughnessTex", m_defaultMetallicRoughnessTexture);
         m_defaultStandardMaterial->SetProperty("material.heightTex", m_defaultBlackTexture);
         m_defaultStandardMaterial->SetProperty("material.emissiveTex", m_defaultBlackTexture);
-
     }
 
     void PuduGraphics::InitDefaultTextures()
@@ -2975,20 +2976,44 @@ namespace Pudu
 
         shader->numActiveLayouts = layouts.size();
 
-        if (!LoadedShaders.contains(shaderPath))
-        {
-            LoadedShaders[shaderPath] = shader->Handle();
-            auto absolutePath = fs::absolute("shaders" / shaderPath);
+        auto absoluteShaderPath = fs::absolute("Shaders" / shaderPath);
+        std::string absoluteShaderPathString = absoluteShaderPath.string();
+        std::ranges::transform(absoluteShaderPathString, absoluteShaderPathString.begin(), ::tolower);
 
-            watchedFiles[absolutePath] = std::make_unique<filewatch::FileWatch<std::string>>(
-                absolutePath.string().c_str(), [this](const std::string& path, filewatch::Event event)
-                {
-                    if (event == filewatch::Event::modified)
+        absoluteShaderPath = absoluteShaderPathString;
+
+
+        auto dependencies = shader->GetDependencies();
+        for (Size i = 0; i < dependencies->size(); i++)
+        {
+            fs::path dependency = fs::path(dependencies->at(i));
+
+            auto absolutePath = fs::absolute("Shaders" / dependency);
+            std::string absolutePathString = absolutePath.string();
+            std::ranges::transform(absolutePathString, absolutePathString.begin(), ::tolower);
+            //    absolutePath = absolutePathString;
+
+            if (LoadedShaders.find(absolutePath) == LoadedShaders.end())
+                LoadedShaders[absolutePath] = {};
+
+            if (watchedFiles.find(absolutePath) == watchedFiles.end())
+            {
+                watchedFiles[absolutePath] = std::make_unique<filewatch::FileWatch<std::string>>(
+                    absolutePath.string().c_str(), [this](const filewatch::CallbackInformation<std::string>& info)
                     {
-                        LOG("Shader {} has been modified", fs::path(path).filename().string());
-                        ReloadShader(LoadedShaders[fs::path(path)].Get().get());
-                    }
-                });
+                        if (info.event == filewatch::Event::modified)
+                        {
+                            LOG("Shader {} has been modified", info.fullPath);
+
+                            auto shadersToReload = LoadedShaders[info.fullPath];
+                            for (auto& shaderToReload : shadersToReload)
+                            {
+                                ReloadShader(shaderToReload.Get().get());
+                            }
+                        }
+                    });
+            }
+            LoadedShaders[absolutePath].push_back(shader->Handle());
         }
 
         return shader;

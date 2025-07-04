@@ -20,18 +20,6 @@ struct StandardMaterial
 
 ParameterBlock<StandardMaterial> material;
 
-// struct SkyboxAmbientSampler:IDiffuseAmbientSampler
-// {
-//     SamplerCube m_skybox;
-//
-//     float3 Sample(float3 n)
-//     {
-//         return m_skybox.Sample(n).xyz;
-//     }
-// }
-
-
-
 [shader("vertex")]
 VSOut vertexMain(VertexInput input)
 {
@@ -94,6 +82,8 @@ float4 fragmentMain(VSOut input)
     m.Emissive = material.emissiveTex.Sample(uv).xyz;
 
 
+
     col.xyz = StandardSurface(m);
+
     return col;
 }
