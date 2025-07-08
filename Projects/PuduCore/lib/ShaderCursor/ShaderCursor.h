@@ -33,6 +33,7 @@ namespace Pudu
 
         void Write(const SPtr<GraphicsBuffer>& buffer, const void* data, Size offset, Size size);
         void Write(const SPtr<Texture>& texture, u32 mipLevel, const MaterialApplyPropertyGPUTarget& gpuTarget);
+        void Write(const SPtr<TextureSampler>& ptr);
         void Write(f32 value);
         void Write(u32 value);
         void Write(vec2 value);

@@ -4,10 +4,11 @@
 
 namespace Pudu
 {
-	class CommandPool :public GPUResource<CommandPool>
-	{
-	public:
-		VkCommandPool vkHandle;
-	};
-}
+    class CommandPool : public GPUResource<CommandPool>
+    {
+    public:
+        GPUResourceType Type() override { return GPUResourceType::CommandPool; }
 
+        VkCommandPool vkHandle;
+    };
+}

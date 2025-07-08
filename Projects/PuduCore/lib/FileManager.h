@@ -2,13 +2,9 @@
 
 #pragma once
 #define NOMINMAX
-#include <complex.h>
-#include <complex.h>
 #include <filesystem>
 #include <vector>
 
-#include "BlitRenderPass.h"
-#include "BlitRenderPass.h"
 #include "MeshCreationData.h"
 #include "RenderEntity.h"
 
@@ -30,8 +26,6 @@ namespace Pudu {
 		/// </summary>
 		static std::vector<char> ReadAssetFile(const std::string& fileName);
 		static std::vector<char> ReadAssetFile(const fs::path& path);
-
-		static MeshCreationData LoadModelObj(std::string const& assetPath);
 
 		static std::vector<MeshCreationData> LoadModelGltf(fs::path const& path);
 

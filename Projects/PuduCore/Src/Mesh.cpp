@@ -40,6 +40,6 @@ namespace Pudu
 	}
 	std::string* Mesh::GetName()
 	{
-		return &m_name;
+		return &name;
 	}
 }

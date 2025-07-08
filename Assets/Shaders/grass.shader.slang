@@ -1,7 +1,7 @@
 import PuduGraphicsModule;
 
 #include "Lib/grass.slang"
-#include "Lib/Shadowmap.slang"
+#include "Lib/PuduShadowModule.slang"
 
 #include "lib/lygia/generative/cnoise.hlsl"
 #include "lib/lygia/generative/random.hlsl"

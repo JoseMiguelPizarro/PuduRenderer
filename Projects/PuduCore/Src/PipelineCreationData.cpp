@@ -1,4 +1,3 @@
-#include <fmt/format.h>
 #include "Logger.h"
 #include "Resources/Resources.h"
 
@@ -46,7 +45,7 @@ namespace Pudu
 			}
 		}
 
-		LOG_ERROR("Trying to get non valid stage {}", (uint32_t)stageFlag);
+		LOG_ERROR("Trying to get non valid stage {}", static_cast<uint32_t>(stageFlag));
 
 		return stages[0];
 	}

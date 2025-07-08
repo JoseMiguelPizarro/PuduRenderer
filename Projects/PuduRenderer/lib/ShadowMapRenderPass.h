@@ -15,6 +15,9 @@ namespace Pudu
 		virtual void AfterRender(RenderFrameData& renderData) override;
 		virtual void Render(RenderFrameData& frameData) override;
 		void BeforeRenderDrawcall(RenderFrameData& frameData, DrawCall& drawcall) override;
+		void SetDepthBiasSlope(float slope);
+		void SetDepthConstantBias(float bias);
+		Viewport GetViewport(RenderFrameData& frameData) const override;
 
 	private:
 		const std::filesystem::path K_DepthShaderPath = "depth.shader.slang";

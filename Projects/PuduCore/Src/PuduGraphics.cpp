@@ -3,10 +3,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include <fmt/core.h>
-
-#include "VmaUsage.h"
-
+#include <algorithm>
 #include <limits>
 
 #include "PuduGraphics.h"
@@ -14,15 +11,12 @@
 
 
 #include <stdexcept>
-#include <algorithm>
 #include <Logger.h>
 #include <set>
 #include "UniformBufferObject.h"
-#include <chrono>
 
 #include "DrawCall.h"
 
-#include "SPIRVParser.h"
 #include "Frame.h"
 #include "FrameGraph/FrameGraph.h"
 
@@ -37,10 +31,14 @@
 #include "FileManager.h"
 #include "RenderFrameData.h"
 #include <vk_mem_alloc.h>
+#include <FileWatch.hpp>
 
 namespace Pudu
 {
     const char* SHADER_ENTRY_POINT = "main";
+
+    std::unordered_map<fs::path, std::vector<GPUResourceHandle<Shader>>> LoadedShaders;
+    std::unordered_map<fs::path, std::unique_ptr<filewatch::FileWatch<std::string>>> watchedFiles;
 
     class FrameGraph;
 
@@ -489,34 +487,153 @@ namespace Pudu
 
     void PuduGraphics::InitDefaultResources()
     {
-        MeshCreationData defaultQuadMeshData;
-        defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
-        defaultQuadMeshData.Vertices = {
-            Vertex({-.5, 0, -0.5}, {1, 1, 1}, {0, 0}, {0, 1, 0}, {1, 0, 0, 1}),
-            Vertex({0.5, 0, -0.5}, {1, 1, 1}, {1., 0}, {0, 1, 0}, {1, 0, 0, 1}),
-            Vertex({-.5, 0, 0.5}, {1, 1, 1}, {0, 1}, {0, 1, 0}, {1, 0, 0, 1}),
-            Vertex({0.5, 0, 0.5}, {1, 1, 1}, {1, 1}, {0, 1, 0}, {1, 0, 0, 1})
-        };
+        //Default Meshes
+        {
+            MeshCreationData defaultQuadMeshData;
+            defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
+            defaultQuadMeshData.Vertices = {
+                Vertex({-.5, 0, -0.5}, {1, 1, 1}, {0, 0}, {0, 1, 0}, {1, 0, 0, 1}),
+                Vertex({0.5, 0, -0.5}, {1, 1, 1}, {1., 0}, {0, 1, 0}, {1, 0, 0, 1}),
+                Vertex({-.5, 0, 0.5}, {1, 1, 1}, {0, 1}, {0, 1, 0}, {1, 0, 0, 1}),
+                Vertex({0.5, 0, 0.5}, {1, 1, 1}, {1, 1}, {0, 1, 0}, {1, 0, 0, 1})
+            };
 
-        defaultQuadMeshData.Name = "DefaultQuad";
+            defaultQuadMeshData.Name = "DefaultQuad";
 
-        m_defaultQuad = CreateMesh(defaultQuadMeshData);
+            m_defaultQuad = CreateMesh(defaultQuadMeshData);
 
-        m_defaultStandardShader = CreateShader("standardSurface.shader.slang", "Default StandardSurface");
-        m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
-        m_defaultErrorShader = CreateShader(k_DEFAULT_ERROR_SHADER_PATH, "ErrorShader");
+            // Create default cube mesh
+            MeshCreationData defaultCubeMeshData;
+            defaultCubeMeshData.Indices = {
+                0, 1, 2, 2, 3, 0, // front
+                4, 5, 6, 6, 7, 4, // back
+                8, 9, 10, 10, 11, 8, // right
+                12, 13, 14, 14, 15, 12, // left
+                16, 17, 18, 18, 19, 16, // top
+                20, 21, 22, 22, 23, 20 // bottom
+            };
 
-        m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang", "QuadArrayOverlay");
+            defaultCubeMeshData.Vertices = {
+                // Front face
+                Vertex({-0.5f, -0.5f, 0.5f}, {1, 1, 1}, {0, 0}, {0, 0, 1}, {1, 0, 0, 1}),
+                Vertex({0.5f, -0.5f, 0.5f}, {1, 1, 1}, {1, 0}, {0, 0, 1}, {1, 0, 0, 1}),
+                Vertex({0.5f, 0.5f, 0.5f}, {1, 1, 1}, {1, 1}, {0, 0, 1}, {1, 0, 0, 1}),
+                Vertex({-0.5f, 0.5f, 0.5f}, {1, 1, 1}, {0, 1}, {0, 0, 1}, {1, 0, 0, 1}),
 
-        ComputeShaderCreationData envToCubemapCS_Data{"Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"};
-        m_horizonToCubeCompute = CreateComputeShader(envToCubemapCS_Data);
-        auto horizonToCubemapMat = CreateMaterial();
-        horizonToCubemapMat->SetShader(m_horizonToCubeCompute);
+                // Back face
+                Vertex({-0.5f, -0.5f, -0.5f}, {1, 1, 1}, {1, 0}, {0, 0, -1}, {-1, 0, 0, 1}),
+                Vertex({-0.5f, 0.5f, -0.5f}, {1, 1, 1}, {1, 1}, {0, 0, -1}, {-1, 0, 0, 1}),
+                Vertex({0.5f, 0.5f, -0.5f}, {1, 1, 1}, {0, 1}, {0, 0, -1}, {-1, 0, 0, 1}),
+                Vertex({0.5f, -0.5f, -0.5f}, {1, 1, 1}, {0, 0}, {0, 0, -1}, {-1, 0, 0, 1}),
 
-        m_horizonToCubemapCSRenderer.SetShader(m_horizonToCubeCompute);
-        m_horizonToCubemapCSRenderer.SetMaterial(horizonToCubemapMat);
+                // Right face
+                Vertex({0.5f, -0.5f, -0.5f}, {1, 1, 1}, {0, 0}, {1, 0, 0}, {0, 0, 1, 1}),
+                Vertex({0.5f, 0.5f, -0.5f}, {1, 1, 1}, {0, 1}, {1, 0, 0}, {0, 0, 1, 1}),
+                Vertex({0.5f, 0.5f, 0.5f}, {1, 1, 1}, {1, 1}, {1, 0, 0}, {0, 0, 1, 1}),
+                Vertex({0.5f, -0.5f, 0.5f}, {1, 1, 1}, {1, 0}, {1, 0, 0}, {0, 0, 1, 1}),
 
+                // Left face
+                Vertex({-0.5f, -0.5f, -0.5f}, {1, 1, 1}, {1, 0}, {-1, 0, 0}, {0, 0, -1, 1}),
+                Vertex({-0.5f, -0.5f, 0.5f}, {1, 1, 1}, {0, 0}, {-1, 0, 0}, {0, 0, -1, 1}),
+                Vertex({-0.5f, 0.5f, 0.5f}, {1, 1, 1}, {0, 1}, {-1, 0, 0}, {0, 0, -1, 1}),
+                Vertex({-0.5f, 0.5f, -0.5f}, {1, 1, 1}, {1, 1}, {-1, 0, 0}, {0, 0, -1, 1}),
+
+                // Top face
+                Vertex({-0.5f, 0.5f, -0.5f}, {1, 1, 1}, {0, 1}, {0, 1, 0}, {1, 0, 0, 1}),
+                Vertex({-0.5f, 0.5f, 0.5f}, {1, 1, 1}, {0, 0}, {0, 1, 0}, {1, 0, 0, 1}),
+                Vertex({0.5f, 0.5f, 0.5f}, {1, 1, 1}, {1, 0}, {0, 1, 0}, {1, 0, 0, 1}),
+                Vertex({0.5f, 0.5f, -0.5f}, {1, 1, 1}, {1, 1}, {0, 1, 0}, {1, 0, 0, 1}),
+
+                // Bottom face
+                Vertex({-0.5f, -0.5f, -0.5f}, {1, 1, 1}, {0, 0}, {0, -1, 0}, {1, 0, 0, 1}),
+                Vertex({0.5f, -0.5f, -0.5f}, {1, 1, 1}, {1, 0}, {0, -1, 0}, {1, 0, 0, 1}),
+                Vertex({0.5f, -0.5f, 0.5f}, {1, 1, 1}, {1, 1}, {0, -1, 0}, {1, 0, 0, 1}),
+                Vertex({-0.5f, -0.5f, 0.5f}, {1, 1, 1}, {0, 1}, {0, -1, 0}, {1, 0, 0, 1})
+            };
+
+            defaultCubeMeshData.Name = "DefaultCube";
+            m_defaultCube = CreateMesh(defaultCubeMeshData);
+
+            // Create default sphere mesh
+            MeshCreationData defaultSphereMeshData;
+            const float rings = 32.;
+            const float segments = 32.;
+            const float radius = 0.5f;
+
+            // Generate vertices
+            for (int ring = 0; ring <= rings; ring++)
+            {
+                float theta = glm::pi<float>() * ring / rings;
+                for (int segment = 0; segment <= segments; segment++)
+                {
+                    float phi = 2.0f * glm::pi<float>() * segment / segments;
+
+                    float x = radius * sin(theta) * cos(phi);
+                    float y = radius * cos(theta);
+                    float z = radius * sin(theta) * sin(phi);
+
+                    glm::vec3 position(x, y, z);
+                    glm::vec3 normal = glm::normalize(position);
+                    glm::vec2 uv(segment / segments, ring / rings);
+                    glm::vec4 tangent(cos(phi), 0, -sin(phi), 1);
+
+                    defaultSphereMeshData.Vertices.push_back(Vertex(position, {1, 1, 1}, uv, normal, tangent));
+                }
+            }
+
+            // Generate indices
+            for (int ring = 0; ring < rings; ring++)
+            {
+                for (int segment = 0; segment < segments; segment++)
+                {
+                    int current = ring * (segments + 1) + segment;
+                    int next = current + segments + 1;
+
+                    defaultSphereMeshData.Indices.push_back(current);
+                    defaultSphereMeshData.Indices.push_back(current + 1);
+                    defaultSphereMeshData.Indices.push_back(next);
+
+                    defaultSphereMeshData.Indices.push_back(current + 1);
+                    defaultSphereMeshData.Indices.push_back(next + 1);
+                    defaultSphereMeshData.Indices.push_back(next);
+                }
+            }
+
+            defaultSphereMeshData.Name = "DefaultSphere";
+            m_defaultSphere = CreateMesh(defaultSphereMeshData);
+        }
+
+        //Default Shaders
+
+        {
+            m_defaultStandardShader = CreateShader("standardSurface.shader.slang", "Default StandardSurface");
+            m_defaultOverlayShader = CreateShader("quadOverlay.shader.slang", "QuadOverlay");
+            m_defaultErrorShader = CreateShader(k_DEFAULT_ERROR_SHADER_PATH, "ErrorShader");
+
+            m_defaultOverlayTextureArrayShader = CreateShader("quadTextureArrayOverlay.shader.slang",
+                                                              "QuadArrayOverlay");
+
+            ComputeShaderCreationData envToCubemapCS_Data{
+                "Compute/horizonMapToCubeMap.compute.slang", "horizonToCubemap"
+            };
+            m_horizonToCubeCompute = CreateComputeShader(envToCubemapCS_Data);
+            auto horizonToCubemapMat = CreateMaterial();
+            horizonToCubemapMat->SetShader(m_horizonToCubeCompute);
+
+            m_horizonToCubemapCSRenderer.SetShader(m_horizonToCubeCompute);
+            m_horizonToCubemapCSRenderer.SetMaterial(horizonToCubemapMat);
+        }
         InitDefaultTextures();
+
+        //Default materials
+        m_defaultStandardMaterial = CreateMaterial();
+        m_defaultStandardMaterial->name = "DefaultStandardMaterial";
+        m_defaultStandardMaterial->SetShader(m_defaultStandardShader);
+        m_defaultStandardMaterial->SetProperty("material.normalTex", m_defaultNormalmapTexture);
+        m_defaultStandardMaterial->SetProperty("material.albedoTex", m_defaultWhiteTexture);
+        m_defaultStandardMaterial->SetProperty("material.metallicRoughnessTex", m_defaultMetallicRoughnessTexture);
+        m_defaultStandardMaterial->SetProperty("material.heightTex", m_defaultBlackTexture);
+        m_defaultStandardMaterial->SetProperty("material.emissiveTex", m_defaultBlackTexture);
     }
 
     void PuduGraphics::InitDefaultTextures()
@@ -1461,7 +1578,7 @@ namespace Pudu
         for (u32 i = 0; i < imageCount; i++)
         {
             SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE, (u64)swapchain.images[i],
-                            fmt::format("Swapchain Image {}", i).c_str());
+                            std::format("Swapchain Image {}", i).c_str());
         }
 
         LOG("Swap chain images created!");
@@ -1477,14 +1594,14 @@ namespace Pudu
             createData.image = swapchain.images[i];
             createData.format = m_swapChainImageFormat;
             createData.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-            createData.name = fmt::format("Swapchain Image View {}", i).c_str();
+            createData.name = std::format("Swapchain Image View {}", i).c_str();
 
             auto imageView = CreateImageView(createData);
 
             swapchain.imageViews[i] = imageView;
 
             SetResourceName(VkObjectType::VK_OBJECT_TYPE_IMAGE_VIEW, (u64)swapchain.imageViews[i],
-                            fmt::format("Swapchain Image View {}", i).c_str());
+                            std::format("Swapchain Image View {}", i).c_str());
 
             auto handle = m_resources.AllocateRenderTexture();
             auto texture = m_resources.GetTexture<RenderTexture>(handle->Handle());
@@ -1841,6 +1958,7 @@ namespace Pudu
         mesh->m_indexBuffer = indexBuffer;
         mesh->m_vertices = vertices;
         mesh->m_indices = indices;
+        mesh->name = data.Name;
 
         return mesh;
     }
@@ -1982,7 +2100,7 @@ namespace Pudu
             for (size_t i = 0; i < commands.size(); i++)
             {
                 SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commands[i]->vkHandle,
-                                fmt::format("{} {}", name, i).c_str());
+                                std::format("{} {}", name, i).c_str());
             }
         }
 
@@ -2145,10 +2263,26 @@ namespace Pudu
         return m_defaultStandardShader;
     }
 
+    SPtr<Material> PuduGraphics::GetDefaultStandardMaterial()
+    {
+        return m_defaultStandardMaterial;
+    }
+
     SPtr<Mesh> PuduGraphics::GetDefaultQuad()
     {
         return m_defaultQuad;
     }
+
+    SPtr<Mesh> PuduGraphics::GetDefaultCube()
+    {
+        return m_defaultCube;
+    }
+
+    SPtr<Mesh> PuduGraphics::GetDefaultSphere()
+    {
+        return m_defaultSphere;
+    }
+
 
     void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
     {
@@ -2208,7 +2342,7 @@ namespace Pudu
 
         auto pipeline = m_resources.AllocatePipeline();
         auto renderPass = creationData.renderPassHandle.Get();
-        pipeline->name = fmt::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
+        pipeline->name = std::format("Pipeline {} {}", renderPass->name, creationData.shadersStateCreationData.name);
         pipeline->m_renderPass = renderPass->Handle();
 
         CreateVKGraphicsPipeline(pipeline.get(), creationData);
@@ -2327,6 +2461,15 @@ namespace Pudu
         texture->Create(this);
 
         return texture->Handle();
+    }
+
+    GPUResourceHandle<TextureSampler> PuduGraphics::CreateSampler(const SamplerCreationData& creationData)
+    {
+        auto sampler = m_resources.AllocateSampler();
+
+        CreateVKTextureSampler(creationData, sampler->vkHandle);
+
+        return sampler->Handle();
     }
 
     void PuduGraphics::CreateVKTexture(Texture* texture)
@@ -2650,7 +2793,7 @@ namespace Pudu
         texture2d.vkImageViewHandle = CreateImageView(createData);
     }
 
-    void PuduGraphics::CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler)
+    void PuduGraphics::CreateVKTextureSampler(const SamplerCreationData& data, VkSampler& sampler)
     {
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -2708,9 +2851,9 @@ namespace Pudu
             frame.ComputeCommandBuffer = buffers[i * 2 + 1];
 
             SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.CommandBuffer->vkHandle,
-                            fmt::format("Frame {} cmd: graphics queue", i).c_str());
+                            std::format("Frame {} cmd: graphics queue", i).c_str());
             SetResourceName(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)frame.ComputeCommandBuffer->vkHandle,
-                            fmt::format("Frame {} cmd: compute queue", i).c_str());
+                            std::format("Frame {} cmd: compute queue", i).c_str());
         }
 
         LOG("Created command buffer");
@@ -2727,8 +2870,8 @@ namespace Pudu
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(fmt::format("Image available {}", i).c_str());
-            m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(fmt::format("Render Finished {}", i).c_str());
+            m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(std::format("Image available {}", i).c_str());
+            m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(std::format("Render Finished {}", i).c_str());
             vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence);
         }
 
@@ -2845,6 +2988,46 @@ namespace Pudu
         shader->SetDescriptorSetLayouts(layouts);
 
         shader->numActiveLayouts = layouts.size();
+
+        auto absoluteShaderPath = fs::absolute("Shaders" / shaderPath);
+        std::string absoluteShaderPathString = absoluteShaderPath.string();
+        std::ranges::transform(absoluteShaderPathString, absoluteShaderPathString.begin(), ::tolower);
+
+        absoluteShaderPath = absoluteShaderPathString;
+
+
+        auto dependencies = shader->GetDependencies();
+        for (Size i = 0; i < dependencies->size(); i++)
+        {
+            fs::path dependency = fs::path(dependencies->at(i));
+
+            auto absolutePath = fs::absolute("Shaders" / dependency);
+            std::string absolutePathString = absolutePath.string();
+            std::ranges::transform(absolutePathString, absolutePathString.begin(), ::tolower);
+            //    absolutePath = absolutePathString;
+
+            if (LoadedShaders.find(absolutePath) == LoadedShaders.end())
+                LoadedShaders[absolutePath] = {};
+
+            if (watchedFiles.find(absolutePath) == watchedFiles.end())
+            {
+                watchedFiles[absolutePath] = std::make_unique<filewatch::FileWatch<std::string>>(
+                    absolutePath.string().c_str(), [this](const filewatch::CallbackInformation<std::string>& info)
+                    {
+                        if (info.event == filewatch::Event::modified)
+                        {
+                            LOG("Shader {} has been modified", info.fullPath);
+
+                            auto shadersToReload = LoadedShaders[info.fullPath];
+                            for (auto& shaderToReload : shadersToReload)
+                            {
+                                ReloadShader(shaderToReload.Get().get());
+                            }
+                        }
+                    });
+            }
+            LoadedShaders[absolutePath].push_back(shader->Handle());
+        }
 
         return shader;
     }

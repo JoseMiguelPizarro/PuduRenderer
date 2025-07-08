@@ -27,7 +27,7 @@ public struct GlobalsConstants
 
 public struct Globals
 {
-    public Sampler2D shadowMap;
+    public Sampler2DShadow shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;
@@ -37,6 +37,7 @@ public struct Globals
     public SamplerCube IBL_Diffuse;
     public uint IBL_Levels;
     public Sampler2D BRDF_LUT;
+    public SamplerState linearSampler;
     public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
     public float gamma = 2.2;
@@ -44,7 +45,8 @@ public struct Globals
 
 public enum DebugMode
 {
-   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance, BRDFLUT
+   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance, BRDFLUT,
+   VertexNormal,VertexTangent,VertexColor,UV0
 };
 
 public struct DEBUG

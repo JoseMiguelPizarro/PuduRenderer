@@ -4,7 +4,6 @@
 #include "Scene.h"
 #include "PuduGraphics.h"
 #include "Resources/Resources.h"
-#include "SPIRVParser.h"
 #include <GPUCommands.h>
 
 #include "Material.h"
@@ -304,10 +303,7 @@ namespace Pudu
 
             auto ubo = frameData.graphics->GetUniformBufferObject(drawCall);
 
-            Viewport viewport;
-            viewport.rect = {0, 0, (uint16)frameData.graphics->WindowWidth, (uint16)frameData.graphics->WindowHeight};
-            viewport.maxDepth = 1;
-            commands->SetViewport(viewport);
+            commands->SetViewport(GetViewport(frameData));
             commands->PushConstants(pipeline->vkPipelineLayoutHandle,
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                     sizeof(UniformBufferObject), &ubo);
@@ -316,6 +312,15 @@ namespace Pudu
 
             AfterRenderDrawcall(frameData, drawCall);
         }
+    }
+
+    Viewport RenderPass::GetViewport(RenderFrameData& frameData) const
+    {
+        Viewport viewport;
+        viewport.rect = {0, 0, static_cast<u16>(frameData.graphics->WindowWidth), static_cast<u16>(frameData.graphics->WindowHeight)};
+        viewport.maxDepth = 1;
+
+        return viewport;
     }
 
     void RenderPass::SetupRender(RenderFrameData& renderData)

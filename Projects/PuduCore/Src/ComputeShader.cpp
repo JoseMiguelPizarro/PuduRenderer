@@ -1,6 +1,6 @@
 #include "ComputeShader.h"
 #include "PuduGraphics.h"
-#include "SPIRVParser.h"
+
 namespace Pudu
 {
 	void ComputeShader::SetTexture(const char* name, SPtr<Texture> texture)

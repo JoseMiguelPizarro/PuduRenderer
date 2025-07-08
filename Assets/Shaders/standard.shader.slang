@@ -1,6 +1,6 @@
 // Bindless support
 #include "Lib/DefaultVertexInput.hlsl"
-#include "lib/Shadowmap.slang"
+import "Lib/PuduShadowModule.slang"
 
 import PuduGraphicsModule;
 

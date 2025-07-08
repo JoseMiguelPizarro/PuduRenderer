@@ -142,6 +142,7 @@ namespace Pudu
         SPtr<Texture> GetMultisampledColorTexture() const;
         SPtr<Texture> GetMultisampledDepthTexture() const;
 
+
         bool HasReplacementMaterial() const;
         bool IsMultisampled() const;
         static void BindPipeline(const Pipeline* pipeline, RenderFrameData& frameData);
@@ -161,6 +162,7 @@ namespace Pudu
         //Here is where scissors, viewport, depthbias. target render target are set and Camera values are pushed
         virtual void SetupRender(RenderFrameData& frameData);
         virtual void Render(RenderFrameData& frameData);
+        virtual Viewport GetViewport(RenderFrameData& frameData) const;
 
         //Restore or release resources
         virtual void AfterRender(RenderFrameData& frameData)

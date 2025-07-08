@@ -12,6 +12,7 @@ ENUM_STRING(
     Texture2D,
     TextureCube,
     Texture2DArray,
+    Sampler,
     RenderPass,
     Framebuffer,
     Pipeline,

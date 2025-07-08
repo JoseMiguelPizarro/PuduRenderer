@@ -9,7 +9,6 @@
 
 namespace Pudu
 {
-
     enum class ShaderCompilationResult
     {
         Success,
@@ -37,12 +36,20 @@ namespace Pudu
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) { m_constantBuffers = buffers; }
         void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
 
+        UPtr<std::vector<fs::path>> GetDependencies()
+        {
+            return std::make_unique<std::vector<fs::path>>(m_dependencies);
+        }
+
     private:
         friend class ShaderObjectLayoutBuilder;
+        friend class ShaderCompiler;
+
         std::unordered_map<std::string, ShaderKernel> m_kernelsByName;
         std::vector<VkPushConstantRange> m_pushConstantRanges;
         std::vector<ConstantBufferInfo> m_constantBuffers;
         std::vector<ConstantBufferInfo> m_pushConstants;
+        std::vector<fs::path> m_dependencies;
         PushConstantInfo m_pushConstantsInfo;
     };
 }

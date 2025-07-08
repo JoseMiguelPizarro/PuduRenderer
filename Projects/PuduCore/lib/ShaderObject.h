@@ -26,6 +26,7 @@ namespace Pudu
         u32 GetActiveLayoutCount() const { return numActiveLayouts; }
         bool NeedsPipelineRebuild() { return m_needsPipelineRebuild; }
         std::vector<GPUResourceHandle<Pipeline>>* GetPipelines() { return &m_pipelines; }
+        UPtr<std::vector<fs::path>> GetDependencies();
 
 
 #pragma region DescriptorProvider

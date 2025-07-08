@@ -18,7 +18,6 @@ namespace Pudu
 		glm::vec3 Direction();
 		Projection Projection;
 	
-
 		float GetIlluminance();
 	};
 }

@@ -79,7 +79,7 @@ namespace Pudu
             return this->m_Index == other.m_Index;
         }
 
-        SPtr<T> Get()
+        SPtr<T> Get() const
         {
             ASSERT(m_Index != k_INVALID_HANDLE, "Trying to get resource [{}] with invalid handle",
                    ToString(m_underlyingType));
@@ -94,7 +94,11 @@ namespace Pudu
         GPUResourceHandle<T> Handle() { return m_handle; }
 
 
-        virtual GPUResourceType Type() { return GPUResourceType::UNDEFINED; };
+        virtual GPUResourceType Type()
+        {
+            ASSERT(false, "UNDEFINED TYPE. Did you forget to override Type() on child GPUResource class?");
+            return GPUResourceType::UNDEFINED;
+        };
         virtual ~GPUResource() = default;
 
     protected:

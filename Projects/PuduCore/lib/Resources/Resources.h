@@ -22,31 +22,34 @@ namespace Pudu
     typedef uint32_t FrameGraphNodeHandle;
     typedef uint32_t ResourceHandle;
 
-
 #pragma endregion
 
     namespace QueueType
     {
         enum Enum
         {
-            Graphics, Compute, CopyTransfer, Count
+            Graphics,
+            Compute,
+            CopyTransfer,
+            Count
         };
 
         enum Mask
         {
-            Graphics_mask = 1 << 0, Compute_mask = 1 << 1, CopyTransfer_mask = 1 << 2, Count_mask = 1 << 3
+            Graphics_mask = 1 << 0,
+            Compute_mask = 1 << 1,
+            CopyTransfer_mask = 1 << 2,
+            Count_mask = 1 << 3
         };
 
-        static const char* s_value_names[] = {
-            "Graphics", "Compute", "CopyTransfer", "Count"
-        };
+        static const char *s_value_names[] = {
+            "Graphics", "Compute", "CopyTransfer", "Count"};
 
-        static const char* ToString(Enum e)
+        static const char *ToString(Enum e)
         {
             return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
         }
     }
-
 
 #pragma region RenderPass
 
@@ -71,22 +74,18 @@ namespace Pudu
             All_mask = Red_mask | Green_mask | Blue_mask | Alpha_mask
         };
 
-        static const char* s_value_names[] = {
-            "Red", "Green", "Blue", "Alpha", "All", "Count"
-        };
+        static const char *s_value_names[] = {
+            "Red", "Green", "Blue", "Alpha", "All", "Count"};
 
-        static const char* ToString(Enum e)
+        static const char *ToString(Enum e)
         {
             return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
         }
     }
 
-
     class PuduGraphics;
 
-
 #pragma endregion
-
 
     namespace FillMode
     {
@@ -106,11 +105,10 @@ namespace Pudu
             Count_mask = 1 << 3
         };
 
-        static const char* s_value_names[] = {
-            "Wireframe", "Solid", "Point", "Count"
-        };
+        static const char *s_value_names[] = {
+            "Wireframe", "Solid", "Point", "Count"};
 
-        static const char* ToString(Enum e)
+        static const char *ToString(Enum e)
         {
             return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
         }
@@ -157,7 +155,7 @@ namespace Pudu
         {
         }
 
-        DepthStencilCreation& SetDepth(bool write, VkCompareOp comparisonTest);
+        DepthStencilCreation &SetDepth(bool write, VkCompareOp comparisonTest);
 
         VkStencilOpState GetVkFront() const { return StencilOperationState::GetVkOpState(front); }
         VkStencilOpState GetVkBack() const { return StencilOperationState::GetVkOpState(back); }
@@ -178,16 +176,15 @@ namespace Pudu
         uint8_t blendEnabled : 1;
         uint8_t pad : 6;
 
-
         BlendState() : blendEnabled(0)
         {
         }
 
-        BlendState& SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor,
+        BlendState &SetColorBlending(VkBlendFactor sourceColor, VkBlendFactor destinationColor,
                                      VkBlendOp colorOperation);
-        BlendState& SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha,
+        BlendState &SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha,
                                      VkBlendOp alphaOperation);
-        BlendState& SetColorWriteMask(ColorWriteEnabled::Mask value);
+        BlendState &SetColorWriteMask(ColorWriteEnabled::Mask value);
     }; // struct BlendState
 
     struct BlendStateCreation
@@ -195,7 +192,7 @@ namespace Pudu
         BlendState blendStates[K_MAX_IMAGE_OUTPUTS];
         uint32_t activeStatesCount = 0;
 
-        BlendState& AddBlendState();
+        BlendState &AddBlendState();
     }; // BlendStateCreation
 
     //
@@ -207,15 +204,14 @@ namespace Pudu
         FillMode::Enum fill = FillMode::Solid;
     }; // struct RasterizationCreation
 
-
     struct ComputePipeline
     {
         VkPipeline vkHandle;
         VkPipelineLayout vkPipelineLayoutHandle;
 
         VkPipelineBindPoint vkPipelineBindPoint;
-        VkDescriptorSet vkDescriptorSet = VK_FALSE; //Just 1 for now, bindless
-        const DescriptorSetLayout* descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
+        VkDescriptorSet vkDescriptorSet = VK_FALSE; // Just 1 for now, bindless
+        const DescriptorSetLayout *descriptorSetLayouts[K_MAX_DESCRIPTOR_SET_LAYOUTS];
         std::vector<GPUResourceHandle<DescriptorSetLayout>> descriptorSetLayoutHandles;
         bool bindlessUpdated;
     };
@@ -233,7 +229,6 @@ namespace Pudu
             Texture_Cube_Array,
         };
     } // namespace TextureType
-
 
     static VkImageCreateFlags ToVkImageFlags(TextureType::Enum type)
     {
@@ -300,8 +295,7 @@ namespace Pudu
             VK_IMAGE_VIEW_TYPE_1D_ARRAY,
             VK_IMAGE_VIEW_TYPE_2D_ARRAY,
             VK_IMAGE_VIEW_TYPE_CUBE,
-            VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
-        };
+            VK_IMAGE_VIEW_TYPE_CUBE_ARRAY};
         return s_vk_data[type];
     }
 
@@ -323,11 +317,10 @@ namespace Pudu
             ComputeMask = 1 << 2
         };
 
-        static const char* s_value_names[] = {
-            "Default", "RenderTarget", "Compute", "Count", "Sample"
-        };
+        static const char *s_value_names[] = {
+            "Default", "RenderTarget", "Compute", "Count", "Sample"};
 
-        static const char* ToString(Enum e)
+        static const char *ToString(Enum e)
         {
             return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
         }
@@ -337,8 +330,7 @@ namespace Pudu
     {
         inline bool IsDepthStencil(VkFormat value)
         {
-            return value == VK_FORMAT_D16_UNORM_S8_UINT || value == VK_FORMAT_D24_UNORM_S8_UINT || value ==
-                VK_FORMAT_D32_SFLOAT_S8_UINT;
+            return value == VK_FORMAT_D16_UNORM_S8_UINT || value == VK_FORMAT_D24_UNORM_S8_UINT || value == VK_FORMAT_D32_SFLOAT_S8_UINT;
         }
 
         inline bool IsDepthOnly(VkFormat value)
@@ -354,7 +346,8 @@ namespace Pudu
         inline bool HasDepth(VkFormat value)
         {
             return (value >= VK_FORMAT_D16_UNORM && value < VK_FORMAT_S8_UINT) || (value >=
-                VK_FORMAT_D16_UNORM_S8_UINT && value <= VK_FORMAT_D32_SFLOAT_S8_UINT);
+                                                                                       VK_FORMAT_D16_UNORM_S8_UINT &&
+                                                                                   value <= VK_FORMAT_D32_SFLOAT_S8_UINT);
         }
 
         inline bool HasStencil(VkFormat value)
@@ -368,21 +361,20 @@ namespace Pudu
         }
     } // namespace TextureFormat
 
-
     struct SamplerCreationData
     {
         bool wrap = true;
         uint32_t maxLOD = 1;
+        std::string name;
         VkFilter filter = VK_FILTER_LINEAR;
     };
-
 
     /// <summary>
     /// Struct passed to load texture functions.
     /// </summary>
     struct TextureLoadSettings
     {
-        const char* name = nullptr;
+        const char *name = nullptr;
         bool bindless;
         bool generateMipmaps = false;
         i32 mipLevels = -1;
@@ -402,14 +394,14 @@ namespace Pudu
 
         TextureFlags::Enum flags = TextureFlags::Default;
 
-        SamplerCreationData* samplerData;
+        SamplerCreationData *samplerData;
         VkFormat format;
         TextureType::Enum textureType = TextureType::Texture2D;
         bool bindless;
-        void* pixels = nullptr;
-        void* sourceData = nullptr;
-        //ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly
-        const char* name = nullptr;
+        void *pixels = nullptr;
+        void *sourceData = nullptr;
+        // ptr to source data, raw texture data if it exists (ie. raw loaded .ktx file) TODO: Remove, this is kinda ugly
+        const char *name = nullptr;
         bool allocate = true;
         bool exposeMipViews = false;
         bool generateMipmaps = false;
@@ -417,6 +409,7 @@ namespace Pudu
 
     struct Framebuffer : GPUResource<Framebuffer>
     {
+        GPUResourceType Type() override { return GPUResourceType::Framebuffer; }
         VkFramebuffer vkHandle;
 
         GPUResourceHandle<RenderPass> renderPassHandle;
@@ -433,7 +426,7 @@ namespace Pudu
 
         uint8_t resize = 0;
 
-        const char* name = nullptr;
+        const char *name = nullptr;
     };
 
     /// <summary>
@@ -449,7 +442,6 @@ namespace Pudu
         uint32_t activeShaders = 0;
         bool graphicsPipeline = false;
     };
-
 
     namespace VertexInputRate
     {
@@ -467,11 +459,10 @@ namespace Pudu
             Count_mask = 1 << 2
         };
 
-        static const char* s_value_names[] = {
-            "PerVertex", "PerInstance", "Count"
-        };
+        static const char *s_value_names[] = {
+            "PerVertex", "PerInstance", "Count"};
 
-        static const char* ToString(Enum e)
+        static const char *ToString(Enum e)
         {
             return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
         }
@@ -500,12 +491,11 @@ namespace Pudu
             Count
         };
 
-        static const char* s_value_names[] = {
+        static const char *s_value_names[] = {
             "Float", "Float2", "Float3", "Float4", "Mat4", "Byte", "Byte4N", "UByte", "UByte4N", "Short2", "Short2N",
-            "Short4", "Short4N", "Uint", "Uint2", "Uint4", "Count"
-        };
+            "Short4", "Short4N", "Uint", "Uint2", "Uint4", "Count"};
 
-        static const char* ToString(Enum e)
+        static const char *ToString(Enum e)
         {
             return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
         }
@@ -515,16 +505,14 @@ namespace Pudu
     {
         static VkFormat s_vk_vertex_formats[VertexComponentFormat::Count] = {
             VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT,
-            /*MAT4 TODO*/VK_FORMAT_R32G32B32A32_SFLOAT,
+            /*MAT4 TODO*/ VK_FORMAT_R32G32B32A32_SFLOAT,
             VK_FORMAT_R8_SINT, VK_FORMAT_R8G8B8A8_SNORM, VK_FORMAT_R8_UINT, VK_FORMAT_R8G8B8A8_UINT,
             VK_FORMAT_R16G16_SINT, VK_FORMAT_R16G16_SNORM,
             VK_FORMAT_R16G16B16A16_SINT, VK_FORMAT_R16G16B16A16_SNORM, VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT,
-            VK_FORMAT_R32G32B32A32_UINT
-        };
+            VK_FORMAT_R32G32B32A32_UINT};
 
         return s_vk_vertex_formats[value];
     }
-
 
     struct VertexAttribute
     {
@@ -536,7 +524,7 @@ namespace Pudu
         VkFormat GetVkFormat() { return format; }
     };
 
-    //Rate at which an attribute is pulled from the buffer
+    // Rate at which an attribute is pulled from the buffer
     struct VertexStream
     {
         uint16_t binding = 0;
@@ -559,16 +547,16 @@ namespace Pudu
         VertexStream vertexStreams[K_MAX_VERTEX_STREAMS];
         VertexAttribute vertexAttributes[K_MAX_VERTEX_ATTRIBUTES];
 
-        VertexInputCreation& AddVertexStream(const VertexStream& stream);
-        VertexInputCreation& AddVertexAttribute(const VertexAttribute& attribute);
+        VertexInputCreation &AddVertexStream(const VertexStream &stream);
+        VertexInputCreation &AddVertexAttribute(const VertexAttribute &attribute);
     }; // struct VertexInputCreation
 
     struct ShaderStage
     {
-        const uint32_t* code;
+        const uint32_t *code;
         uint32_t codeSize = 0;
         VkShaderStageFlagBits type = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
-        const char* entryPointName;
+        const char *entryPointName;
         DescriptorSetLayoutInfo descriptorSetLayoutData;
     };
 
@@ -578,23 +566,23 @@ namespace Pudu
         ShaderStage stages[K_MAX_SHADER_STAGES];
         uint32_t stageCount = 0;
 
-        ShaderStateCreationData& SetName(const char* name);
-        ShaderStateCreationData& AddStage(const uint32_t* code, const char* entryPointName, size_t code_size,
+        ShaderStateCreationData &SetName(const char *name);
+        ShaderStateCreationData &AddStage(const uint32_t *code, const char *entryPointName, size_t code_size,
                                           VkShaderStageFlagBits type);
-        ShaderStage& GetStage(VkShaderStageFlagBits stageFlag);
+        ShaderStage &GetStage(VkShaderStageFlagBits stageFlag);
     };
 
     class ComputeShader;
 
     struct ComputePipelineCreationData
     {
-        const char* name;
-        const char* kernel;
+        const char *name;
+        const char *kernel;
         GPUResourceHandle<ComputeShader> computeShaderHandle;
 
         DescriptorSetLayoutsCollection descriptorCreationData;
-        std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
-        VkDescriptorSetLayout* vkDescriptorSetLayout;
+        std::vector<SPtr<DescriptorSetLayout>> *descriptorSetLayouts;
+        VkDescriptorSetLayout *vkDescriptorSetLayout;
         uint32_t activeLayouts;
     };
 
@@ -606,8 +594,8 @@ namespace Pudu
 
     struct PipelineCreationData
     {
-        const uint32_t* vertexShaderData;
-        const uint32_t* fragmentShaderData;
+        const uint32_t *vertexShaderData;
+        const uint32_t *fragmentShaderData;
 
         RasterizationCreation rasterization;
         DepthStencilCreation depthStencil;
@@ -618,16 +606,16 @@ namespace Pudu
         GPUResourceHandle<RenderPass> renderPassHandle;
 
         DescriptorSetLayoutsCollection descriptorCreationData;
-        std::vector<SPtr<DescriptorSetLayout>>* descriptorSetLayouts;
-        PushConstantInfo* pushConstants;
+        std::vector<SPtr<DescriptorSetLayout>> *descriptorSetLayouts;
+        PushConstantInfo *pushConstants;
 
-        VkDescriptorSetLayout* vkDescriptorSetLayout;
+        VkDescriptorSetLayout *vkDescriptorSetLayout;
         uint32_t activeLayouts;
         bool multiSampled;
 
         VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-        const char* name = nullptr;
+        const char *name = nullptr;
     };
 }
 

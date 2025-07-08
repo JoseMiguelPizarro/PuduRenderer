@@ -46,6 +46,11 @@ namespace Pudu
         return AllocateGPUResource<Texture2DArray>(m_textures);
     }
 
+    SPtr<TextureSampler> GPUResourcesManager::AllocateSampler()
+    {
+        return AllocateGPUResource<TextureSampler>(m_samplers);
+    }
+
     SPtr<RenderPass> GPUResourcesManager::GetRenderPass(GPUResourceHandle<RenderPass> handle)
     {
         return m_renderPasses.GetResource(handle);
@@ -268,10 +273,10 @@ namespace Pudu
             return m_descriptorSetLayouts.GetResource(id);
         case GPUResourceType::Shader:
             return m_shaders.GetResource(id);
-        case GPUResourceType::Mesh:
-            return m_meshes.GetResource(id);
         case GPUResourceType::ComputeShader:
             return m_computeShaders.GetResource(id);
+        case GPUResourceType::Mesh:
+            return m_meshes.GetResource(id);
         case GPUResourceType::Buffer:
             return m_graphicsBuffers.GetResource(id);
         case GPUResourceType::Semaphore:
@@ -282,6 +287,10 @@ namespace Pudu
             return m_commandPools.GetResource(id);
         case GPUResourceType::DescriptorPool:
             return m_descriptorPools.GetResource(id);
+        case GPUResourceType::Sampler:
+            return m_samplers.GetResource(id);
+        case GPUResourceType::Material:
+            return m_materials.GetResource(id);
         default:
             ASSERT(false, "Invalid GPU resource type {}", ToString(type));
             return nullptr;

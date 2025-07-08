@@ -18,12 +18,18 @@ namespace Pudu
     {
         RenderPass::PreRender(renderData);
 
+        auto shadowMap = attachments.depthAttachments[0].resource;
+
         m_previousCamera = renderData.renderer->GetRenderCamera();
         auto dirLight = renderData.scene->directionalLight;
         auto dir = dirLight->Direction();
         m_renderCamera.Transform.SetForward(dir, {0, 1, 0});
         m_renderCamera.Transform.SetLocalPosition(dirLight->GetTransform().GetLocalPosition());
-        m_renderCamera.Projection = renderData.scene->directionalLight->Projection;
+        auto& projection = renderData.scene->directionalLight->Projection;
+        projection.Width = shadowMap->width;
+        projection.Height = shadowMap->height;
+
+        m_renderCamera.Projection = projection;
 
         renderData.renderer->SetRenderCamera(&m_renderCamera);
     }
@@ -37,5 +43,26 @@ namespace Pudu
     {
         frameData.currentCommand->SetDepthBias(m_depthBiasSlope, m_depthConstantBias);
         RenderPass::Render(frameData);
+    }
+
+    void ShadowMapRenderPass::SetDepthBiasSlope(float slope)
+    {
+        m_depthBiasSlope = slope;
+    }
+
+    void ShadowMapRenderPass::SetDepthConstantBias(float bias)
+    {
+        m_depthConstantBias = bias;
+    }
+
+    Viewport ShadowMapRenderPass::GetViewport(RenderFrameData& frameData) const
+    {
+        auto shadowMap = attachments.depthAttachments[0].resource;
+        Viewport viewport;
+        viewport.rect = {0, 0, static_cast<u16>(shadowMap->width), static_cast<u16>(shadowMap->height)};
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        return viewport;
     }
 }

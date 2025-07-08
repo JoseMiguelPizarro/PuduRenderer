@@ -1,5 +1,5 @@
 #include "Lib/DefaultVertexInput.hlsl"
-#include "lib/Shadowmap.slang"
+#include "lib/PuduShadowModule.slang"
 
 import PuduGraphicsModule;
 import PuduCoreModule;
@@ -17,17 +17,8 @@ struct StandardMaterial
     float3 F90 = {0.5f, 0.5f, 0.5f};
     float parallax = 0;
 }
-ParameterBlock<StandardMaterial> material;
 
-// struct SkyboxAmbientSampler:IDiffuseAmbientSampler
-// {
-//     SamplerCube m_skybox;
-//
-//     float3 Sample(float3 n)
-//     {
-//         return m_skybox.Sample(n).xyz;
-//     }
-// }
+ParameterBlock<StandardMaterial> material;
 
 [shader("vertex")]
 VSOut vertexMain(VertexInput input)
@@ -44,8 +35,6 @@ VSOut vertexMain(VertexInput input)
     LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
     output.ShadowCoords = GetShadowCoord(lightingBuffer.shadowMatrix, lightingBuffer.lightMatrix, output.PosWS);
 
-
-
     return output;
 }
 
@@ -54,7 +43,9 @@ float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
     float4 col = 0;
-    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap));
+
+
+    float shadow = saturate(FilterPCF(input.ShadowCoords, GLOBALS.shadowMap));
 
     float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);
@@ -74,7 +65,6 @@ float4 fragmentMain(VSOut input)
      }
 
     float3 albedo = material.albedoTex.Sample(uv).rgb;
-
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal);
@@ -91,6 +81,9 @@ float4 fragmentMain(VSOut input)
     m.F90 = material.F90.xyz;
     m.Emissive = material.emissiveTex.Sample(uv).xyz;
 
+
+
     col.xyz = StandardSurface(m);
+
     return col;
 }

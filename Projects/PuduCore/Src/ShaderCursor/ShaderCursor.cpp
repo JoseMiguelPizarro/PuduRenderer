@@ -139,6 +139,21 @@ namespace Pudu
         m_target->graphics->UpdateDescriptorSet(1, &imageWrite);
     }
 
+    void ShaderCursor::Write(const SPtr<TextureSampler>& ptr)
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.sampler = ptr->vkHandle;
+
+        VkWriteDescriptorSet imageWrite = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        imageWrite.descriptorCount = 1;
+        imageWrite.dstBinding = m_bindingIndex;
+        imageWrite.dstSet = m_target->GetDescriptorSet(m_setIndex);
+        imageWrite.pImageInfo = &imageInfo;
+        imageWrite.descriptorType = m_descriptorType;
+
+        m_target->graphics->UpdateDescriptorSet(1, &imageWrite);
+    }
+
     void ShaderCursor::Write(const SPtr<GraphicsBuffer>& buffer)
     {
         VkDescriptorBufferInfo bufferInfo{};

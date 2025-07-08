@@ -11,6 +11,11 @@ namespace Pudu
 		return pipeline;
 	}
 
+	UPtr<std::vector<fs::path>> IShaderObject::GetDependencies()
+	{
+		return m_compilationObject.GetDependencies();
+	}
+
 	ShaderNode* IShaderObject::GetShaderLayout()
 	{
 		return m_compilationObject.descriptorsData.GetShaderLayout();

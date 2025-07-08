@@ -230,8 +230,9 @@ namespace Pudu
 		//<summary>Loads a texture as a horizonmap and converts it to a cubemap</summary>
 		SPtr<TextureCube> LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings);
 		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
+		GPUResourceHandle<TextureSampler> CreateSampler(const SamplerCreationData& creationData);
 		void CreateVKTexture(Texture* texture);
-		void CreateVKTextureSampler(SamplerCreationData& data, VkSampler& sampler);
+		void CreateVKTextureSampler(const SamplerCreationData& data, VkSampler& sampler);
 
 		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range,std::vector<VkBufferImageCopy2>* regions = nullptr);
 		void GenerateTextureMipMaps(Texture* texture, GPUCommands* commandsBuffer);
@@ -271,7 +272,11 @@ namespace Pudu
 		SPtr<Shader> GetDefaultOverlayShader();
 		SPtr<Shader> GetDefaultOverlayTextureArrayShader();
 		SPtr<Shader> GetDefaultStandardShader();
+		SPtr<Material> GetDefaultStandardMaterial();
+
 		SPtr<Mesh> GetDefaultQuad();
+		SPtr<Mesh> GetDefaultCube();
+		SPtr<Mesh> GetDefaultSphere();
 #pragma endregion
 
 	private:
@@ -383,7 +388,10 @@ namespace Pudu
 		GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
 		GPUResourceHandle<Texture> m_defaultPuduTexture;
 		SPtr<Mesh> m_defaultQuad;
+		SPtr<Mesh> m_defaultCube;
+		SPtr<Mesh> m_defaultSphere;
 		SPtr<Mesh> m_defaultPlane;
+		SPtr<Material> m_defaultStandardMaterial;
 		SPtr<Shader> m_defaultOverlayShader;
 		SPtr<Shader> m_defaultOverlayTextureArrayShader;
 		SPtr<Shader> m_defaultStandardShader;
