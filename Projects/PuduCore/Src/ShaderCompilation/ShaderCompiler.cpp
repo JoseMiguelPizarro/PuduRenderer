@@ -101,6 +101,8 @@ namespace Pudu
         if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         IModule* shaderModule = session->loadModule(path, diagnostics.writeRef());
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
+
         auto dependenciesCount = shaderModule->getDependencyFileCount();
 
         compiledData.m_dependencies.push_back(path);
@@ -111,7 +113,6 @@ namespace Pudu
             compiledData.m_dependencies.push_back(dependencyPath);
         }
 
-        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         std::vector<Slang::ComPtr<IEntryPoint>> slangEntryPoints;
 
