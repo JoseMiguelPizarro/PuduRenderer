@@ -31,6 +31,7 @@ public struct Globals
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;
+    public Sampler2D pudu;
     public SamplerCube skybox;
     public SamplerCube IBL_Specular; //Convoluted image based lighting env map
     public SamplerCube IBL_Diffuse;

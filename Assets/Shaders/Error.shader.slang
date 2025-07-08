@@ -25,10 +25,10 @@ float4 fragmentMain(VSOut input)
 {
    float2 screenUV = GetPixelScreenPosition(input.PosCS);
 
-   screenUV.xy *= 50;
+   screenUV.xy *= 12;
    float id = floor(screenUV.y);
 
    float check =floor((screenUV.x+ id%2)%2);
 
-   return float4(1,0,1,1)*check;
+   return lerp( float4(1,0,1,1), GLOBALS.pudu.Sample(frac(screenUV)),check);
 }
