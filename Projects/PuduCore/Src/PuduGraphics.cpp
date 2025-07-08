@@ -617,6 +617,14 @@ namespace Pudu
         metallicRoughnessTextureData.samplerData = &metallicRoughnessSamplerData;
 
         m_defaultMetallicRoughnessTexture = CreateTexture(metallicRoughnessTextureData);
+
+        SamplerCreationData samplerData{true,1, VK_FILTER_NEAREST};
+        TextureLoadSettings pudutextureSettings;
+        pudutextureSettings.mipLevels = 1;
+        pudutextureSettings.name = "PuduLogo";
+        pudutextureSettings.samplerData = samplerData;
+
+        m_defaultPuduTexture = LoadTexture2D("textures/PuduLogo.png", pudutextureSettings)->Handle();
     }
 
     void PuduGraphics::CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData)
@@ -2117,6 +2125,11 @@ namespace Pudu
         return m_resources.GetTexture<Texture>(m_defaultMetallicRoughnessTexture);
     }
 
+    SPtr<Texture> PuduGraphics::GetPuduTexture()
+    {
+        return m_defaultPuduTexture.Get();
+    }
+
     SPtr<Shader> PuduGraphics::GetDefaultOverlayShader()
     {
         return m_defaultOverlayShader;
@@ -2641,8 +2654,8 @@ namespace Pudu
     {
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = VK_FILTER_LINEAR;
-        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.magFilter = data.filter;
+        samplerInfo.minFilter = data.filter;
 
         VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 

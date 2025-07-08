@@ -463,6 +463,7 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
+        m_globalPropertiesMaterial->SetProperty("GLOBALS.pudu", graphics->GetPuduTexture());
 
         SetRoughnessScale(1.);
         SetGamma(2.2);

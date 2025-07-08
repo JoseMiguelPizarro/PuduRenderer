@@ -373,6 +373,7 @@ namespace Pudu
     {
         bool wrap = true;
         uint32_t maxLOD = 1;
+        VkFilter filter = VK_FILTER_LINEAR;
     };
 
 
