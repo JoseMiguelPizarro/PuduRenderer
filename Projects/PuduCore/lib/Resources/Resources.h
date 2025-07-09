@@ -365,8 +365,8 @@ namespace Pudu
     {
         bool wrap = true;
         uint32_t maxLOD = 1;
-        std::string name;
         VkFilter filter = VK_FILTER_LINEAR;
+        std::string name;
     };
 
     /// <summary>

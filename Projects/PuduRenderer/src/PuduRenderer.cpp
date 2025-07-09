@@ -391,6 +391,7 @@ namespace Pudu
         SamplerCreationData samplerData{};
         samplerData.wrap = true;
         samplerData.name = "sampler_linear";
+        samplerData.filter = VK_FILTER_LINEAR;
 
         auto linerSampler = graphics->CreateSampler(samplerData);
 
