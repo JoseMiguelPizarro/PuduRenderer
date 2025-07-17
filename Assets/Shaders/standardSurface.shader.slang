@@ -82,8 +82,6 @@ float4 fragmentMain(VSOut input)
     m.Emissive = material.emissiveTex.Sample(uv).xyz;
 
 
-
     col.xyz = StandardSurface(m);
-
     return col;
 }

@@ -16,7 +16,7 @@ void Test_PBR::OnInit()
 {
     AntialiasingSettings antialiasingSettings{};
     antialiasingSettings.sampleCount = TextureSampleCount::Eight;
-    Graphics.SetAntiAliasing(antialiasingSettings);
+    Graphics->SetAntiAliasing(antialiasingSettings);
 
     m_camera = {};
     m_camera.Transform.SetLocalPosition({0, 0, 6});
@@ -24,19 +24,19 @@ void Test_PBR::OnInit()
     m_camera.SetClearColor({1, 0, 0, 1});
     Projection projection;
 
-    projection.Width = Graphics.WindowWidth;
-    projection.Height = Graphics.WindowHeight;
+    projection.Width = Graphics->WindowWidth;
+    projection.Height = Graphics->WindowHeight;
     projection.Fov = 45;
 
     m_camera.Projection = projection;
 
-    m_scene = Scene(&Time);
+    m_scene = Scene(this);
     m_scene.camera = &m_camera;
     TargetFPS = 30;
 
-    m_puduRenderer.Init(&Graphics, this);
+    m_puduRenderer.Init(Graphics.get(), this);
 
-    standardShader = Graphics.GetDefaultStandardShader();
+    standardShader = Graphics->GetDefaultStandardShader();
     TextureLoadSettings settings{};
     settings.bindless = false;
     settings.name = "stringy_marble_albedo";
@@ -51,27 +51,27 @@ void Test_PBR::OnInit()
     skyboxLoadSettings.samplerData.wrap = true;
     skyboxLoadSettings.generateMipmaps = true;
 
-    auto skybox = Graphics.LoadTextureHorizonAsCube("textures/skybox/piazza_bologni_4k.ktx2", skyboxLoadSettings);
+    auto skybox = Graphics->LoadTextureHorizonAsCube("textures/skybox/piazza_bologni_4k.ktx2", skyboxLoadSettings);
     m_puduRenderer.SetSkyBox(skybox);
 
-    SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
+    SPtr<Texture2d> albedoTexture = Graphics->LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
 
-    SPtr<Texture2d> normalTexture = Graphics.LoadTexture2D(
+    SPtr<Texture2d> normalTexture = Graphics->LoadTexture2D(
         "textures/patched-brickwork/patched-brickwork_Normal-ogl.png", settings);
-    SPtr<Texture2d> roughnessTexture = Graphics.LoadTexture2D(
+    SPtr<Texture2d> roughnessTexture = Graphics->LoadTexture2D(
         "textures/patched-brickwork/patched-brickwork_roughness.png", settings);
-    SPtr<Texture2d> heightTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_height.png",
+    SPtr<Texture2d> heightTexture = Graphics->LoadTexture2D("textures/patched-brickwork/patched-brickwork_height.png",
                                                            settings);
 
 
-    SPtr<Texture2d> silverAlbedoTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_albedo.png", settings);
-    SPtr<Texture2d> silverNormalTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_normal-ogl.png", settings);
-    SPtr<Texture2d> silverRoughnessTexture = Graphics.
+    SPtr<Texture2d> silverAlbedoTexture = Graphics->LoadTexture2D("textures/silver-bl/silver_albedo.png", settings);
+    SPtr<Texture2d> silverNormalTexture = Graphics->LoadTexture2D("textures/silver-bl/silver_normal-ogl.png", settings);
+    SPtr<Texture2d> silverRoughnessTexture = Graphics->
         LoadTexture2D("textures/silver-bl/silver_roughness.png", settings);
-    SPtr<Texture2d> silverMetalnessTexture = Graphics.
+    SPtr<Texture2d> silverMetalnessTexture = Graphics->
         LoadTexture2D("textures/silver-bl/silver_metallic.png", settings);
-    SPtr<Texture2d> silverHeightTexture = Graphics.LoadTexture2D("textures/silver-bl/silver_height.png", settings);
+    SPtr<Texture2d> silverHeightTexture = Graphics->LoadTexture2D("textures/silver-bl/silver_height.png", settings);
 
     projection.nearPlane = 5;
     projection.farPlane = 20;
@@ -90,7 +90,7 @@ void Test_PBR::OnInit()
 
     const auto skyboxModel = FileManager::LoadGltfScene("models/skybox.gltf")->GetChildByName<RenderEntity>("Sphere");
 
-    auto skyboxShader = Graphics.CreateShader("skybox.shader.slang", "skybox");
+    auto skyboxShader = Graphics->CreateShader("skybox.shader.slang", "skybox");
     const auto skyboxMaterial = skyboxModel->GetModel()->Materials[0];
     skyboxMaterial->name = "Skybox";
     skyboxMaterial->SetShader(skyboxShader);
@@ -102,7 +102,7 @@ void Test_PBR::OnInit()
     m_model->GetTransform().SetLocalPosition({0, 0, 0});
     m_model->GetTransform().SetUniformLocalScale(.5);
 
-    const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
+    const auto overlayShader = Graphics->CreateShader("overlay.slang", "overlay");
     const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf")->GetChildByName<RenderEntity>("OUT_AXIS");
     axisModel->GetTransform().SetLocalPosition({0, 0, 0});
     axisModel->GetTransform().SetUniformLocalScale(0.2f);
@@ -111,9 +111,9 @@ void Test_PBR::OnInit()
     axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
 
     Model sphereModel;
-    sphereModel.Meshes.push_back(Graphics.GetDefaultSphere());
-    sphereModel.Materials.push_back(Graphics.GetDefaultStandardMaterial());
-    auto sphereEntity = EntityManager::AllocateRenderEntity(sphereModel);
+    sphereModel.Meshes.push_back(Graphics->GetDefaultSphere());
+    sphereModel.Materials.push_back(Graphics->GetDefaultStandardMaterial());
+    auto sphereEntity = EntityManager->AllocateRenderEntity(sphereModel);
 
 
     // m_scene.AddEntity(sphereEntity);
@@ -134,7 +134,7 @@ void Test_PBR::OnRun()
     if (Input::IsMouseButtonPressed(MouseButton::Left))
     {
         const auto mousePos = Input::GetMousePosition();
-        const auto mousePosNormalized = mousePos / glm::vec2{Graphics.WindowWidth, Graphics.WindowHeight};
+        const auto mousePosNormalized = mousePos / glm::vec2{Graphics->WindowWidth, Graphics->WindowHeight};
         const auto mousePosNormalized2 = mousePosNormalized * 2.f - 1.f;
 
         auto delta = Input::GetMousePositionDelta();
@@ -159,9 +159,9 @@ void Test_PBR::DrawImGUI()
 {
     PuduApp::DrawImGUI();
 
-    ImGui::Text(StringUtils::Format("FPS: {}", Time.GetFPS()).c_str());
-    ImGui::Text(StringUtils::Format("Time: {}", Time.Time()).c_str());
-    ImGui::Text(StringUtils::Format("DeltaTime: {}", Time.DeltaTime()).c_str());
+    ImGui::Text(StringUtils::Format("FPS: {}", Time->GetFPS()).c_str());
+    ImGui::Text(StringUtils::Format("Time: {}", Time->Time()).c_str());
+    ImGui::Text(StringUtils::Format("DeltaTime: {}", Time->DeltaTime()).c_str());
 
     static int index = 0;
 
@@ -181,7 +181,7 @@ void Test_PBR::DrawImGUI()
 
     ImGuiUtils::DrawEntityTree(entities);
 
-    auto textures = Graphics.Resources()->GetAllocatedTextures()->GetAllResources();
+    auto textures = Graphics->Resources()->GetAllocatedTextures()->GetAllResources();
 
     if (ImGui::CollapsingHeader("Textures"))
     {
@@ -200,11 +200,11 @@ void Test_PBR::DrawImGUI()
         }
     }
 
-    ImGuiUtils::DrawShaderTree(&Graphics, Graphics.Resources()->GetAllocatedShaders()->GetAllResources());
+    ImGuiUtils::DrawShaderTree(Graphics.get(), Graphics->Resources()->GetAllocatedShaders()->GetAllResources());
 
     if (ImGui::CollapsingHeader("Materials"))
     {
-        const auto materials = Graphics.Resources()->GetAllocatedMaterials()->GetAllResources();
+        const auto materials = Graphics->Resources()->GetAllocatedMaterials()->GetAllResources();
 
         for (Size row = 0; row < materials.size(); row++)
         {

@@ -23,6 +23,11 @@ namespace fg = fastgltf;
 
 namespace Pudu
 {
+    void FileManager::Initialize(EntityManager* entityManager)
+    {
+        m_entityManager = entityManager;
+    }
+
     std::vector<char> FileManager::ReadFile(std::filesystem::path const& fileName)
     {
         std::ifstream file(fileName.generic_string(), std::ios::ate | std::ios::binary); //ate: at the end lmao
@@ -264,7 +269,7 @@ namespace Pudu
         std::unordered_map<fastgltf::Node*, EntitySPtr> parentEntitiesByNode;
 
         std::string name = path.stem().string();
-        auto root = EntityManager::AllocateEntity(name);
+        auto root = m_entityManager->AllocateEntity(name);
 
         for (auto& node : asset->nodes)
         {
@@ -281,7 +286,7 @@ namespace Pudu
                 const auto& meshData = meshCreationData[meshIndex.value()];
                 auto model = PuduGraphics::Instance()->CreateModel(meshData);
 
-                auto renderEntity = EntityManager::AllocateRenderEntity(meshData.Name.c_str(), model);
+                auto renderEntity = m_entityManager->AllocateRenderEntity(meshData.Name.c_str(), model);
                 auto [layer] = renderEntity->GetRenderSettings();
                 layer = 0;
                 entity = renderEntity;
@@ -289,7 +294,7 @@ namespace Pudu
             //Node is a transform
             else
             {
-                entity = EntityManager::AllocateEntity(name);
+                entity = m_entityManager->AllocateEntity(name);
 
                 parentEntitiesByNode[&node] = entity;
             }

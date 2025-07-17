@@ -1,6 +1,7 @@
 #pragma once
 #include <chrono>
 
+#include "FileManager.h"
 #include "Input.h"
 #include "PuduGraphics.h"
 #include "PuduTime.h"
@@ -16,8 +17,9 @@ namespace  Pudu
 
 		bool FrameBufferResized;
 		int TargetFPS = 30;
-		PuduGraphics Graphics;
-		PuduTime Time;
+		UPtr<PuduGraphics> Graphics;
+		UPtr<EntityManager> EntityManager;
+		UPtr<PuduTime> Time;
 
 		void virtual DrawImGUI() {};
 
@@ -30,12 +32,9 @@ namespace  Pudu
 
 		virtual void OnInit() {};
 
-
 		void virtual OnCleanup()
 		{
 		};
-
-		
 	};
 
 }

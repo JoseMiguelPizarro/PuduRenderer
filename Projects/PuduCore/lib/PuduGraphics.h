@@ -46,8 +46,6 @@
 #include "AntialiasingSettings.h"
 #include "ComputeShaderRenderer.h"
 #include "PuduGraphicsSettings.h"
-#include "Resources/CommandPool.h"
-#include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
 #include "ShaderCompilation/ShaderCompiler.h"
 #include "Swapchain.h"

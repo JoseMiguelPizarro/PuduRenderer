@@ -1,26 +1,28 @@
 #pragma once
-#include "Entity.h"
+#include "EntityFwd.h"
+#include "IEntityProvider.h"
 #include "RenderEntity.h"
 
 
 namespace Pudu {
 
-	class EntityManager
+	class EntityManager: public IEntityProvider
 	{
 	public:
+		EntityHandle AllocateEntity();
+		EntityHandle AllocateEntity(std::string& name);
+		EntitySPtr GetEntity(Handle handle);
 
-		static EntitySPtr AllocateEntity();
-		static EntitySPtr AllocateEntity(std::string& name);
+		 EntityHandle AllocateRenderEntity();
+		 EntityHandle AllocateRenderEntity(const char*  name);
+		 EntityHandle AllocateRenderEntity(Model model);
+		 EntityHandle AllocateRenderEntity(const char* name, Model model);
+		 void DestroyEntity(EntityHandle entity);
 
-		static RenderEntitySPtr AllocateRenderEntity();
-		static RenderEntitySPtr AllocateRenderEntity(const char*  name);
-		static RenderEntitySPtr AllocateRenderEntity(Model model);
-		static RenderEntitySPtr AllocateRenderEntity(const char* name, Model model);
-		static void DestroyEntity(RenderEntitySPtr entity);
-
-	private:
-		static std::vector<RenderEntitySPtr> m_renderEntities;
-		static std::vector<EntitySPtr> m_entities;
+		 EntitySPtr GetResource(Handle id) override;
+	 private:
+		//TODO: IMPLEMENT WITH RESOURCE POOL
+		std::vector<EntitySPtr> m_entities;
 	};
 }
 

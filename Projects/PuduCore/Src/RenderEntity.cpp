@@ -1,4 +1,6 @@
+#include <memory>
 #include "RenderEntity.h"
+
 #include "Scene.h"
 
 namespace Pudu {
@@ -14,7 +16,7 @@ namespace Pudu {
 	}
 	void RenderEntity::AttatchToScene(Scene& scene)
 	{
-		scene.AddRendererEntity(dynamic_pointer_cast<RenderEntity>(m_entitySPtr));
+		scene.AddRendererEntity(std::dynamic_pointer_cast<RenderEntity>(m_entitySPtr));
 	}
 
 	RenderSettings& RenderEntity::GetRenderSettings()

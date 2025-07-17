@@ -1228,7 +1228,7 @@ namespace Pudu
             framebufferAttachments[activeAttachments] = texture->vkImageViewHandle;
         }
 
-        if (framebuffer->depthStencilAttachmentHandle.Index() != k_INVALID_HANDLE)
+        if (framebuffer->depthStencilAttachmentHandle.Index() != K_INVALID_HANDLE)
         {
             auto depthTexture = m_resources.GetTexture<RenderTexture>(framebuffer->depthStencilAttachmentHandle);
             framebufferAttachments[activeAttachments++] = depthTexture->vkImageViewHandle;

@@ -3,7 +3,7 @@
 namespace Pudu
 {
 	template<typename T>
-	T* ResourcePool<T>::GetResourcePtr(uint32_t handle)
+	T* ResourcePool<T>::GetResourcePtr(Handle handle)
 	{
 		if (handle < m_resources.size())
 		{
@@ -14,7 +14,7 @@ namespace Pudu
 	}
 
 	template<typename T>
-	T ResourcePool<T>::GetResource(uint32_t handle)
+	T ResourcePool<T>::GetResource(Handle handle)
 	{
 		return m_resources[handle];
 	}
@@ -27,9 +27,9 @@ namespace Pudu
 
 
 	template<typename T>
-	uint32_t ResourcePool<T>::AddResource(T resource)
+	Handle ResourcePool<T>::AddResource(T resource)
 	{
-		uint32_t id = (uint32_t)m_resources.size();
+		Handle id = (Handle)m_resources.size();
 		m_resources.resize(id + 1);
 		m_resources[id] = resource;
 
@@ -42,11 +42,11 @@ namespace Pudu
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
 	template<typename T>
-	uint32_t ResourcePool<T>::ObtainResource()
+	Handle ResourcePool<T>::ObtainResource()
 	{
 		T t;
 		m_resources.push_back(t);
-		return (uint32_t)m_resources.size() - 1;
+		return (Handle)m_resources.size() - 1;
 	}
 
 	template<typename T>

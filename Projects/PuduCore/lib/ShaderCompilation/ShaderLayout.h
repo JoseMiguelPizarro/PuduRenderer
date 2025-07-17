@@ -9,7 +9,7 @@
 namespace Pudu
 {
     //🐞 DON'T FORGET TO MODIFY SHADER_NODE_TYPE_NAMES WHEN MODIFYING THIS
-    enum ShaderNodeType
+    enum class ShaderNodeType
     {
         Root,
         //THIS IS RESERVED FOR CBUFFER USUALLY AUTOMATICALLY ALLOCATED
@@ -24,15 +24,15 @@ namespace Pudu
     };
 
     static std::map<ShaderNodeType, const char*> SHADER_NODE_TYPE_NAMES = {
-        {Root, "Root"},
-        {CBuffer, "CBuffer"},
-        {Buffer, "Buffer"},
-        {Array, "Array"},
-        {Resource, "Resource"},
-        {Uniform, "Uniform"},
-        {PushConstant, "PushConstant"},
-        {ParameterBlock, "ParameterBlock"},
-        {Struct, "Struct"}
+        {ShaderNodeType::Root, "Root"},
+        {ShaderNodeType::CBuffer, "CBuffer"},
+        {ShaderNodeType::Buffer, "Buffer"},
+        {ShaderNodeType::Array, "Array"},
+        {ShaderNodeType::Resource, "Resource"},
+        {ShaderNodeType::Uniform, "Uniform"},
+        {ShaderNodeType::PushConstant, "PushConstant"},
+        {ShaderNodeType::ParameterBlock, "ParameterBlock"},
+        {ShaderNodeType::Struct, "Struct"}
     };
 
     struct ShaderNodeHandle

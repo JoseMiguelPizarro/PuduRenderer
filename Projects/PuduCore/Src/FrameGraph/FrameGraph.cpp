@@ -1155,7 +1155,7 @@ namespace Pudu
     //		return r->resourceHandle;
     //	}
 
-    //	GPUResourceHandle resourceHandle{ k_INVALID_HANDLE };
+    //	GPUResourceHandle resourceHandle{ K_INVALID_HANDLE };
     //	resourceHandle.index = resourceCache.resources.ObtainResource();
 
     //	GPUResource* resource = resourceCache.resources.GetResourcePtr(resourceHandle.index);
@@ -1195,7 +1195,7 @@ namespace Pudu
 
     FrameGraphNodeHandle FrameGraphBuilder::CreateNode(const FrameGraphNodeCreation& creation)
     {
-        FrameGraphNodeHandle nodeHandle{k_INVALID_HANDLE};
+        FrameGraphNodeHandle nodeHandle{K_INVALID_HANDLE};
         nodeHandle = nodeCache.nodes.ObtainResource();
 
         FrameGraphNode* node = nodeCache.nodes.GetResourcePtr(nodeHandle);
@@ -1205,7 +1205,7 @@ namespace Pudu
         node->inputs = creation.inputs;
         node->outputs = creation.outputs;
         //node->outputEdges.reserve(creation.outputs.size());
-        node->framebuffer = {k_INVALID_HANDLE};
+        node->framebuffer = {K_INVALID_HANDLE};
         node->renderPass = creation.renderPass;
         //node->type = creation.renderType;
         node->isCompute = creation.isCompute;
@@ -1268,7 +1268,7 @@ namespace Pudu
     NodeEdgeHandle FrameGraphBuilder::CreateNodeEdge(FrameGraphNodeHandle from, FrameGraphNodeHandle to,
                                                      GPUResourceHandleBase resourceHandle)
     {
-        NodeEdgeHandle edgeHandle{k_INVALID_HANDLE};
+        NodeEdgeHandle edgeHandle{K_INVALID_HANDLE};
         edgeHandle.index = nodeCache.nodeEdges.ObtainResource();
 
         NodeEdge* edge = nodeCache.nodeEdges.GetResourcePtr(edgeHandle.index);
@@ -1417,7 +1417,7 @@ namespace Pudu
     //					values.push_back((uint32_t)r.get_int64());
     //				}
 
-    //				outputCreation.textureHandle = { k_INVALID_HANDLE };
+    //				outputCreation.textureHandle = { K_INVALID_HANDLE };
     //				outputCreation.width = values[0];
     //				outputCreation.height = values[1];
     //				outputCreation.depth = 1;

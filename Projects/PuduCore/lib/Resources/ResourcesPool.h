@@ -21,20 +21,20 @@ namespace Pudu
 			m_resources.reserve(MAX_RESOURCE_SIZE);
 		}
 
-		T* GetResourcePtr(uint32_t handle);
+		T* GetResourcePtr(Handle handle);
 
-		T GetResource(uint32_t handle);
+		T GetResource(Handle handle);
 
-		uint32_t AddResource(T resource);
+		Handle AddResource(T resource);
 
 		/// <summary>
 		/// Allocates a new resource and returns its handle
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		uint32_t ObtainResource();
+		Handle ObtainResource();
 
-		size_t Size();
+		Size Size();
 
 		std::vector<T> GetAllResources();
 

@@ -5,57 +5,64 @@
 #include <string>
 #include "Concepts.h"
 #include "PuduCore.h"
+#include "EntityHandle.h"
+#include "Resources/Resource.h"
+#include "EntityFwd.h"
 
-namespace Pudu {
-	class Scene;
-	class Entity
-	{
-		typedef std::shared_ptr<Entity> EntitySPtr;
-	public:
-		virtual std::string ClassName() {
-			return "Entity";
-		}
+namespace Pudu
+{
+    class Scene;
+    class EntityManager;
 
-		void SetName(std::string const name);
-		const std::string& GetName();
-		Entity() {};
-		Entity(std::string& name);
+    class Entity : public Resource<Entity>
+    {
+    public:
+        virtual std::string ClassName()
+        {
+            return "Entity";
+        }
 
-		Transform& GetTransform();
-		void SetTransform(Transform t);
-		void SetParent(EntitySPtr parent);
-		EntitySPtr GetParent();
-		EntitySPtr GetRoot() const;
-		std::vector<EntitySPtr> GetChildren();
+        void SetName(std::string const name);
+        const std::string& GetName();
 
-		EntitySPtr GetChildByName(const char* name);
+        Entity(): m_parent(), m_handle()
+        {
+        }
+        ;
+        Entity(std::string& name);
 
-		template <Derived<Entity> T>
-		SPtr<T> GetChildByName(std::string const& name);
+        Transform& GetTransform();
+        void SetTransform(const Transform& t);
+        void SetParent(EntityHandle parent);
+        EntitySPtr GetParent();
+        EntitySPtr GetRoot() const;
+        std::vector<EntityHandle> GetChildren();
 
-		size_t ChildCount();
-		virtual void AttatchToScene(Scene& scene);
+        EntitySPtr GetChildByName(const char* name);
 
-	protected:
-		friend class EntityManager;
+        template <Derived<Entity> T>
+        SPtr<T> GetChildByName(std::string const& name);
 
-		EntitySPtr m_entitySPtr = nullptr;
-		EntitySPtr m_parent = nullptr;
+        size_t ChildCount();
+        virtual void AttatchToScene(Scene& scene);
 
-		Transform m_transform;
-		std::vector<EntitySPtr> m_children;
-		std::string m_name;
-		EntitySPtr GetRoot(EntitySPtr const & entity) const;
-		void AddChild(EntitySPtr& entity);
+    protected:
+        friend class EntityManager;
 
-	};
+        UPtr<EntityManager> m_entityManager = nullptr;
+        EntityHandle m_parent;
+        EntityHandle m_handle;
 
-	template <Derived<Entity> T>
-	SPtr<T> Entity::GetChildByName(std::string const& name)
-	{
-		return std::dynamic_pointer_cast<T>(GetChildByName(name.c_str()));
-	}
+        Transform m_transform;
+        std::vector<EntityHandle> m_children;
+        std::string m_name;
+        EntitySPtr GetRoot(EntityHandle entity) const;
+        void AddChild(EntityHandle entity);
+    };
 
-	typedef std::shared_ptr<Entity> EntitySPtr;
+    template <Derived<Entity> T>
+    SPtr<T> Entity::GetChildByName(std::string const& name)
+    {
+        return std::dynamic_pointer_cast<T>(GetChildByName(name.c_str()));
+    }
 }
-

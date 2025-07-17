@@ -13,43 +13,49 @@ namespace Pudu
 	void PuduApp::Init()
 	{
 		LOG("PuduApp Init");
+
+		Graphics = std::make_unique<PuduGraphics>();
+		Time = std::make_unique<PuduTime>();
+		EntityManager = std::make_unique<Pudu::EntityManager>();
+
 		PuduGraphicsSettings settings;
 		settings.resolution.x = 1024;
 		settings.resolution.y = 1024;
 		settings.presentMode = PresentMode::FIFO;
-		Graphics.Init(settings);
-		Input::Init(Graphics.WindowPtr);
+		Graphics->Init(settings);
+		Input::Init(Graphics->WindowPtr);
+		FileManager::Initialize(EntityManager.get());
 
 		OnInit();
 
-		Time.m_startTime = std::chrono::high_resolution_clock::now();
-		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
-		Graphics.SetTime(&Time);
+		Time->m_startTime = std::chrono::high_resolution_clock::now();
+		Time->m_endFrameTime = std::chrono::high_resolution_clock::now();
+		Graphics->SetTime(Time.get());
 	}
 
 	void PuduApp::Cleanup()
 	{
-		Graphics.WaitIdle();
+		Graphics->WaitIdle();
 		OnCleanup();
-		Graphics.Cleanup();
+		Graphics->Cleanup();
 	}
 
 	void PuduApp::Run()
 	{
 
-		Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
-		Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
+		Time->m_startFrameTime = std::chrono::high_resolution_clock::now();
+		Time->m_endFrameTime = std::chrono::high_resolution_clock::now();
 
 		//Main Loop
-		while (!glfwWindowShouldClose(Graphics.WindowPtr))
+		while (!glfwWindowShouldClose(Graphics->WindowPtr))
 		{
 			auto targetFrameDuration = std::chrono::duration<double, std::milli>(1000.0f / static_cast<double>(TargetFPS));
 			glfwPollEvents();
 
 			std::chrono::duration<double, std::milli> elapsed = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
 
-			Time.m_endFrameTime = Time.m_startFrameTime;
-			Time.m_startFrameTime = std::chrono::high_resolution_clock::now();
+			Time->m_endFrameTime = Time->m_startFrameTime;
+			Time->m_startFrameTime = std::chrono::high_resolution_clock::now();
 
 
 			if (elapsed < targetFrameDuration)
@@ -66,10 +72,10 @@ namespace Pudu
 			catch (std::exception& e) {
 				std::printf(e.what());
 			}
-			Time.m_endFrameTime = std::chrono::high_resolution_clock::now();
+			Time->m_endFrameTime = std::chrono::high_resolution_clock::now();
 
-			std::chrono::duration<double, std::milli> deltaTime = std::chrono::high_resolution_clock::now() - Time.m_startFrameTime;
-			Time.m_deltaTime = deltaTime.count();
+			std::chrono::duration<double, std::milli> deltaTime = std::chrono::high_resolution_clock::now() - Time->m_startFrameTime;
+			Time->m_deltaTime = deltaTime.count();
 		}
 
 		Cleanup();

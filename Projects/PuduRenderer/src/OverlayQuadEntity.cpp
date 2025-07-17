@@ -32,11 +32,6 @@ namespace Pudu
         return m_model.Materials[0];
     }
 
-    void OverlayQuadEntity::SetPtr(SPtr<RenderEntity> ptr)
-    {
-        m_entitySPtr = ptr;
-    }
-
     void OverlayQuadEntity::SetPositionAndSize(float x, float y, float width, float height)
     {
         auto m = m_model.Materials[0];
@@ -94,12 +89,6 @@ namespace Pudu
     SPtr<Material> OverlayQuadTextureArrayEntity::GetMaterial()
     {
         return m_model.Materials[0];
-    }
-
-    //TODO: THIS IS VERY DIRTY, MUST BE REMOVED
-    void OverlayQuadTextureArrayEntity::SetPtr(SPtr<RenderEntity> ptr)
-    {
-        m_entitySPtr = ptr;
     }
 
     void OverlayQuadTextureArrayEntity::SetPositionAndSize(float x, float y, float width, float height)

@@ -13,7 +13,7 @@ namespace Pudu
 		uint16_t numRenderTargets = 0;
 
 		GPUResourceHandle<Texture> outputTexturesHandle[K_MAX_IMAGE_OUTPUTS];
-		GPUResourceHandle<Texture> depthStencilTextureHandle = { k_INVALID_HANDLE };
+		GPUResourceHandle<Texture> depthStencilTextureHandle = { K_INVALID_HANDLE };
 
 		uint16_t width = 0;
 		uint16_t height = 0;

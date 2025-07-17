@@ -15,7 +15,7 @@ static const uint8_t K_MAX_VERTEX_ATTRIBUTES = 16;
 static const uint32_t K_SUBMIT_HEADER_SENTINEL = 0xfefeb7ba;
 static const uint32_t K_MAX_RESOURCE_DELETIONS = 64;
 
-static const uint32_t k_INVALID_HANDLE = 0xffffffff;
+static const uint32_t K_INVALID_HANDLE = 0xffffffff;
 
 static const uint32_t K_MAX_MIP_LEVELS = 16;
 

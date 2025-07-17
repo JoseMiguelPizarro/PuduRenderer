@@ -1,14 +1,13 @@
 #pragma once
-#include <memory>
 #include "Entity.h"
 #include "Model.h"
 #include "RenderSettings.h"
+#include "EntityFwd.h"
 
 namespace Pudu {
 	
-	class RenderEntity :public Entity
+	class RenderEntity :public Entity, public Resource<RenderEntity>
 	{
-		typedef std::shared_ptr<RenderEntity> RenderEntitySPtr;
 	public:
 
 		std::string ClassName() override {
@@ -25,6 +24,6 @@ namespace Pudu {
 		RenderSettings m_renderSettings = {};
 	};
 
-	typedef std::shared_ptr<RenderEntity> RenderEntitySPtr;
+
 }
 

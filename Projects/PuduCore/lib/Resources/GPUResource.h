@@ -17,11 +17,11 @@ namespace Pudu
 
         friend class GPUResourcesManager;
         void SetIndex(uint32_t index) { m_Index = index; }
-        uint32_t m_Index = k_INVALID_HANDLE;
+        uint32_t m_Index = K_INVALID_HANDLE;
         GPUResourceType m_underlyingType = GPUResourceType::UNDEFINED;
         IGPUResourceProvider* m_provider = nullptr;
 
-        bool IsValid() { return m_Index != k_INVALID_HANDLE; }
+        bool IsValid() { return m_Index != K_INVALID_HANDLE; }
 
 
         operator uint32_t&() { return m_Index; }
@@ -81,7 +81,7 @@ namespace Pudu
 
         SPtr<T> Get() const
         {
-            ASSERT(m_Index != k_INVALID_HANDLE, "Trying to get resource [{}] with invalid handle",
+            ASSERT(m_Index != K_INVALID_HANDLE, "Trying to get resource [{}] with invalid handle",
                    ToString(m_underlyingType));
             return std::static_pointer_cast<T>(m_provider->GetResource(m_Index, m_underlyingType));
         }

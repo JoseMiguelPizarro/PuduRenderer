@@ -15,7 +15,6 @@ public:
      explicit OverlayQuadEntity(PuduGraphics* gfx);
     SPtr<Material> GetMaterial();
 
-    void SetPtr(SPtr<RenderEntity> ptr);
     ///Values in [0,1] Screen coordinates
     void SetPositionAndSize(float x, float y, float width, float height);
     void SetLOD(u32 lod);
@@ -36,8 +35,6 @@ private:
         void SetTextureIndex(uint index);
         void SetLOD(u32 lod);
         SPtr<Material> GetMaterial();
-
-        void SetPtr(SPtr<RenderEntity> ptr);
         ///Values in [0,1] Screen coordinates
         void SetPositionAndSize(float x, float y, float width, float height);
     private:
@@ -46,7 +43,5 @@ private:
     protected:
         SPtr<Shader> GetShader(PuduGraphics* gfx);
     };
-
-
 } // Pudu
 

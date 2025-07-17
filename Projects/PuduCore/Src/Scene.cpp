@@ -3,36 +3,39 @@
 #include "ImGuiUtils.h"
 
 namespace Pudu {
-	void Scene::AddEntity(const EntitySPtr& entity)
+	void Scene::AddEntity(EntityHandle entityPtr)
 	{
-		m_entities.push_back(entity);
-		if (entity != sceneRoot && entity->GetParent() == nullptr)
+
+		m_entities.push_back(entityPtr);
+		auto entity = entityPtr.Get();
+		if (entityPtr != sceneRoot && entity->GetParent() == nullptr)
 		{
 			entity->SetParent(sceneRoot);
 		}
 
-		entity->AttatchToScene(*this);
+		entityPtr->AttatchToScene(*this);
 
-		for (const auto& child : entity->GetChildren())
+		for (const auto& child : entityPtr->GetChildren())
 		{
 			AddEntity(child);
 		}
 	}
-	void Scene::AddEntities(std::vector<EntitySPtr> entities)
+	void Scene::AddEntities(std::vector<ResourceHandle<EntitySPtr>> entities)
 	{
 		for (auto e : entities)
 		{
 			AddEntity(e);
 		}
 	}
-	void Scene::RemoveEntity(EntitySPtr entity)
+	void Scene::RemoveEntity(ResourceHandle<EntitySPtr> entity)
 	{
 		//TODO
 	}
 
-	void Scene::AddRendererEntity(RenderEntitySPtr renderEntity)
+	void Scene::AddRendererEntity(ResourceHandle<SPtr<RenderEntity>> renderEntity)
 	{
-		m_renderEntities.push_back(renderEntity);
+
+		m_renderEntities.push_back(renderEntity.Get());
 
 		auto model = renderEntity->GetModel();
 		for (size_t i = 0; i < model->Meshes.size(); i++)

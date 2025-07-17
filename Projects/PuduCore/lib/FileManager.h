@@ -15,6 +15,8 @@ namespace Pudu {
 	class FileManager
 	{
 	public:
+		static void Initialize(EntityManager* entityManager);
+
 		static std::vector<char> ReadFile(std::filesystem::path const& fileName);
 		/// <summary>
 		/// Get path relative to assets folder
@@ -35,6 +37,10 @@ namespace Pudu {
 		static std::vector<char> LoadShader(fs::path const& path);
 
 		static std::vector<glm::vec4> LoadPointCloud(fs::path const& path);
+
+
+	private:
+		static EntityManager* m_entityManager;
 	};
 
 }
