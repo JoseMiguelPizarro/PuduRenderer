@@ -1,6 +1,17 @@
 module PuduCore;
 
 
+[__AttributeUsage(_AttributeTargets.Var)]
+struct BindlessAttribute
+{
+};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+struct ScopeAttribute
+{
+    string value;
+};
+
 
 public static const float PI = 3.14159265358979f;
 public static constexpr float PI_HALF = PI/2;

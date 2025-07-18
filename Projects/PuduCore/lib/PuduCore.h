@@ -33,9 +33,15 @@ namespace Pudu
     using vec2 = glm::vec2;
     using vec3 = glm::vec3;
     using vec4 = glm::vec4;
+    using float4 = glm::vec4;
+    using float3 = glm::vec3;
+    using float2 = glm::vec2;
     using mat4 = glm::mat4;
     using mat3 = glm::mat3;
     using mat2 = glm::mat2;
+    using float4x4 = glm::mat4;
+    using float3x3 = glm::mat3;
+    using float2x2 = glm::mat2;
     using byte = std::byte;
     using int2 = glm::ivec2;
     using int3 = glm::ivec3;

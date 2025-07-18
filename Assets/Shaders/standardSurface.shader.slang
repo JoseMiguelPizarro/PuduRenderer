@@ -1,10 +1,10 @@
 #include "Lib/DefaultVertexInput.hlsl"
-#include "lib/PuduShadowModule.slang"
 
-import PuduGraphicsModule;
 import PuduCoreModule;
+import PuduGraphicsModule;
+#include "lib/PuduShadowModule.slang"
+#include "lib/PuduLightingModule.slang"
 
-import "Lib/PuduLightingModule.slang";
 
 struct StandardMaterial
 {
@@ -32,8 +32,8 @@ VSOut vertexMain(VertexInput input)
     output.Tangent = mul(UBO.model,input.Tangent);
     output.PosOS = float4(input.Position, 0.);
 
-    LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
-    output.ShadowCoords = GetShadowCoord(lightingBuffer.shadowMatrix, lightingBuffer.lightMatrix, output.PosWS);
+    let directionalLight = LIGHTING.lights.directionalLight;
+    output.ShadowCoords = GetShadowCoord(directionalLight.shadowMatrix, directionalLight.lightMatrix, output.PosWS);
 
     return output;
 }
@@ -44,8 +44,7 @@ float4 fragmentMain(VSOut input)
 {
     float4 col = 0;
 
-
-    float shadow = saturate(FilterPCF(input.ShadowCoords, GLOBALS.shadowMap));
+    float shadow = saturate(FilterPCF(input.ShadowCoords, LIGHTING.shadowMap));
 
     float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);
@@ -54,7 +53,9 @@ float4 fragmentMain(VSOut input)
     float height = material.heightTex.Sample(input.TexCoord.xy).x;
 
     float3 tangentView = WorldToTangent(-viewDir,tangent,bitangent,normal);
-    float3 lightDirTS = WorldToTangent(GLOBALS.lightingBuffer.lightDirection.xyz,tangent,bitangent,normal);
+    let directionalLight = LIGHTING.lights.directionalLight;
+
+    float3 lightDirTS = WorldToTangent(directionalLight.lightDirection.xyz,tangent,bitangent,normal);
     float2 uv = input.TexCoord.xy;
 
     if(material.parallax>0)

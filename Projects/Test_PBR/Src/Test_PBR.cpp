@@ -77,6 +77,7 @@ void Test_PBR::OnInit()
     projection.farPlane = 20;
     m_directionalLight = {};
     m_directionalLight.Projection = projection;
+
     m_directionalLight.GetTransform().SetForward({1.0f,-1, 1}, {0.0f, 1.0f, 0.0f});
     glm::vec3 lightDirection = -m_directionalLight.GetTransform().GetForward();
 
@@ -307,6 +308,7 @@ void Test_PBR::DrawImGUI()
         m_puduRenderer.SetShadowBias(shadowSlopeBias, shadowBias);
     }
 
+    ImGui::SliderFloat("FoV", &m_directionalLight.Projection.Fov, 0.0f, 100.f);
     ImGui::SliderFloat("Near", &m_directionalLight.Projection.nearPlane, 0.0f, 100.f);
     ImGui::SliderFloat("Far", &m_directionalLight.Projection.farPlane, 0.0f, 100.f);
 }

@@ -1,6 +1,8 @@
 #include "Lib/DefaultVertexInput.hlsl"
 
+
 import PuduCoreModule;
+import "Lib/PuduDebugModule";
 import PuduGraphicsModule;
 
 struct PostProcessingData

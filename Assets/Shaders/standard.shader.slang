@@ -53,7 +53,7 @@ float4 fragmentMain(VSOut input)
     float4 base_colour = tex.Sample(input.TexCoord.xy) * input.Color;
     float2 suv = GetPixelScreenPosition(input.PosCS);
 
-    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
+    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, LIGHTING.shadowMap) + 0.5);
     float4 col = pow(base_colour, float4(1.0 / 2.2)) * GetLighting(normalize(input.Normal.xyz), GLOBALS.lightingBuffer.lightDirection.xyz);
     col = lerp(col, float4(0.2, 0.2, 0.3, 1.0), 1 - shadow);
 

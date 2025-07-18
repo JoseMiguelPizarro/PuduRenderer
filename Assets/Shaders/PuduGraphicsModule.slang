@@ -1,18 +1,9 @@
-﻿import  PuduCoreModule;
-#include "Lib/Lighting.hlsl"
+﻿module PuduGraphicsModule;
 
-module PuduGraphicsModule;
+import  PuduCoreModule;
 
-[__AttributeUsage(_AttributeTargets.Var)]
-struct BindlessAttribute
-{
-};
-
-[__AttributeUsage(_AttributeTargets.Var)]
-struct ScopeAttribute
-{
-    string value;
-};
+import "Lib/PuduDebugModule.slang";
+#include "Lib/Lights.slang"
 
 public struct GlobalsConstants
 {
@@ -27,33 +18,15 @@ public struct GlobalsConstants
 
 public struct Globals
 {
-    public Sampler2DShadow shadowMap;
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
     public Sampler2D colorBuffer;
     public Sampler2D pudu;
     public SamplerCube skybox;
-    public SamplerCube IBL_Specular; //Convoluted image based lighting env map
-    public SamplerCube IBL_Diffuse;
-    public uint IBL_Levels;
-    public Sampler2D BRDF_LUT;
+
     public SamplerState linearSampler;
-    public ConstantBuffer<LightBuffer> lightingBuffer;
     public ConstantBuffer<GlobalsConstants> constants;
     public float gamma = 2.2;
-}
-
-public enum DebugMode
-{
-   None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive, LightSpecular, LightDiffuse, ShadowAttenuation, DirectLight, Irradiance, BRDFLUT,
-   VertexNormal,VertexTangent,VertexColor,UV0
-};
-
-public struct DEBUG
-{
-  public DebugMode debugMode;
-  public bool toneMapping = false;
-  public float roughnessScale = 1;
 }
 
 // public struct GlobalsBindless
@@ -63,9 +36,21 @@ public struct DEBUG
 
 [Scope("Global")]
 public ParameterBlock<Globals> GLOBALS;
+//PARAMETERS
+[Scope("Global")]
+public ParameterBlock<SceneLighting> LIGHTING;
 
 [Scope("Global")]
 public ParameterBlock<DEBUG> DEBUG_SETTINGS;
+
+
+public struct UniformBufferObject
+{
+    public float4x4 model;
+    public uint materialId;
+    public float time;
+};
+
 
 // [Bindless, Scope("Global")]
 // public ParameterBlock<GlobalsBindless> GLOBALS_BINDLESS;
@@ -116,4 +101,3 @@ public float4x4 GetProjectionMatrix()
 {
     return GLOBALS.constants.proj;
 }
-

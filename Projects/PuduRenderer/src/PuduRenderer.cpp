@@ -128,7 +128,7 @@ namespace Pudu
 
         gfx->DispatchCompute(&brdfLutCSRenderer, brdfLUTResolution / 32, brdfLUTResolution / 32, 1);
 
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.BRDF_LUT", m_BRDF_LUT);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.BRDF_LUT", m_BRDF_LUT);
     }
 
     void PuduRenderer::InitIBL(PuduGraphics *gfx, SPtr<Texture> envMap)
@@ -257,9 +257,9 @@ namespace Pudu
 
         gfx->DestroyTexture(IBL_DiffuseRT);
 
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Specular", m_IBL_SpecularCube);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Levels", m_IBL_SpecularCube->mipLevels);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.IBL_Diffuse", m_IBL_DiffuseCube);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.IBL_Specular", m_IBL_SpecularCube);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.IBL_Levels", m_IBL_SpecularCube->mipLevels);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.IBL_Diffuse", m_IBL_DiffuseCube);
     }
 
     void PuduRenderer::OnInit(PuduGraphics *graphics, PuduApp *app)
@@ -269,9 +269,11 @@ namespace Pudu
 
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
         m_globalPropertiesMaterial->name = "Global Properties Material";
+
         // Load Globals
+        std::vector<fs::path> globalModules = {"PuduGraphicsModule.slang","lib/PuduDebugModule.slang","lib/PuduLightingModule.slang"};
         m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(
-            graphics->CreateDescriptorSetLayoutsFromModule("PuduGraphicsModule.slang"));
+            graphics->CreateDescriptorSetLayoutsFromModules(globalModules));
         m_globalPropertiesMaterial
             ->SetScope("Global")
             ->SetDescriptorProvider(m_globalDescriptorSetLayouts);
@@ -443,7 +445,7 @@ namespace Pudu
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-        //  AddRenderPass(normalRP.get());
+        AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         // AddRenderPass(drawGrassRP.get());
         AddRenderPass(forwardColorCopyRP.get());
@@ -458,14 +460,14 @@ namespace Pudu
 
         std::printf(frameGraph.ToString().c_str());
 
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.shadowMap", shadowRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.normalBuffer", normalRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.depthBuffer", m_depthCopyRT);
-        m_globalPropertiesMaterial->SetProperty("GLOBALS.lightingBuffer", m_lightingBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.constants", m_globalConstantsBuffer);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.colorBuffer", m_colorCopyRT);
         m_globalPropertiesMaterial->SetProperty("GLOBALS.linearSampler", linerSampler.Get());
         m_globalPropertiesMaterial->SetProperty("GLOBALS.pudu", graphics->GetPuduTexture());
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.shadowMap", shadowRT);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.lights", m_lightingBuffer);
 
         SetRoughnessScale(1.);
         SetGamma(2.2);
@@ -511,9 +513,12 @@ namespace Pudu
     void PuduRenderer::UpdateLightingBuffer(RenderFrameData &frame) const
     {
         LightBuffer lightBuffer{};
-        lightBuffer.lightDirection = {-frame.scene->directionalLight->Direction(), 0.0f};
-        lightBuffer.dirLightMatrix = frame.scene->directionalLight->GetLightMatrix();
-        lightBuffer.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
+        lightBuffer.directionalLight.lightDirection = {-frame.scene->directionalLight->Direction(), 0.0f};
+        lightBuffer.directionalLight.lightMatrix = frame.scene->directionalLight->GetLightMatrix();
+        lightBuffer.directionalLight.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
+        lightBuffer.directionalLight.lightColor = frame.scene->directionalLight->color;
+        lightBuffer.lightCount = 0;
+
 
         frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte *>(&lightBuffer),
                                                sizeof(LightBuffer));

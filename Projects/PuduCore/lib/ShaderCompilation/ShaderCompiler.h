@@ -11,7 +11,8 @@ namespace Pudu {
 	public:
 		void Init();
 		ShaderCompilationObject Compile(const char* path, const std::vector<const char*>& entryPoints, bool compute = false) const;
-		ShaderCompilationObject CompileModule(const fs::path& path);
+		ShaderCompilationObject CompileModule(const fs::path& path) const;
+		ShaderCompilationObject CompileModules(const std::vector< fs::path>& paths) const;
 
 	private:
 		Slang::ComPtr<ISession> m_session;

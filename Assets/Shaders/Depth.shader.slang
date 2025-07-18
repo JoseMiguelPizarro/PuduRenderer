@@ -1,5 +1,4 @@
 #include "Lib/DefaultVertexInput.hlsl"
-#include "Lib/Lighting.hlsl"
 
 import PuduGraphicsModule;
 

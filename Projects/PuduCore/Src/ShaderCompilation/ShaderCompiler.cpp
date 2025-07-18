@@ -104,12 +104,13 @@ namespace Pudu
         if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         auto dependenciesCount = shaderModule->getDependencyFileCount();
+        std::vector<IComponentType*> components = {};
 
         compiledData.m_dependencies.push_back(path);
         for (auto i = 0; i < dependenciesCount; i++)
         {
             auto dependencyPath = fs::path(shaderModule->getDependencyFilePath(i));
-        //    std::ranges::transform(dependencyPath, dependencyPath.begin(), ::tolower);
+
             compiledData.m_dependencies.push_back(dependencyPath);
         }
 
@@ -125,7 +126,6 @@ namespace Pudu
             slangEntryPoints.push_back(e);
         }
 
-        std::vector<IComponentType*> components = {};
         components.push_back(coreModule);
 
 
@@ -176,7 +176,7 @@ namespace Pudu
         return compiledData;
     }
 
-    ShaderCompilationObject ShaderCompiler::CompileModule(const fs::path& path)
+    ShaderCompilationObject ShaderCompiler::CompileModule(const fs::path& path) const
     {
         ASSERT(!path.empty(), "Cannot compile module. Path is empty");
         Slang::ComPtr<IBlob> diagnostics;
@@ -187,6 +187,42 @@ namespace Pudu
         std::vector<IComponentType*> components = {};
 
         components.push_back(module);
+
+        Slang::ComPtr<IComponentType> program;
+        m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(),
+                                                diagnostics.writeRef());
+
+        PrintDiagnostics(diagnostics);
+
+        slang::ProgramLayout* layout = program->getLayout();
+
+        Slang::ComPtr<IComponentType> linkedProgram;
+        program->link(linkedProgram.writeRef(), diagnostics.writeRef());
+
+        PrintDiagnostics(diagnostics);
+        //Global
+        ShaderCompilationObject compiledData;
+        ShaderObjectLayoutBuilder layoutBuilder;
+        layoutBuilder.m_globalSession = m_globalSession;
+        layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
+
+        PrintDiagnostics(diagnostics);
+
+        return compiledData;
+    }
+
+    ShaderCompilationObject ShaderCompiler::CompileModules(const std::vector<fs::path>& paths) const
+    {
+        Slang::ComPtr<IBlob> diagnostics;
+        std::vector<IComponentType*> components = {};
+        for (auto& path : paths)
+        {
+            ASSERT(!path.empty(), "Cannot compile module. Path is empty");
+            IModule* module = m_session->loadModule(path.string().c_str(), diagnostics.writeRef());
+            PrintDiagnostics(diagnostics);
+            components.push_back(module);
+        }
+
 
         Slang::ComPtr<IComponentType> program;
         m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(),

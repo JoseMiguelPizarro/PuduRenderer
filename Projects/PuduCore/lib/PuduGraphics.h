@@ -217,6 +217,7 @@ namespace Pudu
 		void EndDrawFrame();
 		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
 		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
+		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModules(const std::vector<fs::path>& modulePaths);
 		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
 		void ReloadShader(Shader* shader);
 

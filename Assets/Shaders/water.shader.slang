@@ -101,7 +101,7 @@ float4 fragmentMain(VSOut input)
       c = material.skyTex.Sample(rayDir).xyz;
     }
 
-    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, GLOBALS.shadowMap) + 0.5);
+    float shadow = saturate(FilterPCF(input.ShadowCoords / input.ShadowCoords.w, LIGHTING.shadowMap) + 0.5);
 
     c = (c)*(shadow) * .85;
 

@@ -1,12 +1,15 @@
 module PuduLightingModule;
 
+
 import PuduCoreModule;
 import PuduRandomModule;
 import PuduGraphicsModule;
+import "Lib/PuduDebugModule.slang";
 
 
-#define BlinnPhongSpecularAlpha 50.f
+static const float BlinnPhongSpecularAlpha = 50.f;
 static const float DielectricSpecular = 0.04f;
+
 
 public interface IDiffuseAmbientSampler {
     public float3 Sample(float3 N);
@@ -257,12 +260,12 @@ float3 F_Schlick(float3 f0, float3 f90, float u)
 
 float2 SampleBRDFLUT(float2 RoughnessNdV)
 {
-    return GLOBALS.BRDF_LUT.Sample(RoughnessNdV).rg;
+    return LIGHTING.BRDF_LUT.Sample(RoughnessNdV).rg;
 }
 
 float3 SampleIrradiance(float3 N)
 {
-    return GLOBALS.IBL_Diffuse.Sample(N).rgb;
+    return LIGHTING.IBL_Diffuse.Sample(N).rgb;
 }
 
 //Multi-scattering from https://www.jcgt.org/published/0008/01/03/paper.pdf
@@ -291,9 +294,9 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
     float3 VrN = PBR.VrN;
     float NdV = PBR.NdV;
 
-    SamplerCube envMap = GLOBALS.IBL_Specular;
+    SamplerCube envMap = LIGHTING.IBL_Specular;
 
-    float lod = Surface.Roughness * (GLOBALS.IBL_Levels-1);
+    float lod = Surface.Roughness * (LIGHTING.IBL_Levels-1);
     float2 brdfSamplePoint = float2(NdV,Surface.Roughness);
     float2 brdf = SampleBRDFLUT(brdfSamplePoint);
     float3 specularLight = envMap.SampleLevel(VrN,lod).xyz;
@@ -371,7 +374,8 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
 
-    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(GLOBALS.lightingBuffer.lightDirection.xyz),float3(1,1,1));
+    let directionalLight = LIGHTING.lights.directionalLight;
+    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb);
     float3 c = (specularColor + diffuseColor + L)*lerp(.1,1,Surface.ShadowAttenuation) + Surface.Emissive ;
 
 

@@ -1,3 +1,4 @@
+import "Lib/PuduLightingModule.slang";
 import PuduGraphicsModule;
 
 #include "Lib/grass.slang"
@@ -69,8 +70,8 @@ GrassVertexOutput vertexMain(uint id: SV_InstanceID, uint vertexId: SV_VertexID)
     float ratio = grassLength / newLength;
     pos += vertex;
 
-    LightBuffer lightingBuffer = GLOBALS.lightingBuffer;
-    output.shadowCoords = GetShadowCoord(GLOBALS.lightingBuffer.shadowMatrix, GLOBALS.lightingBuffer.lightMatrix, float4(pos, 1));
+    let directionalLight = LIGHTING.lights.directionalLight;
+    output.shadowCoords = GetShadowCoord(directionalLight.shadowMatrix, directionalLight.lightMatrix, float4(pos, 1));
     output.PosCS = mul(projMatrix, mul(viewMatrix, float4(pos, 1)));
 
     output.color = lerp(float4(.5, .6, .7, 1.), float4(.6, .8, .5, 1.), vgradient + length(wind)*5.);
@@ -86,7 +87,7 @@ float4 fragmentMain(GrassVertexOutput input)
     var viewMatrix = GetViewMatrix();
     float3 viewPos = float3(viewMatrix._14, viewMatrix._24, viewMatrix._34);
     float d = 1. - saturate(distance(input.posWS.xyz, viewPos) / 80.f);
-    float shadow = saturate(FilterPCF(input.shadowCoords / input.shadowCoords.w, GLOBALS.shadowMap) + 0.5);
+    float shadow = saturate(FilterPCF(input.shadowCoords / input.shadowCoords.w, LIGHTING.shadowMap) + 0.5);
 
     col = lerp(col, float4(0.2, 0.2, 0.3, 1.0), 1 - shadow);
     return lerp(float4(0.9, .4, 0.6, 0.), col, d);

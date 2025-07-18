@@ -7,18 +7,18 @@
 
 namespace Pudu
 {
-	class Light :public Entity
-	{
-	public:
-		float radius;
-		float intensity;
+    class Light : public Entity
+    {
+    public:
+        float radius;
+        float intensity;
 
-		glm::mat4 GetShadowMatrix();
-		glm::mat4 GetLightMatrix();
-		glm::vec3 Direction();
-		Projection Projection;
-	
-		float GetIlluminance();
-	};
+        float4 color = float4(1.0f);
+        float4x4 GetShadowMatrix();
+        float4x4 GetLightMatrix();
+        float3 Direction();
+        Projection Projection;
+
+        float GetIlluminance();
+    };
 }
-
