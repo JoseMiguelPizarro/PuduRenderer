@@ -75,6 +75,7 @@ void Test_PBR::OnInit()
 
     projection.nearPlane = 5;
     projection.farPlane = 20;
+    projection.Fov = 10.;
     m_directionalLight = {};
     m_directionalLight.Projection = projection;
 
