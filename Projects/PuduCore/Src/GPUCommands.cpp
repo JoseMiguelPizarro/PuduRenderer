@@ -127,7 +127,7 @@ namespace Pudu
     void GPUCommands::PushDescriptorSets(VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout pipelineLayout,
                                          uint32_t set, uint32_t writeCount, const VkWriteDescriptorSet* writes)
     {
-        m_graphics->vkCmdPushDescriptorSetKHR(vkHandle, pipelineBindPoint, pipelineLayout, set, writeCount, writes);
+        m_graphics->pfn_vkCmdPushDescriptorSetKHR(vkHandle, pipelineBindPoint, pipelineLayout, set, writeCount, writes);
 
         m_hasRecordedCommand = true;
     }

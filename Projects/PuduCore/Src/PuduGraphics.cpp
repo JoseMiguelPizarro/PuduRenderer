@@ -89,9 +89,9 @@ namespace Pudu
         CreateFramesCommandBuffer();
         CreateSwapChainSyncObjects();
 
-        vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(
+        pfn_vkCmdPushDescriptorSetKHR= (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(
             m_device, "vkCmdPushDescriptorSetKHR");
-        if (!vkCmdPushDescriptorSetKHR)
+        if (!pfn_vkCmdPushDescriptorSetKHR)
         {
             LOG("Could not get a valid function pointer for vkCmdPushDescriptorSetKHR");
         }
@@ -1466,8 +1466,8 @@ namespace Pudu
         featuresVulkan11.pNext = currentPNext;
         currentPNext = &featuresVulkan11;
 
-        createInfo.enabledExtensionCount = static_cast<u32>(DeviceExtensions.size());
-        createInfo.ppEnabledExtensionNames = DeviceExtensions.data();
+        createInfo.enabledExtensionCount = static_cast<u32>(DeviceExtensionNames.size());
+        createInfo.ppEnabledExtensionNames = DeviceExtensionNames.data();
 
         VkPhysicalDevicePipelineCreationCacheControlFeatures cacheFeatures{};
         cacheFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES;
@@ -1630,15 +1630,15 @@ namespace Pudu
             .pObjectName = name,
         };
 
-        pfnSetDebugUtilsObjectNameEXT(m_device, &resourceNameInfo);
+        pfn_SetDebugUtilsObjectNameEXT(m_device, &resourceNameInfo);
     }
 
     void PuduGraphics::InitDebugUtilsObjectName()
     {
-        pfnSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(
+        pfn_SetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(
             m_device, "vkSetDebugUtilsObjectNameEXT");
 
-        if (pfnSetDebugUtilsObjectNameEXT == nullptr)
+        if (pfn_SetDebugUtilsObjectNameEXT == nullptr)
         {
             LOG_ERROR("Debug utils object function not found");
         }
@@ -3803,7 +3803,7 @@ namespace Pudu
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-        std::set<std::string> requiredExtensions(DeviceExtensions.begin(), DeviceExtensions.end());
+        std::set<std::string> requiredExtensions(DeviceExtensionNames.begin(), DeviceExtensionNames.end());
 
         for (const auto& extension : availableExtensions)
         {

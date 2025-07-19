@@ -54,420 +54,451 @@
 
 namespace Pudu
 {
-	typedef std::optional<uint32_t> Optional;
+    typedef std::optional<uint32_t> Optional;
 
-	using namespace glm;
-	namespace fs = std::filesystem;
+    using namespace glm;
+    namespace fs = std::filesystem;
 
-	struct RenderFrameData;
-
-
-	enum QueueFamily {
-		Graphics,
-		Compute,
-		Transfer,
-		Present
-	};
-
-	struct QueueFamilyIndices
-	{
-		Optional graphicsFamily;
-		Optional presentFamily;
-		Optional computeFamily;
-		Optional transferFamily;
-
-		bool IsComplete()
-		{
-			return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value() && transferFamily.has_value();
-		}
-	};
-
-	struct SwapChainSupportDetails
-	{
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
-
-	const std::vector<const char*> DeviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-		VK_KHR_MAINTENANCE3_EXTENSION_NAME,
-		// Works around a validation layer bug with descriptor pool allocation with VARIABLE_COUNT.
-	// See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
-		VK_KHR_MAINTENANCE1_EXTENSION_NAME,
-		VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
-		VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-	};
+    struct RenderFrameData;
 
 
-	class PuduGraphics
-	{
-	public:
-		static uint32_t const K_BINDLESS_SET_INDEX = 0;
-		static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
-		static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
-		static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
+    enum QueueFamily
+    {
+        Graphics,
+        Compute,
+        Transfer,
+        Present
+    };
 
-	public:
-		static PuduGraphics* Instance();
-		void Init(PuduGraphicsSettings& settings);
-		void DrawFrame(RenderFrameData& frameData);
-		SPtr<Texture> GetMultisampledColorTexture();
-		SPtr<Texture> GetMultisampledDepthTexture();
-		GLFWwindow* GetWindow() { return WindowPtr; }
+    struct QueueFamilyIndices
+    {
+        Optional graphicsFamily;
+        Optional presentFamily;
+        Optional computeFamily;
+        Optional transferFamily;
 
-		PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR{ VK_NULL_HANDLE };
+        bool IsComplete()
+        {
+            return graphicsFamily.has_value() && presentFamily.has_value() && computeFamily.has_value() &&
+                transferFamily.has_value();
+        }
+    };
 
-		uint32_t WindowWidth = 1280;
-		uint32_t WindowHeight = 800;
+    struct SwapChainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 
-		void SetTime(PuduTime* time) { m_time = time; }
-		PuduTime* GetTime() { return m_time; }
+    const std::vector<const char*> DeviceExtensionNames = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+        VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+        // Works around a validation layer bug with descriptor pool allocation with VARIABLE_COUNT.
+        // See: https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2350.
+        VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+        VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
+        VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 
-		const std::vector<const char*> validationLayers =
-		{
-			"VK_LAYER_KHRONOS_validation"
-		};
+        VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+        VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME
+    };
+
+
+    class PuduGraphics
+    {
+    public:
+        class Flags
+        {
+        public:
+            enum Enum
+            {
+                NONE,
+                PROFILER_ENABLED,
+            };
+        };
+
+        static uint32_t const K_BINDLESS_SET_INDEX = 0;
+        static uint32_t const k_MAX_BINDLESS_RESOURCES = 100; //100 idkw
+        static uint32_t const k_BINDLESS_TEXTURE_BINDING = 32; //32 idkw
+        static uint32_t const K_LIGHTING_BUFFER_BINDING = 0; //32 idkw
+
+        static PuduGraphics* Instance();
+        void Init(PuduGraphicsSettings& settings);
+        void DrawFrame(RenderFrameData& frameData);
+        SPtr<Texture> GetMultisampledColorTexture();
+        SPtr<Texture> GetMultisampledDepthTexture();
+        GLFWwindow* GetWindow() { return WindowPtr; }
+        Flags::Enum GetFlags();
+
+        PFN_vkCmdPushDescriptorSetKHR pfn_vkCmdPushDescriptorSetKHR{VK_NULL_HANDLE};
+        PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT{VK_NULL_HANDLE};
+        PFN_vkGetCalibratedTimestampsEXT pfn_vkGetCalibratedTimestampsEXT{VK_NULL_HANDLE};
+        PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr{VK_NULL_HANDLE};
+        PFN_vkGetDeviceProcAddr pfn_vkGetDeviceProcAddr{VK_NULL_HANDLE};
+
+        uint32_t WindowWidth = 1280;
+        uint32_t WindowHeight = 800;
+
+        void SetTime(PuduTime* time) { m_time = time; }
+        PuduTime* GetTime() { return m_time; }
+
+        const std::vector<const char*> validationLayers =
+        {
+            "VK_LAYER_KHRONOS_validation"
+        };
 
 #ifdef NDEBUG
 		const bool enableValidationLayers = false;
 #else
-		const bool enableValidationLayers = true;
+        const bool enableValidationLayers = true;
 #endif
 
-		GLFWwindow* WindowPtr;
-		bool FramebufferResized = false;
-		void Cleanup();
-		Model CreateModel(std::shared_ptr<Mesh> mesh, SPtr<Material> material);
-		Model CreateModel(MeshCreationData const& data);
-		SPtr<Mesh> CreateMesh(MeshCreationData const& meshData);
-		void UpdateDescriptorSet(uint16_t count, const VkWriteDescriptorSet* write, uint16_t copyCount = 0, const VkCopyDescriptorSet* copy = nullptr);
-		void DestroyMesh(SPtr<Mesh> mesh);
-		void DestroyTexture(SPtr<Texture> texture);
-		void WaitIdle();
-		VkInstance GetVkInstance() { return m_vkInstance; }
-		VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
-		VkDevice GetDevice() { return m_device; }
+        GLFWwindow* WindowPtr;
+        bool FramebufferResized = false;
+        void Cleanup();
+        Model CreateModel(std::shared_ptr<Mesh> mesh, SPtr<Material> material);
+        Model CreateModel(MeshCreationData const& data);
+        SPtr<Mesh> CreateMesh(MeshCreationData const& meshData);
+        void UpdateDescriptorSet(uint16_t count, const VkWriteDescriptorSet* write, uint16_t copyCount = 0,
+                                 const VkCopyDescriptorSet* copy = nullptr);
+        void DestroyMesh(SPtr<Mesh> mesh);
+        void DestroyTexture(SPtr<Texture> texture);
+        void WaitIdle();
+        VkInstance GetVkInstance() { return m_vkInstance; }
+        VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
+        VkDevice GetDevice() { return m_device; }
 
-		int2 GetResolution() const;
-		QueueFamilyIndices GetQueueFamiliesIndex();
+        int2 GetResolution() const;
+        QueueFamilyIndices GetQueueFamiliesIndex();
 
-		void DestroyRenderPass(SPtr<RenderPass> renderPass);
-		void DestroyFrameBuffer(SPtr<Framebuffer> frameBuffer);
+        void DestroyRenderPass(SPtr<RenderPass> renderPass);
+        void DestroyFrameBuffer(SPtr<Framebuffer> frameBuffer);
 
-		/// <summary>
-		/// Creates a vkRenderPass and attach it to the passed RenderPass object
-		/// </summary>
-		/// <param name="renderPass"></param>
-		void CreateRenderPass(RenderPass* creationData);
+        /// <summary>
+        /// Creates a vkRenderPass and attach it to the passed RenderPass object
+        /// </summary>
+        /// <param name="renderPass"></param>
+        void CreateRenderPass(RenderPass* creationData);
 
-		template<class T>
-			requires (std::convertible_to<T, RenderPass>)
-		SPtr<T> GetRenderPass() {
-			return m_resources.AllocateRenderPass<T>();
-		}
+        template <class T>
+            requires (std::convertible_to<T, RenderPass>)
+        SPtr<T> GetRenderPass()
+        {
+            return m_resources.AllocateRenderPass<T>();
+        }
 
-		SPtr<Framebuffer> CreateFramebuffer(FramebufferCreationData const& creationData);
+        SPtr<Framebuffer> CreateFramebuffer(FramebufferCreationData const& creationData);
 
-		SPtr<GraphicsBuffer> CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
-			VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const char* name = nullptr);
+        SPtr<GraphicsBuffer> CreateGraphicsBuffer(uint64_t size, void* bufferData, VkBufferUsageFlags usage,
+                                                  VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                                  const char* name = nullptr);
 
-		//TODO: ADD SUPPORT FOR MIPMAPS
+        //TODO: ADD SUPPORT FOR MIPMAPS
 
-		struct ImageCreateData {
-			uint32_t width;
-			uint32_t height;
-			uint32_t depth = 1;
-			uint32_t mipLevels = 1;
-			uint32_t arrayLayers = 1;
-			VkFormat format;
-			VkImageTiling tilling;
-			VkImageUsageFlags usage;
-			VkMemoryPropertyFlags memoryPropertiesFlags;
-			VkImage* image;
-			VkDeviceMemory* imageMemory;
-			char* name;
-		};
+        struct ImageCreateData
+        {
+            uint32_t width;
+            uint32_t height;
+            uint32_t depth = 1;
+            uint32_t mipLevels = 1;
+            uint32_t arrayLayers = 1;
+            VkFormat format;
+            VkImageTiling tilling;
+            VkImageUsageFlags usage;
+            VkMemoryPropertyFlags memoryPropertiesFlags;
+            VkImage* image;
+            VkDeviceMemory* imageMemory;
+            char* name;
+        };
 
-		struct ImageViewCreateData
-		{
-			VkImage image;
-			VkFormat format;
-			VkImageViewType imageView = VK_IMAGE_VIEW_TYPE_2D;
-			VkImageAspectFlags aspectFlags;
-			VkImageViewType viewType;
-			uint32_t levelCount = 1;
-			uint32_t baseMipLevel = 0;
-			uint32_t baseArrayLayer = 0;
-			uint32_t layerCount = 1;
-			const char* name;
-		};
+        struct ImageViewCreateData
+        {
+            VkImage image;
+            VkFormat format;
+            VkImageViewType imageView = VK_IMAGE_VIEW_TYPE_2D;
+            VkImageAspectFlags aspectFlags;
+            VkImageViewType viewType;
+            uint32_t levelCount = 1;
+            uint32_t baseMipLevel = 0;
+            uint32_t baseArrayLayer = 0;
+            uint32_t layerCount = 1;
+            const char* name;
+        };
 
-		GPUResourcesManager* Resources() {
-			return &m_resources;
-		}
+        GPUResourcesManager* Resources()
+        {
+            return &m_resources;
+        }
 
-		GPUResourceHandle<Pipeline> CreateGraphicsPipeline(PipelineCreationData& creationData);
-		GPUResourceHandle<Pipeline> CreateComputePipeline(ComputePipelineCreationData& creationData);
+        GPUResourceHandle<Pipeline> CreateGraphicsPipeline(PipelineCreationData& creationData);
+        GPUResourceHandle<Pipeline> CreateComputePipeline(ComputePipelineCreationData& creationData);
 
-		void SubmitFrame(RenderFrameData& frameData);
-		void DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY, u32 groupCountZ);
-		void EndDrawFrame();
-		static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
-		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
-		DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModules(const std::vector<fs::path>& modulePaths);
-		SPtr<Shader> CreateShader(const fs::path& shaderPath , const char* name);
-		void ReloadShader(Shader* shader);
+        void SubmitFrame(RenderFrameData& frameData);
+        void DispatchCompute(ComputeShaderRenderer* computeShaderRenderer, u32 groupCountX, u32 groupCountY,
+                             u32 groupCountZ);
+        void EndDrawFrame();
+        static UniformBufferObject GetUniformBufferObject(DrawCall& drawCall);
+        DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModule(const fs::path& modulePath);
+        DescriptorSetLayoutsCollection CreateDescriptorSetLayoutsFromModules(const std::vector<fs::path>& modulePaths);
+        SPtr<Shader> CreateShader(const fs::path& shaderPath, const char* name);
+        void ReloadShader(Shader* shader);
 
-		SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
-		SPtr<Material> CreateMaterial();
+        SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
+        SPtr<Material> CreateMaterial();
 
 
-		SPtr<RenderTexture> GetRenderTexture();
-		SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);
-		SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureLoadSettings& creationSettings);
-		//<summary>Loads a texture as a horizonmap and converts it to a cubemap</summary>
-		SPtr<TextureCube> LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings);
-		GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
-		GPUResourceHandle<TextureSampler> CreateSampler(const SamplerCreationData& creationData);
-		void CreateVKTexture(Texture* texture);
-		void CreateVKTextureSampler(const SamplerCreationData& data, VkSampler& sampler);
+        SPtr<RenderTexture> GetRenderTexture();
+        SPtr<Texture2d> LoadTexture2D(fs::path filePath, TextureLoadSettings& creationData);
+        SPtr<TextureCube> LoadTextureCube(fs::path filePath, TextureLoadSettings& creationSettings);
+        //<summary>Loads a texture as a horizonmap and converts it to a cubemap</summary>
+        SPtr<TextureCube> LoadTextureHorizonAsCube(fs::path filePath, TextureLoadSettings& creationSettings);
+        GPUResourceHandle<Texture> CreateTexture(TextureCreationData const& creationData);
+        GPUResourceHandle<TextureSampler> CreateSampler(const SamplerCreationData& creationData);
+        void CreateVKTexture(Texture* texture);
+        void CreateVKTextureSampler(const SamplerCreationData& data, VkSampler& sampler);
 
-		void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range,std::vector<VkBufferImageCopy2>* regions = nullptr);
-		void GenerateTextureMipMaps(Texture* texture, GPUCommands* commandsBuffer);
-		void SetAntiAliasing(const AntialiasingSettings& settings);
+        void UploadTextureData(Texture* texture, void* data, VkImageSubresourceRange& range,
+                               std::vector<VkBufferImageCopy2>* regions = nullptr);
+        void GenerateTextureMipMaps(Texture* texture, GPUCommands* commandsBuffer);
+        void SetAntiAliasing(const AntialiasingSettings& settings);
 
-		VkFormat GetDepthFormat() const { return m_depthFormat; }
-		void UpdateBindlessResources(VkDescriptorSet descriptorSet, uint32_t binding);
-		SPtr<CommandPool> GetCommandPool(QueueFamily type);
-		SPtr<DescriptorPool> GetDescriptorPool(DescriptorPoolCreationData& creationData);
-		VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
-		uint32_t GetImageCount() { return m_imageCount; }
+        VkFormat GetDepthFormat() const { return m_depthFormat; }
+        void UpdateBindlessResources(VkDescriptorSet descriptorSet, uint32_t binding);
+        SPtr<CommandPool> GetCommandPool(QueueFamily type);
+        SPtr<DescriptorPool> GetDescriptorPool(DescriptorPoolCreationData& creationData);
+        VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
+        uint32_t GetImageCount() { return m_imageCount; }
 
-		/// <summary>
-		/// Format of the surface used to create the swapchain
-		/// </summary>
-		/// <returns></returns>
-		VkFormat GetSurfaceFormat() { return m_settings.surfaceFormat; }
-		VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
-		std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData, const char* name = nullptr);
-		GPUCommands BeginSingleTimeCommands();
-		void EndSingleTimeCommands(GPUCommands commandBuffer);
-		void EndSingleTimeComputeCommands(GPUCommands commandBuffer);
-		void UploadBufferData(GraphicsBuffer* buffer, const void* data, Size size, Size offset = 0);
-		std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
-		void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
-		void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount, const VkDescriptorSetLayout* layouts) const;
-		PipelineCreationData GetPipelineCreationData(Shader* shader, RenderPass* renderPass);
+        /// <summary>
+        /// Format of the surface used to create the swapchain
+        /// </summary>
+        /// <returns></returns>
+        VkFormat GetSurfaceFormat() { return m_settings.surfaceFormat; }
+        VkExtent2D GetSwapchainExtend() { return m_swapChainExtent; }
+        std::vector<SPtr<GPUCommands>> CreateCommandBuffers(GPUCommands::CreationData creationData,
+                                                            const char* name = nullptr);
+        GPUCommands BeginSingleTimeCommands();
+        void EndSingleTimeCommands(GPUCommands commandBuffer);
+        void EndSingleTimeComputeCommands(GPUCommands commandBuffer);
+        void UploadBufferData(GraphicsBuffer* buffer, const void* data, Size size, Size offset = 0);
+        std::vector<ResourceUpdate>* GetBindlessResourcesToUpdate();
+        void CreateDescriptorSets(VkDescriptorPool pool, VkDescriptorSet* descriptorSet, uint16_t setsCount,
+                                  const VkDescriptorSetLayout* layouts) const;
+        void CreateDescriptorSets(VkDescriptorSet* descriptorSet, uint16_t setsCount,
+                                  const VkDescriptorSetLayout* layouts) const;
+        PipelineCreationData GetPipelineCreationData(Shader* shader, RenderPass* renderPass);
 
 #pragma region DefaultResources
-		SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
-		SPtr<Texture> GetDefaultWhiteTexture();
-		SPtr<Texture> GetDefaultBlackTexture();
-		SPtr<Texture> GetDefaultNormalMapTexture();
-		SPtr<Texture> GetDefaultMetallicRoughnessTexture();
-		SPtr<Texture> GetPuduTexture();
+        SPtr<ComputeShader> GetHorizonMapToCubeComputeShader();
+        SPtr<Texture> GetDefaultWhiteTexture();
+        SPtr<Texture> GetDefaultBlackTexture();
+        SPtr<Texture> GetDefaultNormalMapTexture();
+        SPtr<Texture> GetDefaultMetallicRoughnessTexture();
+        SPtr<Texture> GetPuduTexture();
 
-		SPtr<Shader> GetDefaultOverlayShader();
-		SPtr<Shader> GetDefaultOverlayTextureArrayShader();
-		SPtr<Shader> GetDefaultStandardShader();
-		SPtr<Material> GetDefaultStandardMaterial();
+        SPtr<Shader> GetDefaultOverlayShader();
+        SPtr<Shader> GetDefaultOverlayTextureArrayShader();
+        SPtr<Shader> GetDefaultStandardShader();
+        SPtr<Material> GetDefaultStandardMaterial();
 
-		SPtr<Mesh> GetDefaultQuad();
-		SPtr<Mesh> GetDefaultCube();
-		SPtr<Mesh> GetDefaultSphere();
+        SPtr<Mesh> GetDefaultQuad();
+        SPtr<Mesh> GetDefaultCube();
+        SPtr<Mesh> GetDefaultSphere();
 #pragma endregion
 
-	private:
-		friend class GPUResourcesManager;
+    private:
+        friend class GPUResourcesManager;
 
-		const fs::path k_DEFAULT_ERROR_SHADER_PATH = "error.shader.slang";
+        const fs::path k_DEFAULT_ERROR_SHADER_PATH = "error.shader.slang";
 
-		SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
-		void InitVulkan();
-		void InitVMA();
-		void CreateVulkanInstance();
-		void PickPhysicalDevice();
-		void CreateLogicalDevice();
-		void CreateSurface();
-		void CreateSwapChain(Swapchain& swapchain);
-		void CreateSwapchainImageViews(Swapchain& swapchain);
-		void SetResourceName(VkObjectType type, u64 handle, const char* name);
-		/// <summary>
-		/// Setup and dispatch compute workload for the frame
-		/// </summary>
-		void SubmitComputeWork(RenderFrameData& frameData);
-		void InitDefaultResources();
-		void InitDefaultTextures();
-		void CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData);
+        SPtr<Texture> LoadAndCreateTexture(fs::path filePath, TextureLoadSettings& creationData);
+        void InitVulkan();
+        void InitVMA();
+        void CreateVulkanInstance();
+        void PickPhysicalDevice();
+        void CreateLogicalDevice();
+        void CreateSurface();
+        void CreateSwapChain(Swapchain& swapchain);
+        void CreateSwapchainImageViews(Swapchain& swapchain);
+        void SetResourceName(VkObjectType type, u64 handle, const char* name);
+        /// <summary>
+        /// Setup and dispatch compute workload for the frame
+        /// </summary>
+        void SubmitComputeWork(RenderFrameData& frameData);
+        void InitDefaultResources();
+        void InitDefaultTextures();
+        void CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData);
 
-		void InitDebugUtilsObjectName();
+        void InitDebugUtilsObjectName();
 
-		GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
-		void CreateVKShaderState(ShaderState* shaderState, ShaderStateCreationData const& creation);
+        GPUResourceHandle<ShaderState> CreateShaderState(ShaderStateCreationData const& creation);
+        void CreateVKShaderState(ShaderState* shaderState, ShaderStateCreationData const& creation);
 
-		GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
-		GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
-		void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutData, std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
+        GPUResourceHandle<DescriptorSetLayout> CreateBindlessDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
+        GPUResourceHandle<DescriptorSetLayout> CreateDescriptorSetLayout(DescriptorSetLayoutInfo& creationData);
+        void CreateDescriptorsLayouts(std::vector<DescriptorSetLayoutInfo>& layoutData,
+                                      std::vector<GPUResourceHandle<DescriptorSetLayout>>& out);
 
-		void CreateBindlessDescriptorPool();
-		void CreateFrames();
-		void CreateCommandPool(VkCommandPool* cmdPool, uint32_t familyIndex);
+        void CreateBindlessDescriptorPool();
+        void CreateFrames();
+        void CreateCommandPool(VkCommandPool* cmdPool, uint32_t familyIndex);
 
-		void CreateTextureImageView(Texture2d& texture2d);
-		SPtr<Semaphore> CreateTimelineSemaphore(const char* name = nullptr);
-		SPtr<Semaphore> CreateSemaphoreSPtr(const char* name = nullptr);
+        void CreateTextureImageView(Texture2d& texture2d);
+        SPtr<Semaphore> CreateTimelineSemaphore(const char* name = nullptr);
+        SPtr<Semaphore> CreateSemaphoreSPtr(const char* name = nullptr);
 
-		void DestroySemaphore(SPtr<Semaphore> semaphore);
-		void DestroyShader(SPtr<Shader> shader);
-		void DestroyShaderModule(VkShaderModule& state);
-		void DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset);
-		void DestroyCommandPool(CommandPool* commandPool);
-		void CreateFramesCommandBuffer();
-		void CreateSwapChainSyncObjects();
-		void RecreateSwapChain();
-		void UpdateUniformBuffer(uint32_t currentImage);
+        void DestroySemaphore(SPtr<Semaphore> semaphore);
+        void DestroyShader(SPtr<Shader> shader);
+        void DestroyShaderModule(VkShaderModule& state);
+        void DestroyDescriptorSetLayout(DescriptorSetLayout& descriptorset);
+        void DestroyCommandPool(CommandPool* commandPool);
+        void CreateFramesCommandBuffer();
+        void CreateSwapChainSyncObjects();
+        void RecreateSwapChain();
+        void UpdateUniformBuffer(uint32_t currentImage);
 
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, std::vector<VkBufferImageCopy2>* regions = nullptr);
+        void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height,
+                               std::vector<VkBufferImageCopy2>* regions = nullptr);
 
-		
-	
 
 #pragma region DepthBuffer
-		VkFormat FindDepthFormat();
+        VkFormat FindDepthFormat();
 
-		bool HasStencilComponent(VkFormat format);
+        bool HasStencilComponent(VkFormat format);
 #pragma endregion
 
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
-			VkFormatFeatureFlags features);
+        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
+                                     VkFormatFeatureFlags features);
 
-		void ReloadPendingShaders();
-		
-
-		void CleanupSwapChain(Swapchain& swapchain);
-
-		VkImageView CreateImageView(ImageViewCreateData data);
+        void ReloadPendingShaders();
 
 
-		/// <summary>
-		/// size in bytes
-		/// </summary>
-		VkShaderModule CreateShaderModule(const uint32_t* code, size_t size, const char* name = nullptr);
+        void CleanupSwapChain(Swapchain& swapchain);
 
-		void CreateUniformBuffers();
+        VkImageView CreateImageView(ImageViewCreateData data);
 
-		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-		bool IsDeviceSuitable(VkPhysicalDevice device);
-		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-		void InitWindow();
-		bool CheckValidationLayerSupport();
-		void UpdateBindlessTexture(GPUResourceHandle<Texture> handle);
-		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-		void SetupDebugMessenger();
-		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		VmaAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags properties,
-			VkBuffer& buffer, const char* name = nullptr);
-		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
-		void DestroyBuffer(const SPtr<GraphicsBuffer>& buffer) const;
-		void AdvanceFrame();
-		std::vector<const char*> GetInstanceExtensions() const;
 
-	private:
+        /// <summary>
+        /// size in bytes
+        /// </summary>
+        VkShaderModule CreateShaderModule(const uint32_t* code, size_t size, const char* name = nullptr);
 
+        void CreateUniformBuffers();
+
+        SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+        bool IsDeviceSuitable(VkPhysicalDevice device);
+        bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
+        QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+        void InitWindow();
+        bool CheckValidationLayerSupport();
+        void UpdateBindlessTexture(GPUResourceHandle<Texture> handle);
+        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        void SetupDebugMessenger();
+        VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+        VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+        VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+        VmaAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags properties,
+                                   VkBuffer& buffer, const char* name = nullptr);
+        void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+        void DestroyBuffer(const SPtr<GraphicsBuffer>& buffer) const;
+        void AdvanceFrame();
+        std::vector<const char*> GetInstanceExtensions() const;
+
+
+        void SetupProfiler();
+
+    private:
 #pragma region DefaultResources
-		GPUResourceHandle<Texture> m_defaultWhiteTexture;
-		GPUResourceHandle<Texture> m_defaultBlackTexture;
-		GPUResourceHandle<Texture> m_defaultNormalmapTexture;
-		GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
-		GPUResourceHandle<Texture> m_defaultPuduTexture;
-		SPtr<Mesh> m_defaultQuad;
-		SPtr<Mesh> m_defaultCube;
-		SPtr<Mesh> m_defaultSphere;
-		SPtr<Mesh> m_defaultPlane;
-		SPtr<Material> m_defaultStandardMaterial;
-		SPtr<Shader> m_defaultOverlayShader;
-		SPtr<Shader> m_defaultOverlayTextureArrayShader;
-		SPtr<Shader> m_defaultStandardShader;
-		SPtr<Shader> m_defaultErrorShader;
-		SPtr<ComputeShader> m_horizonToCubeCompute;
+        GPUResourceHandle<Texture> m_defaultWhiteTexture;
+        GPUResourceHandle<Texture> m_defaultBlackTexture;
+        GPUResourceHandle<Texture> m_defaultNormalmapTexture;
+        GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
+        GPUResourceHandle<Texture> m_defaultPuduTexture;
+        SPtr<Mesh> m_defaultQuad;
+        SPtr<Mesh> m_defaultCube;
+        SPtr<Mesh> m_defaultSphere;
+        SPtr<Mesh> m_defaultPlane;
+        SPtr<Material> m_defaultStandardMaterial;
+        SPtr<Shader> m_defaultOverlayShader;
+        SPtr<Shader> m_defaultOverlayTextureArrayShader;
+        SPtr<Shader> m_defaultStandardShader;
+        SPtr<Shader> m_defaultErrorShader;
+        SPtr<ComputeShader> m_horizonToCubeCompute;
 
-		ComputeShaderRenderer m_horizonToCubemapCSRenderer;
+        ComputeShaderRenderer m_horizonToCubemapCSRenderer;
 
 #pragma endregion
-		static PuduGraphics* s_instance;
-		PuduTime* m_time;
+        static PuduGraphics* s_instance;
+        PuduTime* m_time;
 
-		std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
-		VkDevice m_device;
-		PuduGraphicsSettings m_settings;
+        std::vector<ResourceUpdate> m_bindlessResourcesToUpdate;
+        VkDevice m_device;
+        PuduGraphicsSettings m_settings;
 
-		std::vector<GPUResourceHandle<Shader>> m_shadersToReload;
-		GPUResourcesManager m_resources;
-		SPtr<Semaphore> m_graphicsTimelineSemaphore;
-		SPtr<Semaphore> m_computeTimelineSemaphore;
-		std::unordered_map<fs::path, SPtr<Texture>> m_loadedTexturesMap;
+        std::vector<GPUResourceHandle<Shader>> m_shadersToReload;
+        GPUResourcesManager m_resources;
+        SPtr<Semaphore> m_graphicsTimelineSemaphore;
+        SPtr<Semaphore> m_computeTimelineSemaphore;
+        std::unordered_map<fs::path, SPtr<Texture>> m_loadedTexturesMap;
 
-		PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT;
-		VkFormat m_swapChainImageFormat;
-		VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
+        PFN_vkSetDebugUtilsObjectNameEXT pfn_SetDebugUtilsObjectNameEXT;
+        VkFormat m_swapChainImageFormat;
+        VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
 
-		Swapchain m_currentSwapchain;
-		Swapchain m_oldSwapchain;
-		
-		VkInstance m_vkInstance;
-		VkSurfaceKHR m_surface;
-		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-		VkQueue m_graphicsQueue;
-		VkQueue m_presentationQueue;
-		VkQueue m_computeQueue;
-		VkExtent2D m_swapChainExtent;
+        Swapchain m_currentSwapchain;
+        Swapchain m_oldSwapchain;
 
-		SPtr<CommandPool> m_commandPool;
-		SPtr<RenderTexture> m_multisampledColorTexture;
-		SPtr<RenderTexture> m_multisampledDepthTexture;
+        VkInstance m_vkInstance;
+        VkSurfaceKHR m_surface;
+        VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+        VkQueue m_graphicsQueue;
+        VkQueue m_presentationQueue;
+        VkQueue m_computeQueue;
+        VkExtent2D m_swapChainExtent;
 
-		std::vector<SPtr<GraphicsBuffer>> m_uniformBuffers;
+        SPtr<CommandPool> m_commandPool;
+        SPtr<RenderTexture> m_multisampledColorTexture;
+        SPtr<RenderTexture> m_multisampledDepthTexture;
 
-		VkDescriptorPool m_bindlessDescriptorPool;
+        std::vector<SPtr<GraphicsBuffer>> m_uniformBuffers;
 
-		VkDebugUtilsMessengerEXT m_debugMessenger;
+        VkDescriptorPool m_bindlessDescriptorPool;
 
-		std::vector<Frame> m_Frames;
+        VkDebugUtilsMessengerEXT m_debugMessenger;
 
-		const int MAX_FRAMES_IN_FLIGHT = 2;
-		uint32_t m_currentFrameIndex = 0;
-		uint32_t m_imageCount;
-		uint64_t m_absoluteFrame = 1;
+        std::vector<Frame> m_Frames;
 
-		bool m_initialized = false;
+        const int MAX_FRAMES_IN_FLIGHT = 2;
+        uint32_t m_currentFrameIndex = 0;
+        uint32_t m_imageCount;
+        uint64_t m_absoluteFrame = 1;
 
-		VkAllocationCallbacks* m_allocatorPtr = nullptr;
-		VkPipelineCache m_pipelineCache;
-		VmaAllocator m_VmaAllocator;
-		PhysicalDeviceCreationData m_physicalDeviceData;
+        bool m_initialized = false;
 
-		ShaderCompiler m_shaderCompiler;
+        VkAllocationCallbacks* m_allocatorPtr = nullptr;
+        VkPipelineCache m_pipelineCache;
+        VmaAllocator m_VmaAllocator;
+        PhysicalDeviceCreationData m_physicalDeviceData;
 
-		AntialiasingSettings m_antialiasingSettings;
-	};
+        ShaderCompiler m_shaderCompiler;
 
-	inline SPtr<Material> PuduGraphics::CreateMaterial()
-	{
-		return m_resources.AllocateMaterial();
-	}
+        AntialiasingSettings m_antialiasingSettings;
+    };
+
+    inline SPtr<Material> PuduGraphics::CreateMaterial()
+    {
+        return m_resources.AllocateMaterial();
+    }
 
 
-	void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
-	{
-		PuduGraphics* app = reinterpret_cast<PuduGraphics*>(glfwGetWindowUserPointer(window));
-		app->FramebufferResized = true;
-	}
+    void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
+    {
+        PuduGraphics* app = reinterpret_cast<PuduGraphics*>(glfwGetWindowUserPointer(window));
+        app->FramebufferResized = true;
+    }
 }

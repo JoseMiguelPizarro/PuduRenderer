@@ -20,6 +20,9 @@ set(VULKAN_SDK $ENV{VULKAN_SDK})
 # Fetch KTX
 find_package(KTX REQUIRED)
 
+
+option(USE_TRACY  "Enable Tracy profiler"  ON)
+
 # Include directories
 set(INCLUDE_DIRS
     ${VULKAN_SDK}/Include
@@ -50,6 +53,7 @@ set(LIBS
     vulkan-1
     fastgltf
     glfw3
+    TracyClient
 )
 
 set(SLANG_VERSION "2025.10")
@@ -63,6 +67,18 @@ endif()
 
 include(FetchContent)
 FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-${SLANG_OS}.zip QUIET)
+
+
+FetchContent_Declare (
+        tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG master
+        GIT_SHALLOW TRUE
+        GIT_PROGRESS TRUE
+)
+
+FetchContent_MakeAvailable(tracy)
+
 message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
 add_library(slang SHARED IMPORTED GLOBAL)
 if(WIN32)
@@ -170,15 +186,6 @@ macro(AddPuduApp app_name)
     set_target_properties(${app_name} PROPERTIES
             DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
     )
-
-    #    # Assets copy for the app
-    #    add_custom_command(
-    #            TARGET ${app_name}
-    #            POST_BUILD
-    #            COMMAND ${CMAKE_COMMAND} -E copy_directory
-    #            "${CMAKE_SOURCE_DIR}/Assets"
-    #            "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/Assets/"
-    #    )
 endmacro()
 
 AddPuduApp(CatDiorama)
