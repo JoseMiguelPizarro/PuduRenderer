@@ -46,11 +46,11 @@
 #include "AntialiasingSettings.h"
 #include "ComputeShaderRenderer.h"
 #include "PuduGraphicsSettings.h"
-#include "Resources/CommandPool.h"
-#include "Resources/DescriptorPool.h"
 #include "PuduTime.h"
 #include "ShaderCompilation/ShaderCompiler.h"
 #include "Swapchain.h"
+#include "Profiling/PuduGPUProfiler_fwd.h"
+
 
 namespace Pudu
 {
@@ -102,6 +102,7 @@ namespace Pudu
         VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 
+        //Used for profiling
         VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
         VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME
     };
@@ -307,6 +308,8 @@ namespace Pudu
         SPtr<Mesh> GetDefaultQuad();
         SPtr<Mesh> GetDefaultCube();
         SPtr<Mesh> GetDefaultSphere();
+
+        GPUProfiler* GetGPUProfiler();
 #pragma endregion
 
     private:
@@ -410,7 +413,7 @@ namespace Pudu
         std::vector<const char*> GetInstanceExtensions() const;
 
 
-        void SetupProfiler();
+        void InitProfiler();
 
     private:
 #pragma region DefaultResources
@@ -488,6 +491,7 @@ namespace Pudu
         ShaderCompiler m_shaderCompiler;
 
         AntialiasingSettings m_antialiasingSettings;
+        GPUProfiler* m_gpuProfiler;
     };
 
     inline SPtr<Material> PuduGraphics::CreateMaterial()

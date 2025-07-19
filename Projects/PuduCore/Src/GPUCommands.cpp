@@ -10,6 +10,7 @@
 
 #include <VulkanUtils.h>
 #include <Logger.h>
+#include "Profiling/PuduGPUProfiler.h"
 
 namespace Pudu
 {
@@ -411,7 +412,8 @@ namespace Pudu
 
         blitInfo.pRegions = regions;
         blitInfo.regionCount = regionCount;
-
+        PROFILE_GPU_FUNCTION();
+        PROFILE_GPU_ZONE(m_graphics->GetGPUProfiler(), "Blit", vkHandle);
         vkCmdBlitImage2(vkHandle, &blitInfo);
     }
 

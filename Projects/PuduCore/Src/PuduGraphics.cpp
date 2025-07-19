@@ -9,7 +9,6 @@
 #include "PuduGraphics.h"
 #include "PuduGlobals.h"
 
-
 #include <stdexcept>
 #include <Logger.h>
 #include <set>
@@ -32,6 +31,11 @@
 #include "RenderFrameData.h"
 #include <vk_mem_alloc.h>
 #include <FileWatch.hpp>
+
+#include "Profiling/PuduProfiling.h"
+#include "Profiling/PuduGPUProfiler.h"
+#include <memory>
+
 
 namespace Pudu
 {
@@ -89,12 +93,14 @@ namespace Pudu
         CreateFramesCommandBuffer();
         CreateSwapChainSyncObjects();
 
-        pfn_vkCmdPushDescriptorSetKHR= (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(
+        pfn_vkCmdPushDescriptorSetKHR = (PFN_vkCmdPushDescriptorSetKHR)vkGetDeviceProcAddr(
             m_device, "vkCmdPushDescriptorSetKHR");
         if (!pfn_vkCmdPushDescriptorSetKHR)
         {
             LOG("Could not get a valid function pointer for vkCmdPushDescriptorSetKHR");
         }
+
+        InitProfiler();
     }
 
     void PuduGraphics::InitVMA()
@@ -342,91 +348,136 @@ namespace Pudu
         return extensions;
     }
 
+    void PuduGraphics::InitProfiler()
+    {
+        pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT = (PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT)
+            vkGetInstanceProcAddr(m_vkInstance, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT");
+
+        pfn_vkGetCalibratedTimestampsEXT = (PFN_vkGetCalibratedTimestampsEXT)vkGetDeviceProcAddr(
+            m_device, "vkGetCalibratedTimestampsEXT");
+
+        std::vector<VkTimeDomainEXT> timeDomains;
+
+        u32 timeDomainsCount = 0;
+        pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT(
+            m_physicalDevice, &timeDomainsCount, nullptr);
+
+        timeDomains.resize(timeDomainsCount);
+        pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT(m_physicalDevice, &timeDomainsCount, timeDomains.data());
+
+
+        const bool hasHostQuery =
+            [&timeDomains]() -> bool
+            {
+                for (const VkTimeDomainEXT domain : timeDomains)
+                {
+                    if (domain == VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_EXT ||
+                        domain == VK_TIME_DOMAIN_QUERY_PERFORMANCE_COUNTER_EXT)
+                        return true;
+                }
+                return false;
+            }();
+
+        if (hasHostQuery)
+        {
+            m_gpuProfiler = new GPUProfiler();
+            m_gpuProfiler->Init(m_physicalDevice, m_device, pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+            pfn_vkGetCalibratedTimestampsEXT);
+        }
+    }
 
     void PuduGraphics::DrawFrame(RenderFrameData& frameData)
     {
-        auto frameGraph = frameData.frameGraph;
-        Frame frame = m_Frames[m_currentFrameIndex];
+        PROFILER_ZONE("Draw Frame", 0xffffff);
+            auto frameGraph = frameData.frameGraph;
+            Frame frame = m_Frames[m_currentFrameIndex];
 
-        //don't wait the first frames
-        if (m_absoluteFrame >= MAX_FRAMES_IN_FLIGHT)
-        {
-            u64 graphicsTimelineValue = m_absoluteFrame;
-            u64 computeTimelineValue = m_computeTimelineSemaphore->TimelineValue();
+            //don't wait the first frames
+            if (m_absoluteFrame >= MAX_FRAMES_IN_FLIGHT)
+            {
+                u64 graphicsTimelineValue = m_absoluteFrame;
+                u64 computeTimelineValue = m_computeTimelineSemaphore->TimelineValue();
 
-            u64 timelineValues[]{graphicsTimelineValue, computeTimelineValue};
-            VkSemaphore semaphores[]{m_graphicsTimelineSemaphore->vkHandle, m_computeTimelineSemaphore->vkHandle};
+                u64 timelineValues[]{graphicsTimelineValue, computeTimelineValue};
+                VkSemaphore semaphores[]{m_graphicsTimelineSemaphore->vkHandle, m_computeTimelineSemaphore->vkHandle};
 
-            VkSemaphoreWaitInfo waitInfo{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};
-            waitInfo.semaphoreCount = 1; //for now just wait for the graphics
-            waitInfo.pSemaphores = semaphores;
-            waitInfo.pValues = timelineValues;
+                VkSemaphoreWaitInfo waitInfo{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};
+                waitInfo.semaphoreCount = 1; //for now just wait for the graphics
+                waitInfo.pSemaphores = semaphores;
+                waitInfo.pValues = timelineValues;
 
-            vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
-        }
-        //If any shader needs to be reloaded, must be done after the GPU finish its current workload, hence the semaphore
-        ReloadPendingShaders();
+                vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
+            }
+            //If any shader needs to be reloaded, must be done after the GPU finish its current workload, hence the semaphore
+            ReloadPendingShaders();
 
-        ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
-        //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
+            ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
+            //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-        VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX,
-                                                *frame.ImageAvailableSemaphore,
-                                                VK_NULL_HANDLE, &frameData.frameIndex);
+            VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX,
+                                                    *frame.ImageAvailableSemaphore,
+                                                    VK_NULL_HANDLE, &frameData.frameIndex);
 
-        frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
+            frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            RecreateSwapChain();
-            return;
-        }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        {
-            LOG_ERROR("failed to acquire swap chain image!");
-        }
+            if (result == VK_ERROR_OUT_OF_DATE_KHR)
+            {
+                RecreateSwapChain();
+                return;
+            }
+            else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+            {
+                LOG_ERROR("failed to acquire swap chain image!");
+            }
 
-        vkResetFences(m_device, 1, &frame.InFlightFence);
+            vkResetFences(m_device, 1, &frame.InFlightFence);
 
-        frame.CommandBuffer->Reset();
-        frame.ComputeCommandBuffer->Reset();
+            frame.CommandBuffer->Reset();
+            frame.ComputeCommandBuffer->Reset();
 
-        frame.CommandBuffer->BeginCommands();
-        frame.ComputeCommandBuffer->BeginCommands();
+            PROFILER_ZONE("Render Frame", 0xffffff);
+                frame.CommandBuffer->BeginCommands();
 
-        frameData.frame = &m_Frames[m_currentFrameIndex];
-        frameData.currentCommand = frame.CommandBuffer;
-        frameData.graphics = this;
 
-        frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
+                frame.ComputeCommandBuffer->BeginCommands();
 
-        frameGraph->RenderFrame(frameData);
+                frameData.frame = &m_Frames[m_currentFrameIndex];
+                frameData.currentCommand = frame.CommandBuffer;
+                frameData.graphics = this;
 
-        //PRESENT LOGIC
+                frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
 
-        frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
-                                                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
-                                                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        frameData.currentCommand->Blit(frameData.activeRenderTarget, m_currentSwapchain.textures[frameData.frameIndex],
-                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                frameGraph->RenderFrame(frameData);
 
-        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
-                                                          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+                //PRESENT LOGIC
 
-        //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
-        frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
+                frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
+                                                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
+                                                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                frameData.currentCommand->Blit(frameData.activeRenderTarget,
+                                               m_currentSwapchain.textures[frameData.frameIndex],
+                                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        frame.CommandBuffer->EndCommands();
-        frame.ComputeCommandBuffer->EndCommands();
+                frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
+                                                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-        auto computeCommands = frame.ComputeCommandBuffer;
-        frameData.computeCommandsToSubmit.push_back(computeCommands.get());
+                //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
+                frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
 
-        SubmitComputeWork(frameData);
-        SubmitFrame(frameData);
+                frame.CommandBuffer->EndCommands();
+                frame.ComputeCommandBuffer->EndCommands();
 
-        EndDrawFrame();
+                auto computeCommands = frame.ComputeCommandBuffer;
+                frameData.computeCommandsToSubmit.push_back(computeCommands.get());
+
+            PROFILER_ZONE_END()
+            SubmitComputeWork(frameData);
+            SubmitFrame(frameData);
+
+            EndDrawFrame();
+        PROFILER_ZONE_END()
     }
 
     SPtr<Texture> PuduGraphics::GetMultisampledColorTexture()
@@ -735,7 +786,7 @@ namespace Pudu
 
         m_defaultMetallicRoughnessTexture = CreateTexture(metallicRoughnessTextureData);
 
-        SamplerCreationData samplerData{true,1, VK_FILTER_NEAREST};
+        SamplerCreationData samplerData{true, 1, VK_FILTER_NEAREST};
         TextureLoadSettings pudutextureSettings;
         pudutextureSettings.mipLevels = 1;
         pudutextureSettings.name = "PuduLogo";
@@ -1427,6 +1478,7 @@ namespace Pudu
         featuresVulkan12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+        featuresVulkan12.hostQueryReset = VK_TRUE;
 
         VkPhysicalDeviceFeatures2 deviceFeatures{};
         deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -2283,6 +2335,11 @@ namespace Pudu
         return m_defaultSphere;
     }
 
+    GPUProfiler* PuduGraphics::GetGPUProfiler()
+    {
+        ASSERT(m_gpuProfiler->m_context != nullptr, "GPUProfiler not initialized");
+        return m_gpuProfiler;
+    }
 
     void PuduGraphics::DestroySemaphore(SPtr<Semaphore> semaphore)
     {
@@ -3901,6 +3958,8 @@ namespace Pudu
         glfwTerminate();
 
         m_initialized = false;
+
+        delete m_gpuProfiler;
     }
 
     void PuduGraphics::CleanupSwapChain(Swapchain& swapchain)
