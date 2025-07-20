@@ -211,9 +211,9 @@ namespace Pudu
     }
 
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const GPUResourceHandle<Texture> texture,
-        u32 mipLevel)
+                                            u32 mipLevel)
     {
-        SetProperty(name,texture.Get(),mipLevel);
+        SetProperty(name, texture.Get(), mipLevel);
     }
 
     void ShaderPropertiesBlock::SetProperty(const std::string& name, const SPtr<GraphicsBuffer>& buffer)
@@ -332,7 +332,7 @@ namespace Pudu
     }
 
     void ShaderPropertiesBlock::ApplyTextureSampler(const PropertyUpdateRequest& value,
-        const MaterialApplyPropertyGPUTarget& target)
+                                                    const MaterialApplyPropertyGPUTarget& target)
     {
         auto shaderCursor = ShaderCursor(target.descriptorProvider->GetShaderLayout(), &target);
         auto field = shaderCursor.Field(value.property.name.c_str());
@@ -493,6 +493,26 @@ namespace Pudu
 
                 SetProperty(shaderProperty.name, shaderProperty.buffer);
                 BindPropertyToShaderNode(node, shaderProperty);
+            }
+        }
+        else if (node->type == ShaderNodeType::Resource)
+        {
+            if (node->scope == allocationInfo.scope) //We only care to setup properties relatives to the material scope. 
+            {
+                if (node->binding.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || node->binding.type ==
+                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                {
+                    auto defaultTexture = node->shape == ShaderNode::Shape::TEXTURE_CUBE
+                                              ? allocationInfo.graphics->GetDefaultCubemapTexture()
+                                              : allocationInfo.graphics->GetDefaultBlackTexture();
+
+                    ShaderProperty shaderProperty{};
+                    shaderProperty.type = ShaderPropertyType::Texture;
+                    shaderProperty.name = node->GetFullPath();
+                    shaderProperty.texture = defaultTexture;
+
+                    SetProperty(shaderProperty.name, defaultTexture);
+                }
             }
         }
 

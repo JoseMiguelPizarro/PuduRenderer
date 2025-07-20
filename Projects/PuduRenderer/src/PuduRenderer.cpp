@@ -16,12 +16,13 @@
 
 namespace Pudu
 {
-    void PuduRenderer::SetSkyBox(SPtr<Texture> skybox)
+    void PuduRenderer::SetSkyBox(SPtr<Texture> skybox, bool initIBL)
     {
         m_skybox = skybox;
         m_globalPropertiesMaterial->SetProperty("GLOBALS.skybox", skybox);
 
-        InitIBL(graphics, m_skybox);
+        if (initIBL)
+            InitIBL(graphics, m_skybox);
     }
 
     SPtr<Texture> PuduRenderer::GetSkybox()
@@ -96,7 +97,7 @@ namespace Pudu
         m_shadowMapRenderPass->SetDepthConstantBias(bias);
     }
 
-    void PuduRenderer::InitBRDF_LUT(PuduGraphics *gfx)
+    void PuduRenderer::InitBRDF_LUT(PuduGraphics* gfx)
     {
         u32 brdfLUTResolution = 256;
         SamplerCreationData brdfLUTSamplerCreationData{};
@@ -131,7 +132,7 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("LIGHTING.BRDF_LUT", m_BRDF_LUT);
     }
 
-    void PuduRenderer::InitIBL(PuduGraphics *gfx, SPtr<Texture> envMap)
+    void PuduRenderer::InitIBL(PuduGraphics* gfx, SPtr<Texture> envMap)
     {
         u32 IBLRTResolution = envMap->width >> 2;
         u32 IBLMips = Texture::CalculateMipLevels(IBLRTResolution, IBLRTResolution);
@@ -213,7 +214,8 @@ namespace Pudu
         auto IBL_DiffuseRT = gfx->Resources()->GetTexture<Texture>(gfx->CreateTexture(IBLDiffuseRTCreationData));
 
         ComputeShaderCreationData IBLDiffuse_ComputeData{
-            "Compute/IBL.compute.slang", "IBL_Diffuse", "Kernel_DiffuseIBL"};
+            "Compute/IBL.compute.slang", "IBL_Diffuse", "Kernel_DiffuseIBL"
+        };
         auto IBL_DiffuseCS = gfx->CreateComputeShader(IBLDiffuse_ComputeData);
         auto IBL_DiffuseMaterial = gfx->Resources()->AllocateMaterial();
         IBL_DiffuseMaterial->SetShader(IBL_DiffuseCS);
@@ -262,25 +264,29 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("LIGHTING.IBL_Diffuse", m_IBL_DiffuseCube);
     }
 
-    void PuduRenderer::OnInit(PuduGraphics *graphics, PuduApp *app)
+    void PuduRenderer::OnInit(PuduGraphics* graphics, PuduApp* app)
     {
         this->graphics = graphics;
         this->app = app;
+
+        InitLightingBuffer(graphics);
+        InitConstantsBuffer(graphics);
 
         m_globalPropertiesMaterial = graphics->Resources()->AllocateMaterial();
         m_globalPropertiesMaterial->name = "Global Properties Material";
 
         // Load Globals
-        std::vector<fs::path> globalModules = {"PuduGraphicsModule.slang","lib/PuduDebugModule.slang","lib/PuduLightingModule.slang"};
+        std::vector<fs::path> globalModules = {
+            "PuduGraphicsModule.slang", "lib/PuduDebugModule.slang", "lib/PuduLightingModule.slang"
+        };
         m_globalDescriptorSetLayouts = std::make_shared<DescriptorSetLayoutsCollection>(
             graphics->CreateDescriptorSetLayoutsFromModules(globalModules));
         m_globalPropertiesMaterial
             ->SetScope("Global")
             ->SetDescriptorProvider(m_globalDescriptorSetLayouts);
 
-        InitLightingBuffer(graphics);
-        InitConstantsBuffer(graphics);
         InitBRDF_LUT(graphics);
+
 
         auto depthRT = graphics->GetRenderTexture();
         depthRT->depth = 1;
@@ -331,7 +337,7 @@ namespace Pudu
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();
         m_depthRenderPass->name = "DepthPrepassRenderPass";
         m_depthRenderPass->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Clear)
-            ->SetMultisampled(true);
+                         ->SetMultisampled(true);
 
         m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
         m_shadowMapRenderPass->name = "ShadowMapRenderPass";
@@ -347,14 +353,14 @@ namespace Pudu
 
         auto transparentRP = graphics->GetRenderPass<ForwardRenderPass>();
         transparentRP->SetName("Transparent")
-            ->SetRenderLayer(1)
-            ->SetColorBlending(VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD)
-            ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
-            ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddColorAttachment(normalRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddColorAttachment(m_colorCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddColorAttachment(m_depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load);
+                     ->SetRenderLayer(1)
+                     ->SetColorBlending(VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD)
+                     ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Load)
+                     ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(normalRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(m_colorCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddColorAttachment(m_depthCopyRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+                     ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Write, LoadOperation::Load);
 
         auto overlayRP = graphics->GetRenderPass<ForwardRenderPass>();
         overlayRP
@@ -380,7 +386,7 @@ namespace Pudu
 
         auto grassBuffer = graphics->CreateGraphicsBuffer(sizeof(glm::vec4) * instances, grassPointCloud.data(),
                                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "Data.GrassPos");
 
         auto forwardColorCopyRP = graphics->GetRenderPass<BlitRenderPass>();
@@ -411,7 +417,7 @@ namespace Pudu
         auto indirectBuffer = graphics->CreateGraphicsBuffer(sizeof(VkDrawIndirectCommand) * indirectCommands.size(),
                                                              indirectCommands.data(),
                                                              VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT |
-                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "indirectBuffer");
 
         auto drawGrassRP = graphics->GetRenderPass<DrawIndirectRenderPass>();
@@ -477,7 +483,7 @@ namespace Pudu
 
     static bool isFirstFrame = true;
 
-    void PuduRenderer::OnRender(RenderFrameData &data)
+    void PuduRenderer::OnRender(RenderFrameData& data)
     {
         data.globalPropertiesMaterial = m_globalPropertiesMaterial;
         m_globalPropertiesMaterial->ApplyProperties(data.currentCommand.get());
@@ -489,7 +495,7 @@ namespace Pudu
         UpdateGlobalConstantsBuffer(data);
     }
 
-    void PuduRenderer::OnUploadCameraData(RenderFrameData &frameData)
+    void PuduRenderer::OnUploadCameraData(RenderFrameData& frameData)
     {
         // UpdateGlobalConstantsBuffer(frameData);
 
@@ -504,13 +510,13 @@ namespace Pudu
 
         const Size offset = offsetof(GlobalConstants, nearPlane);
         const Size size = sizeof(GlobalConstants) - offset;
-        const byte *data = reinterpret_cast<byte *>(&globalConstants) + offset;
+        const byte* data = reinterpret_cast<byte*>(&globalConstants) + offset;
 
         frameData.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), data, size, offset);
         frameData.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
-    void PuduRenderer::UpdateLightingBuffer(RenderFrameData &frame) const
+    void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
     {
         LightBuffer lightBuffer{};
         lightBuffer.directionalLight.lightDirection = {-frame.scene->directionalLight->Direction(), 0.0f};
@@ -520,13 +526,13 @@ namespace Pudu
         lightBuffer.lightCount = 0;
 
 
-        frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte *>(&lightBuffer),
+        frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer),
                                                sizeof(LightBuffer));
 
         frame.lightingBuffer = m_lightingBuffer;
     }
 
-    void PuduRenderer::UpdateGlobalConstantsBuffer(const RenderFrameData &frame) const
+    void PuduRenderer::UpdateGlobalConstantsBuffer(const RenderFrameData& frame) const
     {
         GlobalConstants globalConstants{};
         auto camera = m_renderCamera;
@@ -540,27 +546,28 @@ namespace Pudu
         globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
 
         frame.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(),
-                                               reinterpret_cast<const byte *>(&globalConstants),
+                                               reinterpret_cast<const byte*>(&globalConstants),
                                                sizeof(GlobalConstants));
 
         frame.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
-    void PuduRenderer::InitLightingBuffer(PuduGraphics *graphics)
+    void PuduRenderer::InitLightingBuffer(PuduGraphics* graphics)
     {
         m_lightingBuffer = graphics->CreateGraphicsBuffer(sizeof(LightBuffer), nullptr,
                                                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
-                                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                                           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                                              VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                                                          VMA_ALLOCATION_CREATE_MAPPED_BIT,
                                                           "LightingBuffer");
     }
 
-    void PuduRenderer::InitConstantsBuffer(PuduGraphics *graphics)
+    void PuduRenderer::InitConstantsBuffer(PuduGraphics* graphics)
     {
         m_globalConstantsBuffer = graphics->CreateGraphicsBuffer(sizeof(GlobalConstants), nullptr,
                                                                  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
-                                                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT, "GlobalConstants");
+                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                                 VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                                                                 | VMA_ALLOCATION_CREATE_MAPPED_BIT, "GlobalConstants");
     };
 }

@@ -22,6 +22,7 @@ namespace Pudu
 
         void Enable();
         void Disable();
+        bool IsEnabled() const { return m_enabled; }
 
     private:
         friend class PuduGraphics;
@@ -33,8 +34,8 @@ namespace Pudu
 
 #ifdef GPU_PROFILE
 #define PROFILE_GPU_FUNCTION() ZoneScoped
-#define PROFILE_GPU_ZONE(profiler, name,cmdBuffer) TracyVkZone(profiler->GetContext(), cmdBuffer, name);
-#define PROFILE_GPU_COLLECT(profiler, cmdBuffer) TracyVkCollect(profiler->GetContext(), cmdBuffer);
+#define PROFILE_GPU_ZONE(profiler, name,cmdBuffer)  TracyVkZone(profiler->GetContext(), cmdBuffer, name);
+#define PROFILE_GPU_COLLECT(profiler, cmdBuffer) if(profiler->IsEnabled()) TracyVkCollect(profiler->GetContext(), cmdBuffer);
 #else
 #define PROFILE_GPU_FUNCTION()
 #define PROFILE_GPU_ZONE(profiler, name,cmdBuffer)

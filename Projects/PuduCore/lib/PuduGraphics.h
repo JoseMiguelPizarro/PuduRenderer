@@ -298,6 +298,7 @@ namespace Pudu
         SPtr<Texture> GetDefaultBlackTexture();
         SPtr<Texture> GetDefaultNormalMapTexture();
         SPtr<Texture> GetDefaultMetallicRoughnessTexture();
+        SPtr<Texture> GetDefaultCubemapTexture();
         SPtr<Texture> GetPuduTexture();
 
         SPtr<Shader> GetDefaultOverlayShader();
@@ -420,6 +421,7 @@ namespace Pudu
         GPUResourceHandle<Texture> m_defaultWhiteTexture;
         GPUResourceHandle<Texture> m_defaultBlackTexture;
         GPUResourceHandle<Texture> m_defaultNormalmapTexture;
+        GPUResourceHandle<Texture> m_defaultCubemap;
         GPUResourceHandle<Texture> m_defaultMetallicRoughnessTexture;
         GPUResourceHandle<Texture> m_defaultPuduTexture;
         SPtr<Mesh> m_defaultQuad;

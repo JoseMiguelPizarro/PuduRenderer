@@ -778,6 +778,13 @@ namespace Pudu
 
             sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+            destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
         }
         else
         {

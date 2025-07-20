@@ -2,7 +2,6 @@
 
 
 import PuduCoreModule;
-import "Lib/PuduDebugModule";
 import PuduGraphicsModule;
 
 struct PostProcessingData
@@ -13,7 +12,7 @@ struct PostProcessingData
 
 ParameterBlock<PostProcessingData> Data;
 
-static float4 pos[] = {
+static const float4 pos[] = {
     float4(-1, -1, 0, 0),
     float4(-1, 1, 0, 0),
     float4(1, 1, 0, 0),

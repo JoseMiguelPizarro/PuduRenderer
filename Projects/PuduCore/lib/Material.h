@@ -43,6 +43,7 @@ namespace Pudu
         Size arrayIndex;
         SPtr<GraphicsBuffer> buffer;
         std::vector<SPtr<Texture>>* textureArray;
+        ShaderNode* shaderNode = nullptr;
     };
 
     struct PropertyUpdateRequest

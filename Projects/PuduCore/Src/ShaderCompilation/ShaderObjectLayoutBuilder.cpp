@@ -249,8 +249,8 @@ namespace Pudu
                         {
                             Size stringSize = 0;
                             scope = scopeAttribute->getArgumentValueString(0, &stringSize);
-                            if (stringSize > 0)
-                            scope = scope.substr(1, stringSize - 2);
+                            // if (stringSize > 0)
+                            // scope = scope.substr(1, stringSize - 2);
 
                             //Hack since Slang API doen'st return the real string but the whole code
 
@@ -354,6 +354,9 @@ namespace Pudu
                 shaderNode->setIndex = accessPath.setIndex;
                 shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
                 shaderNode->binding = binding;
+                shaderNode->scope = accessPath.shaderNode->scope;
+                shaderNode->shape = static_cast<ShaderNode::Shape>(typeLayoutReflection->getResourceShape());
+
                 accessPath.shaderNode = shaderNode;
             }
             break;

@@ -26,6 +26,7 @@ namespace Pudu
 		m_screenColor->Create(gpu);
 
 		m_postProcessingShader = gpu->CreateShader(m_shaderPath, "Postprocessing");
+		m_postProcessingShader->GetShaderLayout()->Print();
 		m_material->SetShader(m_postProcessingShader);
 		m_material->SetProperty("Data.colorTex", m_screenColor);
 	}

@@ -659,6 +659,8 @@ namespace Pudu
             m_defaultSphere = CreateMesh(defaultSphereMeshData);
         }
 
+        InitDefaultTextures();
+
         //Default Shaders
 
         {
@@ -679,7 +681,6 @@ namespace Pudu
             m_horizonToCubemapCSRenderer.SetShader(m_horizonToCubeCompute);
             m_horizonToCubemapCSRenderer.SetMaterial(horizonToCubemapMat);
         }
-        InitDefaultTextures();
 
         //Default materials
         m_defaultStandardMaterial = CreateMaterial();
@@ -790,6 +791,26 @@ namespace Pudu
         metallicRoughnessTextureData.samplerData = &metallicRoughnessSamplerData;
 
         m_defaultMetallicRoughnessTexture = CreateTexture(metallicRoughnessTextureData);
+
+
+        TextureCreationData defaultCubemapData{};
+        defaultCubemapData.width = 1;
+        defaultCubemapData.height = 1;
+        defaultCubemapData.format = VK_FORMAT_R8G8B8A8_SRGB;
+        defaultCubemapData.textureType = TextureType::Texture_Cube;
+        defaultCubemapData.name = "DefaultCubemap";
+        defaultCubemapData.flags = TextureFlags::Sample;
+        defaultCubemapData.layers = 6;
+        defaultCubemapData.mipmaps = 1;
+
+        std::vector<float> cubemapPixels(24, 1.0f); // 6 faces * RGBA
+        defaultCubemapData.pixels = cubemapPixels.data();
+        defaultCubemapData.dataSize = cubemapPixels.size() * sizeof(float);
+
+        SamplerCreationData cubemapSamplerData{true};
+        defaultCubemapData.samplerData = &cubemapSamplerData;
+
+        m_defaultCubemap = CreateTexture(defaultCubemapData);
 
         SamplerCreationData samplerData{true, 1, VK_FILTER_NEAREST};
         TextureLoadSettings pudutextureSettings;
@@ -2299,6 +2320,11 @@ namespace Pudu
     SPtr<Texture> PuduGraphics::GetDefaultMetallicRoughnessTexture()
     {
         return m_resources.GetTexture<Texture>(m_defaultMetallicRoughnessTexture);
+    }
+
+    SPtr<Texture> PuduGraphics::GetDefaultCubemapTexture()
+    {
+        return m_defaultCubemap.Get();
     }
 
     SPtr<Texture> PuduGraphics::GetPuduTexture()

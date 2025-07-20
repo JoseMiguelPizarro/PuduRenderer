@@ -52,7 +52,7 @@ void Test_PBR::OnInit()
     skyboxLoadSettings.generateMipmaps = true;
 
     auto skybox = Graphics.LoadTextureHorizonAsCube("textures/skybox/piazza_bologni_4k.ktx2", skyboxLoadSettings);
-    m_puduRenderer.SetSkyBox(skybox);
+    m_puduRenderer.SetSkyBox(skybox, false);
 
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
@@ -79,10 +79,12 @@ void Test_PBR::OnInit()
     m_directionalLight = {};
     m_directionalLight.Projection = projection;
 
-    m_directionalLight.GetTransform().SetForward({1.0f,-1, 1}, {0.0f, 1.0f, 0.0f});
+    m_directionalLight.GetTransform().SetForward({1.0f, -1, 1}, {0.0f, 1.0f, 0.0f});
     glm::vec3 lightDirection = -m_directionalLight.GetTransform().GetForward();
 
-    m_directionalLight.GetTransform().SetLocalPosition( {lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance});
+    m_directionalLight.GetTransform().SetLocalPosition({
+        lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance
+    });
     m_scene.directionalLight = &m_directionalLight;
 
 
@@ -250,7 +252,9 @@ void Test_PBR::DrawImGUI()
     if (ImGui::SliderFloat("Light Distance", &m_lightDistance, 0.1f, 30.0f))
     {
         auto lightDirection = -m_directionalLight.GetTransform().GetForward();
-        m_directionalLight.GetTransform().SetLocalPosition( {lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance});
+        m_directionalLight.GetTransform().SetLocalPosition({
+            lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance
+        });
     }
 
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;

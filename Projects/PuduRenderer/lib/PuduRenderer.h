@@ -14,7 +14,7 @@ namespace Pudu
     class PuduRenderer : public Renderer
     {
     public:
-        void SetSkyBox(SPtr<Texture> skybox);
+        void SetSkyBox(SPtr<Texture> skybox, bool initIBL = true);
         SPtr<Texture> GetSkybox();
         SPtr<Texture> GetEnvMap();
         SPtr<Texture> GetBRDF_LUT();
