@@ -82,7 +82,6 @@ FetchContent_MakeAvailable(tracy)
 include_directories(${tracy_SOURCE_DIR}/public)
 
 
-
 message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
 add_library(slang SHARED IMPORTED GLOBAL)
 if (WIN32)
@@ -144,6 +143,9 @@ SETUP_TARGET_PROPERTIES(PuduCore)
 #VK_EXT_host_query_reset is needed for Tracy Vulkan gpu profiler
 set_target_properties(PuduCore PROPERTIES
         COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING;VK_EXT_host_query_reset")
+
+set_target_properties(PuduCore PROPERTIES
+        COMPILE_DEFINITIONS "GPU_PROFILE")
 
 target_link_libraries(PuduCore PUBLIC slang)
 

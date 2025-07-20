@@ -16,12 +16,17 @@ namespace Pudu
         TracyVkCtx GetContext() const { return m_context; }
 
         void Init(VkPhysicalDevice physicalDevice, VkDevice device,
+                  PFN_vkResetQueryPool rqp,
                   PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT gpdctd, PFN_vkGetCalibratedTimestampsEXT
                   gct);
+
+        void Enable();
+        void Disable();
 
     private:
         friend class PuduGraphics;
         TracyVkCtx m_context = nullptr;
+        bool m_enabled = false;
     };
 }
 
@@ -29,7 +34,9 @@ namespace Pudu
 #ifdef GPU_PROFILE
 #define PROFILE_GPU_FUNCTION() ZoneScoped
 #define PROFILE_GPU_ZONE(profiler, name,cmdBuffer) TracyVkZone(profiler->GetContext(), cmdBuffer, name);
+#define PROFILE_GPU_COLLECT(profiler, cmdBuffer) TracyVkCollect(profiler->GetContext(), cmdBuffer);
 #else
 #define PROFILE_GPU_FUNCTION()
 #define PROFILE_GPU_ZONE(profiler, name,cmdBuffer)
+#define PROFILE_GPU_COLLECT(profiler)
 #endif

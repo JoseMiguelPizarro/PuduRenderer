@@ -12,8 +12,12 @@
 #include <Logger.h>
 #include "Profiling/PuduGPUProfiler.h"
 
+
+
 namespace Pudu
 {
+    #define GPU_ZONE(name) PROFILE_GPU_ZONE(m_graphics->GetGPUProfiler(), name, vkHandle)
+
     GPUCommands::GPUCommands(VkCommandBuffer handle, PuduGraphics* gfx) : vkHandle(handle), m_graphics(gfx)
     {
     }
@@ -140,6 +144,7 @@ namespace Pudu
         ASSERT(offset % 4 == 0, "Buffer {} Offset must be a multiple of 4", buffer->name);
         ASSERT(size <= 65536, "Buffer {} Size must be less or equal than 65536[bytes]", buffer->name);
 
+        GPU_ZONE("UpdateBufferData");
         vkCmdUpdateBuffer(vkHandle, buffer->vkHandle, offset, size, data);
     }
 
@@ -389,6 +394,7 @@ namespace Pudu
         blitInfo.pRegions = &blitRegion;
         blitInfo.regionCount = 1;
 
+        GPU_ZONE("Blit");
         vkCmdBlitImage2(vkHandle, &blitInfo);
 
         m_hasRecordedCommand = true;
@@ -413,12 +419,13 @@ namespace Pudu
         blitInfo.pRegions = regions;
         blitInfo.regionCount = regionCount;
         PROFILE_GPU_FUNCTION();
-        PROFILE_GPU_ZONE(m_graphics->GetGPUProfiler(), "Blit", vkHandle);
+        GPU_ZONE("Blit");
         vkCmdBlitImage2(vkHandle, &blitInfo);
     }
 
     void GPUCommands::Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
     {
+        GPU_ZONE("Dispatch");
         vkCmdDispatch(vkHandle, groupCountX, groupCountY, groupCountZ);
 
         m_hasRecordedCommand = true;
@@ -426,6 +433,7 @@ namespace Pudu
 
     void GPUCommands::DispatchIndirect(const GraphicsBuffer* paramsBuffer, uint64_t offset)
     {
+        GPU_ZONE("Dispatch Indirect");
         vkCmdDispatchIndirect(vkHandle, paramsBuffer->vkHandle, offset);
     }
 
@@ -776,6 +784,7 @@ namespace Pudu
             LOG_ERROR("unsupported layout transition! {}-> {}", string_VkImageLayout(oldLayout),
                       string_VkImageLayout(newLayout));
         }
+        GPU_ZONE("Pipeline barrier");
         vkCmdPipelineBarrier(vkHandle, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
         m_hasRecordedCommand = true;
@@ -807,6 +816,7 @@ namespace Pudu
         VkBufferCopy copyRegion{};
         copyRegion.size = size;
 
+        GPU_ZONE("CopyBuffer");
         vkCmdCopyBuffer(vkHandle, srcBuffer, dstBuffer, 1, &copyRegion);
 
         m_hasRecordedCommand = true;
@@ -854,6 +864,7 @@ namespace Pudu
         copyInfo.pRegions = data;
         copyInfo.regionCount = regionsCount;
 
+        GPU_ZONE("CopyBufferToImage");
         vkCmdCopyBufferToImage2(
             vkHandle,
             &copyInfo
@@ -864,6 +875,7 @@ namespace Pudu
 
     void GPUCommands::SetDepthBias(float slopeBias, float constantBias)
     {
+        GPU_ZONE("SetDepthBias");
         vkCmdSetDepthBias(vkHandle, constantBias, 0.0f, slopeBias);
         m_hasRecordedCommand = true;
     }
@@ -881,6 +893,7 @@ namespace Pudu
     void GPUCommands::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
                                   int32_t vertexOffset, uint32_t firstInstance)
     {
+        GPU_ZONE("DrawIndexed");
         vkCmdDrawIndexed(vkHandle, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 
         m_hasRecordedCommand = true;
@@ -888,6 +901,7 @@ namespace Pudu
 
     void GPUCommands::DrawIndirect(GraphicsBuffer* buffer, uint64_t offset, uint32_t drawCount, uint32_t stride)
     {
+        GPU_ZONE("DrawIndirect");
         vkCmdDrawIndirect(vkHandle, buffer->vkHandle, offset, drawCount, stride);
         m_hasRecordedCommand = true;
     }

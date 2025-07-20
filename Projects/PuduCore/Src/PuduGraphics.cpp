@@ -381,8 +381,10 @@ namespace Pudu
         if (hasHostQuery)
         {
             m_gpuProfiler = new GPUProfiler();
-            m_gpuProfiler->Init(m_physicalDevice, m_device, pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
-            pfn_vkGetCalibratedTimestampsEXT);
+            auto pfn_rqp = reinterpret_cast<PFN_vkResetQueryPool>(vkGetInstanceProcAddr(
+                m_vkInstance, "vkResetQueryPool"));
+            m_gpuProfiler->Init(m_physicalDevice, m_device, pfn_rqp, pfn_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+                                pfn_vkGetCalibratedTimestampsEXT);
         }
     }
 
@@ -466,11 +468,14 @@ namespace Pudu
                 //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
                 frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
 
+                PROFILE_GPU_COLLECT(m_gpuProfiler, frame.CommandBuffer->vkHandle);
                 frame.CommandBuffer->EndCommands();
+
                 frame.ComputeCommandBuffer->EndCommands();
 
                 auto computeCommands = frame.ComputeCommandBuffer;
                 frameData.computeCommandsToSubmit.push_back(computeCommands.get());
+
 
             PROFILER_ZONE_END()
             SubmitComputeWork(frameData);
@@ -1049,6 +1054,7 @@ namespace Pudu
     void PuduGraphics::SubmitFrame(RenderFrameData& frameData)
     {
         auto frame = frameData.frame;
+
 
         VkSubmitInfo2 submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
