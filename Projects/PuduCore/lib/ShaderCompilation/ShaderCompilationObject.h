@@ -36,7 +36,8 @@ namespace Pudu
         std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo() { return &m_pushConstants; }
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) { m_constantBuffers = buffers; }
         void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
-        BlendingMode GetBlendMode() const { return m_blendMode; }
+        BlendState GetBlendState() const { return m_blendState; }
+        CullMode GetCullMode() const { return m_cullMode; }
 
         UPtr<std::vector<fs::path>> GetDependencies()
         {
@@ -53,6 +54,7 @@ namespace Pudu
         std::vector<ConstantBufferInfo> m_pushConstants;
         std::vector<fs::path> m_dependencies;
         PushConstantInfo m_pushConstantsInfo;
-        BlendingMode m_blendMode;
+        BlendState m_blendState;
+        CullMode m_cullMode;
     };
 }

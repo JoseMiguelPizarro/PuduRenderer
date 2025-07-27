@@ -42,7 +42,8 @@ VSOut vertexMain(VertexInput input)
 Blending(BlendingMode.CustomBlend),
 SrcColorFactor(BlendFactor.SRC_ALPHA),
 DstColorFactor(BlendFactor.ONE_MINUS_SRC_ALPHA),
-Culling(CullingMode.Back)]
+Culling(CullingMode.Back),
+ColorMask(ColorMask.All)]
 float4 fragmentMain(VSOut input)
     : SV_TARGET
 {

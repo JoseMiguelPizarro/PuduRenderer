@@ -28,9 +28,9 @@ namespace Pudu
 
 		return *this;
 	}
-	BlendState& BlendState::SetColorWriteMask(ColorWriteEnabled::Mask value)
+	BlendState& BlendState::SetColorWriteMask(ColorMask::Enum value)
 	{
-		colorWriteMask = value;
+		colorMask = value;
 		return *this;
 	}
 	DepthStencilCreation& DepthStencilCreation::SetDepth(bool write, VkCompareOp comparisonTest)

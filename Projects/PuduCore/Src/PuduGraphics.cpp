@@ -939,7 +939,7 @@ namespace Pudu
                     auto blendState = creationData.blendState.blendStates[i];
 
                     attachment.blendEnable = blendState.blendEnabled;
-                    attachment.colorWriteMask = blendState.colorWriteMask;
+                    attachment.colorWriteMask = blendState.colorMask;
                     attachment.srcColorBlendFactor = blendState.sourceColorFactor;
                     attachment.dstColorBlendFactor = blendState.destinationColorFactor;
                     attachment.colorBlendOp = blendState.colorBlendOperation;
@@ -2223,19 +2223,25 @@ namespace Pudu
 
         if (shader->HasFragmentData())
         {
-            auto renderPassBlendState = renderPass->GetBlendState();
+            auto renderPassBlendState = shader->m_overridePipelinestate
+                                            ? shader->GetBlendState()
+                                            : *renderPass->GetBlendState();
+
+
             blendStateCreation.AddBlendState()
-                              .SetAlphaBlending(renderPassBlendState->sourceAlphaFactor,
-                                                renderPassBlendState->destinationAlphaFactor,
-                                                renderPassBlendState->alphaBlendOperation)
-                              .SetColorBlending(renderPassBlendState->sourceColorFactor,
-                                                renderPassBlendState->destinationColorFactor,
-                                                renderPassBlendState->colorBlendOperation)
-                              .SetColorWriteMask(ColorWriteEnabled::All_mask);
+                              .SetAlphaBlending(renderPassBlendState.sourceAlphaFactor,
+                                                renderPassBlendState.destinationAlphaFactor,
+                                                renderPassBlendState.alphaBlendOperation)
+                              .SetColorBlending(renderPassBlendState.sourceColorFactor,
+                                                renderPassBlendState.destinationColorFactor,
+                                                renderPassBlendState.colorBlendOperation)
+                              .SetColorWriteMask(renderPassBlendState.colorMask);
         }
 
+        auto cullMode = shader->m_overridePipelinestate ? shader->GetCullMode() : renderPass->GetCullMode();
+
         RasterizationCreation rasterizationCreation;
-        rasterizationCreation.cullMode = ToVk(renderPass->GetCullMode());
+        rasterizationCreation.cullMode = ToVk(cullMode);
         rasterizationCreation.fill = FillMode::Solid;
         rasterizationCreation.front = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 

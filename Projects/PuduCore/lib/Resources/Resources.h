@@ -1,8 +1,6 @@
 #pragma once
 #include <string>
-#include <cstdint>
 #include <vulkan/vulkan_core.h>
-#include <glm/fwd.hpp>
 #include <vector>
 
 #include "DescriptorSetLayoutCollection.h"
@@ -53,33 +51,23 @@ namespace Pudu
 
 #pragma region RenderPass
 
-    namespace ColorWriteEnabled
+    namespace ColorMask
     {
         enum Enum
         {
-            Red,
-            Green,
-            Blue,
-            Alpha,
-            All,
-            Count
-        };
-
-        enum Mask
-        {
-            Red_mask = 1 << 0,
-            Green_mask = 1 << 1,
-            Blue_mask = 1 << 2,
-            Alpha_mask = 1 << 3,
-            All_mask = Red_mask | Green_mask | Blue_mask | Alpha_mask
+            Red = 1 << 0,
+            Green = 1 << 1,
+            Blue = 1 << 2,
+            Alpha = 1 << 3,
+            All = Red | Green | Blue | Alpha,
         };
 
         static const char *s_value_names[] = {
             "Red", "Green", "Blue", "Alpha", "All", "Count"};
 
-        static const char *ToString(Enum e)
+        static const char *ToString(const Enum e)
         {
-            return ((uint32_t)e < Enum::Count ? s_value_names[(int)e] : "unsupported");
+            return (s_value_names[static_cast<int>(e)]);
         }
     }
 
@@ -171,7 +159,7 @@ namespace Pudu
         VkBlendFactor destinationAlphaFactor = VK_BLEND_FACTOR_ZERO;
         VkBlendOp alphaBlendOperation = VK_BLEND_OP_ADD;
 
-        ColorWriteEnabled::Mask colorWriteMask = ColorWriteEnabled::All_mask;
+        ColorMask::Enum colorMask = ColorMask::All;
 
         uint8_t blendEnabled : 1;
         uint8_t pad : 6;
@@ -184,7 +172,7 @@ namespace Pudu
                                      VkBlendOp colorOperation);
         BlendState &SetAlphaBlending(VkBlendFactor sourceAlpha, VkBlendFactor destinationAlpha,
                                      VkBlendOp alphaOperation);
-        BlendState &SetColorWriteMask(ColorWriteEnabled::Mask value);
+        BlendState &SetColorWriteMask(ColorMask::Enum value);
     }; // struct BlendState
 
     struct BlendStateCreation

@@ -89,10 +89,20 @@ public enum BlendFactor
 
 public enum CullingMode
 {
-Back,
-Front,
-None
+        Front,
+		Back,
+		Both,
+		None
 }
+
+public enum ColorMask
+{
+    Red = 1 << 0,
+    Green = 1 << 1,
+    Blue = 1 << 2,
+    Alpha = 1 << 3,
+    All = Red | Green | Blue | Alpha,
+};
 
 public enum DefaultTexture
 {
@@ -169,6 +179,12 @@ struct BlendingAttribute{
 struct CullingAttribute{
 CullingMode cullMode;
 };
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct ColorMaskAttribute
+{
+    ColorMask mask;
+}
 
 public static const float PI = 3.14159265358979f;
 public static constexpr float PI_HALF = PI/2;

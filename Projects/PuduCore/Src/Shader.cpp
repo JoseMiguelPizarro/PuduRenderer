@@ -29,6 +29,16 @@ namespace Pudu
         m_vertexDataSize = dataSize;
     }
 
+    BlendState Shader::GetBlendState()
+    {
+        return m_compilationObject.GetBlendState();
+    }
+
+    CullMode Shader::GetCullMode()
+    {
+        return m_compilationObject.GetCullMode();
+    }
+
     SPtr<Pipeline> Shader::OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass)
     {
         auto creationData = gfx->GetPipelineCreationData(this, renderPass);

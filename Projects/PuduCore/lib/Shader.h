@@ -38,6 +38,8 @@ namespace Pudu
 
         void SetName(const char* name) override { this->name = name; };
         const char* GetName() override { return this->name.c_str(); }
+        BlendState GetBlendState();
+        CullMode GetCullMode();
 
     protected:
         SPtr<Pipeline> OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
@@ -48,6 +50,7 @@ namespace Pudu
     private:
         friend class PuduGraphics;
 
+        bool m_overridePipelinestate = false;
         std::filesystem::path m_shaderPath;
         bool m_hasFragmentData;
         bool m_hasVertexData;
@@ -58,5 +61,8 @@ namespace Pudu
         Size m_fragmentDataSize;
         const u32* m_vertexData;
         Size m_vertexDataSize;
+
+        BlendState m_blendState;
+        CullMode m_cullMode;
     };
 }

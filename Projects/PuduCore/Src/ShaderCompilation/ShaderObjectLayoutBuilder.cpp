@@ -175,7 +175,9 @@ namespace Pudu
         shaderCompilationObject->descriptorsData.bindingsData.push_back(binding);
     }
 
-    void ShaderObjectLayoutBuilder::ParseAttributes(DescriptorSetLayoutInfo& descriptorSetLayoutInfo, VariableReflection* reflectedVar, ShaderLayoutBuilderContext* context)
+    void ShaderObjectLayoutBuilder::ParseAttributes(DescriptorSetLayoutInfo& descriptorSetLayoutInfo,
+                                                    VariableReflection* reflectedVar,
+                                                    ShaderLayoutBuilderContext* context)
     {
         if (auto bindlessAttribute = reflectedVar->findUserAttributeByName(m_globalSession,
                                                                            "Bindless"))
@@ -195,8 +197,6 @@ namespace Pudu
 
             descriptorSetLayoutInfo.scope = scope;
         }
-
-
     }
 
     void ShaderObjectLayoutBuilder::ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection,
@@ -459,7 +459,8 @@ namespace Pudu
             case slang::ParameterCategory::PushConstantBuffer:
                 {
                     accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
-                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; //TODO: USE REAL RANGES
+                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                    //TODO: USE REAL RANGES
                     accessPath.setIndex = 0;
                     accessPath.cumulativeOffset->PushIndex();
                     accessPath.rootBufferInfo->bindingIndex = 0;
@@ -551,18 +552,66 @@ namespace Pudu
         auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
 
         auto entryPointCount = programLayout->getEntryPointCount();
+        BlendState blendState;
+        CullMode cullMode = CullMode::Back;
+        BlendingMode blendMode = BlendingMode::Opaque;
+
         for (int i = 0; i < entryPointCount; i++)
         {
             auto entryPoint = programLayout->getEntryPointByIndex(i);
             auto entryPointFunction = entryPoint->getFunction();
 
-            if (auto blendingAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "BlendingMode"))
+            if (auto blendingAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "Blending"))
             {
                 int blendingModeInt = 0;
                 blendingAttribute->getArgumentValueInt(0, &blendingModeInt);
-                outCompilationObject.m_blendMode =  static_cast<BlendingMode>(blendingModeInt);
+                blendMode = static_cast<BlendingMode>(blendingModeInt);
+            }
+            if (const auto srcColorFactorAttribute = entryPointFunction->findUserAttributeByName(
+                m_globalSession, "SrcColorFactor"))
+            {
+                int value = 0;
+                srcColorFactorAttribute->getArgumentValueInt(0, &value);
+                blendState.sourceColorFactor = static_cast<VkBlendFactor>(value);
+            }
+            if (const auto dstColorFactorAttribute = entryPointFunction->findUserAttributeByName(
+                m_globalSession, "DstColorFactor"))
+            {
+                int value = 0;
+                dstColorFactorAttribute->getArgumentValueInt(0, &value);
+                blendState.destinationColorFactor = static_cast<VkBlendFactor>(value);
+            }
+            if (const auto colorBlendOpAttribute = entryPointFunction->findUserAttributeByName(
+                m_globalSession, "ColorBlendOp"))
+            {
+                int value = 0;
+                colorBlendOpAttribute->getArgumentValueInt(0, &value);
+                blendState.colorBlendOperation = static_cast<VkBlendOp>(value);
+            }
+            if (const auto alphaBlendOp = entryPointFunction->findUserAttributeByName(m_globalSession, "AlphaBlendOp"))
+            {
+                int value = 0;
+                alphaBlendOp->getArgumentValueInt(0, &value);
+                blendState.alphaBlendOperation = static_cast<VkBlendOp>(value);
+            }
+            if (const auto cullModeAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "Culling"))
+            {
+                int cullModeInt = 0;
+                cullModeAttribute->getArgumentValueInt(0, &cullModeInt);
+                cullMode = static_cast<CullMode>(cullModeInt);
+            }
+            if (const auto colorMaskAttribute = entryPointFunction->findUserAttributeByName(
+                m_globalSession, "ColorMask"))
+            {
+                int maskValue = 0;
+                colorMaskAttribute->getArgumentValueInt(0, &maskValue);
+                blendState.colorMask = static_cast<ColorMask::Enum>(maskValue);
             }
         }
+
+        outCompilationObject.m_cullMode = cullMode;
+        if (blendMode == BlendingMode::CustomBlend)
+            outCompilationObject.m_blendState = blendState;
 
         AccessPath rootOffsets;
         rootOffsets.valid = true;
@@ -607,8 +656,8 @@ namespace Pudu
         }
 
         //🐞 SetupPushConstants
-        PushConstantInfo pushConstants {};
-        for (const auto& pushBuffer : context.GetPushConstants() )
+        PushConstantInfo pushConstants{};
+        for (const auto& pushBuffer : context.GetPushConstants())
         {
             VkPushConstantRange pushConstantRange;
             pushConstantRange.offset = pushBuffer.offset;
