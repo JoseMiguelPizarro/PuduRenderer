@@ -91,6 +91,7 @@ namespace Pudu
         Size PushSetIndex() { return ++m_setIndex; }
         Size getSetIndex() const { return m_setIndex; }
         void PushBinding(const DescriptorBinding& binding) const;
+        BlendingMode blendingMode;
 
         ShaderLayoutBuilderContext();
 
@@ -111,6 +112,7 @@ namespace Pudu
                                       ShaderCompilationObject& outCompilationObject);
 
     private:
+        void ParseAttributes(DescriptorSetLayoutInfo& descriptorSetLayoutInfo, VariableReflection* reflectedVar, ShaderLayoutBuilderContext* context);
         void ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection, ShaderLayoutBuilderContext* context,
                                      AccessPath accessPath);
         void ParseVariableLayout(VariableLayoutReflection* varLayout, ShaderLayoutBuilderContext* context,

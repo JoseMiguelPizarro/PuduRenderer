@@ -43,7 +43,7 @@ namespace Pudu
     {
         if (diagnostics)
         {
-            LOG_ERROR_NO_BREAK("Shader compilation error: {}",
+            LOG_ERROR("Shader compilation error: {}",
                                static_cast<const char*>(diagnostics->getBufferPointer()));
 
             return true;
@@ -96,6 +96,8 @@ namespace Pudu
         m_globalSession->createSession(sessionDesc, session.writeRef());
 
         IModule* coreModule = session->loadModule("PuduCoreModule", diagnostics.writeRef());
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
+
         IModule* baseModule = session->loadModule("PuduGraphicsModule", diagnostics.writeRef());
 
         if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();

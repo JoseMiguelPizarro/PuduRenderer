@@ -40,6 +40,7 @@ VSOut vertexMain(VertexInput input)
     return output;
 }
 
+
 [shader("fragment")]
 float4 fragmentMain(VSOut input) : SV_Target
 {

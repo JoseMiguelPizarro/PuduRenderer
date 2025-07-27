@@ -62,7 +62,7 @@ namespace Pudu
     struct RenderFrameData;
 
 
-    enum QueueFamily
+    enum class QueueFamily
     {
         Graphics,
         Compute,

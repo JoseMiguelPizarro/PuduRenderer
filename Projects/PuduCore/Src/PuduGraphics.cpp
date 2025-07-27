@@ -468,7 +468,6 @@ namespace Pudu
                 //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
                 frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
 
-                PROFILE_GPU_COLLECT(m_gpuProfiler, frame.CommandBuffer->vkHandle);
                 frame.CommandBuffer->EndCommands();
 
                 frame.ComputeCommandBuffer->EndCommands();
@@ -478,6 +477,7 @@ namespace Pudu
 
 
             PROFILER_ZONE_END()
+            PROFILE_GPU_COLLECT(m_gpuProfiler, frame.CommandBuffer->vkHandle);
             SubmitComputeWork(frameData);
             SubmitFrame(frameData);
 
@@ -3228,16 +3228,16 @@ namespace Pudu
 
         switch (type)
         {
-        case Pudu::Graphics:
+        case QueueFamily::Graphics:
             familyIndex = queueFamilyIndices.graphicsFamily.value();
             break;
-        case Pudu::Compute:
+        case QueueFamily::Compute:
             familyIndex = queueFamilyIndices.computeFamily.value();
             break;
-        case Pudu::Transfer:
+        case QueueFamily::Transfer:
             familyIndex = queueFamilyIndices.transferFamily.value();
             break;
-        case Pudu::Present:
+        case QueueFamily::Present:
             familyIndex = queueFamilyIndices.presentFamily.value();
             break;
         default:

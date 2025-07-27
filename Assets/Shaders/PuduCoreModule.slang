@@ -1,5 +1,106 @@
 module PuduCore;
+public enum BlendingMode
+{
+        Opaque,
+		AlphaBlend,
+		AdditiveBlend,
+		SubtractiveBlend,
+		MultiplyBlend,
+		CustomBlend
+};
 
+public enum BlendOp
+{
+    ADD = 0,
+    SUBTRACT = 1,
+    REVERSE_SUBTRACT = 2,
+    MIN = 3,
+    MAX = 4,
+    ZERO_EXT = 1000148000,
+    SRC_EXT = 1000148001,
+    DST_EXT = 1000148002,
+    SRC_OVER_EXT = 1000148003,
+    DST_OVER_EXT = 1000148004,
+    SRC_IN_EXT = 1000148005,
+    DST_IN_EXT = 1000148006,
+    SRC_OUT_EXT = 1000148007,
+    DST_OUT_EXT = 1000148008,
+    SRC_ATOP_EXT = 1000148009,
+    DST_ATOP_EXT = 1000148010,
+    XOR_EXT = 1000148011,
+    MULTIPLY_EXT = 1000148012,
+    SCREEN_EXT = 1000148013,
+    OVERLAY_EXT = 1000148014,
+    DARKEN_EXT = 1000148015,
+    LIGHTEN_EXT = 1000148016,
+    COLORDODGE_EXT = 1000148017,
+    COLORBURN_EXT = 1000148018,
+    HARDLIGHT_EXT = 1000148019,
+    SOFTLIGHT_EXT = 1000148020,
+    DIFFERENCE_EXT = 1000148021,
+    EXCLUSION_EXT = 1000148022,
+    INVERT_EXT = 1000148023,
+    INVERT_RGB_EXT = 1000148024,
+    LINEARDODGE_EXT = 1000148025,
+    LINEARBURN_EXT = 1000148026,
+    VIVIDLIGHT_EXT = 1000148027,
+    LINEARLIGHT_EXT = 1000148028,
+    PINLIGHT_EXT = 1000148029,
+    HARDMIX_EXT = 1000148030,
+    HSL_HUE_EXT = 1000148031,
+    HSL_SATURATION_EXT = 1000148032,
+    HSL_COLOR_EXT = 1000148033,
+    HSL_LUMINOSITY_EXT = 1000148034,
+    PLUS_EXT = 1000148035,
+    PLUS_CLAMPED_EXT = 1000148036,
+    PLUS_CLAMPED_ALPHA_EXT = 1000148037,
+    PLUS_DARKER_EXT = 1000148038,
+    MINUS_EXT = 1000148039,
+    MINUS_CLAMPED_EXT = 1000148040,
+    CONTRAST_EXT = 1000148041,
+    INVERT_OVG_EXT = 1000148042,
+    RED_EXT = 1000148043,
+    GREEN_EXT = 1000148044,
+    BLUE_EXT = 1000148045,
+}
+
+public enum BlendFactor
+{
+    ZERO = 0,
+    ONE = 1,
+    SRC_COLOR = 2,
+    ONE_MINUS_SRC_COLOR = 3,
+    DST_COLOR = 4,
+    ONE_MINUS_DST_COLOR = 5,
+    SRC_ALPHA = 6,
+    ONE_MINUS_SRC_ALPHA = 7,
+    DST_ALPHA = 8,
+    ONE_MINUS_DST_ALPHA = 9,
+    CONSTANT_COLOR = 10,
+    ONE_MINUS_CONSTANT_COLOR = 11,
+    CONSTANT_ALPHA = 12,
+    ONE_MINUS_CONSTANT_ALPHA = 13,
+    SRC_ALPHA_SATURATE = 14,
+    SRC1_COLOR = 15,
+    ONE_MINUS_SRC1_COLOR = 16,
+    SRC1_ALPHA = 17,
+    ONE_MINUS_SRC1_ALPHA = 18,
+}
+
+public enum CullingMode
+{
+Back,
+Front,
+None
+}
+
+public enum DefaultTexture
+{
+White,
+Black,
+Normal,
+Pudu
+}
 
 [__AttributeUsage(_AttributeTargets.Var)]
 struct BindlessAttribute
@@ -12,6 +113,62 @@ struct ScopeAttribute
     string value;
 };
 
+[__AttributeUsage(_AttributeTargets.Var)]
+struct DefaultTextureAttribute
+{
+    DefaultTexture value;
+};
+
+[__AttributeUsage(_AttributeTargets.Var)]
+struct NormalMap
+{};
+
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct SrcColorFactorAttribute{
+BlendFactor factor;
+}
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct DstColorFactorAttribute{
+BlendFactor factor;
+}
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct SrcAlphaFactorAttribute{
+BlendFactor factor;
+}
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct DstAlphaFactorAttribute{
+BlendFactor factor;
+}
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct ColorBlendOpAttribute{
+BlendOp op;
+}
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct AlphaBlendOpAttribute{
+BlendOp op;
+}
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct BlendingAttribute{
+  BlendingMode blendingMode;
+
+   __init(BlendingMode blendingMode)
+      {
+          this.blendingMode = blendingMode;
+      };
+};
+
+
+[__AttributeUsage(_AttributeTargets.Function)]
+struct CullingAttribute{
+CullingMode cullMode;
+};
 
 public static const float PI = 3.14159265358979f;
 public static constexpr float PI_HALF = PI/2;

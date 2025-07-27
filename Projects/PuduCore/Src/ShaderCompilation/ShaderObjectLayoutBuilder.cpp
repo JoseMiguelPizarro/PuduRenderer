@@ -175,6 +175,30 @@ namespace Pudu
         shaderCompilationObject->descriptorsData.bindingsData.push_back(binding);
     }
 
+    void ShaderObjectLayoutBuilder::ParseAttributes(DescriptorSetLayoutInfo& descriptorSetLayoutInfo, VariableReflection* reflectedVar, ShaderLayoutBuilderContext* context)
+    {
+        if (auto bindlessAttribute = reflectedVar->findUserAttributeByName(m_globalSession,
+                                                                           "Bindless"))
+        {
+            descriptorSetLayoutInfo.bindless = true;
+        }
+
+        auto scope = std::string("");
+        if (auto scopeAttribute = reflectedVar->findUserAttributeByName(m_globalSession, "Scope"))
+        {
+            Size stringSize = 0;
+            scope = scopeAttribute->getArgumentValueString(0, &stringSize);
+            // if (stringSize > 0)
+            // scope = scope.substr(1, stringSize - 2);
+
+            //Hack since Slang API doen'st return the real string but the whole code
+
+            descriptorSetLayoutInfo.scope = scope;
+        }
+
+
+    }
+
     void ShaderObjectLayoutBuilder::ParseVariableTypeLayout(TypeLayoutReflection* typeLayoutReflection,
                                                             ShaderLayoutBuilderContext* context, AccessPath accessPath)
     {
@@ -237,25 +261,8 @@ namespace Pudu
                         descriptorSetLayoutInfo.CreateInfo.flags = 0;
 
                         auto reflectedVar = accessPath.leaf->variableLayout->getVariable();
-                        if (auto bindlessAttribute = reflectedVar->findUserAttributeByName(m_globalSession,
-                            "Bindless"))
-                        {
-                            descriptorSetLayoutInfo.bindless = true;
-                        }
-
                         descriptorSetLayoutInfo.scope = "";
-                        auto scope = std::string("");
-                        if (auto scopeAttribute = reflectedVar->findUserAttributeByName(m_globalSession, "Scope"))
-                        {
-                            Size stringSize = 0;
-                            scope = scopeAttribute->getArgumentValueString(0, &stringSize);
-                            // if (stringSize > 0)
-                            // scope = scope.substr(1, stringSize - 2);
-
-                            //Hack since Slang API doen'st return the real string but the whole code
-
-                            descriptorSetLayoutInfo.scope = scope;
-                        }
+                        ParseAttributes(descriptorSetLayoutInfo, reflectedVar, context);
 
                         context->shaderCompilationObject->descriptorsData.setsCount++;
                         context->shaderCompilationObject->descriptorsData.setLayoutInfos.push_back(
@@ -264,7 +271,7 @@ namespace Pudu
                         auto shaderNode = accessPath.shaderNode->AppendChild(
                             descriptorSetLayoutInfo.name.c_str(), 0, 0, ShaderNodeType::ParameterBlock);
 
-                        shaderNode->scope = scope;
+                        shaderNode->scope = descriptorSetLayoutInfo.scope;
                         shaderNode->setIndex = descriptorSetLayoutInfo.SetNumber;
 
                         accessPath.shaderNode = shaderNode;
@@ -355,7 +362,7 @@ namespace Pudu
                 shaderNode->bindingIndex = accessPath.cumulativeOffset->index;
                 shaderNode->binding = binding;
                 shaderNode->scope = accessPath.shaderNode->scope;
-                shaderNode->shape = static_cast<ShaderNode::Shape>(typeLayoutReflection->getResourceShape());
+                shaderNode->shape = static_cast<ShaderNode::Shape::Flags>(typeLayoutReflection->getResourceShape());
 
                 accessPath.shaderNode = shaderNode;
             }
@@ -542,6 +549,20 @@ namespace Pudu
         m_indentation = 0;
 
         auto globalVarLayout = programLayout->getGlobalParamsVarLayout();
+
+        auto entryPointCount = programLayout->getEntryPointCount();
+        for (int i = 0; i < entryPointCount; i++)
+        {
+            auto entryPoint = programLayout->getEntryPointByIndex(i);
+            auto entryPointFunction = entryPoint->getFunction();
+
+            if (auto blendingAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "BlendingMode"))
+            {
+                int blendingModeInt = 0;
+                blendingAttribute->getArgumentValueInt(0, &blendingModeInt);
+                outCompilationObject.m_blendMode =  static_cast<BlendingMode>(blendingModeInt);
+            }
+        }
 
         AccessPath rootOffsets;
         rootOffsets.valid = true;

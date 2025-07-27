@@ -38,7 +38,11 @@ VSOut vertexMain(VertexInput input)
     return output;
 }
 
-[shader("fragment")]
+[shader("fragment"),
+Blending(BlendingMode.CustomBlend),
+SrcColorFactor(BlendFactor.SRC_ALPHA),
+DstColorFactor(BlendFactor.ONE_MINUS_SRC_ALPHA),
+Culling(CullingMode.Back)]
 float4 fragmentMain(VSOut input)
     : SV_TARGET
 {

@@ -20,6 +20,8 @@ public struct Globals
 {
     public Sampler2D normalBuffer;
     public Sampler2D depthBuffer;
+
+    [DefaultTexture(DefaultTexture.White)]
     public Sampler2D colorBuffer;
     public Sampler2D pudu;
     public SamplerCube skybox;

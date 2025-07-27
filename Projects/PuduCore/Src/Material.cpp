@@ -497,12 +497,12 @@ namespace Pudu
         }
         else if (node->type == ShaderNodeType::Resource)
         {
-            if (node->scope == allocationInfo.scope) //We only care to setup properties relatives to the material scope. 
+            if (node->scope == allocationInfo.scope) //We only care to setup properties relatives to the material scope.
             {
                 if (node->binding.type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE || node->binding.type ==
                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                 {
-                    auto defaultTexture = node->shape == ShaderNode::Shape::TEXTURE_CUBE
+                    auto defaultTexture = node->shape & ShaderNode::Shape::TEXTURE_CUBE
                                               ? allocationInfo.graphics->GetDefaultCubemapTexture()
                                               : allocationInfo.graphics->GetDefaultBlackTexture();
 

@@ -26,6 +26,16 @@ namespace Pudu
 		None
 	};
 
+	enum class BlendingMode
+	{
+		Opaque,
+		AlphaBlend,
+		AdditiveBlend,
+		SubtractiveBlend,
+		MultiplyBlend,
+		CustomBlend
+	};
+
 	enum class PresentMode
 	{
 		IMMEDIATE = 0,
