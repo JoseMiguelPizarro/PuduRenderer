@@ -57,7 +57,7 @@ set(LIBS
 
 set(TRACY_VERSION "v0.12.2")
 
-set(SLANG_VERSION "2025.10")
+set(SLANG_VERSION "2025.13.1")
 if (WIN32)
     set(SLANG_OS "windows-x86_64")
 elseif (APPLE)
@@ -191,6 +191,7 @@ macro(AddPuduApp app_name)
 
     set_target_properties(${app_name} PROPERTIES
             DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
+            VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
     )
 endmacro()
 
