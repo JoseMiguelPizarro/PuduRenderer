@@ -38,6 +38,7 @@ namespace Pudu
         void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
         BlendState GetBlendState() const { return m_blendState; }
         CullMode GetCullMode() const { return m_cullMode; }
+        bool OverridePipelineState() const { return m_overridesPipelineState; }
 
         UPtr<std::vector<fs::path>> GetDependencies()
         {
@@ -56,5 +57,6 @@ namespace Pudu
         PushConstantInfo m_pushConstantsInfo;
         BlendState m_blendState;
         CullMode m_cullMode;
+        bool m_overridesPipelineState = false;
     };
 }

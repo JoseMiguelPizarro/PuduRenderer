@@ -40,6 +40,7 @@ namespace Pudu
         const char* GetName() override { return this->name.c_str(); }
         BlendState GetBlendState();
         CullMode GetCullMode();
+        bool OverridesPipelineState() { return m_compilationObject.OverridePipelineState(); }
 
     protected:
         SPtr<Pipeline> OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;
@@ -50,7 +51,6 @@ namespace Pudu
     private:
         friend class PuduGraphics;
 
-        bool m_overridePipelinestate = false;
         std::filesystem::path m_shaderPath;
         bool m_hasFragmentData;
         bool m_hasVertexData;

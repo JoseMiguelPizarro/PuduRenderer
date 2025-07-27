@@ -555,6 +555,7 @@ namespace Pudu
         BlendState blendState;
         CullMode cullMode = CullMode::Back;
         BlendingMode blendMode = BlendingMode::Opaque;
+        bool overridePipelineState = false;
 
         for (int i = 0; i < entryPointCount; i++)
         {
@@ -566,6 +567,8 @@ namespace Pudu
                 int blendingModeInt = 0;
                 blendingAttribute->getArgumentValueInt(0, &blendingModeInt);
                 blendMode = static_cast<BlendingMode>(blendingModeInt);
+                overridePipelineState = true;
+
             }
             if (const auto srcColorFactorAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "SrcColorFactor"))
@@ -573,6 +576,7 @@ namespace Pudu
                 int value = 0;
                 srcColorFactorAttribute->getArgumentValueInt(0, &value);
                 blendState.sourceColorFactor = static_cast<VkBlendFactor>(value);
+                overridePipelineState = true;
             }
             if (const auto dstColorFactorAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "DstColorFactor"))
@@ -580,6 +584,7 @@ namespace Pudu
                 int value = 0;
                 dstColorFactorAttribute->getArgumentValueInt(0, &value);
                 blendState.destinationColorFactor = static_cast<VkBlendFactor>(value);
+                overridePipelineState = true;
             }
             if (const auto colorBlendOpAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "ColorBlendOp"))
@@ -587,18 +592,21 @@ namespace Pudu
                 int value = 0;
                 colorBlendOpAttribute->getArgumentValueInt(0, &value);
                 blendState.colorBlendOperation = static_cast<VkBlendOp>(value);
+                overridePipelineState = true;
             }
             if (const auto alphaBlendOp = entryPointFunction->findUserAttributeByName(m_globalSession, "AlphaBlendOp"))
             {
                 int value = 0;
                 alphaBlendOp->getArgumentValueInt(0, &value);
                 blendState.alphaBlendOperation = static_cast<VkBlendOp>(value);
+                overridePipelineState = true;
             }
             if (const auto cullModeAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "Culling"))
             {
                 int cullModeInt = 0;
                 cullModeAttribute->getArgumentValueInt(0, &cullModeInt);
                 cullMode = static_cast<CullMode>(cullModeInt);
+                overridePipelineState = true;
             }
             if (const auto colorMaskAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "ColorMask"))
@@ -606,9 +614,11 @@ namespace Pudu
                 int maskValue = 0;
                 colorMaskAttribute->getArgumentValueInt(0, &maskValue);
                 blendState.colorMask = static_cast<ColorMask::Enum>(maskValue);
+                overridePipelineState = true;
             }
         }
 
+        outCompilationObject.m_overridesPipelineState = overridePipelineState;
         outCompilationObject.m_cullMode = cullMode;
         if (blendMode == BlendingMode::CustomBlend)
             outCompilationObject.m_blendState = blendState;

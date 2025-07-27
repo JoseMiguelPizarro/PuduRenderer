@@ -2223,7 +2223,7 @@ namespace Pudu
 
         if (shader->HasFragmentData())
         {
-            auto renderPassBlendState = shader->m_overridePipelinestate
+            auto renderPassBlendState = shader->OverridesPipelineState()
                                             ? shader->GetBlendState()
                                             : *renderPass->GetBlendState();
 
@@ -2238,7 +2238,7 @@ namespace Pudu
                               .SetColorWriteMask(renderPassBlendState.colorMask);
         }
 
-        auto cullMode = shader->m_overridePipelinestate ? shader->GetCullMode() : renderPass->GetCullMode();
+        auto cullMode = shader->OverridesPipelineState() ? shader->GetCullMode() : renderPass->GetCullMode();
 
         RasterizationCreation rasterizationCreation;
         rasterizationCreation.cullMode = ToVk(cullMode);
