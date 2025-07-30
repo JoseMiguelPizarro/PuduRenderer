@@ -43,7 +43,7 @@ namespace Pudu
     {
         if (diagnostics)
         {
-            LOG_ERROR("Shader compilation error: {}",
+            LOG_ERROR_NO_BREAK("Shader compilation error: {}",
                                static_cast<const char*>(diagnostics->getBufferPointer()));
 
             return true;

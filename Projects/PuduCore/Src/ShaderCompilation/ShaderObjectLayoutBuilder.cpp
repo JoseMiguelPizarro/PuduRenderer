@@ -568,7 +568,6 @@ namespace Pudu
                 blendingAttribute->getArgumentValueInt(0, &blendingModeInt);
                 blendMode = static_cast<BlendingMode>(blendingModeInt);
                 overridePipelineState = true;
-
             }
             if (const auto srcColorFactorAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "SrcColorFactor"))
@@ -577,6 +576,7 @@ namespace Pudu
                 srcColorFactorAttribute->getArgumentValueInt(0, &value);
                 blendState.sourceColorFactor = static_cast<VkBlendFactor>(value);
                 overridePipelineState = true;
+                blendMode = BlendingMode::CustomBlend;
             }
             if (const auto dstColorFactorAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "DstColorFactor"))
@@ -585,6 +585,7 @@ namespace Pudu
                 dstColorFactorAttribute->getArgumentValueInt(0, &value);
                 blendState.destinationColorFactor = static_cast<VkBlendFactor>(value);
                 overridePipelineState = true;
+                blendMode = BlendingMode::CustomBlend;
             }
             if (const auto colorBlendOpAttribute = entryPointFunction->findUserAttributeByName(
                 m_globalSession, "ColorBlendOp"))
@@ -593,6 +594,7 @@ namespace Pudu
                 colorBlendOpAttribute->getArgumentValueInt(0, &value);
                 blendState.colorBlendOperation = static_cast<VkBlendOp>(value);
                 overridePipelineState = true;
+                blendMode = BlendingMode::CustomBlend;
             }
             if (const auto alphaBlendOp = entryPointFunction->findUserAttributeByName(m_globalSession, "AlphaBlendOp"))
             {
@@ -600,6 +602,7 @@ namespace Pudu
                 alphaBlendOp->getArgumentValueInt(0, &value);
                 blendState.alphaBlendOperation = static_cast<VkBlendOp>(value);
                 overridePipelineState = true;
+                blendMode = BlendingMode::CustomBlend;
             }
             if (const auto cullModeAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "Culling"))
             {
@@ -620,7 +623,53 @@ namespace Pudu
 
         outCompilationObject.m_overridesPipelineState = overridePipelineState;
         outCompilationObject.m_cullMode = cullMode;
-        if (blendMode == BlendingMode::CustomBlend)
+
+        switch (blendMode)
+        {
+        case BlendingMode::Opaque:
+            blendState.colorBlendOperation = VK_BLEND_OP_ADD;
+            blendState.alphaBlendOperation = VK_BLEND_OP_ADD;
+            blendState.sourceColorFactor = VK_BLEND_FACTOR_ONE;
+            blendState.destinationColorFactor = VK_BLEND_FACTOR_ZERO;
+            blendState.sourceAlphaFactor = VK_BLEND_FACTOR_ONE;
+            blendState.destinationAlphaFactor = VK_BLEND_FACTOR_ZERO;
+            break;
+        case BlendingMode::AdditiveBlend:
+            blendState.colorBlendOperation = VK_BLEND_OP_ADD;
+            blendState.alphaBlendOperation = VK_BLEND_OP_ADD;
+            blendState.sourceColorFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationColorFactor = VK_BLEND_FACTOR_ONE;
+            blendState.sourceAlphaFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationAlphaFactor = VK_BLEND_FACTOR_ONE;
+            break;
+        case BlendingMode::SubtractiveBlend:
+            blendState.colorBlendOperation = VK_BLEND_OP_SUBTRACT;
+            blendState.alphaBlendOperation = VK_BLEND_OP_SUBTRACT;
+            blendState.sourceColorFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationColorFactor = VK_BLEND_FACTOR_ONE;
+            blendState.sourceAlphaFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationAlphaFactor = VK_BLEND_FACTOR_ONE;
+            break;
+        case BlendingMode::MultiplyBlend:
+            blendState.colorBlendOperation = VK_BLEND_OP_MULTIPLY_EXT;
+            blendState.alphaBlendOperation = VK_BLEND_OP_MULTIPLY_EXT;
+            blendState.sourceColorFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationColorFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            blendState.sourceAlphaFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationAlphaFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            break;
+        case BlendingMode::AlphaBlend:
+            blendState.colorBlendOperation = VK_BLEND_OP_ADD;
+            blendState.alphaBlendOperation = VK_BLEND_OP_ADD;
+            blendState.sourceColorFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            blendState.destinationColorFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            blendState.sourceAlphaFactor = VK_BLEND_FACTOR_ONE;
+            blendState.destinationAlphaFactor = VK_BLEND_FACTOR_ZERO;
+        default:
+            break;
+        }
+
+        if (blendMode == BlendingMode::CustomBlend || overridePipelineState)
             outCompilationObject.m_blendState = blendState;
 
         AccessPath rootOffsets;

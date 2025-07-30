@@ -38,12 +38,10 @@ VSOut vertexMain(VertexInput input)
     return output;
 }
 
-[shader("fragment"),
-Blending(BlendingMode.CustomBlend),
-SrcColorFactor(BlendFactor.SRC_ALPHA),
-DstColorFactor(BlendFactor.ONE_MINUS_SRC_ALPHA),
-Culling(CullingMode.Back),
-ColorMask(ColorMask.All)]
+[
+shader("fragment"),
+ColorMask(ColorMask.All)
+]
 float4 fragmentMain(VSOut input)
     : SV_TARGET
 {
@@ -90,6 +88,7 @@ float4 fragmentMain(VSOut input)
 
 
     col.xyz = StandardSurface(m);
+    col.a = 1;
 
     return col;
 }
