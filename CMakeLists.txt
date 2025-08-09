@@ -57,7 +57,7 @@ set(LIBS
 
 set(TRACY_VERSION "v0.12.2")
 
-set(SLANG_VERSION "2025.13.1")
+set(SLANG_VERSION "2025.14.3")
 if (WIN32)
     set(SLANG_OS "windows-x86_64")
 elseif (APPLE)
@@ -66,6 +66,7 @@ elseif (UNIX)
     set(SLANG_OS "linux-x86_64")
 endif ()
 
+message(STATUS "Fetching Slang ver: ${SLANG_VERSION}")
 include(FetchContent)
 FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-${SLANG_OS}.zip QUIET)
 
