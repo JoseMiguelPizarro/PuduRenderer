@@ -119,6 +119,9 @@ void Test_PBR::OnInit()
     sphereModel.Materials.push_back(Graphics.GetDefaultStandardMaterial());
     auto sphereEntity = EntityManager::AllocateRenderEntity(sphereModel);
 
+    auto untilShader = Graphics.CreateShader("standardUnlit.shader.slang", "standardUnlit");
+
+    m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0]->SetShader(untilShader);
 
     // m_scene.AddEntity(sphereEntity);
     m_scene.AddEntity(m_model);

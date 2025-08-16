@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "GraphicsBuffer.h"
+#include "MeshCreationData.h"
 #include "vertex.h"
 #include "Resources/Resources.h"
 
@@ -10,22 +11,28 @@ namespace Pudu
     class Mesh : public GPUResource<Mesh>
     {
     public:
-        SPtr<GraphicsBuffer> GetVertexBuffer();
+        std::vector<SPtr<GraphicsBuffer>> GetAttributeStreamBuffers();
         SPtr<GraphicsBuffer> GetIndexBuffer();
 
-        std::vector<Vertex>* GetVertices();
-        std::vector<uint32_t>* GetIndices();
+        std::vector<VertexAttributeStream>& GetVertexAttributeStreams();
+        std::vector<u32>* GetIndices();
 
         Mesh() = default;
+        ~Mesh();
 
         void SetIndexBuffer(SPtr<GraphicsBuffer> buffer)
         {
             m_indexBuffer = buffer;
         }
 
-        void SetVertexBuffer(SPtr<GraphicsBuffer> buffer)
+        void SetVertexAttributeBuffers(std::vector<SPtr<GraphicsBuffer>> buffers)
         {
-            m_vertexBuffer = buffer;
+            m_vertexAttributeStreamBuffers = buffers;
+        }
+
+        void SetVertexAttributeStreams(std::vector<VertexAttributeStream> streams)
+        {
+            m_vertexAttributeStreams = streams;
         }
 
         bool IsDisposed();
@@ -41,9 +48,9 @@ namespace Pudu
         GPUResourceType Type() override { return GPUResourceType::Mesh; }
 
     private:
-        SPtr<GraphicsBuffer> m_vertexBuffer;
+        std::vector<SPtr<GraphicsBuffer>> m_vertexAttributeStreamBuffers;
+        std::vector<VertexAttributeStream> m_vertexAttributeStreams;
         SPtr<GraphicsBuffer> m_indexBuffer;
-        std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
         bool m_disposed;
     };

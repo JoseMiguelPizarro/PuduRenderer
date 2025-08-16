@@ -14,9 +14,9 @@
 
 #include <map>
 #include <fastgltf/types.hpp>
-
-
 #include "Logger.h"
+
+#include "VertexLayout.h"
 
 namespace Pudu
 {
@@ -131,7 +131,7 @@ namespace Pudu
                 path = name + (path.empty() ? "" : "->" + path);
                 currentNode = currentNode->parent;
             }
-            std::cout << path.c_str() << std::endl;
+           LOG(path);
         }
         else
         {
@@ -544,6 +544,155 @@ namespace Pudu
         m_indentation--;
     }
 
+
+    static ChannelFormat GetChannelFormat(TypeReflection::ScalarType type, Size elementCount = 1)
+    {
+        switch (type)
+        {
+        case TypeReflection::ScalarType::Bool:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R8_UINT;
+            case 2: return ChannelFormat::R8G8_UINT;
+            case 3: return ChannelFormat::R8G8B8_UINT;
+            case 4: return ChannelFormat::R8G8B8A8_UINT;
+            default: return ChannelFormat::R8_UINT;
+            }
+        case TypeReflection::ScalarType::Int8:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R8_SINT;
+            case 2: return ChannelFormat::R8G8_SINT;
+            case 3: return ChannelFormat::R8G8B8_SINT;
+            case 4: return ChannelFormat::R8G8B8A8_SINT;
+            default: return ChannelFormat::R8_SINT;
+            }
+        case TypeReflection::ScalarType::UInt8:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R8_UINT;
+            case 2: return ChannelFormat::R8G8_UINT;
+            case 3: return ChannelFormat::R8G8B8_UINT;
+            case 4: return ChannelFormat::R8G8B8A8_UINT;
+            default: return ChannelFormat::R8_UINT;
+            }
+        case TypeReflection::ScalarType::Int16:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R16_SINT;
+            case 2: return ChannelFormat::R16G16_SINT;
+            case 3: return ChannelFormat::R16G16B16_SINT;
+            case 4: return ChannelFormat::R16G16B16A16_SINT;
+            default: return ChannelFormat::R16_SINT;
+            }
+        case TypeReflection::ScalarType::UInt16:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R16_UINT;
+            case 2: return ChannelFormat::R16G16_UINT;
+            case 3: return ChannelFormat::R16G16B16_UINT;
+            case 4: return ChannelFormat::R16G16B16A16_UINT;
+            default: return ChannelFormat::R16_UINT;
+            }
+        case TypeReflection::ScalarType::Int32:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R32_SINT;
+            case 2: return ChannelFormat::R32G32_SINT;
+            case 3: return ChannelFormat::R32G32B32_SINT;
+            case 4: return ChannelFormat::R32G32B32A32_SINT;
+            default: return ChannelFormat::R32_SINT;
+            }
+        case TypeReflection::ScalarType::UInt32:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R32_UINT;
+            case 2: return ChannelFormat::R32G32_UINT;
+            case 3: return ChannelFormat::R32G32B32_UINT;
+            case 4: return ChannelFormat::R32G32B32A32_UINT;
+            default: return ChannelFormat::R32_UINT;
+            }
+        case TypeReflection::ScalarType::Float32:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R32_SFLOAT;
+            case 2: return ChannelFormat::R32G32_SFLOAT;
+            case 3: return ChannelFormat::R32G32B32_SFLOAT;
+            case 4: return ChannelFormat::R32G32B32A32_SFLOAT;
+            default: return ChannelFormat::R32_SFLOAT;
+            }
+        case TypeReflection::ScalarType::Int64:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R64_SINT;
+            case 2: return ChannelFormat::R64G64_SINT;
+            case 3: return ChannelFormat::R64G64B64_SINT;
+            case 4: return ChannelFormat::R64G64B64A64_SINT;
+            default: return ChannelFormat::R64_SINT;
+            }
+        case TypeReflection::ScalarType::UInt64:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R64_UINT;
+            case 2: return ChannelFormat::R64G64_UINT;
+            case 3: return ChannelFormat::R64G64B64_UINT;
+            case 4: return ChannelFormat::R64G64B64A64_UINT;
+            default: return ChannelFormat::R64_UINT;
+            }
+        case TypeReflection::ScalarType::Float64:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R64_SFLOAT;
+            case 2: return ChannelFormat::R64G64_SFLOAT;
+            case 3: return ChannelFormat::R64G64B64_SFLOAT;
+            case 4: return ChannelFormat::R64G64B64A64_SFLOAT;
+            default: return ChannelFormat::R64_SFLOAT;
+            }
+        case TypeReflection::ScalarType::Float16:
+            switch (elementCount)
+            {
+            case 1: return ChannelFormat::R16_SFLOAT;
+            case 2: return ChannelFormat::R16G16_SFLOAT;
+            case 3: return ChannelFormat::R16G16B16_SFLOAT;
+            case 4: return ChannelFormat::R16G16B16A16_SFLOAT;
+            default: return ChannelFormat::R16_SFLOAT;
+            }
+        default:
+            ASSERT(false,"Unvalid scalar type");
+        }
+
+        return ChannelFormat::R8_UINT;
+    }
+
+    static Size GetScalarTypeSize(TypeReflection::ScalarType type)
+    {
+        switch (type)
+        {
+        case TypeReflection::ScalarType::None:
+            return 0;
+        case TypeReflection::ScalarType::Void:
+            return 0;
+        case TypeReflection::ScalarType::Bool:
+            return 1;
+        case TypeReflection::ScalarType::Int8:
+        case TypeReflection::ScalarType::UInt8:
+            return 1;
+        case TypeReflection::ScalarType::Int16:
+        case TypeReflection::ScalarType::UInt16:
+            return 2;
+        case TypeReflection::ScalarType::Int32:
+        case TypeReflection::ScalarType::UInt32:
+        case TypeReflection::ScalarType::Float32:
+            return 4;
+        case TypeReflection::ScalarType::Int64:
+        case TypeReflection::ScalarType::UInt64:
+        case TypeReflection::ScalarType::Float64:
+            return 8;
+        default:
+            return 0;
+        }
+    }
+
     void ShaderObjectLayoutBuilder::ParseShaderProgramLayout(slang::ProgramLayout* programLayout,
                                                              ShaderCompilationObject& outCompilationObject)
     {
@@ -561,6 +710,46 @@ namespace Pudu
         {
             auto entryPoint = programLayout->getEntryPointByIndex(i);
             auto entryPointFunction = entryPoint->getFunction();
+            if (auto shaderAttribute = entryPointFunction->findAttributeByName(m_globalSession, "shader"))
+            {
+                Size size = 0;
+                auto shaderType = shaderAttribute->getArgumentValueString(0, &size);
+                if (strcmp(shaderType, "vertex") == 0)
+                {
+                    auto vertexInput = entryPointFunction->getParameterByIndex(0);
+                    auto fields = vertexInput->getType()->getFieldCount();
+                    for (auto f = 0; f < fields; f++)
+                    {
+                        auto field = vertexInput->getType()->getFieldByIndex(f);
+                        auto name = field->getName();
+                        auto type = field->getType()->getScalarType();
+                        auto channelsCount = field->getType()->getElementCount();
+                        auto fieldSize = GetScalarTypeSize(type);
+                        LOG("Field {} Size {}",name,fieldSize);
+
+                        VertexAttributeType vertexAttributeType = VertexAttributeType::UNDEFINED;
+
+                        if (field->findAttributeByName(m_globalSession, "POSITION"))
+                            vertexAttributeType = VertexAttributeType::POSITION;
+                        else if (field->findAttributeByName(m_globalSession, "NORMAL"))
+                            vertexAttributeType = VertexAttributeType::NORMAL;
+                        else if (field->findAttributeByName(m_globalSession, "COLOR"))
+                            vertexAttributeType = VertexAttributeType::COLOR;
+                        else if (field->findAttributeByName(m_globalSession, "TANGENT"))
+                            vertexAttributeType = VertexAttributeType::TANGENT;
+                        else if (field->findAttributeByName(m_globalSession, "TEXCOORD0"))
+                            vertexAttributeType = VertexAttributeType::TEXCOORD0;
+                        else if (field->findAttributeByName(m_globalSession, "TEXCOORD1"))
+                            vertexAttributeType = VertexAttributeType::TEXCOORD1;
+                        else if (field->findAttributeByName(m_globalSession, "TEXCOORD2"))
+                            vertexAttributeType = VertexAttributeType::TEXCOORD2;
+                        else if (field->findAttributeByName(m_globalSession, "TEXCOORD3"))
+                            vertexAttributeType = VertexAttributeType::TEXCOORD3;
+
+                        outCompilationObject.m_vertexLayout.PushAttribute(VertexAttribute(vertexAttributeType, GetChannelFormat(type, channelsCount)));
+                    }
+                }
+            }
 
             if (auto blendingAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "Blending"))
             {
@@ -596,7 +785,8 @@ namespace Pudu
                 overridePipelineState = true;
                 blendMode = BlendingMode::CustomBlend;
             }
-            if (const auto alphaBlendOp = entryPointFunction->findUserAttributeByName(m_globalSession, "AlphaBlendOp"))
+            if (const auto alphaBlendOp = entryPointFunction->findUserAttributeByName(
+                m_globalSession, "AlphaBlendOp"))
             {
                 int value = 0;
                 alphaBlendOp->getArgumentValueInt(0, &value);
@@ -604,7 +794,8 @@ namespace Pudu
                 overridePipelineState = true;
                 blendMode = BlendingMode::CustomBlend;
             }
-            if (const auto cullModeAttribute = entryPointFunction->findUserAttributeByName(m_globalSession, "Culling"))
+            if (const auto cullModeAttribute = entryPointFunction->findUserAttributeByName(
+                m_globalSession, "Culling"))
             {
                 int cullModeInt = 0;
                 cullModeAttribute->getArgumentValueInt(0, &cullModeInt);

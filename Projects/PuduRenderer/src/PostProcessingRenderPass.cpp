@@ -8,13 +8,14 @@ namespace Pudu
 	{
 		m_material = gpu->Resources()->AllocateMaterial();
 
-		MeshCreationData meshCreation = {
-			.Name = "quad",
-		.Vertices = quadVertices,
-		.Indices = quadIndices,
-		};
-
-		m_quadMesh = gpu->CreateMesh(meshCreation);
+		// MeshCreationData meshCreation = {
+		// 	.Name = "quad",
+		// .Vertices = quadVertices,
+		// .Indices = quadIndices,
+		// };
+		//
+		// m_quadMesh = gpu->CreateMesh(meshCreation);
+		m_quadMesh = gpu->GetDefaultQuad();
 
 		m_screenColor = gpu->GetRenderTexture();
 		m_screenColor->name = "ScreenColor";
@@ -35,7 +36,7 @@ namespace Pudu
 	{
 		auto command = renderData.currentCommand;
 
-		command->BindMesh(m_quadMesh.get());
+		command->BindMesh(m_quadMesh.get(), m_material->GetShader()->GetVertexLayout());
 		Pipeline* pipeline = GetPipeline({
 			.renderPass = this,
 			.shader = m_postProcessingShader.get(),

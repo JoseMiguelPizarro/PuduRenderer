@@ -17,8 +17,12 @@ namespace Pudu
 
     static void Print(const char* text, ...)
     {
-        printf(text);
-        printf("\n");
+        std::printf("%s\n", text);
+    }
+
+    static void LOG(std::string message)
+    {
+        std::printf("%s\n", message.c_str());
     }
 
     template <typename... Args>
@@ -45,7 +49,7 @@ namespace Pudu
     }
 
     template <typename... Args>
-       void LOG_ERROR_NO_BREAK(const std::format_string<Args...> fmt, Args&&... args)
+    void LOG_ERROR_NO_BREAK(const std::format_string<Args...> fmt, Args&&... args)
     {
         auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
 
@@ -57,7 +61,7 @@ namespace Pudu
     {
         auto formattedMessage = std::vformat(fmt.get(), std::make_format_args(args...));
 
-        std::printf(std::format("{}⚠️: {}{} \n",k_yellow,formattedMessage,k_reset).c_str());
+        std::printf(std::format("{}⚠️: {}{} \n", k_yellow, formattedMessage, k_reset).c_str());
     }
 
     // Assert function to validate expressions

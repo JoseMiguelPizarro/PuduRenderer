@@ -103,3 +103,8 @@ public float4x4 GetProjectionMatrix()
 {
     return GLOBALS.constants.proj;
 }
+
+public float4 GetPositionCS(float4x4 modelMatrix, float3 positionOS)
+{
+    return mul(GetProjectionMatrix(), mul(GetViewMatrix(),mul(modelMatrix, float4(positionOS,1))));
+}

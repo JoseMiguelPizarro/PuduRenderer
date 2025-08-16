@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <slang.h>
 #include <slang-com-ptr.h>
 

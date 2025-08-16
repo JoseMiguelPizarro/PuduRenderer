@@ -3,6 +3,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <ranges>
 #include <algorithm>
 #include <limits>
 
@@ -217,7 +218,7 @@ namespace Pudu
     {
         for (const auto& availablePresentMode : availablePresentModes)
         {
-            if (availablePresentMode == ToVkPresentMode(m_settings.presentMode))
+            if (availablePresentMode == ToVk(m_settings.presentMode))
             {
                 return availablePresentMode;
             }
@@ -547,12 +548,57 @@ namespace Pudu
         {
             MeshCreationData defaultQuadMeshData;
             defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
-            defaultQuadMeshData.Vertices = {
-                Vertex({-.5, 0, -0.5}, {1, 1, 1}, {0, 0}, {0, 1, 0}, {1, 0, 0, 1}),
-                Vertex({0.5, 0, -0.5}, {1, 1, 1}, {1., 0}, {0, 1, 0}, {1, 0, 0, 1}),
-                Vertex({-.5, 0, 0.5}, {1, 1, 1}, {0, 1}, {0, 1, 0}, {1, 0, 0, 1}),
-                Vertex({0.5, 0, 0.5}, {1, 1, 1}, {1, 1}, {0, 1, 0}, {1, 0, 0, 1})
+            VertexAttributeStream quadPositionStream;
+            quadPositionStream.Count = 4;
+            quadPositionStream.Stride = sizeof(vec3);
+            vec3* positions = new vec3[]{
+                {-.5f, 0, -0.5f},
+                {0.5f, 0, -0.5f},
+                {-.5f, 0, 0.5f},
+                {0.5f, 0, 0.5f}
             };
+            quadPositionStream.Data = positions;
+            quadPositionStream.Attribute.type = VertexAttributeType::POSITION;
+            quadPositionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+
+            VertexAttributeStream quadColorStream;
+            quadColorStream.Count = 4;
+            quadColorStream.Stride = sizeof(vec3);
+            vec3* colors = new vec3[]{
+                {1, 1, 1},
+                {1, 1, 1},
+                {1, 1, 1},
+                {1, 1, 1}
+            };
+            quadColorStream.Data = colors;
+            quadColorStream.Attribute.type = VertexAttributeType::COLOR;
+            quadColorStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+
+            VertexAttributeStream uvStream;
+            uvStream.Count = 4;
+            uvStream.Stride = sizeof(vec2);
+            vec2* uvs = new vec2[]{
+                {0, 0},
+                {1, 0},
+                {0, 1},
+                {1, 1}
+            };
+            uvStream.Data = uvs;
+            uvStream.Attribute.type = VertexAttributeType::TEXCOORD0;
+
+            VertexAttributeStream normalStream;
+            normalStream.Count = 4;
+            normalStream.Stride = sizeof(vec3);
+            vec3* normals = new vec3[]{
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0}
+            };
+            normalStream.Data = normals;
+            normalStream.Attribute.type = VertexAttributeType::NORMAL;
+
+            defaultQuadMeshData.VertexAttributeStreams = {quadPositionStream, quadColorStream, uvStream, normalStream};
 
             defaultQuadMeshData.Name = "DefaultQuad";
 
@@ -569,42 +615,88 @@ namespace Pudu
                 20, 21, 22, 22, 23, 20 // bottom
             };
 
-            defaultCubeMeshData.Vertices = {
-                // Front face
-                Vertex({-0.5f, -0.5f, 0.5f}, {1, 1, 1}, {0, 0}, {0, 0, 1}, {1, 0, 0, 1}),
-                Vertex({0.5f, -0.5f, 0.5f}, {1, 1, 1}, {1, 0}, {0, 0, 1}, {1, 0, 0, 1}),
-                Vertex({0.5f, 0.5f, 0.5f}, {1, 1, 1}, {1, 1}, {0, 0, 1}, {1, 0, 0, 1}),
-                Vertex({-0.5f, 0.5f, 0.5f}, {1, 1, 1}, {0, 1}, {0, 0, 1}, {1, 0, 0, 1}),
+            // Get vertex count
+            const uint32_t vertexCount = 24;
 
-                // Back face
-                Vertex({-0.5f, -0.5f, -0.5f}, {1, 1, 1}, {1, 0}, {0, 0, -1}, {-1, 0, 0, 1}),
-                Vertex({-0.5f, 0.5f, -0.5f}, {1, 1, 1}, {1, 1}, {0, 0, -1}, {-1, 0, 0, 1}),
-                Vertex({0.5f, 0.5f, -0.5f}, {1, 1, 1}, {0, 1}, {0, 0, -1}, {-1, 0, 0, 1}),
-                Vertex({0.5f, -0.5f, -0.5f}, {1, 1, 1}, {0, 0}, {0, 0, -1}, {-1, 0, 0, 1}),
+            // Position stream
+            VertexAttributeStream cubePositionStream;
+            cubePositionStream.Count = vertexCount;
+            cubePositionStream.Stride = sizeof(vec3);
+            vec3* cubePositions = new vec3[]{
+                {-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}, // Front
+                {-0.5f, -0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, // Back
+                {0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, // Right
+                {-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}, {-0.5f, 0.5f, -0.5f}, // Left
+                {-0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, -0.5f}, // Top
+                {-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}, {-0.5f, -0.5f, 0.5f} // Bottom
+            };
+            cubePositionStream.Data = cubePositions;
+            cubePositionStream.Attribute.type = VertexAttributeType::POSITION;
+            cubePositionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
 
-                // Right face
-                Vertex({0.5f, -0.5f, -0.5f}, {1, 1, 1}, {0, 0}, {1, 0, 0}, {0, 0, 1, 1}),
-                Vertex({0.5f, 0.5f, -0.5f}, {1, 1, 1}, {0, 1}, {1, 0, 0}, {0, 0, 1, 1}),
-                Vertex({0.5f, 0.5f, 0.5f}, {1, 1, 1}, {1, 1}, {1, 0, 0}, {0, 0, 1, 1}),
-                Vertex({0.5f, -0.5f, 0.5f}, {1, 1, 1}, {1, 0}, {1, 0, 0}, {0, 0, 1, 1}),
+            // Color stream
+            VertexAttributeStream cubeColorStream;
+            cubeColorStream.Count = vertexCount;
+            cubeColorStream.Stride = sizeof(vec3);
+            vec3* cubeColors = new vec3[vertexCount];
+            for (int i = 0; i < vertexCount; i++)
+            {
+                cubeColors[i] = {1, 1, 1};
+            }
+            cubeColorStream.Data = cubeColors;
+            cubeColorStream.Attribute.type = VertexAttributeType::COLOR;
+            cubeColorStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
 
-                // Left face
-                Vertex({-0.5f, -0.5f, -0.5f}, {1, 1, 1}, {1, 0}, {-1, 0, 0}, {0, 0, -1, 1}),
-                Vertex({-0.5f, -0.5f, 0.5f}, {1, 1, 1}, {0, 0}, {-1, 0, 0}, {0, 0, -1, 1}),
-                Vertex({-0.5f, 0.5f, 0.5f}, {1, 1, 1}, {0, 1}, {-1, 0, 0}, {0, 0, -1, 1}),
-                Vertex({-0.5f, 0.5f, -0.5f}, {1, 1, 1}, {1, 1}, {-1, 0, 0}, {0, 0, -1, 1}),
+            // UV stream
+            VertexAttributeStream cubeUvStream;
+            cubeUvStream.Count = vertexCount;
+            cubeUvStream.Stride = sizeof(vec2);
+            vec2* cubeUVs = new vec2[]{
+                {0, 0}, {1, 0}, {1, 1}, {0, 1}, // Front
+                {1, 0}, {1, 1}, {0, 1}, {0, 0}, // Back
+                {0, 0}, {0, 1}, {1, 1}, {1, 0}, // Right
+                {1, 0}, {0, 0}, {0, 1}, {1, 1}, // Left
+                {0, 1}, {0, 0}, {1, 0}, {1, 1}, // Top
+                {0, 0}, {1, 0}, {1, 1}, {0, 1} // Bottom
+            };
+            cubeUvStream.Data = cubeUVs;
+            cubeUvStream.Attribute.type = VertexAttributeType::TEXCOORD0;
+            cubeUvStream.Attribute.format = ChannelFormat::R32G32_SFLOAT;
 
-                // Top face
-                Vertex({-0.5f, 0.5f, -0.5f}, {1, 1, 1}, {0, 1}, {0, 1, 0}, {1, 0, 0, 1}),
-                Vertex({-0.5f, 0.5f, 0.5f}, {1, 1, 1}, {0, 0}, {0, 1, 0}, {1, 0, 0, 1}),
-                Vertex({0.5f, 0.5f, 0.5f}, {1, 1, 1}, {1, 0}, {0, 1, 0}, {1, 0, 0, 1}),
-                Vertex({0.5f, 0.5f, -0.5f}, {1, 1, 1}, {1, 1}, {0, 1, 0}, {1, 0, 0, 1}),
+            // Normal stream
+            VertexAttributeStream cubeNormalStream;
+            cubeNormalStream.Count = vertexCount;
+            cubeNormalStream.Stride = sizeof(vec3);
+            vec3* cubeNormals = new vec3[]{
+                {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, // Front
+                {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, // Back
+                {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, // Right
+                {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0}, // Left
+                {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, // Top
+                {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0} // Bottom
+            };
+            cubeNormalStream.Data = cubeNormals;
+            cubeNormalStream.Attribute.type = VertexAttributeType::NORMAL;
+            cubeNormalStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
 
-                // Bottom face
-                Vertex({-0.5f, -0.5f, -0.5f}, {1, 1, 1}, {0, 0}, {0, -1, 0}, {1, 0, 0, 1}),
-                Vertex({0.5f, -0.5f, -0.5f}, {1, 1, 1}, {1, 0}, {0, -1, 0}, {1, 0, 0, 1}),
-                Vertex({0.5f, -0.5f, 0.5f}, {1, 1, 1}, {1, 1}, {0, -1, 0}, {1, 0, 0, 1}),
-                Vertex({-0.5f, -0.5f, 0.5f}, {1, 1, 1}, {0, 1}, {0, -1, 0}, {1, 0, 0, 1})
+            // Tangent stream
+            VertexAttributeStream cubeTangentStream;
+            cubeTangentStream.Count = vertexCount;
+            cubeTangentStream.Stride = sizeof(vec4);
+            vec4* cubeTangents = new vec4[]{
+                {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, // Front
+                {-1, 0, 0, 1}, {-1, 0, 0, 1}, {-1, 0, 0, 1}, {-1, 0, 0, 1}, // Back
+                {0, 0, 1, 1}, {0, 0, 1, 1}, {0, 0, 1, 1}, {0, 0, 1, 1}, // Right
+                {0, 0, -1, 1}, {0, 0, -1, 1}, {0, 0, -1, 1}, {0, 0, -1, 1}, // Left
+                {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, // Top
+                {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1} // Bottom
+            };
+            cubeTangentStream.Data = cubeTangents;
+            cubeTangentStream.Attribute.type = VertexAttributeType::TANGENT;
+            cubeTangentStream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
+
+            defaultCubeMeshData.VertexAttributeStreams = {
+                cubePositionStream, cubeColorStream, cubeUvStream, cubeNormalStream, cubeTangentStream
             };
 
             defaultCubeMeshData.Name = "DefaultCube";
@@ -612,38 +704,89 @@ namespace Pudu
 
             // Create default sphere mesh
             MeshCreationData defaultSphereMeshData;
-            const float rings = 32.;
-            const float segments = 32.;
-            const float radius = 0.5f;
+            const float sphereRings = 32.;
+            const float sphereSegments = 32.;
+            const float sphereRadius = 0.5f;
 
-            // Generate vertices
-            for (int ring = 0; ring <= rings; ring++)
+            VertexAttributeStream spherePositionStream;
+            VertexAttributeStream sphereColorStream;
+            VertexAttributeStream sphereUVStream;
+            VertexAttributeStream sphereNormalStream;
+            VertexAttributeStream sphereTangentStream;
+
+            u32 sphereVertexCount = (sphereRings + 1) * (sphereSegments + 1);
+
+            spherePositionStream.Count = sphereVertexCount;
+            sphereColorStream.Count = sphereVertexCount;
+            sphereUVStream.Count = sphereVertexCount;
+            sphereNormalStream.Count = sphereVertexCount;
+            sphereTangentStream.Count = sphereVertexCount;
+
+            spherePositionStream.Stride = sizeof(vec3);
+            sphereColorStream.Stride = sizeof(vec3);
+            sphereUVStream.Stride = sizeof(vec2);
+            sphereNormalStream.Stride = sizeof(vec3);
+            sphereTangentStream.Stride = sizeof(vec4);
+
+            spherePositionStream.Attribute.type = VertexAttributeType::POSITION;
+            spherePositionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+
+            sphereColorStream.Attribute.type = VertexAttributeType::COLOR;
+            sphereColorStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+
+            sphereUVStream.Attribute.type = VertexAttributeType::TEXCOORD0;
+            sphereUVStream.Attribute.format = ChannelFormat::R32G32_SFLOAT;
+
+            sphereNormalStream.Attribute.type = VertexAttributeType::NORMAL;
+            sphereNormalStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+
+            sphereTangentStream.Attribute.type = VertexAttributeType::TANGENT;
+            sphereTangentStream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
+
+            auto spherePositions = new vec3[sphereVertexCount];
+            auto sphereColors = new vec3[sphereVertexCount];
+            auto sphereUVs = new vec2[sphereVertexCount];
+            auto sphereNormals = new vec3[sphereVertexCount];
+            auto sphereTangents = new vec4[sphereVertexCount];
+
+            spherePositionStream.Data = spherePositions;
+            sphereColorStream.Data = sphereColors;
+            sphereUVStream.Data = sphereUVs;
+            sphereNormalStream.Data = sphereNormals;
+            sphereTangentStream.Data = sphereTangents;
+
+            defaultSphereMeshData.VertexAttributeStreams =
+                {spherePositionStream, sphereColorStream, sphereUVStream, sphereNormalStream, sphereTangentStream};
+
+            u32 sphereVertexIndex = 0;
+            for (int ring = 0; ring <= sphereRings; ring++)
             {
-                float theta = glm::pi<float>() * ring / rings;
-                for (int segment = 0; segment <= segments; segment++)
+                float theta = glm::pi<float>() * ring / sphereRings;
+                for (int segment = 0; segment <= sphereSegments; segment++)
                 {
-                    float phi = 2.0f * glm::pi<float>() * segment / segments;
+                    float phi = 2.0f * glm::pi<float>() * segment / sphereSegments;
 
-                    float x = radius * sin(theta) * cos(phi);
-                    float y = radius * cos(theta);
-                    float z = radius * sin(theta) * sin(phi);
+                    float x = sphereRadius * sin(theta) * cos(phi);
+                    float y = sphereRadius * cos(theta);
+                    float z = sphereRadius * sin(theta) * sin(phi);
 
-                    glm::vec3 position(x, y, z);
-                    glm::vec3 normal = glm::normalize(position);
-                    glm::vec2 uv(segment / segments, ring / rings);
-                    glm::vec4 tangent(cos(phi), 0, -sin(phi), 1);
+                    spherePositions[sphereVertexIndex] = vec3(x, y, z);
+                    sphereColors[sphereVertexIndex] = vec3(1, 1, 1);
+                    sphereUVs[sphereVertexIndex] = vec2(segment / sphereSegments, ring / sphereRings);
+                    sphereNormals[sphereVertexIndex] = normalize(vec3(x, y, z));
+                    sphereTangents[sphereVertexIndex] = vec4(cos(phi), 0, -sin(phi), 1);
 
-                    defaultSphereMeshData.Vertices.push_back(Vertex(position, {1, 1, 1}, uv, normal, tangent));
+                    sphereVertexIndex++;
                 }
             }
 
             // Generate indices
-            for (int ring = 0; ring < rings; ring++)
+            for (int ring = 0; ring < sphereRings; ring++)
             {
-                for (int segment = 0; segment < segments; segment++)
+                for (int segment = 0; segment < sphereSegments; segment++)
                 {
-                    int current = ring * (segments + 1) + segment;
-                    int next = current + segments + 1;
+                    int current = ring * (sphereSegments + 1) + segment;
+                    int next = current + sphereSegments + 1;
 
                     defaultSphereMeshData.Indices.push_back(current);
                     defaultSphereMeshData.Indices.push_back(current + 1);
@@ -873,26 +1016,26 @@ namespace Pudu
 
             //Vertex attributes
             std::vector<VkVertexInputAttributeDescription> vertexAttributes(
-                creationData.vertexInput.numVertexAttributes);
+                creationData.vertexInput.GetVertexLayout()->GetAttributeCount());
 
-            u32 vertexAttribsCount = creationData.vertexInput.numVertexAttributes;
+            u32 vertexAttribsCount = creationData.vertexInput.GetVertexLayout()->GetAttributeCount();
 
             for (size_t i = 0; i < vertexAttribsCount; i++)
             {
                 VkVertexInputAttributeDescription& vertexAttribute = vertexAttributes[i];
                 vertexAttribute = {};
 
-                auto inputVertexAttrib = creationData.vertexInput.vertexAttributes[i];
+                auto inputVertexAttrib = creationData.vertexInput.GetVertexLayout()->GetAttribute(i);
                 vertexAttribute.location = inputVertexAttrib.location;
                 vertexAttribute.binding = inputVertexAttrib.binding;
                 vertexAttribute.offset = inputVertexAttrib.offset;
-                vertexAttribute.format = inputVertexAttrib.GetVkFormat();
+                vertexAttribute.format = ToVk(inputVertexAttrib.format);
             }
 
             vertexInputInfo.vertexAttributeDescriptionCount = vertexAttribsCount;
             vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes.data();
 
-            u32 vertexStreamsCount = creationData.vertexInput.numVertexStreams;
+            u32 vertexStreamsCount = creationData.vertexInput.GetStreamCount();
 
 
             //Vertex Bindings
@@ -901,7 +1044,7 @@ namespace Pudu
             {
                 for (size_t i = 0; i < vertexStreamsCount; i++)
                 {
-                    VertexStream const& vertexStream = creationData.vertexInput.vertexStreams[i];
+                    VertexStream const& vertexStream = creationData.vertexInput.GetVertexStream(i);
                     VkVertexInputBindingDescription binding{};
                     binding.binding = vertexStream.binding;
                     binding.inputRate = vertexStream.GetVkInputRate();
@@ -1932,24 +2075,19 @@ namespace Pudu
     }
 
 
-    void GenerateTangents(std::vector<Vertex>& vertices, std::vector<u32>& indices)
+    VertexAttributeStream GenerateTangents(VertexAttributeStream positionStream, VertexAttributeStream uvStream,
+                                           VertexAttributeStream normalStream, std::vector<u32>& indices)
     {
         ASSERT(indices.size() % 3 == 0, "Indices must be a multiple of 3");
 
 
-        glm::vec3* tan1 = new glm::vec3[vertices.size() * 2];
-        glm::vec3* tan2 = tan1 + vertices.size();
+        glm::vec3* tan1 = new glm::vec3[positionStream.Count * 2];
+        glm::vec3* tan2 = tan1 + positionStream.Count;
 
-        // std::vector<glm::vec3> tan1;
-        // std::vector<glm::vec3> tan2;
-
-        // tan1.reserve(vertices.size());
-        // tan2.reserve(vertices.size());
-        //
-        // tan1.resize(vertices.size());
-        // tan2.resize(vertices.size());
-
-        memset(tan1, 0, sizeof(glm::vec3) * vertices.size() * 2);
+        memset(tan1, 0, sizeof(glm::vec3) * positionStream.Count * 2);
+        auto positions = positionStream.GetData<vec3>();
+        auto uvs = uvStream.GetData<vec2>();
+        auto normals = normalStream.GetData<vec3>();
 
         for (size_t i = 0; i < indices.size(); i += 3)
         {
@@ -1957,22 +2095,25 @@ namespace Pudu
             uint i1 = indices[i + 1];
             uint i2 = indices[i + 2];
 
-            Vertex& v0 = vertices[i0];
-            Vertex& v1 = vertices[i1];
-            Vertex& v2 = vertices[i2];
+            vec3 p0 = positions[i0];
+            vec3 p1 = positions[i1];
+            vec3 p2 = positions[i2];
 
-            float x1 = v1.pos.x - v0.pos.x;
-            float x2 = v2.pos.x - v0.pos.x;
-            float y1 = v1.pos.y - v0.pos.y;
-            float y2 = v2.pos.y - v0.pos.y;
-            float z1 = v1.pos.z - v0.pos.z;
-            float z2 = v2.pos.z - v0.pos.z;
+            vec2 uv0 = uvs[i0];
+            vec2 uv1 = uvs[i1];
+            vec2 uv2 = uvs[i2];
 
-            float s1 = v1.texcoord.x - v0.texcoord.x;
-            float s2 = v2.texcoord.x - v0.texcoord.x;
-            float t1 = v1.texcoord.y - v0.texcoord.y;
-            float t2 = v2.texcoord.y - v0.texcoord.y;
+            float x1 = p1.x - p0.x;
+            float x2 = p2.x - p0.x;
+            float y1 = p1.y - p0.y;
+            float y2 = p2.y - p0.y;
+            float z1 = p1.z - p0.z;
+            float z2 = p2.z - p0.z;
 
+            float s1 = uv1.x - uv0.x;
+            float s2 = uv2.x - uv0.x;
+            float t1 = uv1.y - uv0.y;
+            float t2 = uv2.y - uv0.y;
 
             float r = 1.0F / (s1 * t2 - s2 * t1);
 
@@ -1991,53 +2132,99 @@ namespace Pudu
         }
 
         // Normalize the tangents for each vertex
-        for (size_t i = 0; i < vertices.size(); i++)
+        VertexAttributeStream tangentsStream;
+        tangentsStream.Count = positionStream.Count;
+        tangentsStream.Stride = sizeof(vec4);
+        auto tangentsData = new vec4[tangentsStream.Count];
+        for (size_t i = 0; i < positionStream.Count; i++)
         {
             glm::vec3 t = tan1[i];
 
             // Gram-Schmidt orthogonalize
             glm::vec3 tangent = normalize(
-                t - vertices[i].normal * dot(
-                    vertices[i].normal, glm::vec3(t.x, t.y, t.z)));
+                t - normals[i] * dot(
+                    normals[i], glm::vec3(t.x, t.y, t.z)));
 
-            vertices[i].tangent.x = tangent.x;
-            vertices[i].tangent.y = tangent.y;
-            vertices[i].tangent.z = tangent.z;
+            tangentsData[i].x = tangent.x;
+            tangentsData[i].y = tangent.y;
+            tangentsData[i].z = tangent.z;
 
             // Calculate handedness
-            vertices[i].tangent.w = (dot(cross(vertices[i].normal, t), tan2[i]) < 0.0F) ? -1.0F : 1.0F;
+            tangentsData[i].w = (dot(cross(normals[i], t), tan2[i]) < 0.0F) ? -1.0F : 1.0F;
         }
 
         delete[] tan1;
+
+        tangentsStream.Data = tangentsData;
+        return tangentsStream;
     }
 
     SPtr<Mesh> PuduGraphics::CreateMesh(MeshCreationData const& data)
     {
-        auto vertices = data.Vertices;
+        auto streams = data.VertexAttributeStreams;
+
         auto indices = data.Indices;
+        auto mesh = m_resources.AllocateMesh();
+        mesh->m_vertexAttributeStreams = streams;
+        mesh->m_indices = indices;
+        mesh->name = data.Name;
 
-        if (!data.HasTangents)
-        {
-            GenerateTangents(vertices, indices);
-        }
-
-        SPtr<GraphicsBuffer> vertexBuffer = CreateGraphicsBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data(),
-                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                                                 VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
         SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(indices[0]) * indices.size(), indices.data(),
                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                                                 VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
 
-
-        //TODO: Vertices and indices are being copied. Do we want that?
-        auto mesh = m_resources.AllocateMesh();
-        mesh->m_vertexBuffer = vertexBuffer;
         mesh->m_indexBuffer = indexBuffer;
-        mesh->m_vertices = vertices;
-        mesh->m_indices = indices;
-        mesh->name = data.Name;
+
+        std::vector<SPtr<GraphicsBuffer>> vertexAttributeStreamBuffers;
+        for (auto& stream : streams)
+        {
+            SPtr<GraphicsBuffer> streamBuffer = CreateGraphicsBuffer(stream.Stride * stream.Count, stream.Data,
+                                                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                                                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+
+            vertexAttributeStreamBuffers.push_back(streamBuffer);
+        }
+
+        mesh->m_vertexAttributeStreamBuffers = vertexAttributeStreamBuffers;
+
+        if (!data.HasTangents)
+        {
+            auto positionStream = std::ranges::find_if(data.VertexAttributeStreams,
+                                                       [](const auto& stream)
+                                                       {
+                                                           return stream.Attribute.type ==
+                                                               VertexAttributeType::POSITION;
+                                                       });
+
+            auto uvStream = std::ranges::find_if(data.VertexAttributeStreams,
+                                                 [](const auto& stream)
+                                                 {
+                                                     return stream.Attribute.type == VertexAttributeType::TEXCOORD0;
+                                                 });
+
+            auto normalStream = std::ranges::find_if(data.VertexAttributeStreams,
+                                                     [](const auto& stream)
+                                                     {
+                                                         return stream.Attribute.type == VertexAttributeType::NORMAL;
+                                                     });
+
+            if (positionStream != data.VertexAttributeStreams.end() &&
+                uvStream != data.VertexAttributeStreams.end() &&
+                normalStream != data.VertexAttributeStreams.end())
+            {
+                auto tangentStream = GenerateTangents(*positionStream, *uvStream, *normalStream, indices);
+
+                SPtr<GraphicsBuffer> tangentStreamBuffer = CreateGraphicsBuffer(
+                    tangentStream.Stride * tangentStream.Count, tangentStream.Data,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                    VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                mesh->m_vertexAttributeStreams.push_back(tangentStream);
+                mesh->m_vertexAttributeStreamBuffers.push_back(tangentStreamBuffer);
+            }
+        }
 
         return mesh;
     }
@@ -2248,27 +2435,14 @@ namespace Pudu
         DepthStencilCreation depthStencilCreation;
         depthStencilCreation.SetDepth(renderPass->writeDepth, VK_COMPARE_OP_LESS_OR_EQUAL);
 
-        VertexInputCreation vertexInputCreation;
-        auto attribDescriptions = Vertex::GetAttributeDescriptions();
-        auto bindingDescriptions = Vertex::GetBindingDescription();
-
-        for (auto attrib : attribDescriptions)
-        {
-            VertexAttribute a;
-            a.binding = attrib.binding;
-            a.format = attrib.format;
-            a.location = attrib.location;
-            a.offset = attrib.offset;
-
-            vertexInputCreation.AddVertexAttribute(a);
-        }
+        VertexInputCreation vertexInputCreation(shader->m_compilationObject.GetVertexLayout());
 
         VertexStream vertexStream;
-        vertexStream.binding = bindingDescriptions.binding;
-        vertexStream.inputRate = (VertexInputRate::Enum)bindingDescriptions.inputRate;
-        vertexStream.stride = bindingDescriptions.stride;
+        vertexStream.binding = 0; //TODO: SUPPORT DYNAMIC STREAM BINDING
+        vertexStream.inputRate = VertexInputRate::PerVertex;
+        vertexStream.stride = Vertex::GetBindingDescription().stride;
 
-        vertexInputCreation.AddVertexStream(vertexStream);
+        vertexInputCreation.PushVertexStream(vertexStream);
 
         ShaderStateCreationData shaderData;
         shaderData.SetName(shader->name.c_str());
@@ -4017,7 +4191,6 @@ namespace Pudu
         if (!mesh->IsDisposed())
         {
             DestroyBuffer(mesh->GetIndexBuffer());
-            DestroyBuffer(mesh->GetVertexBuffer());
             mesh->Destroy();
         }
     }

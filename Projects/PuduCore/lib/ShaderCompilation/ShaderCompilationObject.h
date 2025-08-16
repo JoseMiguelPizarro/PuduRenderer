@@ -3,7 +3,7 @@
 
 #include "DescriptorSetLayoutCollection.h"
 #include "GPUEnums.h"
-#include "ShaderLayout.h"
+#include "VertexLayout.h"
 #include "ShaderCompilation/ShaderCompilationObject.h"
 #include "Resources/ConstantBufferInfo.h"
 #include "Resources/Resources.h"
@@ -45,6 +45,8 @@ namespace Pudu
             return std::make_unique<std::vector<fs::path>>(m_dependencies);
         }
 
+        VertexLayout* GetVertexLayout(){return &m_vertexLayout;}
+
     private:
         friend class ShaderObjectLayoutBuilder;
         friend class ShaderCompiler;
@@ -56,6 +58,7 @@ namespace Pudu
         std::vector<fs::path> m_dependencies;
         PushConstantInfo m_pushConstantsInfo;
         BlendState m_blendState;
+        VertexLayout m_vertexLayout;
         CullMode m_cullMode;
         bool m_overridesPipelineState = false;
     };
