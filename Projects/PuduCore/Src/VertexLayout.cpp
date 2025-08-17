@@ -19,9 +19,9 @@ namespace Pudu
                K_MAX_VERTEX_ATTRIBUTES);
 
         auto formatSize = GetChannelFormatSize(attribute.format);
-        attribute.offset = m_stride;
-        attribute.location = 0;
-        attribute.binding = m_attributeCount;
+        attribute.offset = 0;
+        attribute.location = m_attributeCount;
+        attribute.binding = m_attributeCount; //Binding to per-attribute vertex stream
 
         m_attributes[m_attributeCount] = attribute;
 

@@ -52,7 +52,7 @@ void Test_PBR::OnInit()
     skyboxLoadSettings.generateMipmaps = true;
 
     auto skybox = Graphics.LoadTextureHorizonAsCube("textures/skybox/piazza_bologni_4k.ktx2", skyboxLoadSettings);
-    m_puduRenderer.SetSkyBox(skybox, false);
+    m_puduRenderer.SetSkyBox(skybox, true);
 
     SPtr<Texture2d> albedoTexture = Graphics.LoadTexture2D("textures/patched-brickwork/patched-brickwork_albedo.png",
                                                            settings);
@@ -119,9 +119,9 @@ void Test_PBR::OnInit()
     sphereModel.Materials.push_back(Graphics.GetDefaultStandardMaterial());
     auto sphereEntity = EntityManager::AllocateRenderEntity(sphereModel);
 
-    auto untilShader = Graphics.CreateShader("standardUnlit.shader.slang", "standardUnlit");
-
-    m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0]->SetShader(untilShader);
+    // auto untilShader = Graphics.CreateShader("standardUnlit.shader.slang", "standardUnlit");
+    //
+    // m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0]->SetShader(untilShader);
 
     // m_scene.AddEntity(sphereEntity);
     m_scene.AddEntity(m_model);

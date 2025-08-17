@@ -32,6 +32,7 @@ namespace Pudu
 
         VertexAttribute() = default;
         VertexAttribute(VertexAttributeType type, ChannelFormat format);
+        Size GetStride() {return GetChannelFormatSize(format);}
 
     private:
         friend struct VertexLayout;

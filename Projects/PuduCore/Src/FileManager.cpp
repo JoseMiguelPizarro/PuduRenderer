@@ -200,6 +200,8 @@ namespace Pudu
                         {
                             data[idx++] = v;
                         });
+
+                        stream.Data = data;
                     }
                     if (strcmp(attribName, "TANGENT") == 0)
                     {
@@ -235,7 +237,6 @@ namespace Pudu
                     hasNormalMap = gltfMat.normalTexture.has_value();
                     hasMetallicRoughnessMap = gltfMat.pbrData.metallicRoughnessTexture.has_value();
                     hasEmissiveMap = gltfMat.emissiveTexture.has_value();
-
 
                     if (hasBaseTexture)
                     {

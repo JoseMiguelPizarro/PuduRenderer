@@ -1561,6 +1561,11 @@ namespace Pudu
                 VkPhysicalDeviceFeatures2 deviceFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
 
                 deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
+                deviceFeatures.features.robustBufferAccess = VK_TRUE;
+
+                VkPhysicalDeviceRobustness2FeaturesEXT robustnessFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT};
+                robustnessFeatures.nullDescriptor = VK_TRUE;
+                robustnessFeatures.robustBufferAccess2 = VK_TRUE;
 
                 VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
                 indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
@@ -1581,6 +1586,9 @@ namespace Pudu
 
                 timelineSemaphoreFeature.pNext = currentPnext;
                 currentPnext = &timelineSemaphoreFeature;
+
+                robustnessFeatures.pNext = currentPnext;
+                currentPnext = &robustnessFeatures;
 
                 deviceFeatures.pNext = currentPnext;
 
@@ -2135,6 +2143,9 @@ namespace Pudu
         VertexAttributeStream tangentsStream;
         tangentsStream.Count = positionStream.Count;
         tangentsStream.Stride = sizeof(vec4);
+        tangentsStream.Attribute.type = VertexAttributeType::TANGENT;
+        tangentsStream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
+
         auto tangentsData = new vec4[tangentsStream.Count];
         for (size_t i = 0; i < positionStream.Count; i++)
         {
@@ -2179,6 +2190,8 @@ namespace Pudu
         std::vector<SPtr<GraphicsBuffer>> vertexAttributeStreamBuffers;
         for (auto& stream : streams)
         {
+            ASSERT(stream.Data != nullptr, "Vertex attribute stream data is null {} {}",data.Name, ToString(stream.Attribute.type));
+
             SPtr<GraphicsBuffer> streamBuffer = CreateGraphicsBuffer(stream.Stride * stream.Count, stream.Data,
                                                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -2435,14 +2448,19 @@ namespace Pudu
         DepthStencilCreation depthStencilCreation;
         depthStencilCreation.SetDepth(renderPass->writeDepth, VK_COMPARE_OP_LESS_OR_EQUAL);
 
-        VertexInputCreation vertexInputCreation(shader->m_compilationObject.GetVertexLayout());
+        auto vertexLayout = shader->m_compilationObject.GetVertexLayout();
+        VertexInputCreation vertexInputCreation(vertexLayout);
 
-        VertexStream vertexStream;
-        vertexStream.binding = 0; //TODO: SUPPORT DYNAMIC STREAM BINDING
-        vertexStream.inputRate = VertexInputRate::PerVertex;
-        vertexStream.stride = Vertex::GetBindingDescription().stride;
+        for (Size i = 0; i < vertexLayout->GetAttributeCount(); i++)
+        {
+            auto attribute = vertexLayout->GetAttribute(i);
 
-        vertexInputCreation.PushVertexStream(vertexStream);
+            VertexStream vertexStream;
+            vertexStream.binding = i; //TODO: SUPPORT DYNAMIC STREAM BINDING
+            vertexStream.inputRate = VertexInputRate::PerVertex;
+            vertexStream.stride = attribute.GetStride();
+            vertexInputCreation.PushVertexStream(vertexStream);
+        }
 
         ShaderStateCreationData shaderData;
         shaderData.SetName(shader->name.c_str());

@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <glm/fwd.hpp>
 #include "PuduCore.h"
 #include "Model.h"
 

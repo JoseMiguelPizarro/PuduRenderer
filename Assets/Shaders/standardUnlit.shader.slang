@@ -24,5 +24,5 @@ VertexOutput vertexMain(VertexInput Input)
 [shader("fragment")]
 float4 fragmentMain(VertexOutput Input):SV_TARGET
 {
-return float4(1,0,0,1);
+    return float4(1,0,0,1);
 };

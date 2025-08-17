@@ -897,6 +897,7 @@ namespace Pudu
         for (Size i = 0; i< vertexLayout->GetAttributeCount(); ++i)
         {
             auto attribute = vertexLayout->GetAttribute(i);
+            bool attributeFound = false;
             for (Size j = 0; j < meshAttributeStreams.size(); ++j)
             {
                 auto meshAttributeStream = meshAttributeStreams[j];
@@ -905,8 +906,16 @@ namespace Pudu
                     vertexStreamBuffers[attribCount] = attributeStreamBuffers[j]->vkHandle;
                     vertexStreamBufferOffsets[attribCount] = 0;
                     attribCount++;
+                    attributeFound = true;
                     break;
                 }
+            }
+
+            if (attributeFound == false)
+            { //TODO:DIRTY HACK. WE MIGHT USE A DUMMY BUFFER INSTEAD?
+                vertexStreamBuffers[attribCount] = attributeStreamBuffers[0]->vkHandle;
+                vertexStreamBufferOffsets[attribCount] = 0;
+                attribCount++;
             }
         }
 
