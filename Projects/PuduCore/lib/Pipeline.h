@@ -2,6 +2,7 @@
 
 #include "Resources/GPUResource.h"
 #include "Resources/Resources.h"
+#include "VertexLayout.h"
 
 namespace Pudu
 {
@@ -23,6 +24,33 @@ namespace Pudu
             Graphics,
             Compute
         };
+    };
+
+
+    struct PipelineCreationData
+    {
+        const u32 *vertexShaderData;
+        const u32 *fragmentShaderData;
+
+        RasterizationCreation rasterization;
+        DepthStencilCreation depthStencil;
+        BlendStateCreation blendState;
+        VertexInputCreation vertexInput;
+        ShaderStateCreationData shadersStateCreationData;
+
+        GPUResourceHandle<RenderPass> renderPassHandle;
+
+        DescriptorSetLayoutsCollection descriptorCreationData;
+        std::vector<SPtr<DescriptorSetLayout>> *descriptorSetLayouts;
+        PushConstantInfo *pushConstants;
+
+        VkDescriptorSetLayout *vkDescriptorSetLayout;
+        u32 activeLayouts;
+        bool multiSampled;
+
+        VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+        const char *name = nullptr;
     };
 
     class Pipeline : public GPUResource<Pipeline>

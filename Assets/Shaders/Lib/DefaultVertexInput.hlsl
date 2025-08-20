@@ -1,6 +1,8 @@
+
+
 #ifndef DefaultVertexInput_h
     #define DefaultVertexInput_h
-
+import PuduCoreModule;
 
 struct VSOut
 {
@@ -18,11 +20,11 @@ struct VSOut
 
 struct VertexInput
 {
-    float3 Position:POSITION;
-    float3 Color: COLOR;
-    float2 TexCoord: TEXCOORD;
-    float3 Normal: NORMAL;
-    float4 Tangent:TANGENT;
+ 	[POSITION] 	float3 Position;
+    [COLOR] 	float3 Color;
+    [TEXCOORD0] float2 TexCoord;
+    [NORMAL] 	float3 Normal;
+    [TANGENT] 	float4 Tangent;
 };
 
 #endif

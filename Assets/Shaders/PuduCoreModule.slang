@@ -9,6 +9,8 @@ public enum BlendingMode
 		CustomBlend
 };
 
+
+
 public enum BlendOp
 {
     ADD = 0,
@@ -122,6 +124,23 @@ struct ScopeAttribute
 {
     string value;
 };
+
+[__AttributeUsage(_AttributeTargets.Var)]
+struct COLORAttribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct POSITIONAttribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct NORMALAttribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct TANGENTAttribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct TEXCOORD0Attribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct TEXCOORD1Attribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct TEXCOORD2Attribute{};
+[__AttributeUsage(_AttributeTargets.Var)]
+struct TEXCOORD3Attribute{};
 
 [__AttributeUsage(_AttributeTargets.Var)]
 struct DefaultTextureAttribute

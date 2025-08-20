@@ -293,10 +293,10 @@ namespace Pudu
         void SetDepthBias(float slopeBias, float constantBias);
 
         /// <summary>
-        /// Binds a mesh for rendering
+        /// Binds a mesh for rendering for an specific vertex layout
         /// </summary>
         /// <param name="mesh">Pointer to mesh object</param>
-        void BindMesh(Mesh* mesh);
+        void BindMesh(Mesh* mesh, VertexLayout* vertexLayout);
 
         /// <summary>
         /// Draws indexed geometry

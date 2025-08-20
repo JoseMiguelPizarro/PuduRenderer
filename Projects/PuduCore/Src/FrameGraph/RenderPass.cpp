@@ -299,7 +299,7 @@ namespace Pudu
 
             BindMaterialDescriptorSets(pipeline, material, frameData);
 
-            commands->BindMesh(mesh.get());
+            commands->BindMesh(mesh.get(),material->m_shader->GetVertexLayout());
 
             auto ubo = frameData.graphics->GetUniformBufferObject(drawCall);
 

@@ -49,7 +49,7 @@ namespace Pudu
 
     namespace fs = std::filesystem;
 
-//I KNOW MACROS ARE EVIL BUT THIS ONE IS QUITE HANDY!
+//Declares an enum class with a ToString method I KNOW MACROS ARE EVIL BUT THIS ONE IS QUITE HANDY!
 #define ENUM_STRING(enumName, ...) \
         enum class enumName { __VA_ARGS__ }; \
         inline const char* ToString(enumName value) { \

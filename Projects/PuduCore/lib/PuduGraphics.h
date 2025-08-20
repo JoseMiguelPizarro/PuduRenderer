@@ -104,9 +104,9 @@ namespace Pudu
 
         //Used for profiling
         VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
-        VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME
+        VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+        VK_EXT_ROBUSTNESS_2_EXTENSION_NAME
     };
-
 
     class PuduGraphics
     {

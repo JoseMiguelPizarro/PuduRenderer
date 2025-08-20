@@ -3,9 +3,9 @@
 
 namespace Pudu
 {
-	SPtr<GraphicsBuffer> Mesh::GetVertexBuffer()
+	std::vector<SPtr<GraphicsBuffer>> Mesh::GetAttributeStreamBuffers()
 	{
-		return m_vertexBuffer;
+		return m_vertexAttributeStreamBuffers;
 	}
 
 	SPtr<GraphicsBuffer> Mesh::GetIndexBuffer()
@@ -13,9 +13,9 @@ namespace Pudu
 		return m_indexBuffer;
 	}
 
-	std::vector<Vertex>* Mesh::GetVertices()
+	std::vector<VertexAttributeStream>& Mesh::GetVertexAttributeStreams()
 	{
-		return &m_vertices;
+		return m_vertexAttributeStreams;
 	}
 
 	std::vector<uint32_t>* Mesh::GetIndices()
@@ -23,11 +23,20 @@ namespace Pudu
 		return &m_indices;
 	}
 
+	Mesh::~Mesh()
+	{
+		Destroy();
+	}
+
 	void Mesh::Destroy()
 	{
 		if (!m_disposed)
 		{
 			m_disposed = true;
+			for (auto& stream : m_vertexAttributeStreams)
+			{
+				delete stream.Data;
+			}
 		}
 		else
 		{

@@ -21,10 +21,12 @@ namespace Pudu
         };
         SPtr<Pipeline> CreatePipeline(PuduGraphics* graphics, RenderPass* renderPass);
         virtual VkShaderModule GetModule() { return m_module; }
+
         virtual void SetName(const char* name) = 0;
         virtual const char* GetName() = 0;
         u32 GetActiveLayoutCount() const { return numActiveLayouts; }
         bool NeedsPipelineRebuild() { return m_needsPipelineRebuild; }
+        VertexLayout* GetVertexLayout() { return m_compilationObject.GetVertexLayout();};
         std::vector<GPUResourceHandle<Pipeline>>* GetPipelines() { return &m_pipelines; }
         UPtr<std::vector<fs::path>> GetDependencies();
 

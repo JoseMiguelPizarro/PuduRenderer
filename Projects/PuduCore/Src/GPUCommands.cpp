@@ -1,8 +1,6 @@
 #include "GPUCommands.h"
 #include "PuduGraphics.h"
 #include "Resources/Resources.h"
-#include "vulkan/vulkan.h"
-
 
 #undef  VK_USE_PLATFORM_WIN32_KHR
 #include "vulkan/vk_enum_string_helper.h"
@@ -887,11 +885,41 @@ namespace Pudu
         m_hasRecordedCommand = true;
     }
 
-    void GPUCommands::BindMesh(Mesh* mesh)
+    void GPUCommands::BindMesh(Mesh* mesh, VertexLayout* vertexLayout)
     {
-        VkBuffer vertexBuffers[] = {mesh->GetVertexBuffer()->vkHandle};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(vkHandle, 0, 1, vertexBuffers, offsets);
+        static std::array<VkBuffer, K_MAX_VERTEX_ATTRIBUTES> vertexStreamBuffers;
+        static std::array<VkDeviceSize, K_MAX_VERTEX_ATTRIBUTES> vertexStreamBufferOffsets;
+
+        auto attributeStreamBuffers = mesh->GetAttributeStreamBuffers();
+        auto meshAttributeStreams = mesh->GetVertexAttributeStreams();
+
+        Size attribCount = 0;
+        for (Size i = 0; i< vertexLayout->GetAttributeCount(); ++i)
+        {
+            auto attribute = vertexLayout->GetAttribute(i);
+            bool attributeFound = false;
+            for (Size j = 0; j < meshAttributeStreams.size(); ++j)
+            {
+                auto meshAttributeStream = meshAttributeStreams[j];
+                if (attribute.type == meshAttributeStream.Attribute.type)
+                {
+                    vertexStreamBuffers[attribCount] = attributeStreamBuffers[j]->vkHandle;
+                    vertexStreamBufferOffsets[attribCount] = 0;
+                    attribCount++;
+                    attributeFound = true;
+                    break;
+                }
+            }
+
+            if (attributeFound == false)
+            { //TODO:DIRTY HACK. WE MIGHT USE A DUMMY BUFFER INSTEAD?
+                vertexStreamBuffers[attribCount] = attributeStreamBuffers[0]->vkHandle;
+                vertexStreamBufferOffsets[attribCount] = 0;
+                attribCount++;
+            }
+        }
+
+        vkCmdBindVertexBuffers(vkHandle, 0, attribCount, vertexStreamBuffers.data(), vertexStreamBufferOffsets.data());
         vkCmdBindIndexBuffer(vkHandle, mesh->GetIndexBuffer()->vkHandle, 0, VK_INDEX_TYPE_UINT32);
 
         m_hasRecordedCommand = true;
