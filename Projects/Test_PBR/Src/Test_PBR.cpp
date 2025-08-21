@@ -10,7 +10,10 @@
 #include "ImGui/imgui.h"
 #include "ImGuiUtils.h"
 #include "OverlayQuadEntity.h"
+#include <FileWatch.hpp>
 
+
+std::unique_ptr<filewatch::FileWatch<std::string>> watch;
 
 void Test_PBR::OnInit()
 {
@@ -124,9 +127,32 @@ void Test_PBR::OnInit()
     // m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->Materials[0]->SetShader(untilShader);
 
     // m_scene.AddEntity(sphereEntity);
-    m_scene.AddEntity(m_model);
+    auto blenderFilePath = "models/test.blend";
+    m_testModel = FileManager::LoadGltfScene("models/testoutput.glb");
+
+    watch = std::make_unique<filewatch::FileWatch<std::string>>(
+        fs::absolute(blenderFilePath).string().c_str(), [this](const filewatch::CallbackInformation<std::string>& info)
+        {
+            if (info.event == filewatch::Event::modified || info.event == filewatch::Event::renamed_old)
+            {
+                std::filesystem::path script = R"(gltfexport.bat)";
+                std::string command =std::format("cd models &&{}",script.string().c_str());
+
+                int ret = std::system(command.c_str());
+
+                m_scene.RemoveEntity(m_testModel);
+
+                m_testModel = FileManager::LoadGltfScene("models/testoutput.glb");
+
+                m_scene.AddEntity(m_testModel);
+            }
+        });
+
+  //  m_scene.AddEntity(m_model);
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(axisModel);
+    m_scene.AddEntity(m_testModel);
+
 }
 
 void Test_PBR::OnRun()

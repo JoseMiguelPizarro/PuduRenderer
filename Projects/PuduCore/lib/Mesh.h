@@ -37,7 +37,10 @@ namespace Pudu
 
         bool IsDisposed();
 
+        virtual void OnCreate(PuduGraphics* gpu) override;
+
         std::string* GetName();
+        bool HasTangents();
 
     private:
         friend PuduGraphics;
@@ -53,5 +56,6 @@ namespace Pudu
         SPtr<GraphicsBuffer> m_indexBuffer;
         std::vector<uint32_t> m_indices;
         bool m_disposed;
+        bool m_hasTangents;
     };
 }

@@ -1,10 +1,9 @@
 #include <unordered_map>
 #include <vector>
-#include <Logger.h>
 #include "Renderer.h"
 #include "FrameGraph/RenderPass.h"
-#include "Shader.h"
 #include "Pipeline.h"
+#include "RenderEntity.h"
 
 namespace Pudu
 {
@@ -103,6 +102,8 @@ namespace Pudu
 		renderData.graphics = graphics;
 		renderData.app = app;
 
+		PrepareDrawcalls(renderData);
+
 		SetRenderCamera(scene->camera);
 
 		renderData.camera = scene->camera;
@@ -122,6 +123,43 @@ namespace Pudu
 
 			m_isRenderCameraDirty = false;
 		}
+	}
+
+	void Renderer::PrepareDrawcalls(RenderFrameData& frameData)
+	{
+		auto scene = frameData.scene;
+		m_drawCallsPerLayer->clear();
+
+		for (auto entity:scene->GetEntities())
+		{
+			RenderEntitySPtr renderEntity = std::dynamic_pointer_cast<RenderEntity>(entity);
+
+			if (renderEntity != nullptr)
+			{
+				auto model = renderEntity->GetModel();
+				for (size_t i = 0; i < model->Meshes.size(); i++)
+				{
+					auto mesh = model->Meshes[i];
+					mesh->Create(frameData.graphics); //Ensure mesh has been GPU allocated
+
+					SPtr<Material> material = model->Materials[0];
+					if (i >= model->Materials.size())
+					{
+						material = model->Materials[0];
+					}
+
+					model->Transform = &renderEntity->GetTransform();
+					DrawCall dc(model, model->Meshes[i], material);
+
+					AddDrawCall(dc, renderEntity->GetRenderSettings());
+				}
+			}
+		}
+	}
+
+	void Renderer::AddDrawCall(DrawCall& drawCall, RenderSettings& settings)
+	{
+		m_drawCallsPerLayer[settings.layer].push_back(drawCall);
 	}
 }
 

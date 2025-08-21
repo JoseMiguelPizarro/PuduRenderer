@@ -315,6 +315,7 @@ namespace Pudu
 
     private:
         friend class GPUResourcesManager;
+        friend class Mesh;
 
         const fs::path k_DEFAULT_ERROR_SHADER_PATH = "error.shader.slang";
 
@@ -325,6 +326,7 @@ namespace Pudu
         void PickPhysicalDevice();
         void CreateLogicalDevice();
         void CreateSurface();
+        void AllocateMeshGPUData(Mesh* mesh);
         void CreateSwapChain(Swapchain& swapchain);
         void CreateSwapchainImageViews(Swapchain& swapchain);
         void SetResourceName(VkObjectType type, u64 handle, const char* name);

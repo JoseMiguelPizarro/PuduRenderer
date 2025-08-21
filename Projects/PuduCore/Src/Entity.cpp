@@ -2,87 +2,93 @@
 
 #include "Logger.h"
 
-namespace Pudu {
-	Entity::Entity(std::string& name) :m_name(name) {}
+namespace Pudu
+{
+    Entity::Entity(std::string& name) : m_name(name)
+    {
+    }
 
 
-	void Entity::SetName(std::string const name)
-	{
-		m_name = name;
-	}
+    void Entity::SetName(std::string const name)
+    {
+        m_name = name;
+    }
 
-	const std::string& Entity::GetName()
-	{
-		return m_name;
-	}
+    const std::string& Entity::GetName()
+    {
+        return m_name;
+    }
 
-	Transform& Entity::GetTransform()
-	{
-		return m_transform;
-	}
-	void Entity::SetTransform(Transform t)
-	{
-		m_transform = t;
-	}
+    Transform& Entity::GetTransform()
+    {
+        return m_transform;
+    }
 
-	void Entity::SetParent(EntitySPtr parent)
-	{
-		m_parent = parent;
-		m_transform.SetParent(&parent->m_transform);
+    void Entity::SetTransform(Transform t)
+    {
+        m_transform = t;
+    }
 
-		parent->AddChild(m_entitySPtr);
-	}
+    void Entity::SetParent(EntitySPtr parent)
+    {
+        m_parent = parent;
+        if (m_parent != nullptr)
+        {
+            m_transform.SetParent(&parent->m_transform);
+            parent->AddChild(m_entitySPtr);
+        }
+    }
 
-	EntitySPtr Entity::GetParent()
-	{
-		return m_parent;
-	}
+    EntitySPtr Entity::GetParent()
+    {
+        return m_parent;
+    }
 
-	std::vector<EntitySPtr> Entity::GetChildren()
-	{
-		return m_children;
-	}
+    std::vector<EntitySPtr> Entity::GetChildren()
+    {
+        return m_children;
+    }
 
-	EntitySPtr Entity::GetChildByName(const char* name)
-	{
-		for (auto& child : m_children)
-		{
-			const char* childName = child->GetName().c_str();
-			if (strcmp(childName, name) == 0)
-				return child;
-		}
+    EntitySPtr Entity::GetChildByName(const char* name)
+    {
+        for (auto& child : m_children)
+        {
+            const char* childName = child->GetName().c_str();
+            if (strcmp(childName, name) == 0)
+                return child;
+        }
 
-		ASSERT(false, "Child not found");
-		return nullptr;
-	}
+        ASSERT(false, "Child not found");
+        return nullptr;
+    }
 
 
-	size_t Entity::ChildCount()
-	{
-		return m_children.size();
-	}
-	void Entity::AttatchToScene(Scene& scene)
-	{
-	}
+    size_t Entity::ChildCount()
+    {
+        return m_children.size();
+    }
 
-	EntitySPtr Entity::GetRoot() const
-	{
-		return GetRoot(m_entitySPtr);
-	}
+    void Entity::AttatchToScene(Scene& scene)
+    {
+    }
 
-	EntitySPtr Entity::GetRoot(EntitySPtr const& entity) const
-	{
-		if (entity->m_parent == nullptr)
-		{
-			return entity;
-		}
+    EntitySPtr Entity::GetRoot() const
+    {
+        return GetRoot(m_entitySPtr);
+    }
 
-		return GetRoot(entity->m_parent);
-	}
+    EntitySPtr Entity::GetRoot(EntitySPtr const& entity) const
+    {
+        if (entity->m_parent == nullptr)
+        {
+            return entity;
+        }
 
-	void Entity::AddChild(EntitySPtr& entity)
-	{
-		m_children.push_back(entity);
-	}
+        return GetRoot(entity->m_parent);
+    }
 
+    void Entity::AddChild(EntitySPtr& entity)
+    {
+        m_children.push_back(entity);
+    }
 }

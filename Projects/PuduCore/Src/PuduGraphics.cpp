@@ -1746,6 +1746,8 @@ namespace Pudu
         }
     }
 
+
+
     void PuduGraphics::CreateSwapChain(Swapchain& swapchain)
     {
         LOG("CreateSwapChain");
@@ -2179,8 +2181,14 @@ namespace Pudu
         mesh->m_vertexAttributeStreams = streams;
         mesh->m_indices = indices;
         mesh->name = data.Name;
+        mesh->m_hasTangents = data.HasTangents;
 
-        SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(indices[0]) * indices.size(), indices.data(),
+        return mesh;
+    }
+
+    void PuduGraphics::AllocateMeshGPUData(Mesh* mesh)
+    {
+        SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(mesh->m_indices[0]) * mesh->m_indices.size(), mesh->m_indices.data(),
                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                                                 VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
@@ -2188,9 +2196,10 @@ namespace Pudu
         mesh->m_indexBuffer = indexBuffer;
 
         std::vector<SPtr<GraphicsBuffer>> vertexAttributeStreamBuffers;
+        auto& streams =mesh->GetVertexAttributeStreams();
         for (auto& stream : streams)
         {
-            ASSERT(stream.Data != nullptr, "Vertex attribute stream data is null {} {}",data.Name, ToString(stream.Attribute.type));
+            ASSERT(stream.Data != nullptr, "Vertex attribute stream data is null {} {}",mesh->GetName()->c_str(), ToString(stream.Attribute.type));
 
             SPtr<GraphicsBuffer> streamBuffer = CreateGraphicsBuffer(stream.Stride * stream.Count, stream.Data,
                                                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -2202,32 +2211,32 @@ namespace Pudu
 
         mesh->m_vertexAttributeStreamBuffers = vertexAttributeStreamBuffers;
 
-        if (!data.HasTangents)
+        if (!mesh->HasTangents())
         {
-            auto positionStream = std::ranges::find_if(data.VertexAttributeStreams,
+            auto positionStream = std::ranges::find_if(streams,
                                                        [](const auto& stream)
                                                        {
                                                            return stream.Attribute.type ==
                                                                VertexAttributeType::POSITION;
                                                        });
 
-            auto uvStream = std::ranges::find_if(data.VertexAttributeStreams,
+            auto uvStream = std::ranges::find_if(streams,
                                                  [](const auto& stream)
                                                  {
                                                      return stream.Attribute.type == VertexAttributeType::TEXCOORD0;
                                                  });
 
-            auto normalStream = std::ranges::find_if(data.VertexAttributeStreams,
+            auto normalStream = std::ranges::find_if(streams,
                                                      [](const auto& stream)
                                                      {
                                                          return stream.Attribute.type == VertexAttributeType::NORMAL;
                                                      });
 
-            if (positionStream != data.VertexAttributeStreams.end() &&
-                uvStream != data.VertexAttributeStreams.end() &&
-                normalStream != data.VertexAttributeStreams.end())
+            if (positionStream != streams.end() &&
+                uvStream != streams.end() &&
+                normalStream != streams.end())
             {
-                auto tangentStream = GenerateTangents(*positionStream, *uvStream, *normalStream, indices);
+                auto tangentStream = GenerateTangents(*positionStream, *uvStream, *normalStream, mesh->m_indices);
 
                 SPtr<GraphicsBuffer> tangentStreamBuffer = CreateGraphicsBuffer(
                     tangentStream.Stride * tangentStream.Count, tangentStream.Data,
@@ -2236,10 +2245,10 @@ namespace Pudu
                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
                 mesh->m_vertexAttributeStreams.push_back(tangentStream);
                 mesh->m_vertexAttributeStreamBuffers.push_back(tangentStreamBuffer);
+
+                mesh->m_hasTangents = true;
             }
         }
-
-        return mesh;
     }
 
     void PuduGraphics::CreateBindlessDescriptorPool()

@@ -20,18 +20,12 @@ namespace Pudu {
 		void AddEntity(const EntitySPtr& entity);
 		void AddEntities(std::vector<EntitySPtr> entities);
 		void RemoveEntity(EntitySPtr entity);
-		void RemoveRenderEntity(RenderEntitySPtr renderEntity);
 		void DrawImGui();
 		std::vector<EntitySPtr> GetEntities();
 		std::vector<RenderEntitySPtr> GetRenderEntities();
 		EntitySPtr sceneRoot;
 		PuduTime* time;
 		Light* directionalLight;
-
-
-		const std::vector<DrawCall>* GetDrawCalls(uint32_t layer) const {
-			return &m_drawCallsPerLayer[layer];
-		}
 
 		Scene() {
 			sceneRoot = EntityManager::AllocateEntity();
@@ -48,12 +42,8 @@ namespace Pudu {
 		friend class Entity;
 		friend class RenderEntity;
 
-		void AddRendererEntity(RenderEntitySPtr renderEntity);
-		void AddDrawCall(DrawCall& drawCall, RenderSettings& settings);
 		std::vector<EntitySPtr> m_entities;
-		std::vector<RenderEntitySPtr> m_renderEntities;
-
-		std::vector<DrawCall> m_drawCallsPerLayer[32];
+		void RemoveEntityInternal(EntitySPtr entity, bool isRoot);
 	};
 }
 

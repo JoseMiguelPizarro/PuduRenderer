@@ -14,7 +14,6 @@ namespace Pudu {
 	}
 	void RenderEntity::AttatchToScene(Scene& scene)
 	{
-		scene.AddRendererEntity(dynamic_pointer_cast<RenderEntity>(m_entitySPtr));
 	}
 
 	RenderSettings& RenderEntity::GetRenderSettings()

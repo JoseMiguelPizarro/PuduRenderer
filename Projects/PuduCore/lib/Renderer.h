@@ -41,11 +41,20 @@ namespace Pudu
 
         void UploadCameraData(RenderFrameData& frameData);
 
+        const std::vector<DrawCall>* GetDrawCalls(uint32_t layer) const {
+            return &m_drawCallsPerLayer[layer];
+        }
+
+        void PrepareDrawcalls(RenderFrameData& frameData);
+
+
     protected:
         friend class FrameGraph;
 
         PuduGraphics* graphics;
         PuduApp* app;
+        std::vector<DrawCall> m_drawCallsPerLayer[32];
+        void AddDrawCall(DrawCall& drawCall, RenderSettings& settings);
 
         virtual void OnUploadCameraData(RenderFrameData& frameData) {};
         virtual void OnInit(PuduGraphics* graphics, PuduApp* app)

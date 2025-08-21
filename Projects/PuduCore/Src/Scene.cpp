@@ -2,90 +2,84 @@
 #include <ImGui/imgui.h>
 #include "ImGuiUtils.h"
 
-namespace Pudu {
-	void Scene::AddEntity(const EntitySPtr& entity)
-	{
-		m_entities.push_back(entity);
-		if (entity != sceneRoot && entity->GetParent() == nullptr)
-		{
-			entity->SetParent(sceneRoot);
-		}
+namespace Pudu
+{
+    void Scene::AddEntity(const EntitySPtr& entity)
+    {
+        m_entities.push_back(entity);
+        if (entity != sceneRoot && entity->GetParent() == nullptr)
+        {
+            entity->SetParent(sceneRoot);
+        }
 
-		entity->AttatchToScene(*this);
+        entity->AttatchToScene(*this);
 
-		for (const auto& child : entity->GetChildren())
-		{
-			AddEntity(child);
-		}
-	}
-	void Scene::AddEntities(std::vector<EntitySPtr> entities)
-	{
-		for (auto e : entities)
-		{
-			AddEntity(e);
-		}
-	}
-	void Scene::RemoveEntity(EntitySPtr entity)
-	{
-		//TODO
-	}
+        for (const auto& child : entity->GetChildren())
+        {
+            AddEntity(child);
+        }
+    }
 
-	void Scene::AddRendererEntity(RenderEntitySPtr renderEntity)
-	{
-		m_renderEntities.push_back(renderEntity);
+    void Scene::AddEntities(std::vector<EntitySPtr> entities)
+    {
+        for (auto e : entities)
+        {
+            AddEntity(e);
+        }
+    }
 
-		auto model = renderEntity->GetModel();
-		for (size_t i = 0; i < model->Meshes.size(); i++)
-		{
-			SPtr<Material> material = model->Materials[0];
-			if (i >= model->Materials.size())
-			{
-				material = model->Materials[0];
-			}
+    void Scene::RemoveEntity(EntitySPtr entity)
+    {
+        RemoveEntityInternal(entity, true);
+    }
 
-			model->Transform = &renderEntity->GetTransform();
-			DrawCall dc(model, model->Meshes[i], material);
+    void Scene::RemoveEntityInternal(EntitySPtr entity, bool isRoot)
+    {
+        m_entities.erase
+        (
+            std::ranges::remove_if
+            (m_entities,
+             [entity](const auto& ps) { return ps == entity; }
+            ).begin(), m_entities.end()
+        );
 
-			AddDrawCall(dc, renderEntity->GetRenderSettings());
-		}
-	}
-	void Scene::AddDrawCall(DrawCall& drawCall, RenderSettings& settings)
-	{
-		m_drawCallsPerLayer[settings.layer].push_back(drawCall);
-	}
-	void Scene::RemoveRenderEntity(RenderEntitySPtr renderEntity)
-	{
-		//TODO
-	}
-	void Scene::DrawImGui()
-	{
-		ImGui::NewFrame();
-		ImGui::Begin("Pudu Renderer Debug");
-		ImGui::Text("Camera:");
+        if (isRoot)
+        {
+            entity->SetParent(nullptr);
+        }
 
-		vec3 cameraFwd = camera->Transform.GetForward();
+        for (auto& child : entity->GetChildren())
+        {
+            RemoveEntityInternal(child, false);
+        }
+    }
 
-		ImGuiUtils::DrawTransform(camera->Transform);
+    void Scene::DrawImGui()
+    {
+        ImGui::NewFrame();
+        ImGui::Begin("Pudu Renderer Debug");
+        ImGui::Text("Camera:");
 
-		ImGui::Text(std::format("Cam Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
-		ImGui::Text(std::format("FPS: {}", Time->GetFPS()).c_str());
-		ImGui::Text(std::format("Delta Time: {}", time->DeltaTime()).c_str());
+        vec3 cameraFwd = camera->Transform.GetForward();
 
-		auto entities = GetEntities();
+        ImGuiUtils::DrawTransform(camera->Transform);
 
-		//Tree begin
-		ImGuiUtils::DrawEntityTree(entities);
+        ImGui::Text(std::format("Cam Forward: {},{},{}", cameraFwd.x, cameraFwd.y, cameraFwd.z).c_str());
+        ImGui::Text(std::format("FPS: {}", Time->GetFPS()).c_str());
+        ImGui::Text(std::format("Delta Time: {}", time->DeltaTime()).c_str());
 
-		//Tree end
-		ImGui::End();
-		ImGui::Render();
-	}
-	std::vector<EntitySPtr> Scene::GetEntities()
-	{
-		return m_entities;
-	}
-	std::vector<RenderEntitySPtr> Scene::GetRenderEntities()
-	{
-		return m_renderEntities;
-	}
+        auto entities = GetEntities();
+
+        //Tree begin
+        ImGuiUtils::DrawEntityTree(entities);
+
+        //Tree end
+        ImGui::End();
+        ImGui::Render();
+    }
+
+    std::vector<EntitySPtr> Scene::GetEntities()
+    {
+        return m_entities;
+    }
 }

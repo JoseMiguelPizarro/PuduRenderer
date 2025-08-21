@@ -47,8 +47,19 @@ namespace Pudu
 	{
 		return m_disposed;
 	}
+
+	void Mesh::OnCreate(PuduGraphics* gpu)
+	{
+		gpu->AllocateMeshGPUData(this);
+	}
+
 	std::string* Mesh::GetName()
 	{
 		return &name;
+	}
+
+	bool Mesh::HasTangents()
+	{
+		return m_hasTangents;
 	}
 }

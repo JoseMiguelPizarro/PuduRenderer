@@ -264,10 +264,9 @@ namespace Pudu
 
     void RenderPass::Render(RenderFrameData& frameData)
     {
-        auto renderScene = frameData.scene;
         auto commands = frameData.currentCommand;
 
-        auto drawCalls = renderScene->GetDrawCalls(m_renderLayer);
+        auto drawCalls = frameData.renderer->GetDrawCalls(m_renderLayer);
 
         for (DrawCall drawCall : *drawCalls)
         {

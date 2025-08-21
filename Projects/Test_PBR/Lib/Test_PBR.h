@@ -26,6 +26,7 @@ private:
     PuduRenderer m_puduRenderer;
     SPtr<Shader> standardShader;
     EntitySPtr m_model;
+    EntitySPtr m_testModel;
     Light m_directionalLight;
     SPtr<OverlayQuadTextureArrayEntity> m_arrayQO;
 };

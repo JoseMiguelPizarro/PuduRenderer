@@ -887,6 +887,9 @@ namespace Pudu
 
     void GPUCommands::BindMesh(Mesh* mesh, VertexLayout* vertexLayout)
     {
+        if (!mesh->IsAllocated())
+            mesh->Create(m_graphics);
+
         static std::array<VkBuffer, K_MAX_VERTEX_ATTRIBUTES> vertexStreamBuffers;
         static std::array<VkDeviceSize, K_MAX_VERTEX_ATTRIBUTES> vertexStreamBufferOffsets;
 
