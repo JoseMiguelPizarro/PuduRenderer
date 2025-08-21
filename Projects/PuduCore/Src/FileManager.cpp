@@ -190,16 +190,35 @@ namespace Pudu
 
                         stream.Data = data;
                     }
-                    if (strcmp(attribName, "COLOR_0") == 0)
+                    if (strcmp(attribName, "COLOR_0") == 0 || strcmp(attribName, "COLOR_1") == 0)
+                    //TODO: UP TO HOW MANY COLORS WE SHOULD SUPPORT? Blender starts from _1
                     {
                         stream.Attribute.type = VertexAttributeType::COLOR;
-                        stream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-                        auto data = new vec3[accessor.count];
                         Size idx = 0;
-                        fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v)
+                        void* data;
+
+                        auto type = accessor.type;
+                        if (type == fastgltf::AccessorType::Vec3)
                         {
-                            data[idx++] = v;
-                        });
+                            stream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+                            auto vdata = new vec3[accessor.count];
+                            fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v)
+                            {
+                                vdata[idx++] = v;
+                            });
+
+                            data = vdata;
+                        }
+                        else if (type == fastgltf::AccessorType::Vec4)
+                        {
+                            stream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
+                            auto vdata = new vec4[accessor.count];
+                            fastgltf::iterateAccessor<vec4>(gltfAsset.get(), accessor, [&](vec4 v)
+                            {
+                                vdata[idx++] = v;
+                            });
+                            data = vdata;
+                        }
 
                         stream.Data = data;
                     }
@@ -217,6 +236,12 @@ namespace Pudu
                         hasTangents = true;
 
                         stream.Data = data;
+                    }
+
+                    if (stream.Data == nullptr)
+                    {
+                        LOG_WARNING("Mesh: {} Attribute not recognized: {} ", mesh.name, attribName);
+                        continue;
                     }
 
                     stream.Stride = GetChannelFormatSize(stream.Attribute.format);

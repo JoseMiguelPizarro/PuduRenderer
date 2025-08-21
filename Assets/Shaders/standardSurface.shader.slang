@@ -68,7 +68,7 @@ float4 fragmentMain(VSOut input)
         uv = pom.uv;
      }
 
-    float3 albedo = material.albedoTex.Sample(uv).rgb;
+    float3 albedo = material.albedoTex.Sample(uv).rgb * input.Color.rgb;
     float3 normalTS = DecodeNormal(material.normalTex.Sample(uv).xy);
 
     float3 normalWS = TangentToWorld(normalTS,tangent,bitangent,normal);
@@ -87,6 +87,7 @@ float4 fragmentMain(VSOut input)
 
     col.xyz = StandardSurface(m);
     col.a = 1;
+
 
     return col;
 }

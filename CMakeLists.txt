@@ -17,10 +17,10 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs")
 # Set Vulkan SDK
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
+option(USE_TRACY "Enable Tracy profiler" OFF)
+
 # Fetch KTX
 find_package(KTX REQUIRED)
-
-option(USE_TRACY "Enable Tracy profiler" ON)
 
 # Include directories
 set(INCLUDE_DIRS
@@ -65,6 +65,8 @@ elseif (APPLE)
 elseif (UNIX)
     set(SLANG_OS "linux-x86_64")
 endif ()
+
+
 
 message(STATUS "Fetching Slang ver: ${SLANG_VERSION}")
 include(FetchContent)
