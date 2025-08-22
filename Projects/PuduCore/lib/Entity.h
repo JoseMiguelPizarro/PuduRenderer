@@ -34,6 +34,7 @@ namespace Pudu {
 		SPtr<T> GetChildByName(std::string const& name);
 
 		size_t ChildCount();
+		void RemoveChild(EntitySPtr child);
 		virtual void AttatchToScene(Scene& scene);
 
 	protected:

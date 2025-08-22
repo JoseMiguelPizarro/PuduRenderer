@@ -30,10 +30,15 @@ namespace Pudu
 
     void Scene::RemoveEntity(EntitySPtr entity)
     {
-        RemoveEntityInternal(entity, true);
+        if (entity->GetParent() != nullptr)
+            entity->GetParent()->RemoveChild(entity);
+
+        ASSERT(entity!= sceneRoot, "Cannot remove scene root");
+
+        RemoveEntityInternal(entity);
     }
 
-    void Scene::RemoveEntityInternal(EntitySPtr entity, bool isRoot)
+    void Scene::RemoveEntityInternal(EntitySPtr entity)
     {
         m_entities.erase
         (
@@ -43,14 +48,9 @@ namespace Pudu
             ).begin(), m_entities.end()
         );
 
-        if (isRoot)
-        {
-            entity->SetParent(nullptr);
-        }
-
         for (auto& child : entity->GetChildren())
         {
-            RemoveEntityInternal(child, false);
+            RemoveEntityInternal(child);
         }
     }
 

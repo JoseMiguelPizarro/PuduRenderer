@@ -68,6 +68,12 @@ namespace Pudu
         return m_children.size();
     }
 
+    void Entity::RemoveChild(EntitySPtr child)
+    {
+        m_children.erase(std::ranges::remove(m_children, child).begin(), m_children.end());
+        child->SetParent(nullptr);
+    }
+
     void Entity::AttatchToScene(Scene& scene)
     {
     }

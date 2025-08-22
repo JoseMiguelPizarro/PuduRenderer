@@ -43,7 +43,7 @@ namespace Pudu {
 		friend class RenderEntity;
 
 		std::vector<EntitySPtr> m_entities;
-		void RemoveEntityInternal(EntitySPtr entity, bool isRoot);
+		void RemoveEntityInternal(EntitySPtr entity);
 	};
 }
 
