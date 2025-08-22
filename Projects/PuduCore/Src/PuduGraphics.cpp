@@ -33,7 +33,6 @@
 #include <vk_mem_alloc.h>
 #include <FileWatch.hpp>
 
-#include "Profiling/PuduProfiling.h"
 #include "Profiling/PuduGPUProfiler.h"
 #include <memory>
 

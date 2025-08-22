@@ -17,8 +17,6 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs")
 # Set Vulkan SDK
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
-option(USE_TRACY "Enable Tracy profiler" OFF)
-
 # Fetch KTX
 find_package(KTX REQUIRED)
 
@@ -147,8 +145,7 @@ SETUP_TARGET_PROPERTIES(PuduCore)
 set_target_properties(PuduCore PROPERTIES
         COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING;VK_EXT_host_query_reset")
 
-set_target_properties(PuduCore PROPERTIES
-        COMPILE_DEFINITIONS "GPU_PROFILE")
+#set_target_properties(PuduCore PROPERTIES COMPILE_DEFINITIONS "GPU_PROFILE")
 
 target_link_libraries(PuduCore PUBLIC slang)
 

@@ -8,9 +8,10 @@
 
 namespace Pudu
 {
+#ifdef GPU_PROFILE
     GPUProfiler::~GPUProfiler()
     {
-        TracyVkDestroy(m_context);
+        TracyVkDestroy(static_cast<tracy::VkCtx*>(m_context));
     }
 
     void GPUProfiler::Init(VkPhysicalDevice physicalDevice, VkDevice device,PFN_vkResetQueryPool rqp,
@@ -22,6 +23,18 @@ namespace Pudu
             gpdctd,
             gct);
     }
+#else
+    GPUProfiler::~GPUProfiler()
+    {
+
+    }
+
+    void GPUProfiler::Init(VkPhysicalDevice physicalDevice, VkDevice device, PFN_vkResetQueryPool rqp, PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT gpdctd, PFN_vkGetCalibratedTimestampsEXT gct)
+    {
+
+    }
+#endif
+
 
     void GPUProfiler::Enable()
     {
