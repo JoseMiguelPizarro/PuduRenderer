@@ -125,10 +125,13 @@ namespace Pudu
 		}
 	}
 
+
+
 	void Renderer::PrepareDrawcalls(RenderFrameData& frameData)
 	{
+		ClearDrawCalls(frameData);
+
 		auto scene = frameData.scene;
-		m_drawCallsPerLayer->clear();
 
 		for (auto entity:scene->GetEntities())
 		{
@@ -160,6 +163,14 @@ namespace Pudu
 	void Renderer::AddDrawCall(DrawCall& drawCall, RenderSettings& settings)
 	{
 		m_drawCallsPerLayer[settings.layer].push_back(drawCall);
+	}
+
+	void Renderer::ClearDrawCalls(RenderFrameData& frameData)
+	{
+		for (auto& layer : m_drawCallsPerLayer)
+		{
+			layer.clear();
+		}
 	}
 }
 

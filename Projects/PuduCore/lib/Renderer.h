@@ -56,6 +56,7 @@ namespace Pudu
         std::vector<DrawCall> m_drawCallsPerLayer[32];
         void AddDrawCall(DrawCall& drawCall, RenderSettings& settings);
 
+        virtual void ClearDrawCalls(RenderFrameData& frameData);
         virtual void OnUploadCameraData(RenderFrameData& frameData) {};
         virtual void OnInit(PuduGraphics* graphics, PuduApp* app)
         {
