@@ -94,7 +94,6 @@ namespace Pudu
             fastgltf::Options::GenerateMeshIndices;
 
         fastgltf::Parser parser;
-        //data.FromPath(pathAssetFolder);
 
         auto gltfFile = fastgltf::MappedGltfFile::FromPath(pathAssetFolder);
 
@@ -252,7 +251,7 @@ namespace Pudu
                 MeshCreationData meshCreationData{};
                 MaterialCreationData materialCreationData{};
 
-                if (bool hasMat = !gltfAsset->materials.empty())
+                if (bool hasMat = !gltfAsset->materials.empty() && primitive.materialIndex.has_value())
                 {
                     auto& gltfMat = gltfAsset->materials[primitive.materialIndex.value()];
 
