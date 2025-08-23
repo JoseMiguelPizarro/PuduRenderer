@@ -3,8 +3,6 @@
 
 #include "GraphicsBuffer.h"
 #include "MeshCreationData.h"
-#include "vertex.h"
-#include "Resources/Resources.h"
 
 namespace Pudu
 {
