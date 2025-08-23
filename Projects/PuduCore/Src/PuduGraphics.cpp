@@ -259,13 +259,13 @@ namespace Pudu
         allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
         allocCreateInfo.flags = properties;
 
-
         VmaAllocation alloc;
         VmaAllocationInfo allocInfo;
 
+
         //Create buffer, allocate the memory and binds memory to buffer
         VKCheck(
-            vmaCreateBufferWithAlignment(m_VmaAllocator, &bufferInfo, &allocCreateInfo, 16, &buffer, &alloc, &allocInfo
+            vmaCreateBuffer(m_VmaAllocator, &bufferInfo, &allocCreateInfo, &buffer, &alloc, &allocInfo
             ),
             "Failed creating buffer");
         if (name != nullptr)
@@ -1656,6 +1656,7 @@ namespace Pudu
         featuresVulkan12.descriptorBindingStorageTexelBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
         featuresVulkan12.hostQueryReset = VK_TRUE;
+        featuresVulkan12.scalarBlockLayout = VK_TRUE;
 
         VkPhysicalDeviceFeatures2 deviceFeatures{};
         deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
