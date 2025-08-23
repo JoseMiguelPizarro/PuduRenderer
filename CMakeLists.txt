@@ -175,7 +175,34 @@ configure_file(${slangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
 
 configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
 
+message("source dir: ${CMAKE_SOURCE_DIR}")
+
+
+
 macro(AddPuduApp app_name)
+    set(DIRECTORY "${CMAKE_SOURCE_DIR}/Projects/${app_name}")
+    if (NOT EXISTS ${DIRECTORY})
+        message("Directory: ${DIRECTORY}")
+        file(MAKE_DIRECTORY "Projects/${app_name}")
+        file(MAKE_DIRECTORY "Projects/${app_name}/Lib")
+        file(MAKE_DIRECTORY "Projects/${app_name}/Src")
+
+        # Copy and modify template header
+        file(READ "Templates/NewPuduAppTemplate.h" template_header_content)
+        string(REPLACE "NewPuduAppTemplate" "${app_name}" modified_header_content "${template_header_content}")
+        file(WRITE "Projects/${app_name}/Lib/${app_name}.h" "${modified_header_content}")
+
+        # Copy and modify template source
+        file(READ "Templates/NewPuduAppTemplate.cpp" template_source_content)
+        string(REPLACE "NewPuduAppTemplate" "${app_name}" modified_source_content "${template_source_content}")
+        file(WRITE "Projects/${app_name}/Src/${app_name}.cpp" "${modified_source_content}")
+
+        #Copy and modify main.cpp
+        file(READ "Templates/mainTemplate.cpp" template_source_content)
+        string(REPLACE "NewPuduAppTemplate" "${app_name}" modified_source_content "${template_source_content}")
+        file(WRITE "Projects/${app_name}/Src/main.cpp" "${modified_source_content}")
+    endif ()
+
     add_target(${app_name} EXECUTABLE)
     set_target_properties(${app_name} PROPERTIES
             COMPILE_DEFINITIONS "HLSLPP_FEATURE_TRANSFORM"
@@ -188,7 +215,6 @@ macro(AddPuduApp app_name)
 
     target_link_libraries(${app_name} PUBLIC PuduRenderer PuduCore PUBLIC slang)
 
-
     set_target_properties(${app_name} PROPERTIES
             DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
             VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
@@ -197,3 +223,4 @@ endmacro()
 
 AddPuduApp(CatDiorama)
 AddPuduApp(Test_PBR)
+AddPuduApp(Blender_HotReload)
