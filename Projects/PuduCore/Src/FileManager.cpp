@@ -129,9 +129,6 @@ namespace Pudu
                 fastgltf::Accessor& indexAccessor = gltfAsset->accessors[primitive.indicesAccessor.value()];
                 indices.resize(indexAccessor.count);
 
-                std::vector<VertexAttributeStream> vertexAttributeStreams;
-                vertexAttributeStreams.reserve(primitive.attributes.size());
-
                 fastgltf::iterateAccessorWithIndex<u32>(gltfAsset.get(), indexAccessor,
                                                         [&](u32 index, size_t i)
                                                         {
@@ -141,111 +138,101 @@ namespace Pudu
                 auto& positionsAccessor = gltfAsset->accessors[primitive.findAttribute("POSITION")->accessorIndex];
 
 
+                SPtr<MeshAttributes> meshAttributes = MeshAttributes::Create();
+
                 for (auto& attribute : primitive.attributes)
                 {
-                    VertexAttributeStream stream{};
-
                     auto accessor = gltfAsset->accessors[attribute.accessorIndex];
                     const char* attribName = attribute.name.c_str();
+                    bool attributeFound = false;
                     if (strcmp(attribName, "POSITION") == 0)
                     {
-                        stream.Attribute.type = VertexAttributeType::POSITION;
-                        stream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-                        auto data = new vec3[accessor.count];
+                        attributeFound = true;
+                        auto& stream =  meshAttributes->CreateAttribute({VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT}, accessor.count);
+
                         Size idx = 0;
+
                         fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v)
                         {
-                            data[idx++] = v;
+                            memcpy(stream.Data + idx * sizeof(vec3), &v, sizeof(vec3));
+                            idx++;
                         });
-
-                        stream.Data = data;
                     }
 
                     if (strcmp(attribName, "TEXCOORD_0") == 0) //TODO: HANDLE IF IT'S vec2,vec3 or vec4
                     {
-                        stream.Attribute.type = VertexAttributeType::TEXCOORD0;
-                        stream.Attribute.format = ChannelFormat::R32G32_SFLOAT;
-                        auto data = new vec2[accessor.count];
+                        attributeFound = true;
+                        auto& stream = meshAttributes->CreateAttribute(
+                            {VertexAttributeType::TEXCOORD0, ChannelFormat::R32G32_SFLOAT}, accessor.count);
                         Size idx = 0;
                         fastgltf::iterateAccessor<vec2>(gltfAsset.get(), accessor, [&](vec2 v)
                         {
-                            data[idx++] = v;
+                            memcpy(stream.Data + idx * sizeof(vec2), &v, sizeof(vec2));
+                            idx++;
                         });
-
-                        stream.Data = data;
                     }
 
                     if (strcmp(attribName, "NORMAL") == 0)
                     {
-                        stream.Attribute.type = VertexAttributeType::NORMAL;
-                        stream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-                        auto data = new vec3[accessor.count];
+                        attributeFound = true;
+                        auto& stream = meshAttributes->CreateAttribute(
+                            {VertexAttributeType::NORMAL, ChannelFormat::R32G32B32_SFLOAT}, accessor.count);
                         Size idx = 0;
-
                         fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v)
                         {
-                            data[idx++] = v;
+                            memcpy(stream.Data + idx * sizeof(vec3), &v, sizeof(vec3));
+                            idx++;
                         });
-
-                        stream.Data = data;
                     }
-                    if (strcmp(attribName, "COLOR_0") == 0 || strcmp(attribName, "COLOR_1") == 0)
-                    //TODO: UP TO HOW MANY COLORS WE SHOULD SUPPORT? Blender starts from _1
-                    {
-                        stream.Attribute.type = VertexAttributeType::COLOR;
-                        Size idx = 0;
-                        void* data;
 
+                    if (strcmp(attribName, "COLOR_0") == 0 || strcmp(attribName, "COLOR_1") == 0) //TODO: UP TO HOW MANY COLORS WE SHOULD SUPPORT? Blender starts from _1
+                    {
+                        attributeFound = true;
                         auto type = accessor.type;
                         if (type == fastgltf::AccessorType::Vec3)
                         {
-                            stream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-                            auto vdata = new vec3[accessor.count];
+                            auto& stream = meshAttributes->CreateAttribute(
+                                {VertexAttributeType::COLOR, ChannelFormat::R32G32B32_SFLOAT}, accessor.count);
+                            Size idx = 0;
                             fastgltf::iterateAccessor<vec3>(gltfAsset.get(), accessor, [&](vec3 v)
                             {
-                                vdata[idx++] = v;
+                                memcpy(stream.Data + idx * sizeof(vec3), &v, sizeof(vec3));
+                                idx++;
                             });
-
-                            data = vdata;
                         }
                         else if (type == fastgltf::AccessorType::Vec4)
                         {
-                            stream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
-                            auto vdata = new vec4[accessor.count];
+                            attributeFound = true;
+                            auto& stream = meshAttributes->CreateAttribute(
+                                {VertexAttributeType::COLOR, ChannelFormat::R32G32B32A32_SFLOAT}, accessor.count);
+                            Size idx = 0;
                             fastgltf::iterateAccessor<vec4>(gltfAsset.get(), accessor, [&](vec4 v)
                             {
-                                vdata[idx++] = v;
+                                memcpy(stream.Data + idx * sizeof(vec4), &v, sizeof(vec4));
+                                idx++;
                             });
-                            data = vdata;
                         }
-
-                        stream.Data = data;
                     }
+
                     if (strcmp(attribName, "TANGENT") == 0)
                     {
-                        stream.Attribute.type = VertexAttributeType::TANGENT;
-                        stream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
-                        auto data = new vec4[accessor.count];
+                        attributeFound = true;
+                        auto& stream = meshAttributes->CreateAttribute(
+                            {VertexAttributeType::TANGENT, ChannelFormat::R32G32B32A32_SFLOAT}, accessor.count);
                         Size idx = 0;
                         fastgltf::iterateAccessor<vec4>(gltfAsset.get(), accessor, [&](vec4 v)
                         {
-                            data[idx++] = v;
+                            memcpy(stream.Data + idx * sizeof(vec4), &v, sizeof(vec4));
+                            idx++;
                         });
 
                         hasTangents = true;
-
-                        stream.Data = data;
                     }
 
-                    if (stream.Data == nullptr)
+                    if (attributeFound == false)
                     {
                         LOG_WARNING("Mesh: {} Attribute not recognized: {} ", mesh.name, attribName);
-                        continue;
                     }
-
-                    stream.Stride = GetChannelFormatSize(stream.Attribute.format);
-                    stream.Count = accessor.count;
-                    vertexAttributeStreams.push_back(stream);
                 }
 
                 MeshCreationData meshCreationData{};
@@ -292,7 +279,7 @@ namespace Pudu
                 materialCreationData.name = mesh.name;
 
                 meshCreationData.Indices = indices;
-                meshCreationData.VertexAttributeStreams = vertexAttributeStreams;
+                meshCreationData.MeshAttributes = meshAttributes;
                 meshCreationData.Material = materialCreationData;
                 meshCreationData.Name = mesh.name;
                 meshCreationData.HasTangents = hasTangents;

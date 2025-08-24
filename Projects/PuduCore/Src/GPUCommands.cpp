@@ -901,9 +901,9 @@ namespace Pudu
         {
             auto attribute = vertexLayout->GetAttribute(i);
             bool attributeFound = false;
-            for (Size j = 0; j < meshAttributeStreams.size(); ++j)
+            for (Size j = 0; j < meshAttributeStreams->GetAttributeCount(); j++)
             {
-                auto meshAttributeStream = meshAttributeStreams[j];
+                auto meshAttributeStream = meshAttributeStreams->GetAttributeStream(j);
                 if (attribute.type == meshAttributeStream.Attribute.type)
                 {
                     vertexStreamBuffers[attribCount] = attributeStreamBuffers[j]->vkHandle;

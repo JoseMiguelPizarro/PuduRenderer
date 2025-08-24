@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 
+#include "Logger.h"
 #include "VertexLayout.h"
 #include "MaterialCreationData.h"
 
@@ -11,14 +12,40 @@ namespace Pudu
         VertexAttribute Attribute;
         Size Count;
         Size Stride;
-        void* Data;
+        byte* Data;
         VertexAttributeStream() = default;
 
         template<typename T>
         T* GetData()
         {
-            return static_cast<T*>(Data);
+            return reinterpret_cast<T*>(Data);
         }
+    };
+
+    struct MeshAttributes
+    {
+        MeshAttributes() = default;
+        VertexAttributeStream& CreateAttribute(const VertexAttribute& attribute, Size count);
+        void PushVertexAttributeStream(VertexAttributeStream& stream);
+        void SetAttributeData(VertexAttributeType attribute, const void* data);
+
+        static SPtr<MeshAttributes> Create();
+        Size GetAttributeCount() const {return m_attributeCount;};
+        std::optional<VertexAttributeStream*> FindVertexAttributeStream(VertexAttributeType attribute);
+
+        VertexAttributeStream& GetAttributeStream(Size index)
+        {
+            ASSERT(index < m_attributeCount, "Trying to get attribute stream with index out of bounds {}", index);
+            return m_vertexAttributeStream[index];
+        };
+
+        void Destroy();
+        ~MeshAttributes();
+
+    private:
+        VertexAttributeStream m_vertexAttributeStream [K_MAX_VERTEX_ATTRIBUTES];
+        bool m_disposed = false;
+        Size m_attributeCount = 0;
     };
 
     struct MeshCreationData
@@ -34,10 +61,11 @@ namespace Pudu
 
         std::string Name;
 
-        std::vector<VertexAttributeStream> VertexAttributeStreams;
         std::vector<u32> Indices;
         std::vector<ModelLayout> ModelLayouts;
         bool HasTangents;
         MaterialCreationData Material;
+        SPtr<MeshAttributes> MeshAttributes;
     };
+
 }

@@ -12,7 +12,7 @@ namespace Pudu
         std::vector<SPtr<GraphicsBuffer>> GetAttributeStreamBuffers();
         SPtr<GraphicsBuffer> GetIndexBuffer();
 
-        std::vector<VertexAttributeStream>& GetVertexAttributeStreams();
+        MeshAttributes* GetVertexAttributeStreams() const;
         std::vector<u32>* GetIndices();
 
         Mesh() = default;
@@ -26,11 +26,6 @@ namespace Pudu
         void SetVertexAttributeBuffers(std::vector<SPtr<GraphicsBuffer>> buffers)
         {
             m_vertexAttributeStreamBuffers = buffers;
-        }
-
-        void SetVertexAttributeStreams(std::vector<VertexAttributeStream> streams)
-        {
-            m_vertexAttributeStreams = streams;
         }
 
         bool IsDisposed();
@@ -50,7 +45,7 @@ namespace Pudu
 
     private:
         std::vector<SPtr<GraphicsBuffer>> m_vertexAttributeStreamBuffers;
-        std::vector<VertexAttributeStream> m_vertexAttributeStreams;
+        SPtr<MeshAttributes> m_attributes;
         SPtr<GraphicsBuffer> m_indexBuffer;
         std::vector<uint32_t> m_indices;
         bool m_disposed;

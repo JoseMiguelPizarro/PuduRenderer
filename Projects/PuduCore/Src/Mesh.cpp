@@ -13,9 +13,9 @@ namespace Pudu
 		return m_indexBuffer;
 	}
 
-	std::vector<VertexAttributeStream>& Mesh::GetVertexAttributeStreams()
+	MeshAttributes* Mesh::GetVertexAttributeStreams() const
 	{
-		return m_vertexAttributeStreams;
+		return m_attributes.get();
 	}
 
 	std::vector<uint32_t>* Mesh::GetIndices()
@@ -33,10 +33,7 @@ namespace Pudu
 		if (!m_disposed)
 		{
 			m_disposed = true;
-			for (auto& stream : m_vertexAttributeStreams)
-			{
-				delete stream.Data;
-			}
+			m_attributes->Destroy();
 		}
 		else
 		{

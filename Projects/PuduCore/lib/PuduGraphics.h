@@ -334,6 +334,9 @@ namespace Pudu
         /// Setup and dispatch compute workload for the frame
         /// </summary>
         void SubmitComputeWork(RenderFrameData& frameData);
+        void InitDefaultCube();
+        void InitDefaultQuad();
+        void InitDefaultSphere();
         void InitDefaultResources();
         void InitDefaultTextures();
         void CreateVKGraphicsPipeline(Pipeline* pipeline, PipelineCreationData& creationData);

@@ -391,97 +391,97 @@ namespace Pudu
     void PuduGraphics::DrawFrame(RenderFrameData& frameData)
     {
         PROFILER_ZONE("Draw Frame", 0xffffff);
-            auto frameGraph = frameData.frameGraph;
-            Frame frame = m_Frames[m_currentFrameIndex];
+        auto frameGraph = frameData.frameGraph;
+        Frame frame = m_Frames[m_currentFrameIndex];
 
-            //don't wait the first frames
-            if (m_absoluteFrame >= MAX_FRAMES_IN_FLIGHT)
-            {
-                u64 graphicsTimelineValue = m_absoluteFrame;
-                u64 computeTimelineValue = m_computeTimelineSemaphore->TimelineValue();
+        //don't wait the first frames
+        if (m_absoluteFrame >= MAX_FRAMES_IN_FLIGHT)
+        {
+            u64 graphicsTimelineValue = m_absoluteFrame;
+            u64 computeTimelineValue = m_computeTimelineSemaphore->TimelineValue();
 
-                u64 timelineValues[]{graphicsTimelineValue, computeTimelineValue};
-                VkSemaphore semaphores[]{m_graphicsTimelineSemaphore->vkHandle, m_computeTimelineSemaphore->vkHandle};
+            u64 timelineValues[]{graphicsTimelineValue, computeTimelineValue};
+            VkSemaphore semaphores[]{m_graphicsTimelineSemaphore->vkHandle, m_computeTimelineSemaphore->vkHandle};
 
-                VkSemaphoreWaitInfo waitInfo{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};
-                waitInfo.semaphoreCount = 1; //for now just wait for the graphics
-                waitInfo.pSemaphores = semaphores;
-                waitInfo.pValues = timelineValues;
+            VkSemaphoreWaitInfo waitInfo{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};
+            waitInfo.semaphoreCount = 1; //for now just wait for the graphics
+            waitInfo.pSemaphores = semaphores;
+            waitInfo.pValues = timelineValues;
 
-                vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
-            }
-            //If any shader needs to be reloaded, must be done after the GPU finish its current workload, hence the semaphore
-            ReloadPendingShaders();
+            vkWaitSemaphores(m_device, &waitInfo, ~0ull); //wait infinite
+        }
+        //If any shader needs to be reloaded, must be done after the GPU finish its current workload, hence the semaphore
+        ReloadPendingShaders();
 
-            ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
-            //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
+        ////Fences are used to ensure that the GPU has stopped using resources for a given frame. This force the CPU to wait for the GPU to finish using the resources
+        //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
-            VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX,
-                                                    *frame.ImageAvailableSemaphore,
-                                                    VK_NULL_HANDLE, &frameData.frameIndex);
+        VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX,
+                                                *frame.ImageAvailableSemaphore,
+                                                VK_NULL_HANDLE, &frameData.frameIndex);
 
-            frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
+        frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
 
-            if (result == VK_ERROR_OUT_OF_DATE_KHR)
-            {
-                RecreateSwapChain();
-                return;
-            }
-            else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-            {
-                LOG_ERROR("failed to acquire swap chain image!");
-            }
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapChain();
+            return;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
+            LOG_ERROR("failed to acquire swap chain image!");
+        }
 
-            vkResetFences(m_device, 1, &frame.InFlightFence);
+        vkResetFences(m_device, 1, &frame.InFlightFence);
 
-            frame.CommandBuffer->Reset();
-            frame.ComputeCommandBuffer->Reset();
+        frame.CommandBuffer->Reset();
+        frame.ComputeCommandBuffer->Reset();
 
-            PROFILER_ZONE("Render Frame", 0xffffff);
-                frame.CommandBuffer->BeginCommands();
-
-
-                frame.ComputeCommandBuffer->BeginCommands();
-
-                frameData.frame = &m_Frames[m_currentFrameIndex];
-                frameData.currentCommand = frame.CommandBuffer;
-                frameData.graphics = this;
-
-                frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
-
-                frameGraph->RenderFrame(frameData);
-
-                //PRESENT LOGIC
-
-                frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
-                                                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-                frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
-                                                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-                frameData.currentCommand->Blit(frameData.activeRenderTarget,
-                                               m_currentSwapchain.textures[frameData.frameIndex],
-                                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-                frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
-                                                                  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-                //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
-                frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
-
-                frame.CommandBuffer->EndCommands();
-
-                frame.ComputeCommandBuffer->EndCommands();
-
-                auto computeCommands = frame.ComputeCommandBuffer;
-                frameData.computeCommandsToSubmit.push_back(computeCommands.get());
+        PROFILER_ZONE("Render Frame", 0xffffff);
+        frame.CommandBuffer->BeginCommands();
 
 
-            PROFILER_ZONE_END()
-            PROFILE_GPU_COLLECT(m_gpuProfiler, frame.CommandBuffer->vkHandle);
-            SubmitComputeWork(frameData);
-            SubmitFrame(frameData);
+        frame.ComputeCommandBuffer->BeginCommands();
 
-            EndDrawFrame();
+        frameData.frame = &m_Frames[m_currentFrameIndex];
+        frameData.currentCommand = frame.CommandBuffer;
+        frameData.graphics = this;
+
+        frameData.commandsToSubmit.push_back(frame.CommandBuffer->vkHandle);
+
+        frameGraph->RenderFrame(frameData);
+
+        //PRESENT LOGIC
+
+        frameData.currentCommand->TransitionTextureLayout(frameData.activeRenderTarget,
+                                                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
+                                                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        frameData.currentCommand->Blit(frameData.activeRenderTarget,
+                                       m_currentSwapchain.textures[frameData.frameIndex],
+                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        frameData.currentCommand->TransitionTextureLayout(m_currentSwapchain.textures[frameData.frameIndex],
+                                                          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+        //TODO: Ideally we shouldn't have to set the texture usage manually, a solution would be to move the transition image layout logic directly
+        frameGraph->SetTextureUsage(frameData.activeRenderTarget->Handle(), COPY_SOURCE);
+
+        frame.CommandBuffer->EndCommands();
+
+        frame.ComputeCommandBuffer->EndCommands();
+
+        auto computeCommands = frame.ComputeCommandBuffer;
+        frameData.computeCommandsToSubmit.push_back(computeCommands.get());
+
+
+        PROFILER_ZONE_END()
+        PROFILE_GPU_COLLECT(m_gpuProfiler, frame.CommandBuffer->vkHandle);
+        SubmitComputeWork(frameData);
+        SubmitFrame(frameData);
+
+        EndDrawFrame();
         PROFILER_ZONE_END()
     }
 
@@ -541,69 +541,9 @@ namespace Pudu
         vkQueueSubmit2(m_computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
-    void PuduGraphics::InitDefaultResources()
+    void PuduGraphics::InitDefaultCube()
     {
-        //Default Meshes
-        {
-            MeshCreationData defaultQuadMeshData;
-            defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
-            VertexAttributeStream quadPositionStream;
-            quadPositionStream.Count = 4;
-            quadPositionStream.Stride = sizeof(vec3);
-            vec3* positions = new vec3[]{
-                {-.5f, 0, -0.5f},
-                {0.5f, 0, -0.5f},
-                {-.5f, 0, 0.5f},
-                {0.5f, 0, 0.5f}
-            };
-            quadPositionStream.Data = positions;
-            quadPositionStream.Attribute.type = VertexAttributeType::POSITION;
-            quadPositionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-
-            VertexAttributeStream quadColorStream;
-            quadColorStream.Count = 4;
-            quadColorStream.Stride = sizeof(vec3);
-            vec3* colors = new vec3[]{
-                {1, 1, 1},
-                {1, 1, 1},
-                {1, 1, 1},
-                {1, 1, 1}
-            };
-            quadColorStream.Data = colors;
-            quadColorStream.Attribute.type = VertexAttributeType::COLOR;
-            quadColorStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-
-            VertexAttributeStream uvStream;
-            uvStream.Count = 4;
-            uvStream.Stride = sizeof(vec2);
-            vec2* uvs = new vec2[]{
-                {0, 0},
-                {1, 0},
-                {0, 1},
-                {1, 1}
-            };
-            uvStream.Data = uvs;
-            uvStream.Attribute.type = VertexAttributeType::TEXCOORD0;
-
-            VertexAttributeStream normalStream;
-            normalStream.Count = 4;
-            normalStream.Stride = sizeof(vec3);
-            vec3* normals = new vec3[]{
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0},
-                {0, 1, 0}
-            };
-            normalStream.Data = normals;
-            normalStream.Attribute.type = VertexAttributeType::NORMAL;
-
-            defaultQuadMeshData.VertexAttributeStreams = {quadPositionStream, quadColorStream, uvStream, normalStream};
-
-            defaultQuadMeshData.Name = "DefaultQuad";
-
-            m_defaultQuad = CreateMesh(defaultQuadMeshData);
-
-            // Create default cube mesh
+             // Create default cube mesh
             MeshCreationData defaultCubeMeshData;
             defaultCubeMeshData.Indices = {
                 0, 1, 2, 2, 3, 0, // front
@@ -617,11 +557,9 @@ namespace Pudu
             // Get vertex count
             const uint32_t vertexCount = 24;
 
-            // Position stream
-            VertexAttributeStream cubePositionStream;
-            cubePositionStream.Count = vertexCount;
-            cubePositionStream.Stride = sizeof(vec3);
-            vec3* cubePositions = new vec3[]{
+            auto cubeAttributes = MeshAttributes::Create();
+
+            vec3 cubePositions[] = {
                 {-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}, // Front
                 {-0.5f, -0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, // Back
                 {0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, // Right
@@ -629,28 +567,14 @@ namespace Pudu
                 {-0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, -0.5f}, // Top
                 {-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}, {-0.5f, -0.5f, 0.5f} // Bottom
             };
-            cubePositionStream.Data = cubePositions;
-            cubePositionStream.Attribute.type = VertexAttributeType::POSITION;
-            cubePositionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
 
-            // Color stream
-            VertexAttributeStream cubeColorStream;
-            cubeColorStream.Count = vertexCount;
-            cubeColorStream.Stride = sizeof(vec3);
-            vec3* cubeColors = new vec3[vertexCount];
+            vec3 cubeColors[vertexCount];
             for (int i = 0; i < vertexCount; i++)
             {
                 cubeColors[i] = {1, 1, 1};
             }
-            cubeColorStream.Data = cubeColors;
-            cubeColorStream.Attribute.type = VertexAttributeType::COLOR;
-            cubeColorStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
 
-            // UV stream
-            VertexAttributeStream cubeUvStream;
-            cubeUvStream.Count = vertexCount;
-            cubeUvStream.Stride = sizeof(vec2);
-            vec2* cubeUVs = new vec2[]{
+            vec2 cubeUVs[] = {
                 {0, 0}, {1, 0}, {1, 1}, {0, 1}, // Front
                 {1, 0}, {1, 1}, {0, 1}, {0, 0}, // Back
                 {0, 0}, {0, 1}, {1, 1}, {1, 0}, // Right
@@ -658,15 +582,8 @@ namespace Pudu
                 {0, 1}, {0, 0}, {1, 0}, {1, 1}, // Top
                 {0, 0}, {1, 0}, {1, 1}, {0, 1} // Bottom
             };
-            cubeUvStream.Data = cubeUVs;
-            cubeUvStream.Attribute.type = VertexAttributeType::TEXCOORD0;
-            cubeUvStream.Attribute.format = ChannelFormat::R32G32_SFLOAT;
 
-            // Normal stream
-            VertexAttributeStream cubeNormalStream;
-            cubeNormalStream.Count = vertexCount;
-            cubeNormalStream.Stride = sizeof(vec3);
-            vec3* cubeNormals = new vec3[]{
+            vec3 cubeNormals[] = {
                 {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, // Front
                 {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, // Back
                 {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, // Right
@@ -674,15 +591,8 @@ namespace Pudu
                 {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, // Top
                 {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0} // Bottom
             };
-            cubeNormalStream.Data = cubeNormals;
-            cubeNormalStream.Attribute.type = VertexAttributeType::NORMAL;
-            cubeNormalStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
 
-            // Tangent stream
-            VertexAttributeStream cubeTangentStream;
-            cubeTangentStream.Count = vertexCount;
-            cubeTangentStream.Stride = sizeof(vec4);
-            vec4* cubeTangents = new vec4[]{
+            vec4 cubeTangents[] = {
                 {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, // Front
                 {-1, 0, 0, 1}, {-1, 0, 0, 1}, {-1, 0, 0, 1}, {-1, 0, 0, 1}, // Back
                 {0, 0, 1, 1}, {0, 0, 1, 1}, {0, 0, 1, 1}, {0, 0, 1, 1}, // Right
@@ -690,115 +600,172 @@ namespace Pudu
                 {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, // Top
                 {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1}, {1, 0, 0, 1} // Bottom
             };
-            cubeTangentStream.Data = cubeTangents;
-            cubeTangentStream.Attribute.type = VertexAttributeType::TANGENT;
-            cubeTangentStream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
 
-            defaultCubeMeshData.VertexAttributeStreams = {
-                cubePositionStream, cubeColorStream, cubeUvStream, cubeNormalStream, cubeTangentStream
-            };
+            cubeAttributes->CreateAttribute({VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT},
+                                            vertexCount);
+            cubeAttributes->SetAttributeData(VertexAttributeType::POSITION, cubePositions);
 
+            cubeAttributes->CreateAttribute({VertexAttributeType::COLOR, ChannelFormat::R32G32B32_SFLOAT}, vertexCount);
+            cubeAttributes->SetAttributeData(VertexAttributeType::COLOR, cubeColors);
+
+            cubeAttributes->CreateAttribute({VertexAttributeType::TEXCOORD0, ChannelFormat::R32G32_SFLOAT},
+                                            vertexCount);
+            cubeAttributes->SetAttributeData(VertexAttributeType::TEXCOORD0, cubeUVs);
+
+            cubeAttributes->CreateAttribute({VertexAttributeType::NORMAL, ChannelFormat::R32G32B32_SFLOAT},
+                                            vertexCount);
+            cubeAttributes->SetAttributeData(VertexAttributeType::NORMAL, cubeNormals);
+
+            cubeAttributes->CreateAttribute({VertexAttributeType::TANGENT, ChannelFormat::R32G32B32A32_SFLOAT},
+                                            vertexCount);
+            cubeAttributes->SetAttributeData(VertexAttributeType::TANGENT, cubeTangents);
+
+
+            defaultCubeMeshData.MeshAttributes = cubeAttributes;
             defaultCubeMeshData.Name = "DefaultCube";
             m_defaultCube = CreateMesh(defaultCubeMeshData);
+    }
 
-            // Create default sphere mesh
-            MeshCreationData defaultSphereMeshData;
-            const float sphereRings = 32.;
-            const float sphereSegments = 32.;
-            const float sphereRadius = 0.5f;
+    void PuduGraphics::InitDefaultQuad()
+    {
+        MeshCreationData defaultQuadMeshData;
+        defaultQuadMeshData.Indices = {0, 2, 1, 1, 2, 3};
 
-            VertexAttributeStream spherePositionStream;
-            VertexAttributeStream sphereColorStream;
-            VertexAttributeStream sphereUVStream;
-            VertexAttributeStream sphereNormalStream;
-            VertexAttributeStream sphereTangentStream;
+        vec3 positions[] = {
+            {-.5f, 0, -0.5f},
+            {0.5f, 0, -0.5f},
+            {-.5f, 0, 0.5f},
+            {0.5f, 0, 0.5f}
+        };
+        vec3 colors[] = {
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+        };
+        vec2 uvs[] = {
+            {0, 0},
+            {1, 0},
+            {0, 1},
+            {1, 1}
+        };
 
-            u32 sphereVertexCount = (sphereRings + 1) * (sphereSegments + 1);
+        vec3 normals[] = {
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+        };
 
-            spherePositionStream.Count = sphereVertexCount;
-            sphereColorStream.Count = sphereVertexCount;
-            sphereUVStream.Count = sphereVertexCount;
-            sphereNormalStream.Count = sphereVertexCount;
-            sphereTangentStream.Count = sphereVertexCount;
+        auto quadAttributes = MeshAttributes::Create();
+        quadAttributes->CreateAttribute({VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT}, 4);
+        quadAttributes->SetAttributeData(VertexAttributeType::POSITION, positions);
 
-            spherePositionStream.Stride = sizeof(vec3);
-            sphereColorStream.Stride = sizeof(vec3);
-            sphereUVStream.Stride = sizeof(vec2);
-            sphereNormalStream.Stride = sizeof(vec3);
-            sphereTangentStream.Stride = sizeof(vec4);
+        quadAttributes->CreateAttribute({VertexAttributeType::COLOR, ChannelFormat::R32G32B32_SFLOAT}, 4);
+        quadAttributes->SetAttributeData(VertexAttributeType::COLOR, colors);
 
-            spherePositionStream.Attribute.type = VertexAttributeType::POSITION;
-            spherePositionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+        quadAttributes->CreateAttribute({VertexAttributeType::TEXCOORD0, ChannelFormat::R32G32_SFLOAT}, 4);
+        quadAttributes->SetAttributeData(VertexAttributeType::TEXCOORD0, uvs);
 
-            sphereColorStream.Attribute.type = VertexAttributeType::COLOR;
-            sphereColorStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+        quadAttributes->CreateAttribute({VertexAttributeType::NORMAL, ChannelFormat::R32G32B32_SFLOAT}, 4);
+        quadAttributes->SetAttributeData(VertexAttributeType::NORMAL, normals);
 
-            sphereUVStream.Attribute.type = VertexAttributeType::TEXCOORD0;
-            sphereUVStream.Attribute.format = ChannelFormat::R32G32_SFLOAT;
+        defaultQuadMeshData.MeshAttributes = quadAttributes;
+        defaultQuadMeshData.Name = "DefaultQuad";
 
-            sphereNormalStream.Attribute.type = VertexAttributeType::NORMAL;
-            sphereNormalStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
+        m_defaultQuad = CreateMesh(defaultQuadMeshData);
+    }
 
-            sphereTangentStream.Attribute.type = VertexAttributeType::TANGENT;
-            sphereTangentStream.Attribute.format = ChannelFormat::R32G32B32A32_SFLOAT;
+    void PuduGraphics::InitDefaultSphere()
+    {
+        // Create default sphere mesh
+        MeshCreationData defaultSphereMeshData;
+        const float sphereRings = 32.;
+        const float sphereSegments = 32.;
+        const float sphereRadius = 0.5f;
 
-            auto spherePositions = new vec3[sphereVertexCount];
-            auto sphereColors = new vec3[sphereVertexCount];
-            auto sphereUVs = new vec2[sphereVertexCount];
-            auto sphereNormals = new vec3[sphereVertexCount];
-            auto sphereTangents = new vec4[sphereVertexCount];
+        constexpr u32 sphereVertexCount = (sphereRings + 1) * (sphereSegments + 1);
 
-            spherePositionStream.Data = spherePositions;
-            sphereColorStream.Data = sphereColors;
-            sphereUVStream.Data = sphereUVs;
-            sphereNormalStream.Data = sphereNormals;
-            sphereTangentStream.Data = sphereTangents;
+        auto sphereAttributes = MeshAttributes::Create();
+        sphereAttributes->CreateAttribute({VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT},
+                                          sphereVertexCount);
+        sphereAttributes->CreateAttribute({VertexAttributeType::COLOR, ChannelFormat::R32G32B32_SFLOAT},
+                                          sphereVertexCount);
+        sphereAttributes->CreateAttribute({VertexAttributeType::TEXCOORD0, ChannelFormat::R32G32_SFLOAT},
+                                          sphereVertexCount);
+        sphereAttributes->CreateAttribute({VertexAttributeType::NORMAL, ChannelFormat::R32G32B32_SFLOAT},
+                                          sphereVertexCount);
+        sphereAttributes->CreateAttribute({VertexAttributeType::TANGENT, ChannelFormat::R32G32B32A32_SFLOAT},
+                                          sphereVertexCount);
 
-            defaultSphereMeshData.VertexAttributeStreams =
-                {spherePositionStream, sphereColorStream, sphereUVStream, sphereNormalStream, sphereTangentStream};
+        vec3 spherePositions[sphereVertexCount];
+        vec3 sphereColors[sphereVertexCount];
+        vec2 sphereUVs[sphereVertexCount];
+        vec3 sphereNormals[sphereVertexCount];
+        vec4 sphereTangents[sphereVertexCount];
 
-            u32 sphereVertexIndex = 0;
-            for (int ring = 0; ring <= sphereRings; ring++)
+        u32 sphereVertexIndex = 0;
+        for (int ring = 0; ring <= sphereRings; ring++)
+        {
+            float theta = glm::pi<float>() * ring / sphereRings;
+            for (int segment = 0; segment <= sphereSegments; segment++)
             {
-                float theta = glm::pi<float>() * ring / sphereRings;
-                for (int segment = 0; segment <= sphereSegments; segment++)
-                {
-                    float phi = 2.0f * glm::pi<float>() * segment / sphereSegments;
+                float phi = 2.0f * glm::pi<float>() * segment / sphereSegments;
 
-                    float x = sphereRadius * sin(theta) * cos(phi);
-                    float y = sphereRadius * cos(theta);
-                    float z = sphereRadius * sin(theta) * sin(phi);
+                float x = sphereRadius * sin(theta) * cos(phi);
+                float y = sphereRadius * cos(theta);
+                float z = sphereRadius * sin(theta) * sin(phi);
 
-                    spherePositions[sphereVertexIndex] = vec3(x, y, z);
-                    sphereColors[sphereVertexIndex] = vec3(1, 1, 1);
-                    sphereUVs[sphereVertexIndex] = vec2(segment / sphereSegments, ring / sphereRings);
-                    sphereNormals[sphereVertexIndex] = normalize(vec3(x, y, z));
-                    sphereTangents[sphereVertexIndex] = vec4(cos(phi), 0, -sin(phi), 1);
+                spherePositions[sphereVertexIndex] = vec3(x, y, z);
+                sphereColors[sphereVertexIndex] = vec3(1, 1, 1);
+                sphereUVs[sphereVertexIndex] = vec2(segment / sphereSegments, ring / sphereRings);
+                sphereNormals[sphereVertexIndex] = normalize(vec3(x, y, z));
+                sphereTangents[sphereVertexIndex] = vec4(cos(phi), 0, -sin(phi), 1);
 
-                    sphereVertexIndex++;
-                }
+                sphereVertexIndex++;
             }
+        }
 
-            // Generate indices
-            for (int ring = 0; ring < sphereRings; ring++)
+        sphereAttributes->SetAttributeData(VertexAttributeType::POSITION, spherePositions);
+        sphereAttributes->SetAttributeData(VertexAttributeType::COLOR, sphereColors);
+        sphereAttributes->SetAttributeData(VertexAttributeType::TEXCOORD0, sphereUVs);
+        sphereAttributes->SetAttributeData(VertexAttributeType::NORMAL, sphereNormals);
+        sphereAttributes->SetAttributeData(VertexAttributeType::TANGENT, sphereTangents);
+
+
+        // Generate indices
+        for (int ring = 0; ring < sphereRings; ring++)
+        {
+            for (int segment = 0; segment < sphereSegments; segment++)
             {
-                for (int segment = 0; segment < sphereSegments; segment++)
-                {
-                    int current = ring * (sphereSegments + 1) + segment;
-                    int next = current + sphereSegments + 1;
+                int current = ring * (sphereSegments + 1) + segment;
+                int next = current + sphereSegments + 1;
 
-                    defaultSphereMeshData.Indices.push_back(current);
-                    defaultSphereMeshData.Indices.push_back(current + 1);
-                    defaultSphereMeshData.Indices.push_back(next);
+                defaultSphereMeshData.Indices.push_back(current);
+                defaultSphereMeshData.Indices.push_back(current + 1);
+                defaultSphereMeshData.Indices.push_back(next);
 
-                    defaultSphereMeshData.Indices.push_back(current + 1);
-                    defaultSphereMeshData.Indices.push_back(next + 1);
-                    defaultSphereMeshData.Indices.push_back(next);
-                }
+                defaultSphereMeshData.Indices.push_back(current + 1);
+                defaultSphereMeshData.Indices.push_back(next + 1);
+                defaultSphereMeshData.Indices.push_back(next);
             }
+        }
 
-            defaultSphereMeshData.Name = "DefaultSphere";
-            m_defaultSphere = CreateMesh(defaultSphereMeshData);
+        defaultSphereMeshData.Name = "DefaultSphere";
+        defaultSphereMeshData.MeshAttributes = sphereAttributes;
+
+        m_defaultSphere = CreateMesh(defaultSphereMeshData);
+    }
+
+    void PuduGraphics::InitDefaultResources()
+    {
+        //Default Meshes
+        {
+            InitDefaultCube();
+
+            InitDefaultQuad();
+
+            InitDefaultSphere();
         }
 
         InitDefaultTextures();
@@ -1562,7 +1529,9 @@ namespace Pudu
                 deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
                 deviceFeatures.features.robustBufferAccess = VK_TRUE;
 
-                VkPhysicalDeviceRobustness2FeaturesEXT robustnessFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT};
+                VkPhysicalDeviceRobustness2FeaturesEXT robustnessFeatures{
+                    VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT
+                };
                 robustnessFeatures.nullDescriptor = VK_TRUE;
                 robustnessFeatures.robustBufferAccess2 = VK_TRUE;
 
@@ -1745,7 +1714,6 @@ namespace Pudu
             throw std::runtime_error("Failed to create window surface");
         }
     }
-
 
 
     void PuduGraphics::CreateSwapChain(Swapchain& swapchain)
@@ -2168,17 +2136,15 @@ namespace Pudu
 
         delete[] tan1;
 
-        tangentsStream.Data = tangentsData;
+        tangentsStream.Data = reinterpret_cast<byte*>(tangentsData);
         return tangentsStream;
     }
 
     SPtr<Mesh> PuduGraphics::CreateMesh(MeshCreationData const& data)
     {
-        auto streams = data.VertexAttributeStreams;
-
         auto indices = data.Indices;
         auto mesh = m_resources.AllocateMesh();
-        mesh->m_vertexAttributeStreams = streams;
+        mesh->m_attributes = data.MeshAttributes;
         mesh->m_indices = indices;
         mesh->name = data.Name;
         mesh->m_hasTangents = data.HasTangents;
@@ -2188,7 +2154,8 @@ namespace Pudu
 
     void PuduGraphics::AllocateMeshGPUData(Mesh* mesh)
     {
-        SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(mesh->m_indices[0]) * mesh->m_indices.size(), mesh->m_indices.data(),
+        SPtr<GraphicsBuffer> indexBuffer = CreateGraphicsBuffer(sizeof(mesh->m_indices[0]) * mesh->m_indices.size(),
+                                                                mesh->m_indices.data(),
                                                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                                                 VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
@@ -2196,10 +2163,13 @@ namespace Pudu
         mesh->m_indexBuffer = indexBuffer;
 
         std::vector<SPtr<GraphicsBuffer>> vertexAttributeStreamBuffers;
-        auto& streams =mesh->GetVertexAttributeStreams();
-        for (auto& stream : streams)
+        auto meshAttributes = mesh->GetVertexAttributeStreams();
+        for (Size i = 0; i < meshAttributes->GetAttributeCount(); i++)
         {
-            ASSERT(stream.Data != nullptr, "Vertex attribute stream data is null {} {}",mesh->GetName()->c_str(), ToString(stream.Attribute.type));
+            auto& stream = meshAttributes->GetAttributeStream(i);
+
+            ASSERT(stream.Data != nullptr, "Vertex attribute stream data is null {} {}", mesh->GetName()->c_str(),
+                   ToString(stream.Attribute.type));
 
             SPtr<GraphicsBuffer> streamBuffer = CreateGraphicsBuffer(stream.Stride * stream.Count, stream.Data,
                                                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -2213,37 +2183,26 @@ namespace Pudu
 
         if (!mesh->HasTangents())
         {
-            auto positionStream = std::ranges::find_if(streams,
-                                                       [](const auto& stream)
-                                                       {
-                                                           return stream.Attribute.type ==
-                                                               VertexAttributeType::POSITION;
-                                                       });
+            auto positionStream = meshAttributes->FindVertexAttributeStream(VertexAttributeType::POSITION);
 
-            auto uvStream = std::ranges::find_if(streams,
-                                                 [](const auto& stream)
-                                                 {
-                                                     return stream.Attribute.type == VertexAttributeType::TEXCOORD0;
-                                                 });
+            auto uvStream = meshAttributes->FindVertexAttributeStream(VertexAttributeType::TEXCOORD0);
 
-            auto normalStream = std::ranges::find_if(streams,
-                                                     [](const auto& stream)
-                                                     {
-                                                         return stream.Attribute.type == VertexAttributeType::NORMAL;
-                                                     });
+            auto normalStream =meshAttributes->FindVertexAttributeStream(VertexAttributeType::NORMAL);
 
-            if (positionStream != streams.end() &&
-                uvStream != streams.end() &&
-                normalStream != streams.end())
+            if (positionStream.has_value() &&
+                uvStream.has_value() &&
+                normalStream.has_value())
             {
-                auto tangentStream = GenerateTangents(*positionStream, *uvStream, *normalStream, mesh->m_indices);
+                auto tangentStream = GenerateTangents(*positionStream.value(), *uvStream.value(), *normalStream.value(), mesh->m_indices);
 
                 SPtr<GraphicsBuffer> tangentStreamBuffer = CreateGraphicsBuffer(
                     tangentStream.Stride * tangentStream.Count, tangentStream.Data,
                     VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
-                mesh->m_vertexAttributeStreams.push_back(tangentStream);
+
+               meshAttributes->PushVertexAttributeStream(tangentStream);
+
                 mesh->m_vertexAttributeStreamBuffers.push_back(tangentStreamBuffer);
 
                 mesh->m_hasTangents = true;

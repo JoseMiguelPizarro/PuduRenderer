@@ -20,35 +20,26 @@ namespace Pudu
     {
         m_material = gpu->Resources()->AllocateMaterial();
 
-        vec3* positions = new vec3[4]
+        auto meshAttributes = MeshAttributes::Create();
+
+        vec3 positions[] =
         {
             {-.5f, -.5f, 0.f}, {-.5f, .5f, .0f}, {.5f, .5f, .0f}, {.5f, -.5f, .0f}
         };
 
-        vec2* texCoords = new vec2[4]{{0, 0}, {0, 1.f}, {1.f, 1.f}, {1.f, 0.f}};
+        vec2 texCoords[] ={{0, 0}, {0, 1.f}, {1.f, 1.f}, {1.f, 0.f}};
 
-        VertexAttributeStream positionStream;
-        positionStream.Attribute.format = ChannelFormat::R32G32B32_SFLOAT;
-        positionStream.Attribute.type = VertexAttributeType::POSITION;
-        positionStream.Data = positions;
-        positionStream.Stride = sizeof(vec3);
-        positionStream.Count = 4;
+        meshAttributes->CreateAttribute({VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT}, 4);
+        meshAttributes->SetAttributeData(VertexAttributeType::POSITION, positions);
 
-        VertexAttributeStream texCoordStream;
-        texCoordStream.Attribute.format = ChannelFormat::R32G32_SFLOAT;
-        texCoordStream.Attribute.type = VertexAttributeType::TEXCOORD0;
-        texCoordStream.Count = 4;
-        texCoordStream.Stride = sizeof(vec2);
-        texCoordStream.Data = texCoords;
-
-        std::vector<VertexAttributeStream> attributesStream = { positionStream, texCoordStream};
+        meshAttributes->CreateAttribute({VertexAttributeType::TEXCOORD0, ChannelFormat::R32G32_SFLOAT}, 4);
+        meshAttributes->SetAttributeData(VertexAttributeType::TEXCOORD0, texCoords);
 
         MeshCreationData meshCreation = {
             .Name = "quad",
             .Indices = quadIndices,
+            .MeshAttributes = meshAttributes
         };
-
-        meshCreation.VertexAttributeStreams = attributesStream;
 
         m_quadMesh = gpu->CreateMesh(meshCreation);
 
