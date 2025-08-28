@@ -32,7 +32,7 @@ void Blender_HotReload::OnInit()
 
     m_scene = Scene(&Time);
     m_scene.camera = &m_camera;
-    TargetFPS = 30;
+    TargetFPS = 3000;
 
     m_puduRenderer.Init(&Graphics, this);
 
@@ -130,6 +130,10 @@ void Blender_HotReload::OnRun()
 void Blender_HotReload::DrawImGUI()
 {
     PuduApp::DrawImGUI();
+
+    ImGui::Text(std::format("FPS: {}", Time.GetFPS()).c_str());
+    ImGui::Text(std::format("Time: {}", Time.Time()).c_str());
+    ImGui::Text(std::format("DeltaTime: {}", Time.DeltaTime()).c_str());
 }
 }
 

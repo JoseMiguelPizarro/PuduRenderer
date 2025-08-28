@@ -37,7 +37,7 @@ namespace Pudu {
 		timePoint m_startTime;
 		timePoint m_endFrameTime;
 		timePoint m_startFrameTime;
-		float m_deltaTime;
+		float m_deltaTime = 0;
 	};
 }
 
