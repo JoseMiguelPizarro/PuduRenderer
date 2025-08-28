@@ -10,11 +10,14 @@ namespace Pudu
 {
     struct Swapchain
     {
-        VkImage images[4];
-        SPtr<RenderTexture> textures[4];
-        VkImageView imageViews[4];
+        VkImage images[k_MAX_SWAP_CHAIN_IMAGES];
+        SPtr<RenderTexture> textures[k_MAX_SWAP_CHAIN_IMAGES];
+        SPtr<Semaphore> renderCompleteSemaphores[k_MAX_SWAP_CHAIN_IMAGES];
+
+        VkImageView imageViews[k_MAX_SWAP_CHAIN_IMAGES];
         VkSwapchainKHR swapchainHandle;
         Size imageCount;
+
 
         VkImage GetImage(uint32_t index);
         VkImageView GetImageView(uint32_t index);

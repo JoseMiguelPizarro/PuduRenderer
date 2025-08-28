@@ -24,7 +24,8 @@ namespace Pudu
 
 	struct RenderFrameData
 	{
-		uint32_t frameIndex;
+		u32 frameIndex;
+		u32 swapChainIndex;
 		Frame* frame;
 		FrameGraph* frameGraph;
 		Scene* scene;
@@ -42,7 +43,7 @@ namespace Pudu
 		Camera* camera;
 		SPtr<GraphicsBuffer> lightingBuffer;
 		SPtr<Material> globalPropertiesMaterial;
-		uint32_t descriptorSetOffset;
+		u32 descriptorSetOffset;
 
 		bool areGlobalPropertiesBound = false;
 

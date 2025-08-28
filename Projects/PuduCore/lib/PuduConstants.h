@@ -3,6 +3,7 @@
 
 
 static const uint8_t K_MAX_IMAGE_OUTPUTS = 8;
+static const uint8_t k_MAX_SWAP_CHAIN_IMAGES = 4;
 // Maximum number of images/render_targets/fbo attachments usable. +1 if we count depth/stencil
 static const uint8_t K_MAX_DESCRIPTOR_SET_LAYOUTS = 8; // Maximum number of layouts in the pipeline.
 static const uint8_t K_MAX_SHADER_STAGES = 5;

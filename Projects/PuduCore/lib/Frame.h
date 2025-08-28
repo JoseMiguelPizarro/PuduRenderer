@@ -10,8 +10,7 @@ namespace Pudu
 		//TODO: ALLOCATE COMMANDS IN RESOURCE MANAGER AND USE POINTERS INSTEAD
 		SPtr<GPUCommands> CommandBuffer;
 		SPtr<GPUCommands> ComputeCommandBuffer;
-		SPtr<Semaphore> ImageAvailableSemaphore;
-		SPtr<Semaphore> RenderFinishedSemaphore;
+		SPtr<Semaphore> PresentSemaphore;
 		VkFence InFlightFence;
 	};
 }

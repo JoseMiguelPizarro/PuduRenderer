@@ -392,6 +392,8 @@ namespace Pudu
     {
         PROFILER_ZONE("Draw Frame", 0xffffff);
         auto frameGraph = frameData.frameGraph;
+
+        frameData.frameIndex = m_currentFrameIndex;
         Frame frame = m_Frames[m_currentFrameIndex];
 
         //don't wait the first frames
@@ -417,10 +419,10 @@ namespace Pudu
         //vkWaitForFences(m_device, 1, &frame.InFlightFence, VK_TRUE, UINT64_MAX);
 
         VkResult result = vkAcquireNextImageKHR(m_device, m_currentSwapchain.swapchainHandle, UINT64_MAX,
-                                                *frame.ImageAvailableSemaphore,
-                                                VK_NULL_HANDLE, &frameData.frameIndex);
+                                                *frame.PresentSemaphore,
+                                                VK_NULL_HANDLE, &frameData.swapChainIndex);
 
-        frameData.currentSwapChain = m_currentSwapchain.textures[frameData.frameIndex];
+        frameData.currentSwapChain = m_currentSwapchain.textures[frameData.swapChainIndex];
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -1191,10 +1193,6 @@ namespace Pudu
 
         VkSemaphoreSubmitInfo waitSemaphores[]{
             {
-                VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, *frame->ImageAvailableSemaphore, 0,
-                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0
-            },
-            {
                 VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle,
                 m_computeTimelineSemaphore->TimelineValue(), VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT, 0
             },
@@ -1202,11 +1200,15 @@ namespace Pudu
                 VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore->vkHandle,
                 m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0
             },
+            {
+                VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, *frame->PresentSemaphore, 0,
+                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0
+            },
         };
 
         VkSemaphoreSubmitInfo signalSemaphores[]{
             {
-                VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, *frame->RenderFinishedSemaphore, 0,
+                VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, *m_currentSwapchain.renderCompleteSemaphores[frameData.swapChainIndex], 0,
                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0
             },
             {
@@ -1227,9 +1229,6 @@ namespace Pudu
             commandSubmitInfos.push_back(commandInfo);
         }
 
-        VkSemaphore presentWaitSemaphores[]{
-            *frame->RenderFinishedSemaphore
-        };
 
         submitInfo.waitSemaphoreInfoCount = 3;
         submitInfo.pWaitSemaphoreInfos = waitSemaphores;
@@ -1248,6 +1247,11 @@ namespace Pudu
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
+
+        VkSemaphore presentWaitSemaphores[]{
+            *m_currentSwapchain.renderCompleteSemaphores[frameData.swapChainIndex]
+        };
+
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -1258,7 +1262,7 @@ namespace Pudu
         VkSwapchainKHR swapChains[] = {m_currentSwapchain.swapchainHandle};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &frameData.frameIndex;
+        presentInfo.pImageIndices = &frameData.swapChainIndex;
         presentInfo.pResults = nullptr; // Optional
 
 
@@ -3125,8 +3129,9 @@ namespace Pudu
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            m_Frames[i].ImageAvailableSemaphore = CreateSemaphoreSPtr(std::format("Image available {}", i).c_str());
-            m_Frames[i].RenderFinishedSemaphore = CreateSemaphoreSPtr(std::format("Render Finished {}", i).c_str());
+            m_Frames[i].PresentSemaphore = CreateSemaphoreSPtr(std::format("Image available {}", i).c_str());
+            m_currentSwapchain.renderCompleteSemaphores[i] = (CreateSemaphoreSPtr(std::format("Render Finished {}", i).c_str()));
+
             vkCreateFence(m_device, &fenceInfo, nullptr, &m_Frames[i].InFlightFence);
         }
 
