@@ -1191,6 +1191,12 @@ namespace Pudu
         VkSubmitInfo2 submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 
+        u64 graphicsWaitValue = 0;
+        if (m_absoluteFrame > MAX_FRAMES_IN_FLIGHT)
+        {
+            graphicsWaitValue = m_absoluteFrame - MAX_FRAMES_IN_FLIGHT - 1;
+        }
+
         VkSemaphoreSubmitInfo waitSemaphores[]{
             {
                 VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_computeTimelineSemaphore->vkHandle,
@@ -1198,7 +1204,7 @@ namespace Pudu
             },
             {
                 VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, m_graphicsTimelineSemaphore->vkHandle,
-                m_absoluteFrame - (MAX_FRAMES_IN_FLIGHT - 1), VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0
+                graphicsWaitValue, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0
             },
             {
                 VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO, nullptr, *frame->PresentSemaphore, 0,
