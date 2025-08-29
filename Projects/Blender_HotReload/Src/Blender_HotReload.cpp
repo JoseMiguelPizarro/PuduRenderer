@@ -32,7 +32,6 @@ void Blender_HotReload::OnInit()
 
     m_scene = Scene(&Time);
     m_scene.camera = &m_camera;
-    TargetFPS = 3000;
 
     m_puduRenderer.Init(&Graphics, this);
 
@@ -134,6 +133,97 @@ void Blender_HotReload::DrawImGUI()
     ImGui::Text(std::format("FPS: {}", Time.GetFPS()).c_str());
     ImGui::Text(std::format("Time: {}", Time.Time()).c_str());
     ImGui::Text(std::format("DeltaTime: {}", Time.DeltaTime()).c_str());
+
+        static bool postProcessingEnabled = true;
+    if (ImGui::Checkbox("Post Processing", &postProcessingEnabled))
+        m_puduRenderer.EnablePostProcessing(postProcessingEnabled);
+
+    static bool toneMappingEnabled = true;
+    if (ImGui::Checkbox("Tone Mapping", &toneMappingEnabled))
+    {
+        m_puduRenderer.EnableToneMapping(toneMappingEnabled);
+    }
+
+    static float exposure = 1.0f;
+    if (ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f))
+    {
+        m_puduRenderer.SetExposure(exposure);
+    }
+
+    ImGui::Text("Light");
+    vec3 forward = m_directionalLight.GetTransform().GetForward();
+    if (ImGui::InputFloat3("Light Direction", &forward[0]))
+    {
+        m_directionalLight.GetTransform().SetForward(normalize(forward), {0, 1, 0});
+    }
+
+    if (ImGui::SliderFloat("Light Distance", &m_lightDistance, 0.1f, 30.0f))
+    {
+        auto lightDirection = -m_directionalLight.GetTransform().GetForward();
+        m_directionalLight.GetTransform().SetLocalPosition({
+            lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance
+        });
+    }
+
+    static Renderer::Debug currentDebugMode = Renderer::Debug::None;
+    //None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive
+    const char* debugModeNames[] = {
+        "None", "Albedo", "Diffuse", "Normal", "Metallic", "Roughness", "Emissive", "LightSpecular", "LightDiffuse",
+        "ShadowAttenuation", "DirectLight", "Irradiance", "BRDFLUT"
+    };
+
+    if (ImGui::Combo("Debug Mode", reinterpret_cast<int*>(&currentDebugMode), debugModeNames,
+                     IM_ARRAYSIZE(debugModeNames)))
+    {
+        m_puduRenderer.SetDebugMode(currentDebugMode);
+    }
+
+    static vec3 F0 = {0.04f, 0.04f, 0.04f};
+    static vec3 F90 = {0.5f, 0.5f, 0.5f};
+    if (ImGui::InputFloat3("F0", &F0[0]))
+    {
+        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->
+                                 Materials[0];
+        modelMat->SetProperty("material.F0", F0);
+    }
+    if (ImGui::InputFloat3("F90", &F90[0]))
+    {
+        auto modelMat = m_model->GetChildByName<RenderEntity>("mesh_helmet_LP_13930damagedHelmet")->GetModel()->
+                                 Materials[0];
+        modelMat->SetProperty("material.F90", F90);
+    }
+
+    static float roughnessScale = 1.0f;
+    if (ImGui::SliderFloat("Roughness Scale", &roughnessScale, 0.0f, 10.0f))
+    {
+        m_puduRenderer.SetRoughnessScale(roughnessScale);
+    }
+
+    static float modelScale = 1.0f;
+    if (ImGui::SliderFloat("Model Scale", &modelScale, 0.0f, 20.0f))
+    {
+        m_model->GetTransform().SetUniformLocalScale(modelScale);
+        m_model->GetTransform().UpdateWorldTransformRecursivelly();
+    }
+
+    static float gamma = 2.2f;
+    if (ImGui::SliderFloat("Gamma", &gamma, 1.0f, 3.0f))
+    {
+        m_puduRenderer.SetGamma(gamma);
+    }
+
+    ImGui::Text("Shadows");
+    static float shadowBias;
+    static float shadowSlopeBias;
+    if (ImGui::SliderFloat("ShadowBias", &shadowBias, 0.0f, 10.f)
+        || ImGui::SliderFloat("ShadowSlopeBias", &shadowSlopeBias, 0.0f, 10.f))
+    {
+        m_puduRenderer.SetShadowBias(shadowSlopeBias, shadowBias);
+    }
+
+    ImGui::SliderFloat("FoV", &m_directionalLight.Projection.Fov, 0.0f, 100.f);
+    ImGui::SliderFloat("Near", &m_directionalLight.Projection.nearPlane, 0.0f, 100.f);
+    ImGui::SliderFloat("Far", &m_directionalLight.Projection.farPlane, 0.0f, 100.f);
 }
 }
 

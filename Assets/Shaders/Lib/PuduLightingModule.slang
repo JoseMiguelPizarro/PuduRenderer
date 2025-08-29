@@ -25,6 +25,7 @@ public struct SurfaceInfo {
     public float3 Albedo;
     public float3 Normal;
     public float3 ViewDir;
+    public float3 PosWS;
     public float3 SpecularColor = float3(1, 1, 1);
     public float3 F0 = float3(.2,.2,.2);
     public float3 F90 = float3(1,1,1);
@@ -315,7 +316,7 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
       float3 ld = normalize(LightDirection);
       float3 h = normalize(ld +  v);
       float NdotV = PBR.NdV;
-      float NdotL = clamp(dot(n, ld), 0.001, 1.0);
+      float NdotL = saturate(dot(n, ld));
       float NdotH = saturate(dot(n, h));
       float LdotH = saturate(dot(ld, h));
       float VdotH = saturate(dot(v, h));
@@ -326,12 +327,15 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
           PBR.NdH = NdotH;
           PBR.LdH = LdotH;
           PBR.VdH = VdotH;
+          PBR.F90 = float3(1,1,1);
+          PBR.F0 = float3(0,0,0);
           float3  F = F_Schlick(PBR,Surface);
           float G = G_SmithGGX(PBR);
           float D = D_GGX(PBR.NdH,Surface.Roughness);
 //float D = MicrofacetDistribution(PBR);
     float3 diffuseContrib =  (1 - F)*DiffuseBurley(PBR,Surface);
     float3 specContrib = F * G * D / max((4.0 * NdotL * NdotV),0.0001);
+
     color = NdotL * LightColor * (diffuseContrib + specContrib);
   }
   return color;
@@ -371,11 +375,21 @@ public float3 StandardSurface(SurfaceInfo Surface) {
 
     PBRInfo PBR = GetPBRInputs(Surface);
 
-    float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.);
-    float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.);
+    float3 specularColor = GetIBLRadianceContributionGGX(PBR,Surface,1.)*0.1;
+    float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.) * 0.1;
 
     let directionalLight = LIGHTING.lights.directionalLight;
-    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation;
+    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation * 0.;
+    for(int i = 0; i<1;i++)
+    {
+        let light = LIGHTING.lights.pointLight[i];
+        let lightPos = float3(5,5,5);
+        let lightColor = float3(100,0,0);
+        float lightDist = dot(Surface.PosWS, lightPos);
+        float attenuation =1/(lightDist * lightDist);
+        L+=CalculatePBRLightContribution(PBR,Surface, normalize(Surface.PosWS -lightPos),lightColor) * attenuation;
+    }
+
     float3 c = (specularColor + diffuseColor + L) + Surface.Emissive ;
 
     switch(DEBUG_SETTINGS.debugMode)

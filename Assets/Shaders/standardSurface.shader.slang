@@ -77,6 +77,7 @@ float4 fragmentMain(VSOut input)
     m.Albedo = albedo;
     m.SpecularColor = float3(1,1,1);
     m.Normal = normalWS;
+    m.PosWS = input.PosWS.xyz;
     m.Metallic = metallicRoughness.x;
     m.Roughness = metallicRoughness.y;
     m.ViewDir = viewDir;
