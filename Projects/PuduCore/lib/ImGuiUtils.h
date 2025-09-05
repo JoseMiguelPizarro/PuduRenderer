@@ -1,7 +1,7 @@
 #pragma once
 #include <ImGui/imgui.h>
 #include "Transform.h"
-#include "Entity.h"
+#include "Entities/Entity.h"
 #include "ShaderCompilation/ShaderLayout.h"
 #include "Shader.h"
 #include "glm/matrix.hpp"

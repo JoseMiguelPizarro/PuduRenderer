@@ -8,7 +8,7 @@
 #include "PuduGraphics.h"
 
 #include <MaterialCreationData.h>
-#include <EntityManager.h>
+#include <../lib/Entities/EntityManager.h>
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
@@ -113,6 +113,7 @@ namespace Pudu
                                                           fg::Expected<fastgltf::Asset>& gltfAsset)
     {
         std::vector<MeshCreationData> creationData;
+
 
         for (auto& mesh : gltfAsset->meshes)
         {

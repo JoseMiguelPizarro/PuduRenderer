@@ -1,6 +1,6 @@
 #include <FileManager.h>
 #include "CatDiorama.h"
-#include "EntityManager.h"
+#include "../../PuduCore/lib/Entities/EntityManager.h"
 #include "StringUtils.h"
 
 namespace fs = std::filesystem;

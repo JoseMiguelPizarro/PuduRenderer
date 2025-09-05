@@ -523,8 +523,9 @@ namespace Pudu
         lightBuffer.directionalLight.lightMatrix = frame.scene->directionalLight->GetLightMatrix();
         lightBuffer.directionalLight.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
         lightBuffer.directionalLight.lightColor = frame.scene->directionalLight->color;
-        lightBuffer.lightCount = 1;
-        lightBuffer.pointLight[0] = PointLightData{{3,3,3},{10,0,0,0},5,10};
+        lightBuffer.lightCount = 2;
+        lightBuffer.pointLight[0] = PointLightData{{10,3,10},{10,0,0,0},5,10};
+        lightBuffer.pointLight[1] = PointLightData{{-10,3,-10},{0,100,0,0},4,10};
 
 
 

@@ -1,4 +1,4 @@
-#include "RenderEntity.h"
+#include "Entities/RenderEntity.h"
 #include "Scene.h"
 
 namespace Pudu {

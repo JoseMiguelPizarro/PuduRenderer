@@ -1,14 +1,11 @@
 #pragma once
 #include <vector>
-#include "DrawCall.h"
 #include "PuduTime.h"
 #include "Camera.h"
-#include "Entity.h"
-#include "RenderEntity.h"
-#include "EntityManager.h"
-#include "Resources/Resources.h"
+#include "Entities/Entity.h"
+#include "Entities/RenderEntity.h"
+#include "Entities/EntityManager.h"
 #include "Lighting/Light.h"
-#include "RenderSettings.h"
 
 namespace Pudu {
 

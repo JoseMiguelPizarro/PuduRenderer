@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "MeshCreationData.h"
-#include "RenderEntity.h"
+#include "Entities/RenderEntity.h"
 
 namespace fs = std::filesystem;
 

@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
-#include <Transform.h>
+#include "Transform.h"
 #include <vector>
 #include <string>
-#include "Concepts.h"
-#include "PuduCore.h"
+#include "../Concepts.h"
+#include "../PuduCore.h"
 
 namespace Pudu {
 	class Scene;

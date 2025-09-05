@@ -3,7 +3,7 @@
 #include "Renderer.h"
 #include "FrameGraph/RenderPass.h"
 #include "Pipeline.h"
-#include "RenderEntity.h"
+#include "../lib/Entities/RenderEntity.h"
 
 namespace Pudu
 {

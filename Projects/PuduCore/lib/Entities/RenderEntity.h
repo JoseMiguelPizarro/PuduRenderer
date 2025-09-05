@@ -1,8 +1,8 @@
 #pragma once
 #include <memory>
 #include "Entity.h"
-#include "Model.h"
-#include "RenderSettings.h"
+#include "../Model.h"
+#include "../RenderSettings.h"
 
 namespace Pudu {
 	

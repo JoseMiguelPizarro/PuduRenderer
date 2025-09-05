@@ -801,7 +801,8 @@ namespace Pudu
         m_defaultStandardMaterial->SetProperty("material.albedoTex", m_defaultWhiteTexture);
         m_defaultStandardMaterial->SetProperty("material.metallicRoughnessTex", m_defaultMetallicRoughnessTexture);
         m_defaultStandardMaterial->SetProperty("material.heightTex", m_defaultBlackTexture);
-        m_defaultStandardMaterial->SetProperty("material.emissiveTex", m_defaultBlackTexture);
+        m_defaultStandardMaterial->SetProperty("material.F90", {0.04f, 0.04f, 0.04f});
+        m_defaultStandardMaterial->SetProperty("material.F90",  {0.5f, 0.5f, 0.5f});
     }
 
     void PuduGraphics::InitDefaultTextures()
