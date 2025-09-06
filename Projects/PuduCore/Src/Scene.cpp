@@ -16,6 +16,8 @@ namespace Pudu
 
         for (const auto& child : entity->GetChildren())
         {
+            ASSERT(child != nullptr, "Trying to add an Entity [{}] with a null child", entity->GetName());
+
             AddEntity(child);
         }
     }

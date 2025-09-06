@@ -25,7 +25,7 @@ namespace Pudu
         auto dir = dirLight->Direction();
         m_renderCamera.Transform.SetForward(dir, {0, 1, 0});
         m_renderCamera.Transform.SetLocalPosition(dirLight->GetTransform().GetLocalPosition());
-        auto& projection = renderData.scene->directionalLight->Projection;
+        auto projection = renderData.scene->directionalLight->GetProjection();
         projection.Width = shadowMap->width;
         projection.Height = shadowMap->height;
 

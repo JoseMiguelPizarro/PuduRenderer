@@ -380,14 +380,15 @@ public float3 StandardSurface(SurfaceInfo Surface) {
 
     let directionalLight = LIGHTING.lights.directionalLight;
     float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation * 0.;
-    for(int i = 0; i<1;i++)
+    for(int i = 0; i<LIGHTING.lights.lightCount.x; i++)
     {
         let light = LIGHTING.lights.pointLight[i];
-        let lightPos = float3(5,5,5);
-        let lightColor = float3(100,0,0);
+        let lightPos = light.positionAndRange.xyz;
+        let intensity = light.colorAndIntensity.w;
+        let lightColor = light.colorAndIntensity.rgb;
         float lightDist = dot(Surface.PosWS, lightPos);
         float attenuation =1/(lightDist * lightDist);
-        L+=CalculatePBRLightContribution(PBR,Surface, normalize(Surface.PosWS -lightPos),lightColor) * attenuation;
+        L+=CalculatePBRLightContribution(PBR,Surface, normalize(lightPos - Surface.PosWS),lightColor.rgb * intensity) * attenuation;
     }
 
     float3 c = (specularColor + diffuseColor + L) + Surface.Emissive ;

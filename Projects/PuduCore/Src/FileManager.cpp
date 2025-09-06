@@ -16,6 +16,8 @@
 #include <fastgltf/util.hpp>
 #include <fastgltf/glm_element_traits.hpp>
 
+#include "../lib/Entities/LightEntity.h"
+
 
 namespace fs = std::filesystem;
 namespace fg = fastgltf;
@@ -93,7 +95,7 @@ namespace Pudu
             fastgltf::Options::LoadExternalBuffers |
             fastgltf::Options::GenerateMeshIndices;
 
-        fastgltf::Parser parser;
+        fastgltf::Parser parser(fastgltf::Extensions::KHR_lights_punctual);
 
         auto gltfFile = fastgltf::MappedGltfFile::FromPath(pathAssetFolder);
 
@@ -102,8 +104,7 @@ namespace Pudu
 
         if (auto error = asset.error() != fastgltf::Error::None)
         {
-            Print(std::to_string(error).c_str());
-            LOG_ERROR("Invalid gltf asset");
+            LOG_ERROR("Invalid gltf asset Error: {}", std::to_string(error).c_str());
         }
 
         return asset;
@@ -149,7 +150,8 @@ namespace Pudu
                     if (strcmp(attribName, "POSITION") == 0)
                     {
                         attributeFound = true;
-                        auto& stream =  meshAttributes->CreateAttribute({VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT}, accessor.count);
+                        auto& stream = meshAttributes->CreateAttribute(
+                            {VertexAttributeType::POSITION, ChannelFormat::R32G32B32_SFLOAT}, accessor.count);
 
                         Size idx = 0;
 
@@ -186,7 +188,8 @@ namespace Pudu
                         });
                     }
 
-                    if (strcmp(attribName, "COLOR_0") == 0 || strcmp(attribName, "COLOR_1") == 0) //TODO: UP TO HOW MANY COLORS WE SHOULD SUPPORT? Blender starts from _1
+                    if (strcmp(attribName, "COLOR_0") == 0 || strcmp(attribName, "COLOR_1") == 0)
+                    //TODO: UP TO HOW MANY COLORS WE SHOULD SUPPORT? Blender starts from _1
                     {
                         attributeFound = true;
                         auto type = accessor.type;
@@ -304,6 +307,7 @@ namespace Pudu
 
         auto meshCreationData = GetGltfMeshCreationData(path, asset);
 
+
         std::vector<EntitySPtr> entities;
         std::unordered_map<fastgltf::Node*, EntitySPtr> parentEntitiesByNode;
 
@@ -316,6 +320,7 @@ namespace Pudu
 
             auto name = std::string(node.name);
             auto meshIndex = node.meshIndex;
+            auto lightIndex = node.lightIndex;
 
             EntitySPtr entity;
             bool shouldUpdateTransforms = false;
@@ -329,6 +334,21 @@ namespace Pudu
                 auto [layer] = renderEntity->GetRenderSettings();
                 layer = 0;
                 entity = renderEntity;
+            }
+            else if (node.lightIndex.has_value())
+            {
+                auto light = asset->lights[lightIndex.value()];
+                Light lightData =
+                {
+                    .range = light.range.value_or(10.0f),
+                    .intensity = light.intensity,
+                    .type =   static_cast<LightType>(light.type),
+                    .color = vec4{light.color.x(), light.color.y(), light.color.z(), 1.0f},
+                };
+
+                auto lightEntity = EntityManager::AllocateEntity<LightEntity>(name);
+                lightEntity->SetLightData(lightData);
+                entity = lightEntity;
             }
             //Node is a transform
             else

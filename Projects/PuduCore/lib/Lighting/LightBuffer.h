@@ -18,16 +18,14 @@ namespace Pudu
 
     struct PointLightData
     {
-        float3 lightPosition;
-        float4 lightColor;
-        float lightRadius;
-        float lightIntensity;
+        float4 positionAndRange;
+        float4 colorAndIntensity;
     };
 
     struct LightBuffer
     {
         DirectionalLightData directionalLight;
-        int lightCount;
+        int4 lightCount;
         PointLightData pointLight[64];
     };
 }

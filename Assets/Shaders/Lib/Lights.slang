@@ -11,18 +11,17 @@ public struct DirectionalLight
     public float4x4 shadowMatrix;
 };
 
+//TODO: FIX ALIGNMENT
 public struct PointLight
 {
-    public float3 lightPosition;
-    public float4 lightColor;
-    public float lightRadius;
-    public float lightIntensity;
+    public float4 positionAndRange;
+    public float4 colorAndIntensity;
 };
 
 public struct LightingBuffer
 {
     public DirectionalLight directionalLight;
-    public int lightCount;
+    public int4 lightCount;
     public PointLight[64] pointLight;
 };
 

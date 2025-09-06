@@ -84,9 +84,14 @@ namespace Pudu
         useEntryPointNameOption.name = slang::CompilerOptionName::VulkanUseEntryPointName;
         useEntryPointNameOption.value = {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr};
 
-        std::array<slang::CompilerOptionEntry, 1> options =
+        slang::CompilerOptionEntry forceScalarLayoutOption;
+        forceScalarLayoutOption.name = slang::CompilerOptionName::GLSLForceScalarLayout;
+        forceScalarLayoutOption.value = {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr};
+
+        std::array options =
         {
-            useEntryPointNameOption
+            useEntryPointNameOption,
+            forceScalarLayoutOption
         };
 
         sessionDesc.compilerOptionEntries = options.data();
@@ -184,7 +189,7 @@ namespace Pudu
         Slang::ComPtr<IBlob> diagnostics;
         IModule* module = m_session->loadModule(path.string().c_str(), diagnostics.writeRef());
 
-        PrintDiagnostics(diagnostics);
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         std::vector<IComponentType*> components = {};
 
@@ -194,21 +199,21 @@ namespace Pudu
         m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(),
                                                 diagnostics.writeRef());
 
-        PrintDiagnostics(diagnostics);
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         slang::ProgramLayout* layout = program->getLayout();
 
         Slang::ComPtr<IComponentType> linkedProgram;
         program->link(linkedProgram.writeRef(), diagnostics.writeRef());
 
-        PrintDiagnostics(diagnostics);
+       if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
         //Global
         ShaderCompilationObject compiledData;
         ShaderObjectLayoutBuilder layoutBuilder;
         layoutBuilder.m_globalSession = m_globalSession;
         layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
 
-        PrintDiagnostics(diagnostics);
+       if ( PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         return compiledData;
     }
@@ -227,6 +232,7 @@ namespace Pudu
 
 
         Slang::ComPtr<IComponentType> program;
+
         m_session->createCompositeComponentType(components.data(), components.size(), program.writeRef(),
                                                 diagnostics.writeRef());
 

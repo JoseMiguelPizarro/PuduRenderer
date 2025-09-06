@@ -522,12 +522,21 @@ namespace Pudu
         lightBuffer.directionalLight.lightDirection = {-frame.scene->directionalLight->Direction(), 0.0f};
         lightBuffer.directionalLight.lightMatrix = frame.scene->directionalLight->GetLightMatrix();
         lightBuffer.directionalLight.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
-        lightBuffer.directionalLight.lightColor = frame.scene->directionalLight->color;
-        lightBuffer.lightCount = 2;
-        lightBuffer.pointLight[0] = PointLightData{{10,3,10},{10,0,0,0},5,10};
-        lightBuffer.pointLight[1] = PointLightData{{-10,3,-10},{0,100,0,0},4,10};
+        lightBuffer.directionalLight.lightColor = frame.scene->directionalLight->GetColor();
 
-
+        static std::vector<SPtr<LightEntity>> lights;
+        lights.clear();
+        frame.scene->GetEntitiesOfType<LightEntity>(lights);
+        lightBuffer.lightCount.x = lights.size();
+        for (Size i = 0; i < lights.size(); i++)
+        {
+            auto& light = lights[i];
+            auto color = light->GetColor();
+            lightBuffer.pointLight[i] = PointLightData{
+                .positionAndRange =float4(light->GetTransform().GetLocalPosition(), light->GetLightData().range),
+                .colorAndIntensity =float4( color.x, color.y ,color.z, light->GetLightData().intensity),
+            };
+        }
 
         frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer),
                                                sizeof(LightBuffer));

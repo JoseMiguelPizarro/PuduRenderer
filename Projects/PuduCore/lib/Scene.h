@@ -2,10 +2,10 @@
 #include <vector>
 #include "PuduTime.h"
 #include "Camera.h"
+#include "Entities/LightEntity.h"
 #include "Entities/Entity.h"
 #include "Entities/RenderEntity.h"
 #include "Entities/EntityManager.h"
-#include "Lighting/Light.h"
 
 namespace Pudu {
 
@@ -22,7 +22,7 @@ namespace Pudu {
 		std::vector<RenderEntitySPtr> GetRenderEntities();
 		EntitySPtr sceneRoot;
 		PuduTime* time;
-		Light* directionalLight;
+		LightEntity* directionalLight;
 
 		Scene() {
 			sceneRoot = EntityManager::AllocateEntity();
@@ -34,6 +34,18 @@ namespace Pudu {
 		}
 
 		PuduTime* Time = nullptr;
+
+		template<EntityDerived T>
+		void GetEntitiesOfType(std::vector<SPtr<T>>& entities)
+		{
+			for ( auto& entity : m_entities)
+			{
+				if (auto e = std::dynamic_pointer_cast<T>(entity))
+				{
+					entities.push_back(e);
+				}
+			}
+		}
 
 	private:
 		friend class Entity;

@@ -11,7 +11,6 @@ namespace Pudu {
 		e->m_entitySPtr = e;
 		m_entities.push_back(e);
 
-
 		return e;
 	}
 
