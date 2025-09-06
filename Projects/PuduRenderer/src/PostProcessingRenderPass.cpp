@@ -49,7 +49,7 @@ namespace Pudu
         m_screenColor->width = gpu->WindowWidth;
         m_screenColor->height = gpu->WindowHeight;
         m_screenColor->depth = 1;
-        m_screenColor->format = VK_FORMAT_R8G8B8A8_UNORM;
+        m_screenColor->format = VK_FORMAT_R32G32B32A32_SFLOAT; //TODO: MAKE THIS SAME FORMAT AS CURRENT RENDER TARGET FORMAT
         m_screenColor->Create(gpu);
 
         m_postProcessingShader = gpu->CreateShader(m_shaderPath, "Postprocessing");

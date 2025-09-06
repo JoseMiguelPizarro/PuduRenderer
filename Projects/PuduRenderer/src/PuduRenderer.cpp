@@ -316,7 +316,7 @@ namespace Pudu
         colorRT->depth = 1;
         colorRT->width = graphics->WindowWidth;
         colorRT->height = graphics->WindowHeight;
-        colorRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+        colorRT->format = VK_FORMAT_R32G32B32A32_SFLOAT; //HDR!
         colorRT->name = "ForwardColor";
         colorRT->SetUsage(ResourceUsage::RENDER_TARGET);
 
@@ -331,7 +331,7 @@ namespace Pudu
         m_colorCopyRT->depth = 1;
         m_colorCopyRT->width = graphics->WindowWidth;
         m_colorCopyRT->height = graphics->WindowHeight;
-        m_colorCopyRT->format = VK_FORMAT_R8G8B8A8_UNORM;
+        m_colorCopyRT->format = colorRT->format;
         m_colorCopyRT->name = "ColorCopy";
 
         m_depthRenderPass = graphics->GetRenderPass<DepthPrepassRenderPass>();

@@ -311,32 +311,32 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
 
 float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 LightDirection, float3 LightColor)
 {
-      float3 n = Surface.Normal;
-      float3 v = PBR.ViewDir;
-      float3 ld = normalize(LightDirection);
-      float3 h = normalize(ld +  v);
-      float NdotV = PBR.NdV;
-      float NdotL = saturate(dot(n, ld));
-      float NdotH = saturate(dot(n, h));
-      float LdotH = saturate(dot(ld, h));
-      float VdotH = saturate(dot(v, h));
-      float3 color = float3(0);
+    float3 n = Surface.Normal;
+    float3 v = PBR.ViewDir;
+    float3 ld = normalize(LightDirection);
+    float3 h = normalize(ld +  v);
+    float NdotV = PBR.NdV;
+    float NdotL = saturate(dot(n, ld));
+    float NdotH = saturate(dot(n, h));
+    float LdotH = saturate(dot(ld, h));
+    float VdotH = saturate(dot(v, h));
+    float3 color = float3(0);
 
-        if (NdotL > 0.0 || NdotV > 0.0) {
-          PBR.NdL = NdotL;
-          PBR.NdH = NdotH;
-          PBR.LdH = LdotH;
-          PBR.VdH = VdotH;
-          PBR.F90 = float3(1,1,1);
-          PBR.F0 = float3(0,0,0);
-          float3  F = F_Schlick(PBR,Surface);
-          float G = G_SmithGGX(PBR);
-          float D = D_GGX(PBR.NdH,Surface.Roughness);
+    if (NdotL > 0.0 || NdotV > 0.0) {
+      PBR.NdL = NdotL;
+      PBR.NdH = NdotH;
+      PBR.LdH = LdotH;
+      PBR.VdH = VdotH;
+      PBR.F90 = float3(1,1,1);
+      PBR.F0 = float3(0,0,0);
+      float3  F = F_Schlick(PBR,Surface);
+      float G = G_SmithGGX(PBR);
+      float D = D_GGX(PBR.NdH,Surface.Roughness);
 //float D = MicrofacetDistribution(PBR);
-    float3 diffuseContrib =  (1 - F)*DiffuseBurley(PBR,Surface);
-    float3 specContrib = F * G * D / max((4.0 * NdotL * NdotV),0.0001);
+        float3 diffuseContrib =  (1. - F)*DiffuseBurley(PBR,Surface);
+        float3 specContrib = F * G * D / max((4.0 * NdotL * NdotV),0.0001);
 
-    color = NdotL * LightColor * (diffuseContrib + specContrib);
+        color = NdotL * LightColor * (diffuseContrib + specContrib);
   }
   return color;
 }
@@ -367,6 +367,10 @@ PBRInfo GetPBRInputs(SurfaceInfo Surface)
     return PBR;
 }
 
+public float DistanceAttenuation(float distance, float range){
+    return max( min( 1.0 - pow( distance / range ,4), 1 ), 0 ) / (distance * distance); //Based on GLTF recommended attenuation
+}
+
 public float3 StandardSurface(SurfaceInfo Surface) {
     Surface.Roughness *= DEBUG_SETTINGS.roughnessScale;
 
@@ -384,10 +388,11 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     {
         let light = LIGHTING.lights.pointLight[i];
         let lightPos = light.positionAndRange.xyz;
+        let lightRange = light.positionAndRange.w;
         let intensity = light.colorAndIntensity.w;
         let lightColor = light.colorAndIntensity.rgb;
-        float lightDist = dot(Surface.PosWS, lightPos);
-        float attenuation =1/(lightDist * lightDist);
+        float lightDist = distance(Surface.PosWS,lightPos);
+        float attenuation =DistanceAttenuation(lightDist, lightRange);
         L+=CalculatePBRLightContribution(PBR,Surface, normalize(lightPos - Surface.PosWS),lightColor.rgb * intensity) * attenuation;
     }
 
