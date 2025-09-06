@@ -1,1 +1,1 @@
-"C:\Program Files\Blender Foundation\Blender 4.4\Blender.exe" "test.blend" -b --python-expr "import bpy; bpy.ops.export_scene.gltf(filepath='testoutput.gltf',use_selection=False, export_apply=True)"
+"C:\Program Files\Blender Foundation\Blender 4.4\Blender.exe" "test.blend" -b --python-expr "import bpy; bpy.ops.export_scene.gltf(filepath='testoutput.gltf',use_selection=False, export_apply=True, export_lights=True)"
