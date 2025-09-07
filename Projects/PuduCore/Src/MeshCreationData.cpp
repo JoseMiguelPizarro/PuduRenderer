@@ -1,13 +1,18 @@
 ﻿#include "MeshCreationData.h"
-
 #include "Logger.h"
-
 
 namespace Pudu
 {
+    std::string VertexAttributeStream::GetName()
+    {
+        return std::format("AttributeStream_{}", ToString(Attribute.type));
+    }
+
     VertexAttributeStream& MeshAttributes::CreateAttribute(const VertexAttribute& attribute, Size count)
     {
-        ASSERT(m_attributeCount < K_MAX_VERTEX_ATTRIBUTES, "Reached max vertex attributes [{} won't be set].", ToString(attribute.type));
+        ASSERT(m_attributeCount < K_MAX_VERTEX_ATTRIBUTES, "Reached max vertex attributes [{} won't be set].",
+               ToString(attribute.type));
+        ASSERT(count > 0, "Trying to create attribute with count 0");
 
         for (auto& stream : m_vertexAttributeStream)
         {
@@ -22,14 +27,15 @@ namespace Pudu
         stream.Count = count;
         stream.Stride = GetChannelFormatSize(attribute.format);
 
-        stream.Data = new byte[count * GetChannelFormatSize(attribute.format)];
+        stream.Data = new byte[count * stream.Stride];
 
         return stream;
     }
 
     void MeshAttributes::PushVertexAttributeStream(VertexAttributeStream& stream)
     {
-        ASSERT(m_attributeCount < K_MAX_VERTEX_ATTRIBUTES, "Reached max vertex attributes [{} won't be set].", ToString(stream.Attribute.type));
+        ASSERT(m_attributeCount < K_MAX_VERTEX_ATTRIBUTES, "Reached max vertex attributes [{} won't be set].",
+               ToString(stream.Attribute.type));
 
         m_vertexAttributeStream[m_attributeCount++] = stream;
     }

@@ -55,7 +55,7 @@ float G_SmithGGXCorrelated(float NdL, float NdV, float AlphaRoughness) {
     float a2 = AlphaRoughness * AlphaRoughness;
     float GGXV = NdL * sqrt(NdV * NdV * (1.0 - a2) + a2);
     float GGXL = NdV * sqrt(NdL * NdL * (1.0 - a2) + a2);
-    return 0.5 / (GGXV + GGXL);
+    return 0.5 / max((GGXV + GGXL),0.01);
 }
 
 float G_SmithGGXCorrelatedFast(float NdL, float NdV, float roughness) {
@@ -87,9 +87,9 @@ float G_SmithGGX(PBRInfo PBR) {
   float NdV = PBR.NdV;
   float rSqr = PBR.alphaRoughness * PBR.alphaRoughness;
   float attenuationL = 2.0 * NdL /
-    (NdL + sqrt(rSqr + (1.0 - rSqr) * (NdL * NdL)));
+    max((NdL + sqrt(rSqr + (1.0 - rSqr) * (NdL * NdL))),0.01);
   float attenuationV = 2.0 * NdV /
-    (NdV + sqrt(rSqr + (1.0 - rSqr) * (NdV * NdV)));
+    max((NdV + sqrt(rSqr + (1.0 - rSqr) * (NdV * NdV))),0.01);
   return attenuationL * attenuationV;
 }
 
@@ -323,20 +323,18 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
     float3 color = float3(0);
 
     if (NdotL > 0.0 || NdotV > 0.0) {
-      PBR.NdL = NdotL;
-      PBR.NdH = NdotH;
-      PBR.LdH = LdotH;
-      PBR.VdH = VdotH;
-      PBR.F90 = float3(1,1,1);
-      PBR.F0 = float3(0,0,0);
-      float3  F = F_Schlick(PBR,Surface);
-      float G = G_SmithGGX(PBR);
-      float D = D_GGX(PBR.NdH,Surface.Roughness);
-//float D = MicrofacetDistribution(PBR);
+        PBR.NdL = NdotL;
+        PBR.NdH = NdotH;
+        PBR.LdH = LdotH;
+        PBR.VdH = VdotH;
+        Surface.F90 = float3(.04,.04,.04);
+        Surface.F0 = float3(0.1,0.1,0.1);
+        float3  F = F_Schlick(PBR,Surface);
+        float G = G_SmithGGXCorrelated(NdotL, NdotV, PBR.alphaRoughness);
+        float D = D_GGX(PBR.NdH,Surface.Roughness);
         float3 diffuseContrib =  (1. - F)*DiffuseBurley(PBR,Surface);
-        float3 specContrib = F * G * D / max((4.0 * NdotL * NdotV),0.0001);
-
-        color = NdotL * LightColor * (diffuseContrib + specContrib);
+        float3 specContrib = F* G* D/max(4*NdotL * NdotV, 0.1); //Clamped to 0.1 to prevent noise
+        color = NdotL * LightColor * (specContrib + diffuseContrib);
   }
   return color;
 }
@@ -439,6 +437,5 @@ public float3 StandardSurface(SurfaceInfo Surface) {
         default:
         break;
     }
-
     return c;
 }

@@ -20,6 +20,8 @@ namespace Pudu
         {
             return reinterpret_cast<T*>(Data);
         }
+
+        std::string GetName();
     };
 
     struct MeshAttributes

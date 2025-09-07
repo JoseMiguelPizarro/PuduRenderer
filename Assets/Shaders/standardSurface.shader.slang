@@ -26,7 +26,7 @@ VSOut vertexMain(VertexInput input)
     VSOut output = (VSOut)0.0;
     output.PosCS = mul(GetProjectionMatrix(), mul(GetViewMatrix(), mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
-    output.Color = float4(input.Color, 1.0);
+    output.Color =input.Color;
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = mul(UBO.model, float4(input.Normal, 0.));
     output.Tangent = mul(UBO.model,input.Tangent);
@@ -88,7 +88,5 @@ float4 fragmentMain(VSOut input)
 
     col.xyz = StandardSurface(m);
     col.a = 1;
-
-
     return col;
 }

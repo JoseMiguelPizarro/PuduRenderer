@@ -2185,7 +2185,7 @@ namespace Pudu
             SPtr<GraphicsBuffer> streamBuffer = CreateGraphicsBuffer(stream.Stride * stream.Count, stream.Data,
                                                                      VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                                                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+                                                                     VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, stream.GetName().c_str());
 
             vertexAttributeStreamBuffers.push_back(streamBuffer);
         }

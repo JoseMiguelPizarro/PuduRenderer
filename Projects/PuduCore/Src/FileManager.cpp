@@ -212,7 +212,7 @@ namespace Pudu
                             Size idx = 0;
                             fastgltf::iterateAccessor<vec4>(gltfAsset.get(), accessor, [&](vec4 v)
                             {
-                                memcpy(stream.Data + idx * sizeof(vec4), &v, sizeof(vec4));
+                                memcpy(stream.Data + idx * sizeof(vec4),&v , sizeof(vec4));
                                 idx++;
                             });
                         }
