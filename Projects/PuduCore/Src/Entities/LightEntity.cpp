@@ -42,6 +42,11 @@ namespace Pudu {
         return m_light.Projection;
     }
 
+    LightType LightEntity::GetLightType()
+    {
+        return m_light.type;
+    }
+
     void LightEntity::SetProjection(const Projection& projection)
     {
         m_light.Projection = projection;

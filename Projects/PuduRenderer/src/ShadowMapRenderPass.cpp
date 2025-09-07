@@ -16,16 +16,21 @@ namespace Pudu
 
     void ShadowMapRenderPass::PreRender(RenderFrameData& renderData)
     {
+        auto dirLight = renderData.directionalLight;
+        if (dirLight == nullptr)
+            return;
+
         RenderPass::PreRender(renderData);
 
         auto shadowMap = attachments.depthAttachments[0].resource;
 
         m_previousCamera = renderData.renderer->GetRenderCamera();
-        auto dirLight = renderData.scene->directionalLight;
+
+
         auto dir = dirLight->Direction();
         m_renderCamera.Transform.SetForward(dir, {0, 1, 0});
         m_renderCamera.Transform.SetLocalPosition(dirLight->GetTransform().GetLocalPosition());
-        auto projection = renderData.scene->directionalLight->GetProjection();
+        auto projection = renderData.directionalLight->GetProjection();
         projection.Width = shadowMap->width;
         projection.Height = shadowMap->height;
 
@@ -36,11 +41,17 @@ namespace Pudu
 
     void ShadowMapRenderPass::AfterRender(RenderFrameData& renderData)
     {
+        if (renderData.directionalLight == nullptr)
+            return;
+
         renderData.renderer->SetRenderCamera(m_previousCamera);
     }
 
     void ShadowMapRenderPass::Render(RenderFrameData& frameData)
     {
+        if (frameData.directionalLight != nullptr)
+            return;
+
         frameData.currentCommand->SetDepthBias(m_depthBiasSlope, m_depthConstantBias);
         RenderPass::Render(frameData);
     }

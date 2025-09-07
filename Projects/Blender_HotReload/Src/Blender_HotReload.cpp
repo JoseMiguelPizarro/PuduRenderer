@@ -38,16 +38,6 @@ void Blender_HotReload::OnInit()
     projection.nearPlane = 5;
     projection.farPlane = 20;
     projection.Fov = 10.;
-    m_directionalLight = EntityManager::AllocateEntity<LightEntity>();
-    m_directionalLight->SetProjection(projection);
-
-    m_directionalLight->GetTransform().SetForward({1.0f, -1, 1}, {0.0f, 1.0f, 0.0f});
-    vec3 lightDirection = -m_directionalLight->GetTransform().GetForward();
-
-    m_directionalLight->GetTransform().SetLocalPosition({
-        lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance
-    });
-    m_scene.directionalLight = m_directionalLight.get();
 
     TextureLoadSettings skyboxLoadSettings{};
     skyboxLoadSettings.bindless = false;
@@ -156,19 +146,6 @@ void Blender_HotReload::DrawImGUI()
     }
 
     ImGui::Text("Light");
-    vec3 forward = m_directionalLight->GetTransform().GetForward();
-    if (ImGui::InputFloat3("Light Direction", &forward[0]))
-    {
-        m_directionalLight->GetTransform().SetForward(normalize(forward), {0, 1, 0});
-    }
-
-    if (ImGui::SliderFloat("Light Distance", &m_lightDistance, 0.1f, 30.0f))
-    {
-        auto lightDirection = -m_directionalLight->GetTransform().GetForward();
-        m_directionalLight->GetTransform().SetLocalPosition({
-            lightDirection.x * m_lightDistance, lightDirection.y * m_lightDistance, lightDirection.z * m_lightDistance
-        });
-    }
 
     static Renderer::Debug currentDebugMode = Renderer::Debug::None;
     //None,Albedo,Diffuse,Normal, Metallic, Roughness, Emissive
@@ -226,11 +203,11 @@ void Blender_HotReload::DrawImGUI()
         m_puduRenderer.SetShadowBias(shadowSlopeBias, shadowBias);
     }
 
-    auto projection = m_directionalLight->GetProjection();
-    ImGui::SliderFloat("FoV", &projection.Fov, 0.0f, 100.f);
-    ImGui::SliderFloat("Near", &projection.nearPlane, 0.0f, 100.f);
-    ImGui::SliderFloat("Far", &projection.farPlane, 0.0f, 100.f);
-    m_directionalLight->SetProjection(projection);
+    // auto projection = m_directionalLight->GetProjection();
+    // ImGui::SliderFloat("FoV", &projection.Fov, 0.0f, 100.f);
+    // ImGui::SliderFloat("Near", &projection.nearPlane, 0.0f, 100.f);
+    // ImGui::SliderFloat("Far", &projection.farPlane, 0.0f, 100.f);
+    // m_directionalLight->SetProjection(projection);
 }
 }
 

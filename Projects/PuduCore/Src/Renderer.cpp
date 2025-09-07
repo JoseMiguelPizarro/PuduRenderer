@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <vector>
+#include <algorithm>
 #include "Renderer.h"
 #include "FrameGraph/RenderPass.h"
 #include "Pipeline.h"
@@ -101,6 +102,24 @@ namespace Pudu
 		renderData.frameGraph = &frameGraph;
 		renderData.graphics = graphics;
 		renderData.app = app;
+
+		static std::vector<SPtr<LightEntity>> lights;
+		lights.clear();
+		scene->GetEntitiesOfType<LightEntity>(lights);
+
+		for (auto& light : lights)
+		{
+			if (light->GetLightType() == LightType::Directional)
+			{
+				auto p = light->GetProjection();
+				p.Height = graphics->WindowHeight;
+				p.Width = graphics->WindowWidth;
+				p.projectionType = Projection::Ortographic;
+
+				renderData.directionalLight = light;
+				break;
+			}
+		}
 
 		PrepareDrawcalls(renderData);
 

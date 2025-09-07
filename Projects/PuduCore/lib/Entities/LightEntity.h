@@ -18,6 +18,7 @@ namespace Pudu
         float3 Direction();
         float4 GetColor();
         Projection GetProjection();
+        LightType GetLightType();
         void SetProjection(const Projection& projection);
 
     private:

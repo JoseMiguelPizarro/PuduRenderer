@@ -20,7 +20,6 @@ namespace Pudu
         Camera m_camera;
         Scene m_scene;
         PuduRenderer m_puduRenderer;
-        SPtr<LightEntity> m_directionalLight;
         float m_camRadius = 10;
         float m_lightDistance = 10;
         EntitySPtr m_model;

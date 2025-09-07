@@ -35,6 +35,7 @@ namespace Pudu
 		SPtr<RenderTexture> activeRenderTarget;
 		SPtr<RenderTexture> currentSwapChain;
 		SPtr<RenderPass> currentRenderPass;
+		SPtr<LightEntity> directionalLight;
 		DrawCall* currentDrawCall;
 		const Pipeline* currentPipeline;
 		PuduApp* app;

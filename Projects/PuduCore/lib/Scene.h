@@ -22,7 +22,6 @@ namespace Pudu {
 		std::vector<RenderEntitySPtr> GetRenderEntities();
 		EntitySPtr sceneRoot;
 		PuduTime* time;
-		LightEntity* directionalLight;
 
 		Scene() {
 			sceneRoot = EntityManager::AllocateEntity();

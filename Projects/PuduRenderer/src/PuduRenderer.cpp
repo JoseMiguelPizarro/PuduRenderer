@@ -519,23 +519,37 @@ namespace Pudu
     void PuduRenderer::UpdateLightingBuffer(RenderFrameData& frame) const
     {
         LightBuffer lightBuffer{};
-        lightBuffer.directionalLight.lightDirection = {-frame.scene->directionalLight->Direction(), 0.0f};
-        lightBuffer.directionalLight.lightMatrix = frame.scene->directionalLight->GetLightMatrix();
-        lightBuffer.directionalLight.shadowMatrix = frame.scene->directionalLight->GetShadowMatrix();
-        lightBuffer.directionalLight.lightColor = frame.scene->directionalLight->GetColor();
+        if (frame.directionalLight != nullptr)
+        {
+            lightBuffer.directionalLight.lightDirection =  {-frame.directionalLight->Direction(), 0.0f};
+            lightBuffer.directionalLight.lightMatrix = frame.directionalLight->GetLightMatrix();
+            lightBuffer.directionalLight.shadowMatrix = frame.directionalLight->GetShadowMatrix();
+            lightBuffer.directionalLight.lightColor = frame.directionalLight->GetColor();
+        }
+        else
+        {
+            lightBuffer.directionalLight.lightColor = {0.0f, 0.0f, 0.0f, 0.0f};
+            lightBuffer.directionalLight.lightDirection = {1.0f, 0.0f, 0.0f, 0.0f};
+            lightBuffer.directionalLight.lightMatrix = identity<float4x4>();
+            lightBuffer.directionalLight.shadowMatrix = identity<float4x4>();
+        }
 
         static std::vector<SPtr<LightEntity>> lights;
         lights.clear();
         frame.scene->GetEntitiesOfType<LightEntity>(lights);
         lightBuffer.lightCount.x = lights.size();
+        Size lightIndex  = 0;
         for (Size i = 0; i < lights.size(); i++)
         {
             auto& light = lights[i];
-            auto color = light->GetColor();
-            lightBuffer.pointLight[i] = PointLightData{
-                .positionAndRange =float4(light->GetTransform().GetLocalPosition(), light->GetLightData().range),
-                .colorAndIntensity =float4( color.x, color.y ,color.z, light->GetLightData().intensity),
-            };
+            if (light->GetLightType() == LightType::Point)
+            {
+                auto color = light->GetColor();
+                lightBuffer.pointLight[lightIndex++] = PointLightData{
+                    .positionAndRange = float4(light->GetTransform().GetLocalPosition(), light->GetLightData().range),
+                    .colorAndIntensity = float4(color.x, color.y, color.z, light->GetLightData().intensity),
+                };
+            }
         }
 
         frame.currentCommand->UploadBufferData(m_lightingBuffer.get(), reinterpret_cast<const byte*>(&lightBuffer),

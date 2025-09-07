@@ -327,8 +327,6 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
         PBR.NdH = NdotH;
         PBR.LdH = LdotH;
         PBR.VdH = VdotH;
-        Surface.F90 = float3(.04,.04,.04);
-        Surface.F0 = float3(0.1,0.1,0.1);
         float3  F = F_Schlick(PBR,Surface);
         float G = G_SmithGGXCorrelated(NdotL, NdotV, PBR.alphaRoughness);
         float D = D_GGX(PBR.NdH,Surface.Roughness);
@@ -338,7 +336,6 @@ float3 CalculatePBRLightContribution(PBRInfo PBR, SurfaceInfo Surface, float3 Li
   }
   return color;
 }
-
 
 PBRInfo GetPBRInputs(SurfaceInfo Surface)
 {
@@ -381,7 +378,7 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.) * 0.1;
 
     let directionalLight = LIGHTING.lights.directionalLight;
-    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation * 0.;
+    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(-directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation;
     for(int i = 0; i<LIGHTING.lights.lightCount.x; i++)
     {
         let light = LIGHTING.lights.pointLight[i];
