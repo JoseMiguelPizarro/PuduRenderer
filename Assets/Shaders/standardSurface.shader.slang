@@ -49,6 +49,7 @@ float4 fragmentMain(VSOut input)
 
     float shadow = saturate(FilterPCF(input.ShadowCoords, LIGHTING.shadowMap));
 
+
     float3 viewDir = GetViewDirection(input.PosWS.xyz);
     float3 tangent = normalize( input.Tangent.xyz);
     float3 normal = normalize(input.Normal.xyz);
@@ -88,5 +89,6 @@ float4 fragmentMain(VSOut input)
 
     col.xyz = StandardSurface(m);
     col.a = 1;
+
     return col;
 }

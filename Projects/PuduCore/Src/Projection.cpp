@@ -1,11 +1,17 @@
+#include <array>
+
 #include "Projection.h"
-#include "glm/matrix.hpp"
-#include <PuduMath.h>
+#include "Math/PuduMath.h"
 
 
 namespace Pudu
 {
-	glm::mat4 Projection::GetProjectionMatrix()
+	void Projection::GetFrustumPlanes(std::array<Plane, 6> planes)
+	{
+		
+	}
+
+	mat4 Projection::GetProjectionMatrix()
 	{
 		if (projectionType == Perspective)
 		{

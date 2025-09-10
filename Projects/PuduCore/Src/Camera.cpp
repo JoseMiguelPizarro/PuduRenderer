@@ -1,7 +1,7 @@
 ﻿#include "Camera.h"
 
 #include "glm/glm.hpp"
-#include "PuduMath.h"
+#include "../lib/Math/PuduMath.h"
 
 using namespace glm;
 

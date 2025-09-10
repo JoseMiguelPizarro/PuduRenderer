@@ -34,6 +34,7 @@ float FilterPCF(float4 sc, Sampler2DShadow shadowMap)
     int count = 0;
     int range = 1;
 
+
   for (int x = -range; x <= range; x++)
     {
         for (int y = -range; y <= range; y++)

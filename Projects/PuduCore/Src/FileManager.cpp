@@ -348,6 +348,7 @@ namespace Pudu
 
                 auto lightEntity = EntityManager::AllocateEntity<LightEntity>(name);
                 lightEntity->SetLightData(lightData);
+
                 entity = lightEntity;
             }
             //Node is a transform

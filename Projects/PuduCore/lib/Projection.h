@@ -1,5 +1,5 @@
 #pragma once
-#include "glm/matrix.hpp"
+#include "Math/Plane.h"
 
 namespace Pudu
 {
@@ -16,6 +16,9 @@ namespace Pudu
 		float nearPlane = 1;
 		float farPlane = 100;
 		ProjectionType projectionType = Perspective;
+
+
+		void GetFrustumPlanes(std::array<Plane,6> planes);
 
 		glm::mat4 GetProjectionMatrix();
 	};

@@ -1,6 +1,6 @@
 ﻿#include "Transform.h"
 #include <glm/ext/matrix_transform.hpp>
-#include "PuduMath.h"
+#include "../lib/Math/PuduMath.h"
 
 using namespace glm;
 

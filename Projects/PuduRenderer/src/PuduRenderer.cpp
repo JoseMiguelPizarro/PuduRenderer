@@ -521,6 +521,13 @@ namespace Pudu
         LightBuffer lightBuffer{};
         if (frame.directionalLight != nullptr)
         {
+            auto projection = frame.directionalLight->GetProjection();
+            projection.Width = 20;
+            projection.Height = 20;
+            projection.projectionType = Projection::Ortographic;
+            frame.directionalLight->SetProjection(projection);
+            frame.directionalLight->GetTransform().SetLocalPosition(frame.directionalLight->Direction() * -20.0f);
+
             lightBuffer.directionalLight.lightDirection =  {-frame.directionalLight->Direction(), 0.0f};
             lightBuffer.directionalLight.lightMatrix = frame.directionalLight->GetLightMatrix();
             lightBuffer.directionalLight.shadowMatrix = frame.directionalLight->GetShadowMatrix();

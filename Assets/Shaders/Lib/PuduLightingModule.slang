@@ -378,7 +378,7 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.) * 0.1;
 
     let directionalLight = LIGHTING.lights.directionalLight;
-    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(-directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation;
+    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation;
     for(int i = 0; i<LIGHTING.lights.lightCount.x; i++)
     {
         let light = LIGHTING.lights.pointLight[i];
@@ -434,5 +434,6 @@ public float3 StandardSurface(SurfaceInfo Surface) {
         default:
         break;
     }
+
     return c;
 }

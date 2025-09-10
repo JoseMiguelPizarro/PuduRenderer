@@ -3,7 +3,7 @@
 //
 
 #include "../../lib/Entities/LightEntity.h"
-#include "PuduMath.h"
+#include "../../lib/Math/PuduMath.h"
 
 namespace Pudu {
     Light& LightEntity::GetLightData()
