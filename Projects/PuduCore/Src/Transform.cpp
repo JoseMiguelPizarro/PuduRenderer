@@ -74,6 +74,14 @@ namespace Pudu {
 		m_localRotation = rotEuler;
 	}
 
+	void Transform::SetForward(vec3 forward)
+	{
+		quat rot = LookRotation(normalize(forward));
+
+		vec3 rotEuler = degrees(eulerAngles(rot));
+		m_localRotation = rotEuler;
+	}
+
 	vec3 Transform::GetForward()
 	{
 		return normalize(rotate(GetRotationQuat(), vec3(0, 0, 1)));

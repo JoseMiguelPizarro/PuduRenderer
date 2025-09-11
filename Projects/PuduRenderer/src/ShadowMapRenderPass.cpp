@@ -28,7 +28,7 @@ namespace Pudu
 
 
         auto dir = dirLight->Direction();
-        m_renderCamera.Transform.SetForward(dir, {0, 1, 0});
+        m_renderCamera.Transform.SetForward(dir);
         m_renderCamera.Transform.SetLocalPosition(dirLight->GetTransform().GetLocalPosition());
 
         auto projection = renderData.directionalLight->GetProjection();

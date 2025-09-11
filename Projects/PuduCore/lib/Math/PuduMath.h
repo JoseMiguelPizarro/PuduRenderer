@@ -88,8 +88,24 @@ namespace Pudu {
 			vec4(-dot(eyePosition,right_axis),-dot(eyePosition,up_axis),-dot(eyePosition,forward_axis),1.0f) };
 	}
 
+	//Build basis on single forward vector. Based on https://graphics.pixar.com/library/OrthonormalB/paper.pdf
+	static quat LookRotation(vec3 forward)
+	{
+			float sign = copysignf(1.0f, forward.z);
+			const float a = -1.0f / (sign + forward.z);
+			const float b = forward.x * forward.y * a;
+			vec3 b1 = vec3(1.0f + sign * forward.x * forward.x * a, sign * b, -sign * forward.x);
+			vec3 b2 = vec3(b, sign + forward.y * forward.y * a, -forward.y);
+
+		return quat(mat3(b1,b2,forward));
+	}
+
 	static quat LookRotation(vec3 forward, vec3 up)
 	{
+		if (dot(forward, up) > 0.999f)
+		{
+			return LookRotation(forward);
+		}
 		vec3 right = normalize(cross(up, forward));
 		return quat(mat3(right, cross(forward, right), forward));
 	}

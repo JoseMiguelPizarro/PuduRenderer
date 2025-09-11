@@ -314,9 +314,12 @@ namespace Pudu
         std::string name = path.stem().string();
         auto root = EntityManager::AllocateEntity(name);
 
+
+
         for (auto& node : asset->nodes)
         {
             LOG("{}", node.name);
+            bool flipForward = false;
 
             auto name = std::string(node.name);
             auto meshIndex = node.meshIndex;
@@ -350,6 +353,8 @@ namespace Pudu
                 lightEntity->SetLightData(lightData);
 
                 entity = lightEntity;
+
+                flipForward = light.type == fastgltf::LightType::Directional;
             }
             //Node is a transform
             else
@@ -369,8 +374,14 @@ namespace Pudu
             t.SetRotation(r);
             t.SetLocalPosition(vec3(translation[0], translation[1], translation[2]));
             t.SetLocalScale(vec3(scale[0], scale[1], scale[2]));
-        }
 
+            if (flipForward)
+            {
+                auto forward = t.GetForward();
+
+                t.SetForward(-forward);
+            }
+        }
 
         for (auto& [node, parentEntity] : parentEntitiesByNode)
         {

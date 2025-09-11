@@ -27,6 +27,7 @@ namespace Pudu {
 		mat4 GetTransformationMatrix();
 		vec3 GetForward();
 		void SetForward(vec3 forward, vec3 up);
+		void SetForward(vec3 forward);
 
 		mat4 GetParentMatrix();
 		void SetParentMatrix(mat4 m);
