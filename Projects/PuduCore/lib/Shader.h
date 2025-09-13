@@ -11,30 +11,47 @@ namespace Pudu
     class RenderPass;
     class PuduGraphics;
 
+    struct ShaderData
+    {
+        const u32* data;
+        Size size;
+        std::string entryPoint;
+    };
+
     class Shader : public GPUResource<Shader>, public IShaderObject
     {
     public:
         ~Shader() override
         {
-            delete m_fragmentData;
-            delete m_vertexData;
+            if (m_fragmentData.has_value())
+                delete m_fragmentData.value().data;
+            if (m_vertexData.has_value())
+                delete m_vertexData.value().data;
+            if (m_geometryData.has_value())
+                delete m_geometryData.value().data;
         }
 
         Shader() = default;
 
-        void LoadFragmentData(const u32* data, Size dataSize, const char* entryPoint = "main");
-        void LoadVertexData(const u32* data, Size dataSize, const char* entryPoint = "main");
+        void LoadFragmentData(const u32* data, Size dataSize, const char* entryPoint = K_FRAGMENT_SHADER_ENTRY_POINT);
+        void LoadVertexData(const u32* data, Size dataSize, const char* entryPoint = K_VERTEX_SHADER_ENTRY_POINT);
+        void LoadGeometryData(const u32* data, Size dataSize, const char* entryPoint = K_GEOMETRY_SHADER_ENTRY_POINT);
 
-        const u32* GetFragmentData() const { return m_fragmentData; }
-        const u32* GetVertexData() const { return m_vertexData; }
-        Size GetVertexDataSize() const { return m_vertexDataSize; }
-        Size GetFragmentDataSize() const { return m_fragmentDataSize; }
+        const u32* GetVertexData() const { return m_vertexData.value().data; }
+        const u32* GetGeometryData() const { return m_geometryData.value().data; }
+        const u32* GetFragmentData() const { return m_fragmentData.value().data; }
 
-        bool HasFragmentData() const { return m_hasFragmentData; }
-        bool HasVertexData() const { return m_hasVertexData; }
+        Size GetVertexDataSize() const { return m_vertexData.value().size; }
+        Size GetGeometryDataSize() const { return m_geometryData.value().size; }
+        Size GetFragmentDataSize() const { return m_fragmentData.value().size; }
 
-        const char* GetFragmentEntryPoint() const { return m_fragmentEntryPoint.c_str(); }
-        const char* GetVertexEntryPoint() const { return m_vertexEntryPoint.c_str(); }
+        bool HasFragmentData() const { return m_fragmentData.has_value(); }
+        bool HasGeometryData() const { return m_geometryData.has_value(); }
+        bool HasVertexData() const { return m_vertexData.has_value(); }
+
+        const char* GetFragmentEntryPoint() const { return  m_fragmentData.value().entryPoint.c_str(); }
+        const char* GetVertexEntryPoint() const { return m_vertexData.value().entryPoint.c_str(); }
+        const char* GetGeometryEntryPoint() const { return m_geometryData.value().entryPoint.c_str(); }
 
         void SetName(const char* name) override { this->name = name; };
         const char* GetName() override { return this->name.c_str(); }
@@ -52,15 +69,10 @@ namespace Pudu
         friend class PuduGraphics;
 
         std::filesystem::path m_shaderPath;
-        bool m_hasFragmentData;
-        bool m_hasVertexData;
-        std::string m_fragmentEntryPoint;
-        std::string m_vertexEntryPoint;
 
-        const u32* m_fragmentData;
-        Size m_fragmentDataSize;
-        const u32* m_vertexData;
-        Size m_vertexDataSize;
+        std::optional<ShaderData> m_fragmentData;
+        std::optional<ShaderData> m_vertexData;
+        std::optional<ShaderData> m_geometryData;
 
         BlendState m_blendState;
         CullMode m_cullMode;

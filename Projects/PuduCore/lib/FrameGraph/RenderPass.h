@@ -157,7 +157,7 @@ namespace Pudu
         virtual void BeginRender(RenderFrameData& data);
         virtual void EndRender(RenderFrameData& data);
 
-        //Best place for changing Texture layout or doing any modification to the camera
+        //Best place for changing Texture layout or doing any modification to the camera or setting up resources
         virtual void PreRender(RenderFrameData& renderData);
         //Here is where scissors, viewport, depthbias. target render target are set and Camera values are pushed
         virtual void SetupRender(RenderFrameData& frameData);

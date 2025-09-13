@@ -54,6 +54,7 @@ namespace Pudu {
 	}
 
 
+	//Aspect ratio: Width/Height
 	static mat4 PerspectiveMatrix(float vertical_fov, float aspect_ratio, float n, float f)
 	{
 		float fov_rad = vertical_fov * 2.0f * PI / 360.0f;

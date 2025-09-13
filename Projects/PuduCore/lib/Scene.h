@@ -37,6 +37,8 @@ namespace Pudu {
 		template<EntityDerived T>
 		void GetEntitiesOfType(std::vector<SPtr<T>>& entities)
 		{
+			entities.clear();
+
 			for ( auto& entity : m_entities)
 			{
 				if (auto e = std::dynamic_pointer_cast<T>(entity))

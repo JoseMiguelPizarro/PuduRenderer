@@ -13,6 +13,7 @@
 #include "GlobalConstants.h"
 #include "Lighting/LightBuffer.h"
 #include "FileManager.h"
+#include "OmnidirectionalShadowmapRenderPass.h"
 
 namespace Pudu
 {
@@ -312,6 +313,13 @@ namespace Pudu
         shadowRT->format = VK_FORMAT_D32_SFLOAT;
         shadowRT->name = "ShadowMap";
 
+        auto omnidirectionalShadowRT = graphics->GetRenderTexture();
+        shadowRT->depth = 1;
+        shadowRT->width = 4096; // TODO: HARDCODED SHADOW RESOLUTION
+        shadowRT->height = 4096;
+        shadowRT->format = VK_FORMAT_D32_SFLOAT;
+        shadowRT->name = "OmnidirectionalShadowMap";
+
         auto colorRT = graphics->GetRenderTexture();
         colorRT->depth = 1;
         colorRT->width = graphics->WindowWidth;
@@ -342,6 +350,11 @@ namespace Pudu
         m_shadowMapRenderPass = graphics->GetRenderPass<ShadowMapRenderPass>();
         m_shadowMapRenderPass->name = "ShadowMapRenderPass";
         m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
+
+        // auto omnidirectionalShadowsRenderPass = graphics->GetRenderPass<OmnidirectionalShadowmapRenderPass>();
+        // omnidirectionalShadowsRenderPass->AddDepthStencilAttachment(omnidirectionalShadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
+        // omnidirectionalShadowsRenderPass->name = "OmnidirectionalShadowmapRenderPass";
+        // omnidirectionalShadowsRenderPass->Create(graphics);
 
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
@@ -451,6 +464,7 @@ namespace Pudu
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
+     //   AddRenderPass(omnidirectionalShadowsRenderPass.get());
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         // AddRenderPass(drawGrassRP.get());

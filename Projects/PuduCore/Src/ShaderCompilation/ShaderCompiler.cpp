@@ -128,9 +128,8 @@ namespace Pudu
         {
             Slang::ComPtr<IEntryPoint> e;
 
-            shaderModule->findEntryPointByName(entryPoint, e.writeRef());
-
-            slangEntryPoints.push_back(e);
+            if (shaderModule->findEntryPointByName(entryPoint, e.writeRef()) == SLANG_OK)
+                slangEntryPoints.push_back(e);
         }
 
         components.push_back(coreModule);
@@ -163,7 +162,7 @@ namespace Pudu
         layoutBuilder.m_globalSession = m_globalSession;
         layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
 
-        for (size_t i = 0; i < entryPoints.size(); i++)
+        for (size_t i = 0; i < slangEntryPoints.size(); i++)
         {
             Slang::ComPtr<IBlob> kernel;
             linkedProgram->getEntryPointCode(i, 0, kernel.writeRef(), diagnostics.writeRef());
@@ -175,7 +174,8 @@ namespace Pudu
             memcpy(codePtr, kernel->getBufferPointer(), kernelData.codeSize);
 
             kernelData.code = static_cast<const uint32_t*>(codePtr);
-            compiledData.AddKernel(entryPoints[i], kernelData);
+            auto kernelName = slangEntryPoints[i]->getFunctionReflection()->getName();
+            compiledData.AddKernel(kernelName, kernelData);
             if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
         }
 
@@ -206,14 +206,14 @@ namespace Pudu
         Slang::ComPtr<IComponentType> linkedProgram;
         program->link(linkedProgram.writeRef(), diagnostics.writeRef());
 
-       if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
         //Global
         ShaderCompilationObject compiledData;
         ShaderObjectLayoutBuilder layoutBuilder;
         layoutBuilder.m_globalSession = m_globalSession;
         layoutBuilder.ParseShaderProgramLayout(layout, compiledData);
 
-       if ( PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
+        if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
 
         return compiledData;
     }

@@ -33,7 +33,7 @@ VSOut vertexMain(VertexInput input)
     float4 posCS = float4(pos,0, 1);
 
     output.PosCS = posCS;
-    output.Color = float4(input.Color, 1.0);
+    output.Color = input.Color;
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal, 0.);
     output.PosOS = float4(input.Position, 0.);

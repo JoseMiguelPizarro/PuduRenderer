@@ -13,6 +13,14 @@ namespace Pudu
         this->size += static_cast<Size>(ceil(elementSize / padding) * padding);
     }
 
+    std::optional<ShaderKernel*> ShaderCompilationObject::GetKernel(const char* name)
+    {
+        if (m_kernelsByName.find(name) == m_kernelsByName.end())
+            return std::nullopt;
+
+        return &m_kernelsByName[name];
+    }
+
     void ShaderCompilationObject::AddKernel(const char* name, ShaderKernel& kernel)
     {
         m_kernelsByName[name] = kernel;

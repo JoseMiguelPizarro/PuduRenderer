@@ -28,7 +28,7 @@ namespace Pudu
     public:
         DescriptorSetLayoutsCollection descriptorsData;
         ShaderCompilationResult result;
-        ShaderKernel* GetKernel(const char* name) { return &m_kernelsByName[name]; }
+        std::optional<ShaderKernel*> GetKernel(const char* name);
         void AddKernel(const char* name, ShaderKernel& kernel);
         std::vector<VkPushConstantRange>* GetPushConstantRanges() { return &m_pushConstantRanges; }
         PushConstantInfo* GetPushConstantsInfo();

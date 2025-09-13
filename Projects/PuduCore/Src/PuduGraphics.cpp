@@ -2394,8 +2394,8 @@ namespace Pudu
     PipelineCreationData PuduGraphics::GetPipelineCreationData(Shader* shader, RenderPass* renderPass)
     {
         PipelineCreationData creationData;
-        creationData.vertexShaderData = shader->m_vertexData;
-        creationData.fragmentShaderData = shader->m_fragmentData;
+        creationData.vertexShaderData = shader->GetVertexData();
+        creationData.fragmentShaderData = shader->GetFragmentData();
         creationData.name = renderPass->name.c_str();
 
         BlendStateCreation blendStateCreation;
@@ -2448,14 +2448,17 @@ namespace Pudu
 
         if (shader->HasFragmentData())
         {
-            shaderData.AddStage(shader->m_fragmentData, "fragmentMain", shader->m_fragmentDataSize,
+            shaderData.AddStage(shader->GetFragmentData(), K_FRAGMENT_SHADER_ENTRY_POINT, shader->GetFragmentDataSize(),
                                 VK_SHADER_STAGE_FRAGMENT_BIT);
         }
-
         if (shader->HasVertexData())
         {
-            shaderData.AddStage(shader->m_vertexData, "vertexMain", shader->m_vertexDataSize,
+            shaderData.AddStage(shader->GetVertexData(), K_VERTEX_SHADER_ENTRY_POINT, shader->GetVertexDataSize(),
                                 VK_SHADER_STAGE_VERTEX_BIT);
+        }
+        if (shader->HasGeometryData())
+        {
+            shaderData.AddStage(shader->GetGeometryData(),K_GEOMETRY_SHADER_ENTRY_POINT, shader->GetGeometryDataSize(),VK_SHADER_STAGE_GEOMETRY_BIT);
         }
 
         creationData.blendState = blendStateCreation;
@@ -3246,8 +3249,9 @@ namespace Pudu
 
         const char* fragmentEntryPoint = "fragmentMain";
         const char* vertexEntryPoint = "vertexMain";
+        const char* geometryEntryPoint = "geometryMain";
 
-        const std::vector<const char*> entryPoints = {fragmentEntryPoint, vertexEntryPoint};
+        const std::vector entryPoints = {fragmentEntryPoint, vertexEntryPoint, geometryEntryPoint};
         auto compileData = m_shaderCompiler.Compile(shaderPath.string().c_str(), entryPoints);
 
         if (compileData.result == ShaderCompilationResult::Failed)
@@ -3257,8 +3261,15 @@ namespace Pudu
 
         auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
         auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
-        shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
-        shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
+        auto geometryKernel = compileData.GetKernel(geometryEntryPoint);
+
+        if (fragmentKernel.has_value())
+            shader->LoadFragmentData(fragmentKernel.value()->code, fragmentKernel.value()->codeSize, fragmentEntryPoint);
+        if (vertexKernel.has_value())
+            shader->LoadVertexData(vertexKernel.value()->code, vertexKernel.value()->codeSize, vertexEntryPoint);
+        if (geometryKernel.has_value())
+            shader->LoadGeometryData(geometryKernel.value()->code, geometryKernel.value()->codeSize, geometryEntryPoint);
+
         shader->m_compilationObject = compileData;
 
         CreateDescriptorsLayouts(shader->GetDescriptorSetLayoutsData()->setLayoutInfos,
@@ -3333,7 +3344,7 @@ namespace Pudu
 
         const char* kernelName = creationData.kernel.c_str();
         auto kernel = compiledShader.GetKernel(kernelName);
-        shader->m_module = CreateShaderModule(kernel->code, kernel->codeSize, creationData.name.c_str());
+        shader->m_module = CreateShaderModule(kernel.value()->code, kernel.value()->codeSize, creationData.name.c_str());
         shader->m_compilationObject = compiledShader;
         shader->SetKernel(kernelName);
 
@@ -3820,8 +3831,8 @@ namespace Pudu
             auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
             auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
 
-            shader->LoadFragmentData(fragmentKernel->code, fragmentKernel->codeSize, fragmentEntryPoint);
-            shader->LoadVertexData(vertexKernel->code, vertexKernel->codeSize, vertexEntryPoint);
+            shader->LoadFragmentData(fragmentKernel.value()->code, fragmentKernel.value()->codeSize, fragmentEntryPoint);
+            shader->LoadVertexData(vertexKernel.value()->code, vertexKernel.value()->codeSize, vertexEntryPoint);
             shader->m_compilationObject = compileData;
 
             for (auto& pipelineHandle : shader->m_pipelines)
