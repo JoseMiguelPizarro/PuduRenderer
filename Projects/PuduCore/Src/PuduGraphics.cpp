@@ -2743,6 +2743,8 @@ namespace Pudu
 
     void PuduGraphics::CreateVKTexture(Texture* texture)
     {
+        ASSERT(texture->width > 0 && texture->height > 0, "Texture width and height must be greater than 0");
+
         VkImageCreateInfo imageCreateInfo{};
         imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageCreateInfo.flags = ToVkImageFlags(texture->GetTextureType());

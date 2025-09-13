@@ -314,11 +314,11 @@ namespace Pudu
         shadowRT->name = "ShadowMap";
 
         auto omnidirectionalShadowRT = graphics->GetRenderTexture();
-        shadowRT->depth = 1;
-        shadowRT->width = 4096; // TODO: HARDCODED SHADOW RESOLUTION
-        shadowRT->height = 4096;
-        shadowRT->format = VK_FORMAT_D32_SFLOAT;
-        shadowRT->name = "OmnidirectionalShadowMap";
+        omnidirectionalShadowRT->depth = 1;
+        omnidirectionalShadowRT->width = 4096; // TODO: HARDCODED SHADOW RESOLUTION
+        omnidirectionalShadowRT->height = 4096;
+        omnidirectionalShadowRT->format = VK_FORMAT_D32_SFLOAT;
+        omnidirectionalShadowRT->name = "OmnidirectionalShadowMap";
 
         auto colorRT = graphics->GetRenderTexture();
         colorRT->depth = 1;
@@ -351,10 +351,9 @@ namespace Pudu
         m_shadowMapRenderPass->name = "ShadowMapRenderPass";
         m_shadowMapRenderPass->AddDepthStencilAttachment(shadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
 
-        // auto omnidirectionalShadowsRenderPass = graphics->GetRenderPass<OmnidirectionalShadowmapRenderPass>();
-        // omnidirectionalShadowsRenderPass->AddDepthStencilAttachment(omnidirectionalShadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
-        // omnidirectionalShadowsRenderPass->name = "OmnidirectionalShadowmapRenderPass";
-        // omnidirectionalShadowsRenderPass->Create(graphics);
+        m_omnidirectionalShadowMapRenderPass = graphics->GetRenderPass<OmnidirectionalShadowmapRenderPass>();
+        m_omnidirectionalShadowMapRenderPass->name = "OmnidirectionalShadowmapRenderPass";
+        m_omnidirectionalShadowMapRenderPass->AddDepthStencilAttachment(omnidirectionalShadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
 
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
@@ -464,7 +463,7 @@ namespace Pudu
         // AddRenderPass(computeRP.get());
         AddRenderPass(m_depthRenderPass.get());
         AddRenderPass(m_shadowMapRenderPass.get());
-     //   AddRenderPass(omnidirectionalShadowsRenderPass.get());
+        AddRenderPass(m_omnidirectionalShadowMapRenderPass.get());
         AddRenderPass(normalRP.get());
         AddRenderPass(m_forwardRenderPass.get());
         // AddRenderPass(drawGrassRP.get());

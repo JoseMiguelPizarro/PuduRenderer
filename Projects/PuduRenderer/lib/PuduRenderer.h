@@ -7,6 +7,7 @@
 #include "ShadowMapRenderPass.h"
 #include <PuduApp.h>
 #include "ImguiRenderPass.h"
+#include "OmnidirectionalShadowmapRenderPass.h"
 #include "PostProcessingRenderPass.h"
 
 namespace Pudu
@@ -58,6 +59,7 @@ namespace Pudu
         SPtr<RenderPass> m_depthRenderPass;
         SPtr<RenderPass> m_forwardRenderPass;
         SPtr<ShadowMapRenderPass> m_shadowMapRenderPass;
+        SPtr<OmnidirectionalShadowmapRenderPass> m_omnidirectionalShadowMapRenderPass;
         SPtr<PostProcessingRenderPass> m_postProcessingRenderPass;
         SPtr<ImguiRenderPass> m_imguiRenderPass;
         SPtr<GraphicsBuffer> m_lightingBuffer;

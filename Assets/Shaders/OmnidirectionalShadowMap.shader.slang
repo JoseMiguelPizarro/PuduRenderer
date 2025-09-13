@@ -2,7 +2,6 @@ import PuduCoreModule;
 import PuduGraphicsModule;
 
 
-
 struct VertexInput
 {
  	[POSITION] float3 Position;
@@ -57,14 +56,12 @@ struct OmnidirectionalShadowmapData
 
 ParameterBlock<OmnidirectionalShadowmapData> LightData;
 
-[vk::push_constant]
-public uint4 lightIndex;
-
 [shader("geometry")]
 [maxvertexcount(3)]
 void GSMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
 {
- const float3 lightPosition = LIGHTING.lights.pointLight[lightIndex.x].positionAndRange.xyz;
+    uint3 lightIndex  = 0;
+    const float3 lightPosition = LIGHTING.lights.pointLight[lightIndex.x].positionAndRange.xyz;
 
  // back-face culling
  float3 normal = cross(input[2].position.xyz-input[0].position.xyz, input[0].position.xyz - input[1].position.xyz);
