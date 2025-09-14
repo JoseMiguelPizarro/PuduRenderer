@@ -84,8 +84,12 @@ namespace Pudu
         size_t constantBufferSize = 0;
         ConstantBufferInfo* PushConstantBufferInfo();
         ConstantBufferInfo* PushPushConstantsBufferInfo();
-        std::vector<ConstantBufferInfo>& GetPushConstants();
-        std::vector<ConstantBufferInfo>* GetConstantBufferInfos();
+        ConstantBufferInfo& GetPushConstantsInfo(Size index);
+        ConstantBufferInfo& GetConstantBufferInfo(Size index);
+        //Return a pointer to all push constants, meant to be traversed using PushConstantBufferCount
+        ConstantBufferInfo* GetPushConstants(){return m_pushConstants;};
+        Size GetPushConstantsCount() const { return m_pushConstantBufferCount; }
+        Size GetConstantBufferCount() const { return m_constantsBufferCount; }
 
         Size PushSetIndex() { return ++m_setIndex; }
         Size getSetIndex() const { return m_setIndex; }
@@ -95,10 +99,11 @@ namespace Pudu
         ShaderLayoutBuilderContext();
 
     private:
-        const Size MAX_BUFFERS_COUNT = 32;
         size_t m_setIndex = -1;
-        std::vector<ConstantBufferInfo> m_constantBuffers;
-        std::vector<ConstantBufferInfo> m_pushConstants;
+        Size m_constantsBufferCount = 0;
+        Size m_pushConstantBufferCount = 0;
+        ConstantBufferInfo m_constantBuffers[K_MAX_SHADER_BUFFER_COUNT];
+        ConstantBufferInfo m_pushConstants[K_MAX_SHADER_BUFFER_COUNT];
     };
 
     struct ShaderObjectLayoutBuilder

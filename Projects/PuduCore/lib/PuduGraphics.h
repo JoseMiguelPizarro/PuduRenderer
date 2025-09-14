@@ -249,6 +249,8 @@ namespace Pudu
 
         SPtr<ComputeShader> CreateComputeShader(ComputeShaderCreationData& creationData);
         SPtr<Material> CreateMaterial();
+        SPtr<Material> CreateMaterial(const char* name, const SPtr<Shader>& shader);
+
 
 
         SPtr<RenderTexture> GetRenderTexture();
@@ -505,7 +507,6 @@ namespace Pudu
     {
         return m_resources.AllocateMaterial();
     }
-
 
     void static FramebufferResizeCallback(GLFWwindow* window, int width, int height)
     {

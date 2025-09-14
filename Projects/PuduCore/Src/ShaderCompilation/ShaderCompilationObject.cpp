@@ -31,16 +31,15 @@ namespace Pudu
         return &m_pushConstantsInfo;
     }
 
-    void ShaderCompilationObject::SetPushConstants(const std::vector<ConstantBufferInfo>& buffers)
+    void ShaderCompilationObject::SetPushConstants(const ConstantBufferInfo* buffers, Size count)
     {
-        m_pushConstants = buffers;
-
-        for (const auto& buffer : m_pushConstants)
+        for (Size i = 0; i < count; i++)
         {
+            m_pushConstants.push_back(buffers[i]);
             VkPushConstantRange pushConstant = {};
-            pushConstant.offset = buffer.offset;
-            pushConstant.size = buffer.size;
-            pushConstant.stageFlags = buffer.shaderStages;
+            pushConstant.offset = buffers[i].offset;
+            pushConstant.size = buffers[i].size;
+            pushConstant.stageFlags = buffers[i].shaderStages;
             m_pushConstantRanges.push_back(pushConstant);
         }
     }

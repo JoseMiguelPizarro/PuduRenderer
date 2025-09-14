@@ -11,20 +11,14 @@ struct VertexInput
 struct GSOutput
 {
     float4 pos   : SV_POSITION;
-    float3 normal: NORMAL;
+    float3 clipDistance: SV_ClipDistance;
 };
 
 struct VSOutput{
     float4 position:SV_POSITION;
     float3 normal:NORMAL;
 };
-[shader("vertex")]
-VSOutput vertexMain(VertexInput input):SV_POSITION
-{
-    VSOutput output = {0};
-    output.position = GetPositionCS(UBO.model, input.Position);
-    output.normal = input.normal;
-};
+
 
 static const float3 planeNormals[12] =
 {
@@ -56,12 +50,32 @@ struct OmnidirectionalShadowmapData
 
 ParameterBlock<OmnidirectionalShadowmapData> LightData;
 
+
+struct PushConstants
+{
+uint pushIndex;
+}
+
+
+
+[shader("vertex")]
+VSOutput vertexMain(VertexInput input):SV_POSITION
+{
+    VSOutput output = {0};
+    output.position =float4(input.Position,1);
+    output.normal = input.normal;
+
+    return output;
+};
+
+
 [shader("geometry")]
 [maxvertexcount(3)]
 void GSMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
 {
-    uint3 lightIndex  = 0;
-    const float3 lightPosition = LIGHTING.lights.pointLight[lightIndex.x].positionAndRange.xyz;
+   // uint lightIndex  = lightConstants.pushIndex;
+    uint lightIndex = 0;
+    const float3 lightPosition = LIGHTING.lights.pointLight[lightIndex].positionAndRange.xyz;
 
  // back-face culling
  float3 normal = cross(input[2].position.xyz-input[0].position.xyz, input[0].position.xyz - input[1].position.xyz);
@@ -87,14 +101,14 @@ void GSMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream
 
    if(inside == 0x7)
    {
-     const float4x4 shadowViewProjTexMatrix = LightData.shadowMatrix[lightIndex.x + faceIndex];
+     const float4x4 shadowViewProjTexMatrix = LightData.shadowMatrix[lightIndex + faceIndex];
      GSOutput output;
      for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
      {
        output.pos = mul(shadowViewProjTexMatrix, input[vertexIndex].position);
-       output.normal.x = clipDistances[vertexIndex];
-       output.normal.y = clipDistances[3+vertexIndex]; 
-       output.normal.z = clipDistances[6+vertexIndex];
+       output.clipDistance.x = clipDistances[vertexIndex];
+       output.clipDistance.y = clipDistances[3+vertexIndex];
+       output.clipDistance.z = clipDistances[6+vertexIndex];
        triStream.Append(output);
      }
      triStream.RestartStrip();

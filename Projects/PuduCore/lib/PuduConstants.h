@@ -23,5 +23,6 @@ static const uint32_t K_MAX_MIP_LEVELS = 16;
 static const char* K_VERTEX_SHADER_ENTRY_POINT = "vertexMain";
 static const char* K_GEOMETRY_SHADER_ENTRY_POINT = "geometryMain";
 static const char* K_FRAGMENT_SHADER_ENTRY_POINT = "fragmentMain";
+static const size_t K_MAX_SHADER_BUFFER_COUNT = 32;
 
 

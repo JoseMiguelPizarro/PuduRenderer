@@ -3,8 +3,6 @@
 //
 
 
-#include <algorithm>
-#include <ranges>
 #include <slang/slang.h>
 #include "ShaderCompilation/ShaderObjectLayoutBuilder.h"
 
@@ -131,7 +129,7 @@ namespace Pudu
                 path = name + (path.empty() ? "" : "->" + path);
                 currentNode = currentNode->parent;
             }
-           LOG(path);
+            LOG(path);
         }
         else
         {
@@ -141,33 +139,31 @@ namespace Pudu
 
     ShaderLayoutBuilderContext::ShaderLayoutBuilderContext()
     {
-        m_constantBuffers.reserve(MAX_BUFFERS_COUNT);
-        m_pushConstants.reserve(MAX_BUFFERS_COUNT);
     }
 
     ConstantBufferInfo* ShaderLayoutBuilderContext::PushConstantBufferInfo()
     {
-        ASSERT(m_constantBuffers.size() < MAX_BUFFERS_COUNT, "MAX CONSTANT BUFFERS EXCEEDED {}", MAX_BUFFERS_COUNT);
-        m_constantBuffers.resize(m_constantBuffers.size() + 1);
-        return &m_constantBuffers.back();
+        ASSERT(m_constantsBufferCount < K_MAX_SHADER_BUFFER_COUNT, "MAX CONSTANT BUFFERS EXCEEDED {}",
+               K_MAX_SHADER_BUFFER_COUNT);
+        return &m_constantBuffers[m_constantsBufferCount++];
     }
 
     ConstantBufferInfo* ShaderLayoutBuilderContext::PushPushConstantsBufferInfo()
     {
-        ASSERT(m_pushConstants.size() < MAX_BUFFERS_COUNT, "MAX PUSH CONSTANT BUFFERS EXCEEDED {}", MAX_BUFFERS_COUNT);
+        ASSERT(m_pushConstantBufferCount < K_MAX_SHADER_BUFFER_COUNT, "MAX PUSH CONSTANT BUFFERS EXCEEDED {}",
+               K_MAX_SHADER_BUFFER_COUNT);
 
-        m_pushConstants.resize(m_pushConstants.size() + 1);
-        return &m_pushConstants.back();
+        return &m_pushConstants[m_pushConstantBufferCount++];
     }
 
-    std::vector<ConstantBufferInfo>& ShaderLayoutBuilderContext::GetPushConstants()
+    ConstantBufferInfo& ShaderLayoutBuilderContext::GetPushConstantsInfo(Size index)
     {
-        return m_pushConstants;
+        return m_pushConstants[index];
     }
 
-    std::vector<ConstantBufferInfo>* ShaderLayoutBuilderContext::GetConstantBufferInfos()
+    ConstantBufferInfo& ShaderLayoutBuilderContext::GetConstantBufferInfo(Size index)
     {
-        return &m_constantBuffers;
+        return m_constantBuffers[index];
     }
 
     void ShaderLayoutBuilderContext::PushBinding(const DescriptorBinding& binding) const
@@ -235,13 +231,18 @@ namespace Pudu
         case TypeReflection::Kind::TextureBuffer:
         case TypeReflection::Kind::ShaderStorageBuffer:
             {
+                //Only allocate buffer if it's not processing a push constant
+                if (accessPath.isPushConstant == false)
+                {
+                    accessPath.rootBufferInfo = context->PushConstantBufferInfo();
+                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+                        |
+                        VK_SHADER_STAGE_COMPUTE_BIT;
+
+                    accessPath.isContainerStructDefinition = true;
+                }
                 auto elementVarLayout = typeLayoutReflection->getElementVarLayout();
 
-                accessPath.rootBufferInfo = context->PushConstantBufferInfo();
-                accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                    VK_SHADER_STAGE_COMPUTE_BIT;
-
-                accessPath.isContainerStructDefinition = true;
                 /////////////
                 //Binding stack
                 Binding offsets;
@@ -460,6 +461,7 @@ namespace Pudu
                 {
                     accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
                     accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
                     //TODO: USE REAL RANGES
                     accessPath.setIndex = 0;
                     accessPath.cumulativeOffset->PushIndex();
@@ -658,7 +660,7 @@ namespace Pudu
             default: return ChannelFormat::R16_SFLOAT;
             }
         default:
-            ASSERT(false,"Unvalid scalar type");
+            ASSERT(false, "Unvalid scalar type");
         }
 
         return ChannelFormat::R8_UINT;
@@ -725,7 +727,7 @@ namespace Pudu
                         auto type = field->getType()->getScalarType();
                         auto channelsCount = field->getType()->getElementCount();
                         auto fieldSize = GetScalarTypeSize(type);
-                        LOG("Field {} Size {}",name,fieldSize);
+                        LOG("Field {} Size {}", name, fieldSize);
 
                         VertexAttributeType vertexAttributeType = VertexAttributeType::UNDEFINED;
 
@@ -746,7 +748,8 @@ namespace Pudu
                         else if (field->findAttributeByName(m_globalSession, "TEXCOORD3"))
                             vertexAttributeType = VertexAttributeType::TEXCOORD3;
 
-                        outCompilationObject.m_vertexLayout.PushAttribute(VertexAttribute(vertexAttributeType, GetChannelFormat(type, channelsCount)));
+                        outCompilationObject.m_vertexLayout.PushAttribute(
+                            VertexAttribute(vertexAttributeType, GetChannelFormat(type, channelsCount)));
                     }
                 }
             }
@@ -880,10 +883,9 @@ namespace Pudu
         std::vector<ConstantBufferInfo> buffersToAllocate;
         std::vector<DescriptorSetLayoutInfo> descriptorSetsToAllocate;
 
-        auto& constantBuffers = *context.GetConstantBufferInfos();
-
-        for (auto& cbuffer : constantBuffers)
+        for (Size i = 0; i < context.GetConstantBufferCount(); i++)
         {
+            auto& cbuffer = context.GetConstantBufferInfo(i);
             if (cbuffer.size > 0)
             {
                 buffersToAllocate.push_back(cbuffer);
@@ -892,7 +894,7 @@ namespace Pudu
 
         outCompilationObject.descriptorsData.setsCount = context.getSetIndex() + 1;
 
-        outCompilationObject.SetPushConstants(context.GetPushConstants());
+        outCompilationObject.SetPushConstants(context.GetPushConstants(), context.GetPushConstantsCount());
         outCompilationObject.SetBuffersToAllocate(buffersToAllocate);
 
         for (auto& binding : outCompilationObject.descriptorsData.bindingsData)
@@ -907,12 +909,13 @@ namespace Pudu
 
         //🐞 SetupPushConstants
         PushConstantInfo pushConstants{};
-        for (const auto& pushBuffer : context.GetPushConstants())
+        for (Size i = 0; i < context.GetPushConstantsCount(); i++)
         {
+            auto& pushBuffer = context.GetPushConstantsInfo(i);
             VkPushConstantRange pushConstantRange;
             pushConstantRange.offset = pushBuffer.offset;
-            pushConstantRange.size = pushBuffer.size;
             pushConstantRange.stageFlags = pushBuffer.shaderStages;
+            pushConstantRange.size = pushBuffer.size;
 
             pushConstants.ranges.push_back(pushConstantRange);
         }

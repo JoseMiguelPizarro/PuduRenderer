@@ -35,7 +35,7 @@ namespace Pudu
         std::vector<ConstantBufferInfo>* GetConstantBuffers() { return &m_constantBuffers; }
         std::vector<ConstantBufferInfo>* GetPushConstantsBuffersInfo() { return &m_pushConstants; }
         void SetBuffersToAllocate(const std::vector<ConstantBufferInfo>& buffers) { m_constantBuffers = buffers; }
-        void SetPushConstants(const std::vector<ConstantBufferInfo>& buffers);
+        void SetPushConstants(const ConstantBufferInfo* buffers, Size count);
         BlendState GetBlendState() const { return m_blendState; }
         CullMode GetCullMode() const { return m_cullMode; }
         bool OverridePipelineState() const { return m_overridesPipelineState; }

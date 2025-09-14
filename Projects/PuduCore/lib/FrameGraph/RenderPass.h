@@ -212,7 +212,7 @@ namespace Pudu
 
         std::string name;
 
-    private:
+    protected:
         friend class PuduGraphics;
         CullMode m_cullMode = CullMode::Back;
         BlendState m_blendState;

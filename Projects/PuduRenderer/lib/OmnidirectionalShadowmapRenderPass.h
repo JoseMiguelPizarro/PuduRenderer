@@ -20,10 +20,12 @@ namespace Pudu
     public:
         void OnCreate(PuduGraphics* gfx) override;
         void PreRender(RenderFrameData& renderData) override;
+        void Render(RenderFrameData& renderData) override;
 
     private:
         SPtr<GraphicsBuffer> m_omnidirectionalBuffer;
         SPtr<Shader> m_omnidirectionalShader;
+        SPtr<Material> m_omnidirectionalMaterial;
         OmnidirectionalShadowmapData m_data;
     };
 }

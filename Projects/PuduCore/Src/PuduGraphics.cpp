@@ -949,20 +949,23 @@ namespace Pudu
         pipeline->depthStencilFormat = renderPassOutput.depthStencilFormat;
         pipeline->pipelineType = PipelineType::Graphics;
 
-        VkPushConstantRange pushConstant{};
-        pushConstant.offset = 0;
-        pushConstant.size = sizeof(UniformBufferObject);
-        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        //Push contants support
-        VkPushConstantRange constants[1]{pushConstant};
+        auto pushConstantInfo = creationData.pushConstants;
+        std::vector<VkPushConstantRange> pushConstantRanges;
+        for (auto& pushConstant : pushConstantInfo->ranges)
+        {
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.offset = pushConstant.offset;
+            pushConstantRange.size = pushConstant.size;
+            pushConstantRange.stageFlags = pushConstant.stageFlags;
+            pushConstantRanges.push_back(pushConstantRange);
+        }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = creationData.activeLayouts;
         pipelineLayoutInfo.pSetLayouts = creationData.vkDescriptorSetLayout;
-        pipelineLayoutInfo.pPushConstantRanges = constants;
-        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+        pipelineLayoutInfo.pushConstantRangeCount = pushConstantRanges.size();
 
         VkPipelineLayout pipelineLayout;
         vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, m_allocatorPtr, &pipelineLayout);
@@ -2563,6 +2566,14 @@ namespace Pudu
         vkDestroyShaderModule(m_device, shader->GetModule(), m_allocatorPtr);
     }
 
+
+    SPtr<Material> PuduGraphics::CreateMaterial(const char* name, const SPtr<Shader>& shader)
+    {
+        auto material = m_resources.AllocateMaterial();
+        material->name = name;
+        material->SetShader(shader);
+        return material;
+    }
 
     SPtr<RenderTexture> PuduGraphics::GetRenderTexture()
     {
