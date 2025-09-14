@@ -48,21 +48,18 @@ struct OmnidirectionalShadowmapData
         float4x4 shadowMatrix[128]; //FOR NOW HARD CODED TO 128. Packed in sets of 4 per each light
 };
 
-ParameterBlock<OmnidirectionalShadowmapData> LightData;
+struct Data{
+ConstantBuffer<OmnidirectionalShadowmapData> data;
+};
 
-
-struct PushConstants
-{
-uint pushIndex;
-}
-
+ParameterBlock<Data> LightData;
 
 
 [shader("vertex")]
-VSOutput vertexMain(VertexInput input):SV_POSITION
+VSOutput vertexMain(VertexInput input)
 {
     VSOutput output = {0};
-    output.position =float4(input.Position,1);
+    output.position =mul(UBO.model, float4(input.Position,1));
     output.normal = input.normal;
 
     return output;
@@ -71,10 +68,9 @@ VSOutput vertexMain(VertexInput input):SV_POSITION
 
 [shader("geometry")]
 [maxvertexcount(3)]
-void GSMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
+void geometryMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
 {
-   // uint lightIndex  = lightConstants.pushIndex;
-    uint lightIndex = 0;
+    uint lightIndex  = UBO.custom.x;
     const float3 lightPosition = LIGHTING.lights.pointLight[lightIndex].positionAndRange.xyz;
 
  // back-face culling
@@ -101,7 +97,7 @@ void GSMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream
 
    if(inside == 0x7)
    {
-     const float4x4 shadowViewProjTexMatrix = LightData.shadowMatrix[lightIndex + faceIndex];
+     const float4x4 shadowViewProjTexMatrix = LightData.data.shadowMatrix[lightIndex + faceIndex];
      GSOutput output;
      for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
      {

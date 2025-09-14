@@ -237,7 +237,7 @@ namespace Pudu
                     accessPath.rootBufferInfo = context->PushConstantBufferInfo();
                     accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
                         |
-                        VK_SHADER_STAGE_COMPUTE_BIT;
+                        VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_GEOMETRY_BIT; //TODO: SET ONLY RELEVANT STAGES
 
                     accessPath.isContainerStructDefinition = true;
                 }
@@ -460,7 +460,7 @@ namespace Pudu
             case slang::ParameterCategory::PushConstantBuffer:
                 {
                     accessPath.rootBufferInfo = context->PushPushConstantsBufferInfo();
-                    accessPath.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                    //Push constant shader stage will be set at the end based on all stages present in the shader
 
                     //TODO: USE REAL RANGES
                     accessPath.setIndex = 0;
@@ -514,7 +514,7 @@ namespace Pudu
 
 
         scopeOffsets.rootBufferInfo->shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-            VK_SHADER_STAGE_COMPUTE_BIT;
+            VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_GEOMETRY_BIT; //TODO: USE RELEVANT STAGES
 
 
         Binding cumulativeOffset;
@@ -707,6 +707,7 @@ namespace Pudu
         CullMode cullMode = CullMode::Back;
         BlendingMode blendMode = BlendingMode::Opaque;
         bool overridePipelineState = false;
+        VkShaderStageFlags shaderStages = 0;
 
         for (int i = 0; i < entryPointCount; i++)
         {
@@ -716,8 +717,13 @@ namespace Pudu
             {
                 Size size = 0;
                 auto shaderType = shaderAttribute->getArgumentValueString(0, &size);
+                if (strcmp(shaderType, "fragment") == 0)
+                    shaderStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
+                if (strcmp(shaderType, "geometry") == 0)
+                    shaderStages |= VK_SHADER_STAGE_GEOMETRY_BIT;
                 if (strcmp(shaderType, "vertex") == 0)
                 {
+                    shaderStages |= VK_SHADER_STAGE_VERTEX_BIT;
                     auto vertexInput = entryPointFunction->getParameterByIndex(0);
                     auto fields = vertexInput->getType()->getFieldCount();
                     for (auto f = 0; f < fields; f++)
@@ -912,6 +918,7 @@ namespace Pudu
         for (Size i = 0; i < context.GetPushConstantsCount(); i++)
         {
             auto& pushBuffer = context.GetPushConstantsInfo(i);
+            pushBuffer.shaderStages = shaderStages;
             VkPushConstantRange pushConstantRange;
             pushConstantRange.offset = pushBuffer.offset;
             pushConstantRange.stageFlags = pushBuffer.shaderStages;

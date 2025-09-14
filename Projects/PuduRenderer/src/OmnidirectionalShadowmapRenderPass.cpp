@@ -23,6 +23,7 @@ namespace Pudu
         m_omnidirectionalMaterial = gfx->CreateMaterial("OmnidirectionalShadowMapMaterial", m_omnidirectionalShader);
 
         m_omnidirectionalShader->GetShaderLayout()->Print();
+        m_omnidirectionalMaterial->SetProperty("LightData.data", m_omnidirectionalBuffer);
     }
 
     //Convert from projection space to texture space
@@ -113,6 +114,8 @@ namespace Pudu
                     ASSERT(material->GetShader() != nullptr, "Trying to render mesh material {} with null shader",
                            mesh->name.c_str());
 
+                    material->ApplyProperties(commands.get());
+
                     Pipeline* pipeline = GetPipeline({
                         .renderPass = frameData.currentRenderPass.get(),
                         .shader = material->GetShader().get(),
@@ -131,10 +134,11 @@ namespace Pudu
                     commands->BindMesh(mesh.get(), material->GetShader()->GetVertexLayout());
 
                     auto ubo = frameData.graphics->GetUniformBufferObject(drawCall);
+                    ubo.custom.x = lightCount;
 
                     commands->SetViewport(GetViewport(frameData));
                     commands->PushConstants(pipeline->vkPipelineLayoutHandle,
-                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                                             sizeof(UniformBufferObject), &ubo);
 
                     commands->DrawIndexed(static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);

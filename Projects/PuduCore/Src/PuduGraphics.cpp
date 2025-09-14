@@ -1542,6 +1542,7 @@ namespace Pudu
 
                 deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
                 deviceFeatures.features.robustBufferAccess = VK_TRUE;
+                deviceFeatures.features.geometryShader = VK_TRUE;
 
                 VkPhysicalDeviceRobustness2FeaturesEXT robustnessFeatures{
                     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT
@@ -1646,6 +1647,7 @@ namespace Pudu
         deviceFeatures.features.samplerAnisotropy = VK_TRUE;
         deviceFeatures.features.multiDrawIndirect = VK_TRUE;
         deviceFeatures.features.vertexPipelineStoresAndAtomics = VK_TRUE;
+        deviceFeatures.features.geometryShader = VK_TRUE;
 
         VkPhysicalDeviceSynchronization2Features syncFeatures{};
         syncFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;

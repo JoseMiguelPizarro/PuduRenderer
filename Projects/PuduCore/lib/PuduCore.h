@@ -46,6 +46,10 @@ namespace Pudu
     using int2 = glm::ivec2;
     using int3 = glm::ivec3;
     using int4 = glm::ivec4;
+    using uint4 = glm::uvec4;
+    using uint3 = glm::uvec3;
+    using uint2 = glm::uvec2;
+
 
     namespace fs = std::filesystem;
 

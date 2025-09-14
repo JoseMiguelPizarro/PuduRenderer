@@ -51,6 +51,7 @@ public struct UniformBufferObject
     public float4x4 model;
     public uint materialId;
     public float time;
+    public uint4 custom;
 };
 
 

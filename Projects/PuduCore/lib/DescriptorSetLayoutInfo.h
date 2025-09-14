@@ -24,7 +24,7 @@ namespace Pudu {
 			binding.descriptorType = type;
 			binding.descriptorCount = count;
 			binding.stageFlags =VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT |
-					VK_SHADER_STAGE_COMPUTE_BIT; //TODO: Hack, but in all stages for now
+					VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_GEOMETRY_BIT; //TODO: Hack, but in all stages for now
 			binding.pImmutableSamplers = nullptr;
 
 			return binding;
