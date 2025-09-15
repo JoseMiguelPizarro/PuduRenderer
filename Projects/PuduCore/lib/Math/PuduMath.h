@@ -53,6 +53,7 @@ namespace Pudu {
 		return om;
 	}
 
+	
 
 	//Aspect ratio: Width/Height
 	static mat4 PerspectiveMatrix(float vertical_fov, float aspect_ratio, float n, float f)
@@ -68,6 +69,27 @@ namespace Pudu {
 		(
 			aspect_ratio * focal_length, 0.0f, 0.0f, 0.0f,
 			0.0f, -focal_length, 0.0f, 0.0f, //Multiply by -1 to remap to vk ndc space
+			0.0f, 0.0f, A, 1,
+			0.0f, 0.0f, B, 0.0f);
+
+		return pm;
+	}
+
+	static mat4 PerspectiveMatrixFOV(float vertical_fov, float horizontal_fov, float n, float f)
+	{
+		float v_fov_rad = vertical_fov * 2.0f * PI / 360.0f;
+		float h_fov_rad = horizontal_fov * 2.0f * PI / 360.0f;
+
+		float focal_length_v = 1.0f / std::tan(v_fov_rad / 2.0f);
+		float focal_length_h = 1.0f / std::tan(h_fov_rad / 2.0f);
+
+		float A = f / (f - n);
+		float B = -n * A;
+
+		mat4 pm
+		(
+			focal_length_h, 0.0f, 0.0f, 0.0f,
+			0.0f, -focal_length_v, 0.0f, 0.0f, //Multiply by -1 to remap to vk ndc space
 			0.0f, 0.0f, A, 1,
 			0.0f, 0.0f, B, 0.0f);
 

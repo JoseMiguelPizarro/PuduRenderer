@@ -7,13 +7,14 @@ import "Lib/PuduDebugModule.slang";
 
 public struct GlobalsConstants
 {
-    public float2 screenSize;
-    public float time;
-    public float nearPlane;
-    public float farPlane;
-    public float3 cameraPosWS;
     public float4x4 view;
     public float4x4 proj;
+    public float4x4 viewProjection;
+    public float4 cameraPosWS;
+    public float4 nearPlane;
+    public float4 farPlane;
+    public float4 screenSize;
+    public float4 time;
 }
 
 public struct Globals
@@ -49,9 +50,9 @@ public ParameterBlock<DEBUG> DEBUG_SETTINGS;
 public struct UniformBufferObject
 {
     public float4x4 model;
+    public uint4 custom;
     public uint materialId;
     public float time;
-    public uint4 custom;
 };
 
 
@@ -80,7 +81,7 @@ public float2 GetPixelScreenPosition(float4 PosCS)
 
 public float LinearizeDepth(float d)
 {
-    return LinearizeDepth(d, GLOBALS.constants.nearPlane, GLOBALS.constants.farPlane);
+    return LinearizeDepth(d, GLOBALS.constants.nearPlane.x, GLOBALS.constants.farPlane.x);
 };
 
 public float4x4 GetViewMatrix(){
@@ -97,7 +98,7 @@ public float4x4 GetViewMatrix(){
 /// </returns>
 public float3 GetViewDirection(float3 worldPos)
 {
-    return normalize(GLOBALS.constants.cameraPosWS  - worldPos);
+    return normalize(GLOBALS.constants.cameraPosWS.xyz  - worldPos);
 }
 
 public float4x4 GetProjectionMatrix()
@@ -105,7 +106,13 @@ public float4x4 GetProjectionMatrix()
     return GLOBALS.constants.proj;
 }
 
+public float4x4 GetViewProjectionMatrix()
+{
+    return GLOBALS.constants.viewProjection;
+}
+
 public float4 GetPositionCS(float4x4 modelMatrix, float3 positionOS)
 {
-    return mul(GetProjectionMatrix(), mul(GetViewMatrix(),mul(modelMatrix, float4(positionOS,1))));
+    return mul(GLOBALS.constants.viewProjection, mul(modelMatrix, float4(positionOS,1)));
 }
+

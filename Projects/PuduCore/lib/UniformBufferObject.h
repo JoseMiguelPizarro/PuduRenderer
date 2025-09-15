@@ -8,14 +8,8 @@ namespace Pudu
     struct UniformBufferObject
     {
         mat4 modelMatrix;
+        uint4 custom;
         u32 materialId;
         float time;
-        uint4 custom;
-    };
-
-    //16bit alignment
-    struct RenderConstants
-    {
-        alignas(16) uint32_t materialId;
     };
 }

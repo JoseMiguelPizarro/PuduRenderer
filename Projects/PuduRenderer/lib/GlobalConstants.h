@@ -1,13 +1,18 @@
 #pragma once
 #include "glm/glm.hpp"
+#include "PuduCore.h"
 
-struct  GlobalConstants
+namespace Pudu
 {
-      alignas(8) vec2 screenSize;
-      alignas(4) float time;
-      alignas(4) float nearPlane;
-      alignas(4) float farPlane;
-      alignas(16) vec3 cameraPosWS;
-      alignas(16) mat4 viewMatrix;
-      alignas(16) mat4 projectionMatrix;
-};
+    struct GlobalConstants
+    {
+        alignas(16) mat4 viewMatrix;
+        alignas(16) mat4 projectionMatrix;
+        alignas(16) mat4 viewProjectionMatrix;
+        float4 cameraPosWS;
+        float4 nearPlane;
+        float4 farPlane;
+        float4 screenSize;
+        float4 time;
+    };
+}

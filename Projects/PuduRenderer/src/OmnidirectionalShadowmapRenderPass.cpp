@@ -49,26 +49,49 @@ namespace Pudu
         uint resolution = 4096;
         uint widthCount = resolution / size;
 
+        mat4 xRotMatrix, yRotMatrix, zRotMatrix;
+        xRotMatrix = rotate(mat4(1.0f), radians(180.0f), vec3(0.0f, 1.0f, 0.0f));
+        yRotMatrix = rotate(mat4(1.0f), radians(27.36780516f), vec3(1.0f, 0.0f, 0.0f));
+        mat4 rotationA = yRotMatrix * xRotMatrix;
+
+        xRotMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+        yRotMatrix = rotate(mat4(1.0f), radians(27.36780516f), vec3(1.0f, 0.0f, 0.0f));
+        zRotMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
+        mat4 rotationB = zRotMatrix * yRotMatrix * xRotMatrix;
+
+        xRotMatrix = rotate(mat4(1.0f), radians(270.0f), vec3(0.0f, 1.0f, 0.0f));
+        yRotMatrix = rotate(mat4(1.0f), radians(-27.36780516f), vec3(1.0f, 0.0f, 0.0f));
+        mat4 rotationC = yRotMatrix * xRotMatrix;
+
+        xRotMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+        yRotMatrix = rotate(mat4(1.0f), radians(-27.36780516f), vec3(1.0f, 0.0f, 0.0f));
+        zRotMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
+        mat4 rotationD = zRotMatrix * yRotMatrix * xRotMatrix;
+
         for (auto& light : lights)
         {
             if (light->GetLightType() == LightType::Point)
             {
                 float2 coordinates = {count % widthCount, count / widthCount};
-                float4x4 Ta, Tb, Tc, Td;
-                GetTextureSpaceMatrix(coordinates, size, Ta, Tb, Tc, Td);
+                auto translationMatrix = translate(mat4(1.0), -light->GetTransform().GetLocalPosition());
 
-                mat4 mA = Ta * PerspectiveMatrix(125.26438968, 143.98570868 / 125.26438968, 0.1, 100) * translate(
-                    mat4(1.0), light->GetTransform().GetLocalPosition()) * toMat4(
-                    quat(float3(radians(27.36780516f), radians(180.f), 0)));
-                mat4 mB = Tb * PerspectiveMatrix(143.98570868, 125.26438968 / 143.98570868, 0.1, 100) *
-                    translate(mat4(1.0), light->GetTransform().GetLocalPosition()) * toMat4(
-                        quat(float3(radians(27.36780516f), radians(0.f), radians(90.f))));
-                mat4 mC = Tc * PerspectiveMatrix(125.26438968, 143.98570868 / 125.26438968, 0.1, 100) * translate(
-                    mat4(1.0), light->GetTransform().GetLocalPosition()) * toMat4(
-                    quat(float3(radians(-27.36780516f), radians(270.f), 0)));
-                mat4 mD = Td * PerspectiveMatrix(143.98570868, 125.26438968 / 143.98570868, 0.1, 100) *
-                    translate(mat4(1.0), light->GetTransform().GetLocalPosition()) * toMat4(
-                        quat(float3(radians(-27.36780516f), radians(90.f), radians(90.f))));
+                float4x4 Ta, Tb, Tc, Td;
+                GetTextureSpaceMatrix(coordinates, static_cast<float>(size) / static_cast<float>(resolution), Ta, Tb,
+                                      Tc, Td);
+
+                float nearplane = 0.1f;
+                float farplane = 50.f;
+                mat4 mA = PerspectiveMatrixFOV(125.26438968f, 143.98570868f, nearplane, farplane) *
+                    translationMatrix * rotationA;
+
+                mat4 mB =  PerspectiveMatrixFOV(143.98570868f, 125.26438968f, nearplane, farplane) *
+                     translationMatrix * rotationB;
+
+                mat4 mC =  PerspectiveMatrixFOV(125.26438968f, 143.98570868f, nearplane, farplane) *
+                     translationMatrix * rotationC;
+
+                mat4 mD =  PerspectiveMatrixFOV(143.98570868f, 125.26438968f, nearplane, farplane) *
+                     translationMatrix * rotationD;
 
                 m_data.shadowMatrix[count * 4] = mA;
                 m_data.shadowMatrix[count * 4 + 1] = mB;
@@ -122,6 +145,10 @@ namespace Pudu
                         .renderer = frameData.renderer
                     });
 
+
+                    //TODO: HACK TO BIND GLOBAL PROPERTIES TO GEOMETRY SHADER STAGE
+                    frameData.areGlobalPropertiesBound = false;
+
                     BindPipeline(pipeline, frameData);
 
                     for (const auto& mat : model->Materials)
@@ -136,9 +163,15 @@ namespace Pudu
                     auto ubo = frameData.graphics->GetUniformBufferObject(drawCall);
                     ubo.custom.x = lightCount;
 
-                    commands->SetViewport(GetViewport(frameData));
+                    Viewport viewport;
+                    viewport.maxDepth = 1.0f;
+                    viewport.minDepth = 0.0f;
+                    viewport.rect = {0, 0, 4096, 4096};
+                    commands->SetViewport(viewport);
+
                     commands->PushConstants(pipeline->vkPipelineLayoutHandle,
-                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+                                            VK_SHADER_STAGE_GEOMETRY_BIT, 0,
                                             sizeof(UniformBufferObject), &ubo);
 
                     commands->DrawIndexed(static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);

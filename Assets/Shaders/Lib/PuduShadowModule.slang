@@ -19,6 +19,24 @@ float TextureProj(float4 shadowCoord, float2 off, Sampler2DShadow shadowMap)
     return shadow;
 }
 
+struct OmnidirectionalShadowSampleData
+{
+    uint lightIndex;
+    Sampler2DShadow shadowMap;
+    float4 shadowCoord;
+    uint2 lightDimension;
+    float centerOffset;
+};
+
+float SampleOmnidirectionalLightShadow(OmnidirectionalShadowSampleData sampleData)
+{
+    uint x = sampleData.lightIndex%sampleData.lightDimension.x;
+    uint y = sampleData.lightIndex/sampleData.lightDimension.x;
+    float2 uvc = float2(x/sampleData.lightDimension.x + sampleData.centerOffset, y/sampleData.lightDimension.y + sampleData.centerOffset);
+
+    return 0;
+}
+
 float FilterPCF(float4 sc, Sampler2DShadow shadowMap)
 {
     sc /=sc.w;

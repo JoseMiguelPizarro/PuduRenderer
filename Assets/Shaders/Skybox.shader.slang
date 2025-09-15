@@ -20,8 +20,8 @@ float4 GetLighting(float3 normal, float3 lightDirection)
 VSOut vertexMain(VertexInput input)
 {
     VSOut output = (VSOut)0.0;
-    output.PosCS = mul(GetProjectionMatrix(), mul(GetViewMatrix(), mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
+    output.PosCS = mul(GLOBALS.constants.viewProjection,output.PosWS);
     output.Color = input.Color;
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal, 0.);

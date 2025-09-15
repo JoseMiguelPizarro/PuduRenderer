@@ -57,6 +57,11 @@ namespace Pudu
         GetMaterial()->SetProperty("mipLevel",lod);
     }
 
+    void OverlayQuadEntity::SetTexture(SPtr<Texture> texture)
+    {
+        GetMaterial()->SetProperty("material.texture", texture);
+    }
+
     SPtr<Shader> OverlayQuadEntity::GetShader(PuduGraphics* gfx)
     {
         return gfx->GetDefaultOverlayShader();
@@ -79,6 +84,11 @@ namespace Pudu
         SetModel(model);
 
         m_renderSettings.layer = 2;
+    }
+
+    void OverlayQuadTextureArrayEntity::SetTexture(SPtr<Texture> texture)
+    {
+        GetMaterial()->SetProperty("material.texture", texture);
     }
 
     void OverlayQuadTextureArrayEntity::SetTextureIndex(uint index)

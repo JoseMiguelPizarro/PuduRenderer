@@ -3832,10 +3832,11 @@ namespace Pudu
         {
             auto shader = shaderHandle.Get();
 
-            const char* fragmentEntryPoint = "fragmentMain";
-            const char* vertexEntryPoint = "vertexMain";
+            const char* fragmentEntryPoint = K_FRAGMENT_SHADER_ENTRY_POINT;
+            const char* vertexEntryPoint = K_VERTEX_SHADER_ENTRY_POINT;
+            const char* geometryEntryPoint = K_GEOMETRY_SHADER_ENTRY_POINT;
 
-            const std::vector entryPoints = {fragmentEntryPoint, vertexEntryPoint};
+            const std::vector entryPoints = {fragmentEntryPoint, vertexEntryPoint, geometryEntryPoint};
             auto compileData = m_shaderCompiler.Compile(shader->m_shaderPath.string().c_str(), entryPoints);
 
             if (compileData.result == ShaderCompilationResult::Failed)
@@ -3845,9 +3846,15 @@ namespace Pudu
 
             auto fragmentKernel = compileData.GetKernel(fragmentEntryPoint);
             auto vertexKernel = compileData.GetKernel(vertexEntryPoint);
+            auto geometryKernel = compileData.GetKernel(geometryEntryPoint);
 
-            shader->LoadFragmentData(fragmentKernel.value()->code, fragmentKernel.value()->codeSize, fragmentEntryPoint);
-            shader->LoadVertexData(vertexKernel.value()->code, vertexKernel.value()->codeSize, vertexEntryPoint);
+            if (fragmentKernel.has_value())
+                shader->LoadFragmentData(fragmentKernel.value()->code, fragmentKernel.value()->codeSize, fragmentEntryPoint);
+            if (vertexKernel.has_value())
+                shader->LoadVertexData(vertexKernel.value()->code, vertexKernel.value()->codeSize, vertexEntryPoint);
+            if (geometryKernel.has_value())
+                shader->LoadGeometryData(geometryKernel.value()->code, geometryKernel.value()->codeSize, geometryEntryPoint);
+
             shader->m_compilationObject = compileData;
 
             for (auto& pipelineHandle : shader->m_pipelines)

@@ -19,6 +19,7 @@ public:
     ///Values in [0,1] Screen coordinates
     void SetPositionAndSize(float x, float y, float width, float height);
     void SetLOD(u32 lod);
+    void SetTexture(SPtr<Texture> texture);
 private:
     float width, height, x,y;
 
@@ -33,6 +34,7 @@ private:
         explicit OverlayQuadTextureArrayEntity(PuduGraphics* gfx);
 
         //Index of texture from the texture array to render
+        void SetTexture(SPtr<Texture> texture);
         void SetTextureIndex(uint index);
         void SetLOD(u32 lod);
         SPtr<Material> GetMaterial();

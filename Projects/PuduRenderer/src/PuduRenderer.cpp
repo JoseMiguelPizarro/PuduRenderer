@@ -61,6 +61,11 @@ namespace Pudu
         return m_colorCopyRT;
     }
 
+    SPtr<RenderTexture> PuduRenderer::GetOmnidirectionalShadowmapRT() const
+    {
+        return m_omnidirectionalShadowRT;
+    }
+
     void PuduRenderer::SetDebugMode(Debug mode)
     {
         m_globalPropertiesMaterial->SetProperty("DEBUG_SETTINGS.debugMode", static_cast<int>(mode));
@@ -313,12 +318,12 @@ namespace Pudu
         shadowRT->format = VK_FORMAT_D32_SFLOAT;
         shadowRT->name = "ShadowMap";
 
-        auto omnidirectionalShadowRT = graphics->GetRenderTexture();
-        omnidirectionalShadowRT->depth = 1;
-        omnidirectionalShadowRT->width = 4096; // TODO: HARDCODED SHADOW RESOLUTION
-        omnidirectionalShadowRT->height = 4096;
-        omnidirectionalShadowRT->format = VK_FORMAT_D32_SFLOAT;
-        omnidirectionalShadowRT->name = "OmnidirectionalShadowMap";
+        m_omnidirectionalShadowRT = graphics->GetRenderTexture();
+        m_omnidirectionalShadowRT->depth = 1;
+        m_omnidirectionalShadowRT->width = 4096; // TODO: HARDCODED SHADOW RESOLUTION
+        m_omnidirectionalShadowRT->height = 4096;
+        m_omnidirectionalShadowRT->format = VK_FORMAT_D32_SFLOAT;
+        m_omnidirectionalShadowRT->name = "OmnidirectionalShadowMap";
 
         auto colorRT = graphics->GetRenderTexture();
         colorRT->depth = 1;
@@ -353,14 +358,14 @@ namespace Pudu
 
         m_omnidirectionalShadowMapRenderPass = graphics->GetRenderPass<OmnidirectionalShadowmapRenderPass>();
         m_omnidirectionalShadowMapRenderPass->name = "OmnidirectionalShadowmapRenderPass";
-        m_omnidirectionalShadowMapRenderPass->AddDepthStencilAttachment(omnidirectionalShadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
+        m_omnidirectionalShadowMapRenderPass->AddDepthStencilAttachment(m_omnidirectionalShadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
 
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
             ->SetName("ForwardRenderPass")
             ->AddColorAttachment(colorRT, AttachmentAccessUsage::Write, LoadOperation::Clear)
             ->AddColorAttachment(shadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
-            ->AddColorAttachment(omnidirectionalShadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
+            ->AddColorAttachment(m_omnidirectionalShadowRT, AttachmentAccessUsage::Read, LoadOperation::Load)
             ->AddDepthStencilAttachment(depthRT, AttachmentAccessUsage::Read, LoadOperation::Load)
             ->SetMultisampled(true);
 
@@ -516,17 +521,18 @@ namespace Pudu
         GlobalConstants globalConstants{};
         auto camera = m_renderCamera;
 
-        globalConstants.farPlane = camera->Projection.farPlane;
-        globalConstants.nearPlane = camera->Projection.nearPlane;
-        globalConstants.cameraPosWS = camera->Transform.GetLocalPosition();
+        globalConstants.farPlane = float4(camera->Projection.farPlane);
+        globalConstants.nearPlane = float4(camera->Projection.nearPlane);
+        globalConstants.cameraPosWS = float4(camera->Transform.GetLocalPosition(),1);
         globalConstants.viewMatrix = camera->GetViewMatrix();
         globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
+        globalConstants.viewProjectionMatrix = camera->Projection.GetProjectionMatrix() * camera->GetViewMatrix();
 
-        const Size offset = offsetof(GlobalConstants, nearPlane);
-        const Size size = sizeof(GlobalConstants) - offset;
-        const byte* data = reinterpret_cast<byte*>(&globalConstants) + offset;
+        const Size offset = offsetof(GlobalConstants, farPlane);
+        const Size size = offset + sizeof(float4);
+        const byte* data = reinterpret_cast<byte*>(&globalConstants);
 
-        frameData.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), data, size, offset);
+        frameData.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(), data, size, 0);
         frameData.currentCommand->BufferBarrier(m_globalConstantsBuffer.get(), sizeof(GlobalConstants), 0, 0, 0, 0, 0);
     }
 
@@ -584,13 +590,14 @@ namespace Pudu
         GlobalConstants globalConstants{};
         auto camera = m_renderCamera;
         const auto graphics = frame.graphics;
-        globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight};
-        globalConstants.time = frame.app->Time.Time();
-        globalConstants.farPlane = camera->Projection.farPlane;
-        globalConstants.nearPlane = camera->Projection.nearPlane;
-        globalConstants.cameraPosWS = camera->Transform.GetLocalPosition();
+        globalConstants.screenSize = {graphics->WindowWidth, graphics->WindowHeight,0,0};
+        globalConstants.time = float4(frame.app->Time.Time());
+        globalConstants.farPlane = float4(camera->Projection.farPlane);
+        globalConstants.nearPlane = float4(camera->Projection.nearPlane);
+        globalConstants.cameraPosWS = float4(camera->Transform.GetLocalPosition(),1);
         globalConstants.viewMatrix = camera->GetViewMatrix();
         globalConstants.projectionMatrix = camera->Projection.GetProjectionMatrix();
+        globalConstants.viewProjectionMatrix =camera->Projection.GetProjectionMatrix() * camera->GetViewMatrix();
 
         frame.currentCommand->UploadBufferData(m_globalConstantsBuffer.get(),
                                                reinterpret_cast<const byte*>(&globalConstants),

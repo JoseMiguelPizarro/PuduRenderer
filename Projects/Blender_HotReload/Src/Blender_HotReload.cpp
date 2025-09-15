@@ -8,6 +8,7 @@
 #include "FileWatch.hpp"
 #include "ImGuiUtils.h"
 #include "GPUEnums.h"
+#include "OverlayQuadEntity.h"
 
 std::unique_ptr<filewatch::FileWatch<std::string>> watch;
 namespace Pudu
@@ -80,8 +81,14 @@ void Blender_HotReload::OnInit()
             }
         });
 
+    auto overlay = std::make_shared<OverlayQuadEntity>(&Graphics);
+
+    overlay->SetPositionAndSize(0, 0, .3,.3);
+    overlay->SetTexture(m_puduRenderer.GetOmnidirectionalShadowmapRT());
+
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(m_model);
+    m_scene.AddEntity(overlay);
 }
 
 void Blender_HotReload::OnRun()

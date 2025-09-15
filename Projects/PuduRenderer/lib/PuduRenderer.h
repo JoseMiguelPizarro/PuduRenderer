@@ -23,6 +23,7 @@ namespace Pudu
         SPtr<Texture> GetIBLDiffuse();
         SPtr<RenderTexture> GetDepthCopyRT() const;
         SPtr<RenderTexture> GetColorCopyRT() const;
+        SPtr<RenderTexture> GetOmnidirectionalShadowmapRT() const;
         void SetDebugMode(Renderer::Debug mode);
         void SetRoughnessScale(float scale);
         void EnablePostProcessing(bool enable) const;
@@ -56,6 +57,7 @@ namespace Pudu
         SPtr<Texture> m_IBL_DiffuseCube;
         SPtr<RenderTexture> m_depthCopyRT;
         SPtr<RenderTexture> m_colorCopyRT;
+        SPtr<RenderTexture> m_omnidirectionalShadowRT;
         SPtr<RenderPass> m_depthRenderPass;
         SPtr<RenderPass> m_forwardRenderPass;
         SPtr<ShadowMapRenderPass> m_shadowMapRenderPass;

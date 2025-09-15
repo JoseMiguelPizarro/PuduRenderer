@@ -601,6 +601,7 @@ namespace Pudu
 
         command->BindPipeline(pipeline);
 
+        //TODO: CHECKED IF LAST BOUND INCLUDES TARGET SHADING STAGE
         if (!frameData.areGlobalPropertiesBound)
         {
             const auto& globalProperties = frameData.globalPropertiesMaterial;

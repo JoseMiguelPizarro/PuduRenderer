@@ -29,6 +29,7 @@ public struct SceneLighting
 {
     public ConstantBuffer<LightingBuffer> lights;
     public Sampler2DShadow shadowMap;
+    public Sampler2DShadow omnidirectionalShadowMap;
     public SamplerCube IBL_Specular; //Convoluted image based lighting env map
     public SamplerCube IBL_Diffuse;
     public Sampler2D BRDF_LUT;
