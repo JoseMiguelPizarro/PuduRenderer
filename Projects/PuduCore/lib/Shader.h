@@ -58,6 +58,7 @@ namespace Pudu
         BlendState GetBlendState();
         CullMode GetCullMode();
         bool OverridesPipelineState() { return m_compilationObject.OverridePipelineState(); }
+        VkShaderStageFlagBits GetShaderStages() override;
 
     protected:
         SPtr<Pipeline> OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass) override;

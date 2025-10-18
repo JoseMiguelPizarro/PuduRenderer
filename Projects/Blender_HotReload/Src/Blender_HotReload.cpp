@@ -86,9 +86,19 @@ void Blender_HotReload::OnInit()
     overlay->SetPositionAndSize(0, 0, .3,.3);
     overlay->SetTexture(m_puduRenderer.GetOmnidirectionalShadowmapRT());
 
+
+    const auto overlayShader = Graphics.CreateShader("overlay.slang", "overlay");
+    const auto axisModel = FileManager::LoadGltfScene("models/axis.gltf")->GetChildByName<RenderEntity>("OUT_AXIS");
+    axisModel->GetTransform().SetLocalPosition({0, 0, 0});
+    axisModel->GetTransform().SetUniformLocalScale(0.2f);
+    auto& [layer] = axisModel->GetRenderSettings();
+    layer = 2;
+    axisModel->GetModel()->Materials[0]->SetShader(overlayShader);
+
     m_scene.AddEntity(skyboxModel);
     m_scene.AddEntity(m_model);
     m_scene.AddEntity(overlay);
+    m_scene.AddEntity(axisModel);
 }
 
 void Blender_HotReload::OnRun()

@@ -1,8 +1,8 @@
 import "Lib/PuduLightingModule.slang";
 import PuduGraphicsModule;
+import "Lib/PuduShadowModule.slang";
 
 #include "Lib/grass.slang"
-#include "Lib/PuduShadowModule.slang"
 
 #include "lib/lygia/generative/cnoise.hlsl"
 #include "lib/lygia/generative/random.hlsl"

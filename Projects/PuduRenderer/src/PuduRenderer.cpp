@@ -293,6 +293,13 @@ namespace Pudu
 
         InitBRDF_LUT(graphics);
 
+        m_omnidirectionalLightBuffer = graphics->CreateGraphicsBuffer(sizeof(OmnidirectionalShadowmapData), nullptr,
+                                                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                                                    | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                                    VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                                                    "OmnidirectionalLightBuffer");
+
 
         auto depthRT = graphics->GetRenderTexture();
         depthRT->depth = 1;
@@ -359,6 +366,7 @@ namespace Pudu
         m_omnidirectionalShadowMapRenderPass = graphics->GetRenderPass<OmnidirectionalShadowmapRenderPass>();
         m_omnidirectionalShadowMapRenderPass->name = "OmnidirectionalShadowmapRenderPass";
         m_omnidirectionalShadowMapRenderPass->AddDepthStencilAttachment(m_omnidirectionalShadowRT, AttachmentAccessUsage::Write, LoadOperation::Clear);
+        m_omnidirectionalShadowMapRenderPass->SetBuffer(m_omnidirectionalLightBuffer);
 
         m_forwardRenderPass = graphics->GetRenderPass<ForwardRenderPass>();
         m_forwardRenderPass
@@ -492,6 +500,8 @@ namespace Pudu
         m_globalPropertiesMaterial->SetProperty("GLOBALS.linearSampler", linerSampler.Get());
         m_globalPropertiesMaterial->SetProperty("GLOBALS.pudu", graphics->GetPuduTexture());
         m_globalPropertiesMaterial->SetProperty("LIGHTING.shadowMap", shadowRT);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.omnidirectionalSM", m_omnidirectionalShadowRT);
+        m_globalPropertiesMaterial->SetProperty("LIGHTING.omnidirectionalData", m_omnidirectionalLightBuffer);
         m_globalPropertiesMaterial->SetProperty("LIGHTING.lights", m_lightingBuffer);
 
         SetRoughnessScale(1.);

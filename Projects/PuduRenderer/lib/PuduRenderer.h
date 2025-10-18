@@ -66,6 +66,7 @@ namespace Pudu
         SPtr<ImguiRenderPass> m_imguiRenderPass;
         SPtr<GraphicsBuffer> m_lightingBuffer;
         SPtr<GraphicsBuffer> m_globalConstantsBuffer;
+        SPtr<GraphicsBuffer> m_omnidirectionalLightBuffer;
         SPtr<Material> m_globalPropertiesMaterial;
         SPtr<DescriptorSetLayoutsCollection> m_globalDescriptorSetLayouts;
     };

@@ -43,8 +43,10 @@ namespace Pudu
     {
         if (diagnostics)
         {
+            const char* errorMessage = static_cast<const char*>(diagnostics->getBufferPointer());
+
             LOG_ERROR_NO_BREAK("Shader compilation error: {}",
-                               static_cast<const char*>(diagnostics->getBufferPointer()));
+                               errorMessage);
 
             return true;
         }
@@ -226,7 +228,8 @@ namespace Pudu
         {
             ASSERT(!path.empty(), "Cannot compile module. Path is empty");
             IModule* module = m_session->loadModule(path.string().c_str(), diagnostics.writeRef());
-            PrintDiagnostics(diagnostics);
+
+            if (PrintDiagnostics(diagnostics)) return GetFailedCompilationObject();
             components.push_back(module);
         }
 

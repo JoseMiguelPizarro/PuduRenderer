@@ -47,6 +47,20 @@ namespace Pudu
         return m_compilationObject.GetCullMode();
     }
 
+    VkShaderStageFlagBits Shader::GetShaderStages()
+    {
+        uint flags = 0;
+
+        if (m_fragmentData.has_value())
+            flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+        if (m_vertexData.has_value())
+            flags |= VK_SHADER_STAGE_VERTEX_BIT;
+        if (m_geometryData.has_value())
+            flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+
+        return static_cast<VkShaderStageFlagBits>(flags);
+    }
+
     SPtr<Pipeline> Shader::OnCreatePipeline(PuduGraphics* gfx, RenderPass* renderPass)
     {
         auto creationData = gfx->GetPipelineCreationData(this, renderPass);

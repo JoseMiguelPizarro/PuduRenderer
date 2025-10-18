@@ -7,18 +7,12 @@
 #include "PuduGraphics.h"
 #include "Renderer.h"
 #include "RenderFrameData.h"
+#include "maths.h"
 
 namespace Pudu
 {
     void OmnidirectionalShadowmapRenderPass::OnCreate(PuduGraphics* gfx)
     {
-        m_omnidirectionalBuffer = gfx->CreateGraphicsBuffer(sizeof(OmnidirectionalShadowmapData), nullptr,
-                                                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-                                                            | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                                            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                                            VMA_ALLOCATION_CREATE_MAPPED_BIT,
-                                                            "OmnidirectionalLightBuffer");
-
         m_omnidirectionalShader = gfx->CreateShader("OmnidirectionalShadowMap.shader.slang", "Omnidirectional Shader");
         m_omnidirectionalMaterial = gfx->CreateMaterial("OmnidirectionalShadowMapMaterial", m_omnidirectionalShader);
 
@@ -27,6 +21,14 @@ namespace Pudu
     }
 
     //Convert from projection space to texture space
+    mat4 ToMat4(float m[16])
+    {
+        return mat4(m[0], m[1], m[2], m[3],
+                    m[4], m[5], m[6], m[7],
+                    m[8], m[9], m[10], m[11],
+                    m[12], m[13], m[14], m[15]);
+    }
+
     void GetTextureSpaceMatrix(float2 p, float size, float4x4& Ma, float4x4& Mb, float4x4& Mc, float4x4& Md)
     {
         float s = size; //Size
@@ -35,6 +37,8 @@ namespace Pudu
         Mc = float4x4({s, 0, 0, 0}, {0, s / 2, 0, 0}, {0, 0, 1, 0}, {p.x, p.y + s / 2, 0, 1});
         Md = float4x4({s / 2, 0, 0, 0}, {0, s, 0, 0}, {0, 0, 1, 0}, {p.x - s / 2, p.y, 0, 1});
     }
+
+    
 
     void OmnidirectionalShadowmapRenderPass::PreRender(RenderFrameData& renderData)
     {
@@ -49,24 +53,33 @@ namespace Pudu
         uint resolution = 4096;
         uint widthCount = resolution / size;
 
-        mat4 xRotMatrix, yRotMatrix, zRotMatrix;
-        xRotMatrix = rotate(mat4(1.0f), radians(180.0f), vec3(0.0f, 1.0f, 0.0f));
-        yRotMatrix = rotate(mat4(1.0f), radians(27.36780516f), vec3(1.0f, 0.0f, 0.0f));
-        mat4 rotationA = yRotMatrix * xRotMatrix;
 
-        xRotMatrix = rotate(mat4(1.0f), radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-        yRotMatrix = rotate(mat4(1.0f), radians(27.36780516f), vec3(1.0f, 0.0f, 0.0f));
-        zRotMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
-        mat4 rotationB = zRotMatrix * yRotMatrix * xRotMatrix;
+        float tileSize = size/ static_cast<float>(resolution);
 
-        xRotMatrix = rotate(mat4(1.0f), radians(270.0f), vec3(0.0f, 1.0f, 0.0f));
-        yRotMatrix = rotate(mat4(1.0f), radians(-27.36780516f), vec3(1.0f, 0.0f, 0.0f));
-        mat4 rotationC = yRotMatrix * xRotMatrix;
+        Matrix4 views[4];
 
-        xRotMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
-        yRotMatrix = rotate(mat4(1.0f), radians(-27.36780516f), vec3(1.0f, 0.0f, 0.0f));
-        zRotMatrix = rotate(mat4(1.0f), radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
-        mat4 rotationD = zRotMatrix * yRotMatrix * xRotMatrix;
+
+        Matrix4 xRotMatrix, yRotMatrix, zRotMatrix;
+        float offset = 0;
+        xRotMatrix.SetRotationY(180.0f + offset);
+        yRotMatrix.SetRotationX(27.36780516f);
+        auto rotationA  = yRotMatrix*xRotMatrix;
+        xRotMatrix.SetRotationY(0 + offset);
+        yRotMatrix.SetRotationX(27.36780516f);
+        zRotMatrix.SetRotationZ(90.0f);
+        auto rotationB = zRotMatrix*yRotMatrix*xRotMatrix;
+        xRotMatrix.SetRotationY(270.0f + offset);
+        yRotMatrix.SetRotationX(-27.36780516f);
+        auto rotationC = yRotMatrix*xRotMatrix;
+        xRotMatrix.SetRotationY(90.0f + offset);
+        yRotMatrix.SetRotationX(-27.36780516f);
+        zRotMatrix.SetRotationZ(90.0f);
+        auto rotationD = zRotMatrix*yRotMatrix*xRotMatrix;
+
+        views[0] = rotationA;
+        views[1] = rotationB;
+        views[2] = rotationC;
+        views[3] = rotationD;
 
         for (auto& light : lights)
         {
@@ -75,28 +88,68 @@ namespace Pudu
                 float2 coordinates = {count % widthCount, count / widthCount};
                 auto translationMatrix = translate(mat4(1.0), -light->GetTransform().GetLocalPosition());
 
+                Matrix4 translation;
+                Vector3 translationVec;
+                translationVec.x = light->GetTransform().GetLocalPosition().x;
+                translationVec.y = light->GetTransform().GetLocalPosition().y;
+                translationVec.z = light->GetTransform().GetLocalPosition().z;
+
+                translation.SetTranslation(-translationVec);
+
                 float4x4 Ta, Tb, Tc, Td;
                 GetTextureSpaceMatrix(coordinates, static_cast<float>(size) / static_cast<float>(resolution), Ta, Tb,
                                       Tc, Td);
 
                 float nearplane = 0.1f;
                 float farplane = 50.f;
-                mat4 mA = PerspectiveMatrixFOV(125.26438968f, 143.98570868f, nearplane, farplane) *
-                    translationMatrix * rotationA;
 
-                mat4 mB =  PerspectiveMatrixFOV(143.98570868f, 125.26438968f, nearplane, farplane) *
-                     translationMatrix * rotationB;
+                const float fov0 = 143.98570868f+1.99273682f;
+                const float fov1 = 125.26438968f+2.78596497f;
+                Matrix4 tiledShadowProjMatrices[4];
+                tiledShadowProjMatrices[0].SetPerspective(Vector2(fov0, fov1), 0.2f, farplane);
+                tiledShadowProjMatrices[1].SetPerspective(Vector2(fov1, fov0), 0.2f, farplane);
+                tiledShadowProjMatrices[2] = tiledShadowProjMatrices[0];
+                tiledShadowProjMatrices[3] = tiledShadowProjMatrices[1];
 
-                mat4 mC =  PerspectiveMatrixFOV(125.26438968f, 143.98570868f, nearplane, farplane) *
-                     translationMatrix * rotationC;
+                Matrix4 shadowTexMatrices[4];
 
-                mat4 mD =  PerspectiveMatrixFOV(143.98570868f, 125.26438968f, nearplane, farplane) *
-                     translationMatrix * rotationD;
+                float tilePositionX = 0;
+                float tilePositionY = 0;
 
-                m_data.shadowMatrix[count * 4] = mA;
-                m_data.shadowMatrix[count * 4 + 1] = mB;
-                m_data.shadowMatrix[count * 4 + 2] = mC;
-                m_data.shadowMatrix[count * 4 + 3] = mD;
+                shadowTexMatrices[0].Set(
+                    tileSize, 0.0f, 0.0f, 0.0f,
+                    0.0f, tileSize*0.5f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    tilePositionX, tilePositionY-(tileSize*0.5f), 0.0f, 1.0f);
+
+                shadowTexMatrices[1].Set(
+                    tileSize*0.5f, 0.0f, 0.0f, 0.0f,
+                    0.0f, tileSize, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    tilePositionX+(tileSize*0.5f), tilePositionY, 0.0f, 1.0f);
+
+                shadowTexMatrices[2].Set(
+                    tileSize, 0.0f, 0.0f, 0.0f,
+                    0.0f, tileSize*0.5f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    tilePositionX, tilePositionY+(tileSize*0.5f), 0.0f, 1.0f);
+
+                shadowTexMatrices[3].Set(
+                    tileSize*0.5f, 0.0f, 0.0f, 0.0f,
+                    0.0f, tileSize, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    tilePositionX-(tileSize*0.5f), tilePositionY, 0.0f, 1.0f);
+
+                Matrix4 shadowMatrices[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    shadowMatrices[i] = tiledShadowProjMatrices[i] * views[i] * translation;
+                }
+
+                m_data.shadowMatrix[count * 4] = shadowMatrices[0];
+                m_data.shadowMatrix[count * 4 + 1] = shadowMatrices[1];
+                m_data.shadowMatrix[count * 4 + 2] = shadowMatrices[2];
+                m_data.shadowMatrix[count * 4 + 3] = shadowMatrices[3];
 
                 count++;
             }
@@ -108,6 +161,8 @@ namespace Pudu
 
     void OmnidirectionalShadowmapRenderPass::Render(RenderFrameData& frameData)
     {
+        ASSERT(m_omnidirectionalBuffer != nullptr, "Trying to render shadowmap without buffer");
+
         auto commands = frameData.currentCommand;
 
         auto drawCalls = frameData.renderer->GetDrawCalls(m_renderLayer);
@@ -170,8 +225,7 @@ namespace Pudu
                     commands->SetViewport(viewport);
 
                     commands->PushConstants(pipeline->vkPipelineLayoutHandle,
-                                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
-                                            VK_SHADER_STAGE_GEOMETRY_BIT, 0,
+                                 material->GetShader()->GetShaderStages(), 0,
                                             sizeof(UniformBufferObject), &ubo);
 
                     commands->DrawIndexed(static_cast<uint32_t>(mesh->GetIndices()->size()), 1, 0, 0, 0);
@@ -181,5 +235,12 @@ namespace Pudu
                 lightCount++;
             }
         }
+    }
+
+    void OmnidirectionalShadowmapRenderPass::SetBuffer(const SPtr<GraphicsBuffer>& buffer)
+    {
+        ASSERT(buffer != nullptr, "Trying to set null buffer");
+
+        m_omnidirectionalBuffer = buffer;
     }
 }

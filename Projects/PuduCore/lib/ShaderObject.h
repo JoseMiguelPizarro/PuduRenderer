@@ -29,6 +29,7 @@ namespace Pudu
         VertexLayout* GetVertexLayout() { return m_compilationObject.GetVertexLayout();};
         std::vector<GPUResourceHandle<Pipeline>>* GetPipelines() { return &m_pipelines; }
         UPtr<std::vector<fs::path>> GetDependencies();
+        virtual VkShaderStageFlagBits GetShaderStages() {return VK_SHADER_STAGE_ALL;};
 
 
 #pragma region DescriptorProvider

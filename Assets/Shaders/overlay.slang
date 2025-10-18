@@ -1,6 +1,29 @@
-#include "Lib/DefaultVertexInput.hlsl"
 
+import PuduCoreModule;
 import PuduGraphicsModule;
+
+struct VSOut
+{
+    float4 PosCS: SV_POSITION;
+    float4 PosWS:POSITION0;
+    float4 PosOS:POSITION1;
+    float3 Color: COLOR;
+    float3 viewDir:POSITION2;
+    float4 TexCoord:TEXCOORD;
+    float4 Normal:NORMAL;
+    float4 Tangent:TANGENT;
+    float4 ShadowCoords:TEXCOORD1;
+
+};
+
+struct VertexInput
+{
+ 	[POSITION] 	float3 Position;
+    [COLOR] 	float3 Color;
+    [TEXCOORD0] float2 TexCoord;
+    [NORMAL] 	float3 Normal;
+    [TANGENT] 	float4 Tangent;
+};
 
 [shader("vertex")]
 VSOut vertexMain(VertexInput input)
@@ -20,7 +43,8 @@ VSOut vertexMain(VertexInput input)
 
     output.PosCS = mul(GetProjectionMatrix(), mul(GetViewMatrix(), mul(UBO.model, float4(input.Position, 1.0))));
     output.PosWS = mul(UBO.model, float4(input.Position, 1));
-    output.Color = float4(input.Color, 1.0);
+    output.Color = input.Color;
+
     output.TexCoord = float4(input.TexCoord, 0, 0);
     output.Normal = float4(input.Normal, 0.);
     output.PosOS = float4(input.Position, 0.);
@@ -31,5 +55,5 @@ VSOut vertexMain(VertexInput input)
 float4 fragmentMain(VSOut input)
     : SV_Target
 {
-    return input.Color;
+    return float4(input.Color,1);
 }

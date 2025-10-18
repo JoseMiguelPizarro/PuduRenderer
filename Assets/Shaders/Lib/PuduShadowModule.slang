@@ -19,25 +19,77 @@ float TextureProj(float4 shadowCoord, float2 off, Sampler2DShadow shadowMap)
     return shadow;
 }
 
-struct OmnidirectionalShadowSampleData
+public struct OmnidirectionalShadowSampleData
 {
-    uint lightIndex;
-    Sampler2DShadow shadowMap;
-    float4 shadowCoord;
-    uint2 lightDimension;
-    float centerOffset;
+    public uint lightIndex;
+    public Sampler2DShadow shadowMap;
+    public float3 positionWS;
+    public float3 lightVector;
+    public float4x4 shadowMatrix[4];
+    public uint2 lightDimension;
+    public float centerOffset;
 };
 
-float SampleOmnidirectionalLightShadow(OmnidirectionalShadowSampleData sampleData)
+const static float3 faceVectors[4] =
 {
-    uint x = sampleData.lightIndex%sampleData.lightDimension.x;
-    uint y = sampleData.lightIndex/sampleData.lightDimension.x;
-    float2 uvc = float2(x/sampleData.lightDimension.x + sampleData.centerOffset, y/sampleData.lightDimension.y + sampleData.centerOffset);
+  float3(0.0, -0.57735026, -0.81649661), //Green face
+  float3(0.0, -0.57735026, 0.81649661), //Yellow face
+  float3(-0.81649661, 0.57735026, 0.0),// Blue face
+  float3(0.81649661, 0.57735026, 0.0)// Red face
+};
 
-    return 0;
+
+
+uint GetFaceIndex(float3 dir)
+{
+  float4x3 faceMatrix;
+  float dA = dot(dir, faceVectors[0]);
+  float dB = dot(dir, faceVectors[1]);
+  float dC = dot(dir, faceVectors[2]);
+  float dD = dot(dir, faceVectors[3]);
+
+  uint index = 0;
+  float currentMax = dA;
+  if(dB>currentMax)
+  {
+    index = 1;
+    currentMax = dB;
+  }
+  if(dC>currentMax)
+  {
+    index = 2;
+    currentMax = dC;
+  }
+  if(dD > currentMax)
+  {
+    index = 3;
+    currentMax = dD;
+  }
+
+  return index;
 }
 
-float FilterPCF(float4 sc, Sampler2DShadow shadowMap)
+public float SampleOmnidirectionalLightShadow(OmnidirectionalShadowSampleData sampleData)
+{
+    uint faceIndex = GetFaceIndex(sampleData.lightVector);
+    float4 shadowCoord = mul(sampleData.shadowMatrix[faceIndex], float4(sampleData.positionWS,1));
+
+     shadowCoord /= shadowCoord.w;
+
+     shadowCoord = mul(biasMat, shadowCoord);
+
+     float shadow = 1.0;
+
+    float dist = sampleData.shadowMap.Sample(shadowCoord.xy).x;
+    if (shadowCoord.w>0 && dist < shadowCoord.z)
+    {
+        shadow = 0.0f;
+    }
+
+    return shadow;
+}
+
+public float FilterPCF(float4 sc, Sampler2DShadow shadowMap)
 {
     sc /=sc.w;
 
@@ -64,7 +116,7 @@ float FilterPCF(float4 sc, Sampler2DShadow shadowMap)
     return shadowFactor / count;
 }
 
-float4 GetShadowCoord(float4x4 shadowMatrix, float4x4 lightMatrix, float4 posWS)
+public float4 GetShadowCoord(float4x4 shadowMatrix, float4x4 lightMatrix, float4 posWS)
 {
     return mul(biasMat, mul(shadowMatrix, mul(lightMatrix, posWS)));
 }

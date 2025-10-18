@@ -2,8 +2,8 @@
 
 import PuduCoreModule;
 import PuduGraphicsModule;
-#include "lib/PuduShadowModule.slang"
-#include "lib/PuduLightingModule.slang"
+import "lib/PuduShadowModule.slang";
+import "lib/PuduLightingModule.slang";
 
 
 struct StandardMaterial

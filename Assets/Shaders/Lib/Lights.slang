@@ -1,5 +1,7 @@
+#pragma once
 #ifndef PUDU_LIGHTS
 #define PUDU_LIGHTS
+
 
 public struct DirectionalLight
 {
@@ -25,14 +27,21 @@ public struct LightingBuffer
     public PointLight[64] pointLight;
 };
 
+public struct OmnidirectionalShadowmapData
+{
+    public  float4 lightCount;
+    public float4x4 shadowMatrix[128]; //FOR NOW HARD CODED TO 128. Packed in sets of 4 per each light
+};
+
 public struct SceneLighting
 {
     public ConstantBuffer<LightingBuffer> lights;
     public Sampler2DShadow shadowMap;
-    public Sampler2DShadow omnidirectionalShadowMap;
+    public Sampler2DShadow omnidirectionalSM;
     public SamplerCube IBL_Specular; //Convoluted image based lighting env map
     public SamplerCube IBL_Diffuse;
     public Sampler2D BRDF_LUT;
-    public uint IBL_Levels;
+    public ConstantBuffer<OmnidirectionalShadowmapData> omnidirectionalData;
+    public uint4 IBL_Levels;
 };
 #endif

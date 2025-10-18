@@ -4,14 +4,14 @@
 
 #pragma once
 #include "FrameGraph/RenderPass.h"
-
+#include "maths.h"
 
 namespace Pudu
 {
     struct OmnidirectionalShadowmapData
     {
         float4 lightCount;
-        float4x4 shadowMatrix[128]; //FOR NOW HARD CODED TO 128
+        Matrix4 shadowMatrix[128]; //FOR NOW HARD CODED TO 128
     };
 
 
@@ -21,6 +21,7 @@ namespace Pudu
         void OnCreate(PuduGraphics* gfx) override;
         void PreRender(RenderFrameData& renderData) override;
         void Render(RenderFrameData& renderData) override;
+        void SetBuffer(const SPtr<GraphicsBuffer>& buffer);
 
     private:
         SPtr<GraphicsBuffer> m_omnidirectionalBuffer;

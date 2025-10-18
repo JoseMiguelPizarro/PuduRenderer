@@ -4,6 +4,7 @@ module PuduLightingModule;
 import PuduCoreModule;
 import PuduRandomModule;
 import PuduGraphicsModule;
+import "Lib/PuduShadowModule.slang";
 import "Lib/PuduDebugModule.slang";
 
 
@@ -297,7 +298,7 @@ float3 GetIBLRadianceContributionGGX(PBRInfo PBR, SurfaceInfo Surface , float Sp
 
     SamplerCube envMap = LIGHTING.IBL_Specular;
 
-    float lod = Surface.Roughness * (LIGHTING.IBL_Levels-1);
+    float lod = Surface.Roughness * (LIGHTING.IBL_Levels.x-1);
     float2 brdfSamplePoint = float2(NdV,Surface.Roughness);
     float2 brdf = SampleBRDFLUT(brdfSamplePoint);
     float3 specularLight = envMap.SampleLevel(VrN,lod).xyz;
@@ -378,7 +379,7 @@ public float3 StandardSurface(SurfaceInfo Surface) {
     float3 diffuseColor = GetIBLRadianceDiffuse(PBR,Surface,1.) * 0.1;
 
     let directionalLight = LIGHTING.lights.directionalLight;
-    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation;
+    float3 L = CalculatePBRLightContribution(PBR,Surface, normalize(directionalLight.lightDirection.xyz),directionalLight.lightColor.rgb) * Surface.ShadowAttenuation * 0.0;
     for(int i = 0; i<LIGHTING.lights.lightCount.x; i++)
     {
         let light = LIGHTING.lights.pointLight[i];
@@ -387,8 +388,23 @@ public float3 StandardSurface(SurfaceInfo Surface) {
         let intensity = light.colorAndIntensity.w;
         let lightColor = light.colorAndIntensity.rgb;
         float lightDist = distance(Surface.PosWS,lightPos);
-        float attenuation =DistanceAttenuation(lightDist, lightRange);
-        L+=CalculatePBRLightContribution(PBR,Surface, normalize(lightPos - Surface.PosWS),lightColor.rgb * intensity) * attenuation;
+        float attenuation = DistanceAttenuation(lightDist, lightRange);
+        float3 lightVector =  normalize(lightPos - Surface.PosWS);
+
+        OmnidirectionalShadowSampleData shadowSampleData;
+        shadowSampleData.lightIndex = i;
+        shadowSampleData.shadowMap = LIGHTING.omnidirectionalSM;
+        shadowSampleData.positionWS = Surface.PosWS;
+        shadowSampleData.lightVector = lightVector;
+
+        for(int j = 0; j<4; j++)
+        {
+            shadowSampleData.shadowMatrix[j] = LIGHTING.omnidirectionalData.shadowMatrix[i*4 + j];
+        }
+
+        float shadow = SampleOmnidirectionalLightShadow(shadowSampleData);
+
+        L+=CalculatePBRLightContribution(PBR,Surface, lightVector,lightColor.rgb * intensity) *  shadow;
     }
 
     float3 c = (specularColor + diffuseColor + L) + Surface.Emissive ;
