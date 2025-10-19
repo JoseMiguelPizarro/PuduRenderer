@@ -1,27 +1,81 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Define the workspace/project
 project(PuduRenderer LANGUAGES CXX)
 include(FetchContent)
 
-# Set the C++ standard
+# ----------------------------------------------------
+# Global Settings
+# ----------------------------------------------------
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Set architecture
 set(CMAKE_GENERATOR_PLATFORM x64)
-
-# Define configurations
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs")
 
-# Set Vulkan SDK
+set(CMAKE_DISABLE_FIND_PACKAGE_SLANG ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_GLSLANG ON)
+
+# ----------------------------------------------------
+# Vulkan SDK
+# ----------------------------------------------------
 set(VULKAN_SDK $ENV{VULKAN_SDK})
 
-# Fetch KTX
+# ----------------------------------------------------
+# KTX
+# ----------------------------------------------------
 find_package(KTX REQUIRED)
 
-# Include directories
+# ----------------------------------------------------
+# Slang Setup
+# ----------------------------------------------------
+set(SLANG_VERSION "2025.16.1")
+
+if (WIN32)
+    set(SLANG_OS "windows-x86_64")
+elseif (APPLE)
+    set(SLANG_OS "macos-aarch64")
+elseif (UNIX)
+    set(SLANG_OS "linux-x86_64")
+endif()
+
+message(STATUS "Fetching Slang v${SLANG_VERSION} for ${SLANG_OS}")
+
+FetchContent_Populate(
+        slang_zip
+        URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-${SLANG_OS}.zip
+        QUIET
+)
+
+set(SLANG_INCLUDE_DIR "${slang_zip_SOURCE_DIR}/include")
+set(SLANG_LIB_DIR "${slang_zip_SOURCE_DIR}/lib")
+set(SLANG_BIN_DIR "${slang_zip_SOURCE_DIR}/bin")
+
+if (WIN32)
+    set(SLANG_LIB_FILE "${SLANG_LIB_DIR}/slang.lib")
+elseif (APPLE)
+    set(SLANG_LIB_FILE "${SLANG_LIB_DIR}/libslang.dylib")
+elseif (UNIX)
+    set(SLANG_LIB_FILE "${SLANG_LIB_DIR}/libslang.so")
+endif()
+
+add_library(SlangLib STATIC IMPORTED GLOBAL)
+set_target_properties(SlangLib PROPERTIES
+        IMPORTED_LOCATION "${SLANG_LIB_FILE}"
+        INTERFACE_INCLUDE_DIRECTORIES "${SLANG_INCLUDE_DIR}"
+)
+
+# Slang DLLs (runtime)
+if (WIN32)
+    set(SLANG_DLLS
+            "${SLANG_BIN_DIR}/slang.dll"
+            "${SLANG_BIN_DIR}/slang-glslang.dll"
+    )
+endif()
+
+# ----------------------------------------------------
+# Common Include / Libs
+# ----------------------------------------------------
 set(INCLUDE_DIRS
+        ${SLANG_INCLUDE_DIR}
         ${VULKAN_SDK}/Include
         ${VULKAN_SDK}/Include/vma
         lib/fastgltf/include
@@ -33,9 +87,7 @@ set(INCLUDE_DIRS
         Projects/PuduRenderer/lib
         Projects/CatDiorama/lib
 )
-include_directories(${INCLUDE_DIRS})
 
-# Library directories
 set(LIB_DIRS
         ${VULKAN_SDK}/Lib
         lib/fastgltf/${CMAKE_BUILD_TYPE}
@@ -43,9 +95,7 @@ set(LIB_DIRS
         lib/GLFW/Lib
         lib/ktx/lib
 )
-link_directories(${LIB_DIRS})
 
-# Libraries
 set(LIBS
         vulkan-1
         fastgltf
@@ -53,24 +103,10 @@ set(LIBS
         TracyClient
 )
 
+# ----------------------------------------------------
+# Tracy Setup
+# ----------------------------------------------------
 set(TRACY_VERSION "v0.12.2")
-
-set(SLANG_VERSION "2025.14.3")
-if (WIN32)
-    set(SLANG_OS "windows-x86_64")
-elseif (APPLE)
-    set(SLANG_OS "macos-aarch64")
-elseif (UNIX)
-    set(SLANG_OS "linux-x86_64")
-endif ()
-
-
-
-message(STATUS "Fetching Slang ver: ${SLANG_VERSION}")
-include(FetchContent)
-FetchContent_Populate(slang_zip URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-${SLANG_OS}.zip QUIET)
-
-
 FetchContent_Declare(
         tracy
         GIT_REPOSITORY https://github.com/wolfpld/tracy.git
@@ -78,46 +114,34 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE
 )
-
 FetchContent_MakeAvailable(tracy)
 include_directories(${tracy_SOURCE_DIR}/public)
 
-
-message(STATUS "Slang dir: ${slang_zip_SOURCE_DIR}")
-add_library(slang SHARED IMPORTED GLOBAL)
-if (WIN32)
-    set_target_properties(slang PROPERTIES
-            SLANG_DLL ${slang_zip_SOURCE_DIR}/bin/slang.dll
-            GLSLANG_DLL ${slang_zip_SOURCE_DIR}/bin/slang-glslang.dll
-            IMPORTED_IMPLIB ${slang_zip_SOURCE_DIR}/lib/slang.lib
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
-    )
-elseif (APPLE)
-    set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.dylib
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.dylib
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
-    )
-elseif (UNIX)
-    set_target_properties(slang PROPERTIES
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang.so
-            IMPORTED_LOCATION ${slang_zip_SOURCE_DIR}/lib/libslang-glslang.so
-            INTERFACE_INCLUDE_DIRECTORIES ${slang_zip_SOURCE_DIR}/include
-    )
-endif ()
-
+# ----------------------------------------------------
+# Utility Macros
+# ----------------------------------------------------
 function(SETUP_TARGET_PROPERTIES target_name)
-
     set_target_properties(${target_name} PROPERTIES
             CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testLib/${target_name}/${CMAKE_BUILD_TYPE}
             CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testLib/${target_name}/${CMAKE_BUILD_TYPE}
             CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${target_name}/${CMAKE_BUILD_TYPE}
     )
-    message(STATUS ${CMAKE_BINARY_DIR}/bin/${target_name}/${CMAKE_BUILD_TYPE})
-    target_include_directories(${target_name} PUBLIC ${INCLUDE_DIRS})
+    target_include_directories(${target_name} BEFORE PUBLIC ${INCLUDE_DIRS})
     target_link_directories(${target_name} PRIVATE ${LIB_DIRS})
+
+    # Copy Slang DLLs if Windows
+    if (WIN32)
+        foreach(dll ${SLANG_DLLS})
+            add_custom_command(
+                    TARGET ${target_name} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${dll}"
+                    "$<TARGET_FILE_DIR:${target_name}>"
+            )
+        endforeach()
+    endif()
 endfunction()
-# Helper macros
+
 macro(add_target target_name target_type)
     if (${target_type} STREQUAL STATIC)
         add_library(${target_name} STATIC)
@@ -125,36 +149,25 @@ macro(add_target target_name target_type)
         add_executable(${target_name})
     else ()
         message(FATAL_ERROR "Unsupported target type: ${target_type}")
-    endif ()
-    set_target_properties(${target_name} PROPERTIES
-            CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testLib/${target_name}/${CMAKE_BUILD_TYPE}
-            CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testLib/${target_name}/${CMAKE_BUILD_TYPE}
-            CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${target_name}/${CMAKE_BUILD_TYPE}
-    )
-    message(STATUS ${CMAKE_BINARY_DIR}/bin/${target_name}/${CMAKE_BUILD_TYPE})
-    target_include_directories(${target_name} PUBLIC ${INCLUDE_DIRS})
-    target_link_directories(${target_name} PRIVATE ${LIB_DIRS})
+    endif()
+    SETUP_TARGET_PROPERTIES(${target_name})
 endmacro()
 
-
-# Add projects
+# ----------------------------------------------------
+# Core Libraries
+# ----------------------------------------------------
 add_library(PuduCore STATIC)
+target_link_libraries(PuduCore PUBLIC SlangLib)
 SETUP_TARGET_PROPERTIES(PuduCore)
 
-#VK_EXT_host_query_reset is needed for Tracy Vulkan gpu profiler
 set_target_properties(PuduCore PROPERTIES
-        COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING;VK_EXT_host_query_reset")
-
-#set_target_properties(PuduCore PROPERTIES COMPILE_DEFINITIONS "GPU_PROFILE")
-
-target_link_libraries(PuduCore PUBLIC slang)
-
+        COMPILE_DEFINITIONS "SPIRV_REFLECT_USE_SYSTEM_SPIRV_H;IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING;VK_EXT_host_query_reset"
+)
 
 file(GLOB_RECURSE PuduCore_SOURCES Projects/PuduCore/**)
 target_sources(PuduCore PRIVATE ${PuduCore_SOURCES})
 target_link_libraries(PuduCore PRIVATE ${LIBS} KTX::ktx)
 target_include_directories(PuduCore PRIVATE ${KTX_INCLUDE_DIRS})
-
 
 add_target(PuduRenderer STATIC)
 set_target_properties(PuduRenderer PROPERTIES
@@ -164,45 +177,10 @@ file(GLOB_RECURSE PuduRenderer_SOURCES Projects/PuduRenderer/**)
 target_sources(PuduRenderer PRIVATE ${PuduRenderer_SOURCES})
 target_link_libraries(PuduRenderer PRIVATE PuduCore ${LIBS})
 
-
-get_target_property(slangDLL slang SLANG_DLL)
-get_target_property(glslangDLL slang GLSLANG_DLL)
-set(buildDir "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/")
-
-file(MAKE_DIRECTORY ${buildDir})
-
-configure_file(${slangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
-
-configure_file(${glslangDLL} "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/" COPYONLY)
-
-message("source dir: ${CMAKE_SOURCE_DIR}")
-
-
-
+# ----------------------------------------------------
+# Application Macro
+# ----------------------------------------------------
 macro(AddPuduApp app_name)
-    set(DIRECTORY "${CMAKE_SOURCE_DIR}/Projects/${app_name}")
-    if (NOT EXISTS ${DIRECTORY})
-        message("Directory: ${DIRECTORY}")
-        file(MAKE_DIRECTORY "Projects/${app_name}")
-        file(MAKE_DIRECTORY "Projects/${app_name}/Lib")
-        file(MAKE_DIRECTORY "Projects/${app_name}/Src")
-
-        # Copy and modify template header
-        file(READ "Templates/NewPuduAppTemplate.h" template_header_content)
-        string(REPLACE "NewPuduAppTemplate" "${app_name}" modified_header_content "${template_header_content}")
-        file(WRITE "Projects/${app_name}/Lib/${app_name}.h" "${modified_header_content}")
-
-        # Copy and modify template source
-        file(READ "Templates/NewPuduAppTemplate.cpp" template_source_content)
-        string(REPLACE "NewPuduAppTemplate" "${app_name}" modified_source_content "${template_source_content}")
-        file(WRITE "Projects/${app_name}/Src/${app_name}.cpp" "${modified_source_content}")
-
-        #Copy and modify main.cpp
-        file(READ "Templates/mainTemplate.cpp" template_source_content)
-        string(REPLACE "NewPuduAppTemplate" "${app_name}" modified_source_content "${template_source_content}")
-        file(WRITE "Projects/${app_name}/Src/main.cpp" "${modified_source_content}")
-    endif ()
-
     add_target(${app_name} EXECUTABLE)
     set_target_properties(${app_name} PROPERTIES
             COMPILE_DEFINITIONS "HLSLPP_FEATURE_TRANSFORM"
@@ -210,10 +188,21 @@ macro(AddPuduApp app_name)
 
     file(GLOB_RECURSE ${app_name}_SOURCES Projects/${app_name}/**)
     target_sources(${app_name} PRIVATE ${${app_name}_SOURCES})
-
     target_include_directories(${app_name} PRIVATE Projects/${app_name}/Lib)
 
-    target_link_libraries(${app_name} PUBLIC PuduRenderer PuduCore PUBLIC slang)
+    target_link_libraries(${app_name} PUBLIC PuduRenderer PuduCore SlangLib)
+
+    # Copy Slang DLLs to app output. Eventually we should copy all needed dll here
+    if (WIN32)
+        foreach(dll ${SLANG_DLLS})
+            add_custom_command(
+                    TARGET ${app_name} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${dll}"
+                    "$<TARGET_FILE_DIR:${app_name}>"
+            )
+        endforeach()
+    endif()
 
     set_target_properties(${app_name} PROPERTIES
             DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Assets/"
@@ -221,6 +210,9 @@ macro(AddPuduApp app_name)
     )
 endmacro()
 
+# ----------------------------------------------------
+# Apps
+# ----------------------------------------------------
 AddPuduApp(CatDiorama)
 AddPuduApp(Test_PBR)
 AddPuduApp(Blender_HotReload)

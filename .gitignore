@@ -43,3 +43,5 @@ CMakeUserPresets.json
 **.dir
 Debug
 
+/.cmake
+**slang_zip*
