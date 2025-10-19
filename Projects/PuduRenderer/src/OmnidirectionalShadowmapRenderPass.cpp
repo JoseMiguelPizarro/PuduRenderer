@@ -7,7 +7,6 @@
 #include "PuduGraphics.h"
 #include "Renderer.h"
 #include "RenderFrameData.h"
-#include "maths.h"
 
 namespace Pudu
 {
@@ -56,30 +55,7 @@ namespace Pudu
 
         float tileSize = size/ static_cast<float>(resolution);
 
-        Matrix4 views[4];
 
-
-        Matrix4 xRotMatrix, yRotMatrix, zRotMatrix;
-        float offset = 0;
-        xRotMatrix.SetRotationY(180.0f + offset);
-        yRotMatrix.SetRotationX(27.36780516f);
-        auto rotationA  = yRotMatrix*xRotMatrix;
-        xRotMatrix.SetRotationY(0 + offset);
-        yRotMatrix.SetRotationX(27.36780516f);
-        zRotMatrix.SetRotationZ(90.0f);
-        auto rotationB = zRotMatrix*yRotMatrix*xRotMatrix;
-        xRotMatrix.SetRotationY(270.0f + offset);
-        yRotMatrix.SetRotationX(-27.36780516f);
-        auto rotationC = yRotMatrix*xRotMatrix;
-        xRotMatrix.SetRotationY(90.0f + offset);
-        yRotMatrix.SetRotationX(-27.36780516f);
-        zRotMatrix.SetRotationZ(90.0f);
-        auto rotationD = zRotMatrix*yRotMatrix*xRotMatrix;
-
-        views[0] = rotationA;
-        views[1] = rotationB;
-        views[2] = rotationC;
-        views[3] = rotationD;
 
         for (auto& light : lights)
         {
@@ -88,13 +64,11 @@ namespace Pudu
                 float2 coordinates = {count % widthCount, count / widthCount};
                 auto translationMatrix = translate(mat4(1.0), -light->GetTransform().GetLocalPosition());
 
-                Matrix4 translation;
-                Vector3 translationVec;
-                translationVec.x = light->GetTransform().GetLocalPosition().x;
-                translationVec.y = light->GetTransform().GetLocalPosition().y;
-                translationVec.z = light->GetTransform().GetLocalPosition().z;
-
-                translation.SetTranslation(-translationVec);
+                // translationVec.x = light->GetTransform().GetLocalPosition().x;
+                // translationVec.y = light->GetTransform().GetLocalPosition().y;
+                // translationVec.z = light->GetTransform().GetLocalPosition().z;
+                //
+                // translation.SetTranslation(-translationVec);
 
                 float4x4 Ta, Tb, Tc, Td;
                 GetTextureSpaceMatrix(coordinates, static_cast<float>(size) / static_cast<float>(resolution), Ta, Tb,
@@ -105,51 +79,24 @@ namespace Pudu
 
                 const float fov0 = 143.98570868f+1.99273682f;
                 const float fov1 = 125.26438968f+2.78596497f;
-                Matrix4 tiledShadowProjMatrices[4];
-                tiledShadowProjMatrices[0].SetPerspective(Vector2(fov0, fov1), 0.2f, farplane);
-                tiledShadowProjMatrices[1].SetPerspective(Vector2(fov1, fov0), 0.2f, farplane);
-                tiledShadowProjMatrices[2] = tiledShadowProjMatrices[0];
-                tiledShadowProjMatrices[3] = tiledShadowProjMatrices[1];
-
-                Matrix4 shadowTexMatrices[4];
+                // float4x4 tiledShadowProjMatrices[4];
+                // tiledShadowProjMatrices[0].SetPerspective(Vector2(fov0, fov1), 0.2f, farplane);
+                // tiledShadowProjMatrices[1].SetPerspective(Vector2(fov1, fov0), 0.2f, farplane);
+                // tiledShadowProjMatrices[2] = tiledShadowProjMatrices[0];
+                // tiledShadowProjMatrices[3] = tiledShadowProjMatrices[1];
+                //
+                // Matrix4 shadowTexMatrices[4];
 
                 float tilePositionX = 0;
                 float tilePositionY = 0;
 
-                shadowTexMatrices[0].Set(
-                    tileSize, 0.0f, 0.0f, 0.0f,
-                    0.0f, tileSize*0.5f, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    tilePositionX, tilePositionY-(tileSize*0.5f), 0.0f, 1.0f);
 
-                shadowTexMatrices[1].Set(
-                    tileSize*0.5f, 0.0f, 0.0f, 0.0f,
-                    0.0f, tileSize, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    tilePositionX+(tileSize*0.5f), tilePositionY, 0.0f, 1.0f);
 
-                shadowTexMatrices[2].Set(
-                    tileSize, 0.0f, 0.0f, 0.0f,
-                    0.0f, tileSize*0.5f, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    tilePositionX, tilePositionY+(tileSize*0.5f), 0.0f, 1.0f);
 
-                shadowTexMatrices[3].Set(
-                    tileSize*0.5f, 0.0f, 0.0f, 0.0f,
-                    0.0f, tileSize, 0.0f, 0.0f,
-                    0.0f, 0.0f, 1.0f, 0.0f,
-                    tilePositionX-(tileSize*0.5f), tilePositionY, 0.0f, 1.0f);
-
-                Matrix4 shadowMatrices[4];
-                for (int i = 0; i < 4; i++)
-                {
-                    shadowMatrices[i] = tiledShadowProjMatrices[i] * views[i] * translation;
-                }
-
-                m_data.shadowMatrix[count * 4] = shadowMatrices[0];
-                m_data.shadowMatrix[count * 4 + 1] = shadowMatrices[1];
-                m_data.shadowMatrix[count * 4 + 2] = shadowMatrices[2];
-                m_data.shadowMatrix[count * 4 + 3] = shadowMatrices[3];
+                // m_data.shadowMatrix[count * 4] = shadowMatrices[0];
+                // m_data.shadowMatrix[count * 4 + 1] = shadowMatrices[1];
+                // m_data.shadowMatrix[count * 4 + 2] = shadowMatrices[2];
+                // m_data.shadowMatrix[count * 4 + 3] = shadowMatrices[3];
 
                 count++;
             }

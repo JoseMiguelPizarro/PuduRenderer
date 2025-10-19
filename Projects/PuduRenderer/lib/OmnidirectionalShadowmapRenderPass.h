@@ -4,14 +4,13 @@
 
 #pragma once
 #include "FrameGraph/RenderPass.h"
-#include "maths.h"
 
 namespace Pudu
 {
     struct OmnidirectionalShadowmapData
     {
         float4 lightCount;
-        Matrix4 shadowMatrix[128]; //FOR NOW HARD CODED TO 128
+        float4x4 shadowMatrix[128]; //FOR NOW HARD CODED TO 128
     };
 
 
