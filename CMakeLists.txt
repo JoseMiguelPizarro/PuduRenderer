@@ -37,12 +37,17 @@ elseif (UNIX)
     set(SLANG_OS "linux-x86_64")
 endif()
 
+set(DEPENDENCIES_PATH "_deps")
 message(STATUS "Fetching Slang v${SLANG_VERSION} for ${SLANG_OS}")
 
 FetchContent_Populate(
         slang_zip
         URL https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-${SLANG_OS}.zip
+        SOURCE_DIR "${DEPENDENCIES_PATH}/Slang/src"
+        BINARY_DIR "${DEPENDENCIES_PATH}/Slang/bin"
+        SUBBUILD_DIR "${DEPENDENCIES_PATH}/Slang/subBuild"
         QUIET
+
 )
 
 set(SLANG_INCLUDE_DIR "${slang_zip_SOURCE_DIR}/include")
@@ -107,6 +112,7 @@ set(LIBS
 # Tracy Setup
 # ----------------------------------------------------
 set(TRACY_VERSION "v0.12.2")
+set(FETCHCONTENT_BASE_DIR "_deps/tracy")
 FetchContent_Declare(
         tracy
         GIT_REPOSITORY https://github.com/wolfpld/tracy.git
