@@ -69,6 +69,7 @@ const static float3 faceVectors[4] =
     		return transpose(pm);
     	}
 
+//TODO: MAKE PLANES NORMALS MATCH THE FACE ORDER
 static const float3 planeNormals[12] =
 {
   float3(0.00000000, -0.03477280, 0.99939519),
@@ -94,6 +95,14 @@ static const float3 planeNormals[12] =
         tm[3]= float4x4({s / 2, 0, 0, 0}, {0, s, 0, 0}, {0, 0, 1, 0}, {p.x - s / 2, p.y, 0, 1});
     }
 
+    void GetTextureSpaceMatrix(inout float4x4[4] tm)
+    {
+    tm[0] = float4x4({0.5,0,0,-0.5},{0,0.5,0,-0.5},{0,0,1,0},{0.0,0.0,0,1});
+    tm[1] = float4x4({0.5,0,0,0},{0,0.5,0,0},{0,0,1,0},{0,0,0,1});
+    tm[2] = float4x4({0.5,0,0,0},{0,0.5,0,0},{0,0,1,0},{0,0,0,1});
+    tm[3] = float4x4({0.5,0,0,0},{0,0.5,0,0},{0,0,1,0},{0,0,0,1});
+    }
+
 float GetClipDist(in float3 lightPos, in uint planeIndex, float3 vertexPosition)
 {
     float3 normal = planeNormals[planeIndex]; // clipping plane normal
@@ -106,87 +115,120 @@ ConstantBuffer<OmnidirectionalShadowmapData> data;
 
 ParameterBlock<Data> LightData;
 
-
-
-
 [shader("vertex")]
 VSOutput vertexMain(VertexInput input)
 {
-    float3 forward = faceVectors[0];
-    float3 up = cross(forward,{-1,0,0});
-    float3x3 view3x3 = lookAt(forward,up);
-
-    float4x4 view = {
-        float4(view3x3[0], 0),
-        float4(view3x3[1], 0),
-        float4(view3x3[2], 0),
-        float4(0, 0, 0, 1)
-    };
-    float4x4 viewProj = GLOBALS.constants.viewProjection;
-    float fov_x = 143.98570868;
-    float fov_y = 125.26438968;
-    float4x4 proj =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
     VSOutput output = {0};
-    //view = GLOBALS.constants.view;
-    output.position = mul(proj,mul(view, mul(UBO.model, float4(input.Position,1.0f))));
+    output.position = mul(UBO.model, float4(input.Position,1.0f));
 
     return output;
 };
 
-//[shader("geometry")]
-//[maxvertexcount(12)]
-//void geometryMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
-//{
-//    uint lightIndex  = 0;
-//    float3 lightPosition = LIGHTING.lights.pointLight[lightIndex].positionAndRange.xyz;
-//
-// // back-face culling
-// float3 normal = -cross(input[2].position.xyz-input[0].position.xyz, input[0].position.xyz - input[1].position.xyz);
-// float3 view = lightPosition-input[0].position.xyz;
-//
-// if(dot(normal, view) < 0.0f)
-//   return;
-//
-//   float4x4 tm[4];
-//   GetTextureSpaceMatrix(float2(0,0),1,tm);
-//
-// for(uint faceIndex=0; faceIndex<4; faceIndex++)
-// {
-//   uint inside = 0;
-//   float clipDistances[9];
-//   for(uint sideIndex=0; sideIndex<3; sideIndex++)
-//   {
-//     const uint planeIndex = (faceIndex*3)+sideIndex;
-//     const uint bit = 1 << sideIndex;
-//     for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
-//     {
-//       uint clipDistanceIndex = sideIndex*3+vertexIndex;
-//       clipDistances[clipDistanceIndex] = GetClipDist(lightPosition, planeIndex, input[vertexIndex].position.xyz);
-//       inside |= (clipDistances[clipDistanceIndex] > 0.001) ? bit : 0;
-//     }
-//   }
-//
-//   if(inside==0x7)
-//   {
-//        const float4x4 shadowViewProjTexMatrix = LightData.data.shadowMatrix[lightIndex*4 + faceIndex];
-//        GSOutput output;
-//        float4x4 texM = tm[faceIndex];
-//
-//         for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
-//         {
-//            output.pos =mul(shadowViewProjTexMatrix,float4(input[vertexIndex].position.xyz,1));
-//
-//            float clipOffset = 0;
-//            output.clipDistance[0] = clipDistances[vertexIndex] + clipOffset;
-//            output.clipDistance[1] = clipDistances[3+vertexIndex] + clipOffset;
-//            output.clipDistance[2] = clipDistances[6+vertexIndex] + clipOffset;
-//
-//            triStream.Append(output);
-//         }
-//     triStream.RestartStrip();
-//   }
-// }
-//}
+[shader("geometry")]
+[maxvertexcount(12)]
+void geometryMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
+{
+    uint lightIndex  = 0;
+    //float3 lightPosition = LIGHTING.lights.pointLight[lightIndex].positionAndRange.xyz;
+float3 lightPosition = float3(0,0,0);
+ // back-face culling
+    float3 normal = -cross(input[2].position.xyz-input[0].position.xyz, input[0].position.xyz - input[1].position.xyz);
+    float3 viewDir = lightPosition-input[0].position.xyz;
+
+   //TODO: INPLEMENT BACKFACE CULLING
+    float4x4 tm[4];
+    GetTextureSpaceMatrix(tm);
+
+    float4x4 viewProjMatrices[4];
+
+
+//View Proj Green Face [0]
+    float3 forward = faceVectors[0];
+    float3 up = cross(forward,{-1,0,0});
+    float3x3 view3x3 = lookAt(forward,up);
+    float4x4 view = {
+    float4(view3x3[0], 0),
+    float4(view3x3[1], 0),
+    float4(view3x3[2], 0),
+    float4(0, 0, 0, 1)
+         };
+
+    float fov_x = 143.98570868;
+    float fov_y = 125.26438968;
+    float4x4 proj =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
+
+    viewProjMatrices[0] = mul(proj,view);
+
+    //View Proj Yellow Face [1]
+          forward = faceVectors[1];
+          up = cross(forward,{1,0,0});
+          view3x3 = lookAt(forward,up);
+
+          float4x4 view2 = {
+            float4(view3x3[0], 0),
+            float4(view3x3[1], 0),
+            float4(view3x3[2], 0),
+            float4(0, 0, 0, 1)
+              };
+
+          float4x4 proj2 =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
+
+          viewProjMatrices[1] = mul(proj2,view2);
+
+//View Proj Blue Face [2]
+          forward = faceVectors[2];
+          up = cross(forward,{0,0,-1});
+          view3x3 = lookAt(forward,up);
+
+          float4x4 view3 = {
+            float4(view3x3[0], 0),
+            float4(view3x3[1], 0),
+            float4(view3x3[2], 0),
+            float4(0, 0, 0, 1)
+              };
+
+          float4x4 proj3 =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
+
+          viewProjMatrices[2] = mul(proj3,view3);
+
+//View Proj Red Face [3]
+          forward = faceVectors[3];
+          up = cross(forward,{0,0,1});
+          view3x3 = lookAt(forward,up);
+
+          float4x4 view4 = {
+            float4(view3x3[0], 0),
+            float4(view3x3[1], 0),
+            float4(view3x3[2], 0),
+            float4(0, 0, 0, 1)
+              };
+
+          float4x4 proj4 =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
+
+          viewProjMatrices[3] = mul(proj4,view4);
+
+
+ for(uint faceIndex=0; faceIndex<4; faceIndex++)
+ {
+    //const float4x4 shadowViewProjTexMatrix = LightData.data.shadowMatrix[lightIndex*4 + faceIndex];
+    float4x4 shadowViewProjMatrix = viewProjMatrices[faceIndex];
+    GSOutput output;
+    float4x4 texM = tm[faceIndex];
+
+     for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
+         {
+            output.pos =mul(texM,mul(shadowViewProjMatrix,float4(input[vertexIndex].position.xyz,1)));
+
+      //      float clipOffset = 0;
+        //    output.clipDistance[0] = clipDistances[vertexIndex] + clipOffset;
+          //  output.clipDistance[1] = clipDistances[3+vertexIndex] + clipOffset;
+           // output.clipDistance[2] = clipDistances[6+vertexIndex] + clipOffset;
+
+            triStream.Append(output);
+         }
+     triStream.RestartStrip();
+ }
+}
 
 [shader("fragment")]
 float4 fragmentMain(float4 input)
