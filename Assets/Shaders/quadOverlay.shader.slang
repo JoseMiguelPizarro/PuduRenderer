@@ -44,5 +44,5 @@ VSOut vertexMain(VertexInput input)
 [shader("fragment")]
 float4 fragmentMain(VSOut input) : SV_Target
 {
-    return float4(GammaCorrect( material.texture.SampleLevel(input.TexCoord.xy,material.mipLevel).rgb,2.2),0);
+    return float4(GammaCorrect( material.texture.SampleLevel(input.TexCoord.xy,material.mipLevel).rrr,.1),0);
 }

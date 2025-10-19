@@ -72,19 +72,24 @@ const static float3 faceVectors[4] =
 //TODO: MAKE PLANES NORMALS MATCH THE FACE ORDER
 static const float3 planeNormals[12] =
 {
-  float3(0.00000000, -0.03477280, 0.99939519),
-  float3(-0.47510946, -0.70667917, 0.52428567),
-  float3(0.47510946, -0.70667917, 0.52428567),
+  //Green Face
   float3(0.00000000, -0.03477280, -0.99939519),
   float3(0.47510946, -0.70667917, -0.52428567),
   float3(-0.47510946, -0.70667917, -0.52428567),
+  //Yellow Face
+  float3(0.00000000, -0.03477280, 0.99939519),
+  float3(-0.47510946, -0.70667917, 0.52428567),
+  float3(0.47510946, -0.70667917, 0.52428567),
+  //Blue Face
   float3(-0.52428567, 0.70667917, -0.47510946),
   float3(-0.52428567, 0.70667917, 0.47510946),
   float3(-0.99939519, 0.03477280, 0.00000000),
+  //Red Face
   float3(0.52428567, 0.70667917, -0.47510946),
   float3(0.99939519, 0.03477280, 0.00000000),
   float3(0.52428567, 0.70667917, 0.47510946)
 };
+
 
     void GetTextureSpaceMatrix(float2 p, float size, inout float4x4[4] tm)
     {
@@ -97,15 +102,15 @@ static const float3 planeNormals[12] =
 
     void GetTextureSpaceMatrix(inout float4x4[4] tm)
     {
-    tm[0] = float4x4({0.5,0,0,-0.5},{0,0.5,0,-0.5},{0,0,1,0},{0.0,0.0,0,1});
+    tm[0] = float4x4({1.,0,0,0},{0,0.5,0,0.5},{0,0,1,0},{0.0,0.0,0,1});
     tm[1] = float4x4({0.5,0,0,0},{0,0.5,0,0},{0,0,1,0},{0,0,0,1});
     tm[2] = float4x4({0.5,0,0,0},{0,0.5,0,0},{0,0,1,0},{0,0,0,1});
     tm[3] = float4x4({0.5,0,0,0},{0,0.5,0,0},{0,0,1,0},{0,0,0,1});
     }
 
-float GetClipDist(in float3 lightPos, in uint planeIndex, float3 vertexPosition)
+float GetClipDist(in float3 lightPos,float3 vertexPosition ,uint faceIndex, in uint planeIndex)
 {
-    float3 normal = planeNormals[planeIndex]; // clipping plane normal
+    float3 normal = planeNormals[faceIndex*3 + planeIndex]; // clipping plane normal
     return (dot(vertexPosition, normal) + dot(-normal, lightPos));
 }
 
@@ -155,7 +160,7 @@ float3 lightPosition = float3(0,0,0);
 
     float fov_x = 143.98570868;
     float fov_y = 125.26438968;
-    float4x4 proj =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
+    float4x4 proj =PerspectiveMatrixFOV(fov_x,fov_y,1,100);
 
     viewProjMatrices[0] = mul(proj,view);
 
@@ -208,7 +213,7 @@ float3 lightPosition = float3(0,0,0);
           viewProjMatrices[3] = mul(proj4,view4);
 
 
- for(uint faceIndex=0; faceIndex<4; faceIndex++)
+ for(uint faceIndex=0; faceIndex<1; faceIndex++)
  {
     //const float4x4 shadowViewProjTexMatrix = LightData.data.shadowMatrix[lightIndex*4 + faceIndex];
     float4x4 shadowViewProjMatrix = viewProjMatrices[faceIndex];
@@ -217,12 +222,13 @@ float3 lightPosition = float3(0,0,0);
 
      for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
          {
-            output.pos =mul(texM,mul(shadowViewProjMatrix,float4(input[vertexIndex].position.xyz,1)));
+            float3 vertexPos = input[vertexIndex].position.xyz;
+            output.pos =mul(shadowViewProjMatrix,float4(input[vertexIndex].position.xyz,1));
 
-      //      float clipOffset = 0;
-        //    output.clipDistance[0] = clipDistances[vertexIndex] + clipOffset;
-          //  output.clipDistance[1] = clipDistances[3+vertexIndex] + clipOffset;
-           // output.clipDistance[2] = clipDistances[6+vertexIndex] + clipOffset;
+            float clipOffset = 0;
+            output.clipDistance[0] = GetClipDist(lightPosition,vertexPos, faceIndex,0) + clipOffset;
+            output.clipDistance[1] =GetClipDist(lightPosition,vertexPos, faceIndex,1) + clipOffset;
+            output.clipDistance[2] = GetClipDist(lightPosition,vertexPos, faceIndex,2) + clipOffset;
 
             triStream.Append(output);
          }
