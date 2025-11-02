@@ -73,21 +73,21 @@ const static float3 faceVectors[4] =
 static const float3 planeNormals[12] =
 {
   //Green Face
-  float3(0.00000000, -0.03477280, -0.99939519),
-  float3(0.47510946, -0.70667917, -0.52428567),
-  float3(-0.47510946, -0.70667917, -0.52428567),
+  float3(0.00000000, 0, -1),
+  float3(0.47510946, -0.707107, -0.5),
+  float3(-0.5, -0.707107, -0.4999),
   //Yellow Face
-  float3(0.00000000, -0.03477280, 0.99939519),
-  float3(-0.47510946, -0.70667917, 0.52428567),
-  float3(0.47510946, -0.70667917, 0.52428567),
+  float3(0.00000000, 0, 1.),
+  float3(0.5, -0.707107, 0.5),
+  float3(-0.5, -0.707107, 0.49999),
   //Blue Face
-  float3(-0.52428567, 0.70667917, -0.47510946),
-  float3(-0.52428567, 0.70667917, 0.47510946),
-  float3(-0.99939519, 0.03477280, 0.00000000),
+  float3(-0.5, 0.707107, 0.5),
+  float3(-1, 0, 0),
+  float3(-0.5, 0.707107, -0.5),
   //Red Face
-  float3(0.52428567, 0.70667917, -0.47510946),
-  float3(0.99939519, 0.03477280, 0.00000000),
-  float3(0.52428567, 0.70667917, 0.47510946)
+  float3(0.5, 0.707107, -0.49999),
+  float3(1., 1.8841e-6, 0.00000000),
+  float3(0.5, 0.707107, 0.49999)
 };
 
 
@@ -110,7 +110,7 @@ static const float3 planeNormals[12] =
 
 float GetClipDist(in float3 lightPos,float3 vertexPosition ,uint faceIndex, in uint planeIndex)
 {
-    float3 normal = planeNormals[faceIndex*3 + planeIndex]; // clipping plane normal
+    float3 normal = -planeNormals[faceIndex*3 + planeIndex]; // clipping plane normal
     return (dot(vertexPosition, normal) + dot(-normal, lightPos));
 }
 
@@ -180,9 +180,12 @@ float3 lightPosition = float3(0,0,0);
 
           viewProjMatrices[1] = mul(proj2,view2);
 
+
 //View Proj Blue Face [2]
           forward = faceVectors[2];
-          up = cross(forward,{0,0,-1});
+        up = cross(forward,{0.288674,0.408248,-0.866026});
+  //      up = cross(forward, {-0.577349,-0.816497,0.0});
+
           view3x3 = lookAt(forward,up);
 
           float4x4 view3 = {
@@ -198,8 +201,8 @@ float3 lightPosition = float3(0,0,0);
 
 //View Proj Red Face [3]
           forward = faceVectors[3];
-          up = cross(forward,{0,0,1});
-          view3x3 = lookAt(forward,up);
+          up = cross(forward,{0,0,-1});
+          view3x3 = lookAt(forward,{-0.577349,-0.816497,0.0});
 
           float4x4 view4 = {
             float4(view3x3[0], 0),
@@ -213,21 +216,54 @@ float3 lightPosition = float3(0,0,0);
           viewProjMatrices[3] = mul(proj4,view4);
 
 
- for(uint faceIndex=0; faceIndex<1; faceIndex++)
+float4x4 TextMatrices[4];
+float4x4 textM_green = {
+float4(0.25,0,0,-0.5),
+float4(0,0.25,0,-.5),
+float4(0,0,1,0),
+float4(0,0,0,1)};
+
+float4x4 textM_yellow = {
+float4(1.,0,0,0),
+float4(0,1.,0,-.5),
+float4(0,0,1,0),
+float4(0,0,0,1)
+};
+
+float4x4 textM_blue = {
+float4(.5,0,0,-0.),
+float4(0,.5,0,0),
+float4(0,0,1,0),
+float4(0,0,0,1)
+};
+
+float4x4 textM_red = {
+float4(1.,0,0,0.),
+float4(0,1.,0,0.),
+float4(0,0,1,0),
+float4(0,0,0,1)
+};
+
+TextMatrices[0] = textM_green;
+TextMatrices[1] = textM_yellow;
+TextMatrices[2] = textM_blue;
+TextMatrices[3] = textM_red;
+
+ for(uint faceIndex=2; faceIndex<3; faceIndex++)
  {
     //const float4x4 shadowViewProjTexMatrix = LightData.data.shadowMatrix[lightIndex*4 + faceIndex];
     float4x4 shadowViewProjMatrix = viewProjMatrices[faceIndex];
+    float4x4 textM = TextMatrices[faceIndex];
     GSOutput output;
-    float4x4 texM = tm[faceIndex];
 
      for(uint vertexIndex=0; vertexIndex<3; vertexIndex++)
          {
             float3 vertexPos = input[vertexIndex].position.xyz;
-            output.pos =mul(shadowViewProjMatrix,float4(input[vertexIndex].position.xyz,1));
+            output.pos = mul(textM,mul(shadowViewProjMatrix,float4(input[vertexIndex].position.xyz,1)));
 
-            float clipOffset = 0;
+            float clipOffset = 0.;
             output.clipDistance[0] = GetClipDist(lightPosition,vertexPos, faceIndex,0) + clipOffset;
-            output.clipDistance[1] =GetClipDist(lightPosition,vertexPos, faceIndex,1) + clipOffset;
+            output.clipDistance[1] = GetClipDist(lightPosition,vertexPos, faceIndex,1) + clipOffset;
             output.clipDistance[2] = GetClipDist(lightPosition,vertexPos, faceIndex,2) + clipOffset;
 
             triStream.Append(output);
