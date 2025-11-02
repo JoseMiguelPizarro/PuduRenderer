@@ -81,9 +81,12 @@ static const float3 planeNormals[12] =
   float3(0.5, -0.707107, 0.5),
   float3(-0.5, -0.707107, 0.49999),
   //Blue Face
-  float3(-0.5, 0.707107, 0.5),
-  float3(-1, 0, 0),
-  float3(-0.5, 0.707107, -0.5),
+//  float3(-0.5, 0.707107, 0.5),
+  //float3(-1, 0, 0),
+  //float3(-0.5, 0.707107, -0.5),
+  float3(0,1,1),
+  float3(0,1,-1),
+  float3(0,1,0),
   //Red Face
   float3(0.5, 0.707107, -0.49999),
   float3(1., 1.8841e-6, 0.00000000),
@@ -110,8 +113,8 @@ static const float3 planeNormals[12] =
 
 float GetClipDist(in float3 lightPos,float3 vertexPosition ,uint faceIndex, in uint planeIndex)
 {
-    float3 normal = -planeNormals[faceIndex*3 + planeIndex]; // clipping plane normal
-    return (dot(vertexPosition, normal) + dot(-normal, lightPos));
+    float3 normal = normalize( planeNormals[faceIndex*3 + planeIndex]); // clipping plane normal
+    return dot(normal, vertexPosition - lightPos); //Positive if front of plane, negative if behind
 }
 
 struct Data{
@@ -186,7 +189,7 @@ float3 lightPosition = float3(0,0,0);
         up = cross(forward,{0.288674,0.408248,-0.866026});
   //      up = cross(forward, {-0.577349,-0.816497,0.0});
 
-          view3x3 = lookAt(forward,up);
+          view3x3 = lookAt({1,0,0},{0,1,0});
 
           float4x4 view3 = {
             float4(view3x3[0], 0),
