@@ -27,34 +27,51 @@ struct VSOutput{
 };
 
 static const float3 faceNormals[] = {
-float3(-4.982930840924382e-05, -0.5773528814315796, 0.8164947628974915),
-float3(-4.982930840924382e-05, -0.5773528814315796, -0.8164947628974915),
-float3(-0.8164560794830322, 0.5774075984954834, 0.0),
-float3(0.8165407776832581, 0.5772877335548401, 0.0),
+float3(-5.602816145255929e-06, -0.5773529410362244, 0.8164947032928467),
+float3(-5.5730142776155844e-06, -0.5773529410362244, -0.8164947032928467),
+float3(-0.8165003061294556, 0.577345073223114, 0.0),
+float3(0.8164965510368347, 0.5773502588272095, 0.0),
 };
 
 static const float3 faceUps[] = {
-float3(6.098646190366708e-05, 0.8164961934089661, 0.5773506760597229),
-float3(6.098646190366708e-05, 0.8164961934089661, -0.5773506760597229),
-float3(0.5774118304252625, 0.8164531588554382, -0.0),
-float3(0.5772877335548401, -0.8165407776832581, 0.0),
+float3(0.0, -0.8164947032928467, -0.5773529410362244),
+float3(0.0, -0.8164947032928467, 0.5773529410362244),
+float3(0.577345073223114, 0.8165003061294556, -0.0),
+float3(0.5773503184318542, -0.8164966702461243, 0.0),
 };
 
 static const float3 clipPlaneNormals[] = {
-float3(0.0, 0.0, 0.9428103566169739),
-float3(0.4713541269302368, -0.6667037606239319, 0.4714052379131317),
-float3(-0.4714588224887848, -0.6666296720504761, 0.47140008211135864),
-float3(0.0, -0.0, -0.9428103566169739),
-float3(-0.4714588224887848, -0.6666296720504761, -0.47140008211135864),
-float3(0.4713541269302368, -0.6667037606239319, -0.4714052379131317),
-float3(-0.4713541269302368, 0.6667037606239319, 0.4714052379131317),
-float3(-0.9428079128265381, 6.67712083668448e-05, 0.0),
-float3(-0.4713541269302368, 0.6667037606239319, -0.4714052379131317),
-float3(0.4714588224887848, 0.6666296720504761, -0.47140008211135864),
-float3(0.9428079128265381, -6.67712083668448e-05, 0.0),
-float3(0.4714588224887848, 0.6666296720504761, 0.47140008211135864),
+float3(0.0, 0.0, 1.0),
+float3(0.5, -0.7071068286895752, 0.5000000596046448),
+float3(-0.5000041127204895, -0.7071067690849304, 0.49999597668647766),
+float3(0.0, -0.0, -1.0),
+float3(-0.5000041127204895, -0.7071067690849304, -0.49999597668647766),
+float3(0.5, -0.7071068286895752, -0.5000000596046448),
+float3(-0.5, 0.7071068286895752, 0.5000000596046448),
+float3(-1.0, -5.729740223614499e-06, 0.0),
+float3(-0.5, 0.7071068286895752, -0.5000000596046448),
+float3(0.5000041127204895, 0.7071067690849304, -0.49999597668647766),
+float3(1.0, 5.729740223614499e-06, 0.0),
+float3(0.5000041127204895, 0.7071067690849304, 0.49999597668647766),
 };
 
+
+
+static const float3 planeNormals[12] =
+{
+  float3(0.00000000, -0.03477280, 0.99939519),
+  float3(-0.47510946, -0.70667917, 0.52428567),
+  float3(0.47510946, -0.70667917, 0.52428567),
+  float3(0.00000000, -0.03477280, -0.99939519),
+  float3(0.47510946, -0.70667917, -0.52428567),
+  float3(-0.47510946, -0.70667917, -0.52428567),
+  float3(-0.52428567, 0.70667917, -0.47510946),
+  float3(-0.52428567, 0.70667917, 0.47510946),
+  float3(-0.99939519, 0.03477280, 0.00000000),
+  float3(0.52428567, 0.70667917, -0.47510946),
+  float3(0.99939519, 0.03477280, 0.00000000),
+  float3(0.52428567, 0.70667917, 0.47510946)
+};
 
 
 
@@ -141,6 +158,81 @@ VSOutput vertexMain(VertexInput input)
     return output;
 };
 
+
+//pitch-x , roll-z , yaw-y
+
+public float3x3 RotationMatrix3(float3 rotation)
+{
+    float roll = rotation.z;
+    float pitch = rotation.x;
+    float yaw = rotation.y;
+
+    float su = sin(pitch);
+    float cu = cos(pitch);
+    float sv = sin(yaw);
+    float cv = cos(yaw);
+    float sw = sin(roll);
+    float cw = cos(roll);
+
+    float3x3 rotate_x = {
+        {1, 0, 0},
+        {0, cu, -su},
+        {0, su, cu},
+
+    };
+
+    float3x3 rotate_y = {
+        {cv, 0, sv},
+        {0, 1, 0},
+        {-sv, 0, cv}
+    };
+
+    float3x3 rotate_z = {
+        {cw, -sw, 0},
+        {sw, cw, 0},
+        {0, 0, 1}
+    };
+
+    return mul(rotate_x, mul(rotate_y, rotate_z));
+    }
+
+public float4x4 RotationMatrix(float3 rotation)
+{
+    float roll = rotation.z;
+    float pitch = rotation.x;
+    float yaw = rotation.y;
+
+    float su = sin(pitch);
+    float cu = cos(pitch);
+    float sv = sin(yaw);
+    float cv = cos(yaw);
+    float sw = sin(roll);
+    float cw = cos(roll);
+
+    float4x4 rotate_x = {
+        {1, 0, 0, 0},
+        {0, cu, -su, 0},
+        {0, su, cu, 0},
+        {0, 0, 0, 1}
+    };
+
+    float4x4 rotate_y = {
+        {cv, 0, sv, 0},
+        {0, 1, 0, 0},
+        {-sv, 0, cv, 0},
+        {0, 0, 0, 1}
+    };
+
+    float4x4 rotate_z = {
+        {cw, -sw, 0, 0},
+        {sw, cw, 0, 0},
+        {0, 0, 1, 0},
+        {0, 0, 0, 1}
+    };
+
+    return mul(rotate_x, mul(rotate_y, rotate_z));
+    }
+
 [shader("geometry")]
 [maxvertexcount(12)]
 void geometryMain(triangle VSOutput input[3], inout TriangleStream<GSOutput> triStream)
@@ -163,33 +255,22 @@ float3 lightPosition = float3(0,0,0);
     float3 forward = faceNormals[0];
     float3 up = faceUps[0];
     float3x3 view3x3 = lookAt(forward,up);
-    float4x4 view = {
-    float4(view3x3[0], 0),
-    float4(view3x3[1], 0),
-    float4(view3x3[2], 0),
-    float4(0, 0, 0, 1)
-         };
 
+    float4x4 view = RotationMatrix(float3(radians(-27.36780516),radians(0),0));
     float fov_x = 143.98570868;
     float fov_y = 125.26438968;
 
-    float4x4 proj =PerspectiveMatrixFOV(fov_x,fov_y,1,100);
+    float4x4 proj = PerspectiveMatrixFOV(fov_y,fov_x,1,100);
 
     viewProjMatrices[0] = mul(proj,view);
 
     //View Proj Yellow Face [1]
           forward = faceNormals[1];
           up = faceUps[1];
-          view3x3 = lookAt(forward,up);
 
-          float4x4 view2 = {
-            float4(view3x3[0], 0),
-            float4(view3x3[1], 0),
-            float4(view3x3[2], 0),
-            float4(0, 0, 0, 1)
-              };
+          float4x4 view2 = RotationMatrix(float3(radians(-27.36780516),radians(180),radians(0)));
 
-          float4x4 proj2 =PerspectiveMatrixFOV(fov_x,fov_y,1,100);
+          float4x4 proj2 = PerspectiveMatrixFOV(fov_y,fov_x,1,100);
 
           viewProjMatrices[1] = mul(proj2,view2);
 
@@ -197,16 +278,10 @@ float3 lightPosition = float3(0,0,0);
 //View Proj Blue Face [2]
         forward = faceNormals[2];
         up = faceUps[2];
-        view3x3 = lookAt(forward,up);
+        view3x3 = RotationMatrix3(float3(radians(27.36780516),radians(90),radians(0)));
 
-          float4x4 view3 = {
-            float4(view3x3[0], 0),
-            float4(view3x3[1], 0),
-            float4(view3x3[2], 0),
-            float4(0, 0, 0, 1)
-              };
-
-          float4x4 proj3 =PerspectiveMatrixFOV(fov_x,fov_y,1,100);
+        float4x4 view3 = RotationMatrix(float3(radians(27.36780516),radians(90),radians(0)));
+        float4x4 proj3 =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
 
           viewProjMatrices[2] = mul(proj3,view3);
 
@@ -216,36 +291,31 @@ float3 lightPosition = float3(0,0,0);
           up = faceUps[3];
           view3x3 = lookAt(forward,-up);
 
-          float4x4 view4 = {
-            float4(view3x3[0], 0),
-            float4(view3x3[1], 0),
-            float4(view3x3[2], 0),
-            float4(0, 0, 0, 1)
-              };
+          float4x4 view4 = RotationMatrix(float3(radians(27.36780516),radians(-90),radians(0)));
 
-          float4x4 proj4 =PerspectiveMatrixFOV(fov_x,fov_y,1,100);
+          float4x4 proj4 =PerspectiveMatrixFOV(fov_y,fov_x,1,100);
 
           viewProjMatrices[3] = mul(proj4,view4);
 
 
 float4x4 TextMatrices[4];
-float p = 0.25;
+float p = 0.5;
 float4x4 textM_green = {
-float4(p,0,0,-0.5),
-float4(0,p,0,-0.5),
+float4(p,0,0,-p),
+float4(0,p,0,-p),
 float4(0,0,1,0),
 float4(0,0,0,1)};
 
 float4x4 textM_yellow = {
-float4(p,0,0,0.5),
-float4(0,p,0,-0.5),
+float4(p,0,0,p),
+float4(0,p,0,-p),
 float4(0,0,1,0),
 float4(0,0,0,1)
 };
 
 float4x4 textM_blue = {
-float4(p,0,0,-0.5),
-float4(0,p,0,0.5),
+float4(p,0,0,-p),
+float4(0,p,0,p),
 float4(0,0,1,0),
 float4(0,0,0,1)
 };
